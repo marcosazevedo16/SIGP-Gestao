@@ -185,26 +185,21 @@ let productionFrequencyChart = null;
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
   initializeTheme();
-  checkAuthentication();
   
-  // Initialize modal event listeners
-  const presentationModal = document.getElementById('presentation-modal');
-  if (presentationModal) {
-    presentationModal.addEventListener('click', function(e) {
-      if (e.target === presentationModal) {
-        closePresentationModal();
-      }
-    });
-  }
+  // Set initial state: show login screen
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('main-app').classList.remove('active');
+  
+  checkAuthentication();
 });
 
 function checkAuthentication() {
   if (!isAuthenticated) {
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('main-app').style.display = 'none';
+    document.getElementById('login-screen').classList.add('active');
+    document.getElementById('main-app').classList.remove('active');
   } else {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('main-app').style.display = 'block';
+    document.getElementById('login-screen').classList.remove('active');
+    document.getElementById('main-app').classList.add('active');
     initializeApp();
   }
 }
@@ -290,18 +285,13 @@ function handleLogin(event) {
     return;
   }
   
-  // Login successful - CORREÇÃO: Properly show main app
+  // Login successful
   currentUser = user;
   isAuthenticated = true;
   errorDiv.textContent = '';
   document.getElementById('login-username').value = '';
   document.getElementById('login-password').value = '';
-  
-  // Hide login, show main app
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('main-app').style.display = 'block';
-  
-  initializeApp();
+  checkAuthentication();
 }
 
 function handleLogout() {
@@ -434,29 +424,13 @@ function navigateToUserManagement() {
   updateUserStats();
   renderRequests();
   updateRequestStats();
+  updateRequestCharts();
   renderPresentations();
   updatePresentationStats();
+  updatePresentationCharts();
   initializeRequestFilters();
   initializePresentationFilters();
   updateDashboardStats();
-  
-  // Initialize all charts after data is loaded
-  setTimeout(() => {
-    if (typeof Chart !== 'undefined') {
-      initializeRequestCharts();
-      initializePresentationCharts();
-      initializeDemandCharts();
-      initializeVisitCharts();
-      initializeProductionCharts();
-      initializeDashboardCharts();
-      updateRequestCharts();
-      updatePresentationCharts();
-      updateDemandCharts();
-      updateVisitCharts();
-      updateProductionCharts();
-      updateCharts();
-    }
-  }, 200);
   
   console.log('Sistema inicializado com sucesso');
   console.log('Total de módulos:', modulos.length);
@@ -1728,6 +1702,9 @@ function initializeFilters() {
     const requestModal = document.getElementById('request-modal');
     const presentationModal = document.getElementById('presentation-modal');
     const formaApresentacaoModal = document.getElementById('forma-apresentacao-modal');
+    const demandModal = document.getElementById('demand-modal');
+    const visitModal = document.getElementById('visit-modal');
+    const productionModal = document.getElementById('production-modal');
     
     if (event.target === requestModal) {
       closeRequestModal();
@@ -1737,6 +1714,15 @@ function initializeFilters() {
     }
     if (event.target === formaApresentacaoModal) {
       closeFormaApresentacaoModal();
+    }
+    if (event.target === demandModal) {
+      closeDemandModal();
+    }
+    if (event.target === visitModal) {
+      closeVisitModal();
+    }
+    if (event.target === productionModal) {
+      closeProductionModal();
     }
   });
 }
@@ -4243,7 +4229,7 @@ function showPresentationModal(presentationId = null) {
     return;
   }
   
-  // Reset modal display
+  // Explicitly show modal
   modal.style.display = 'flex';
   
   form.reset();
@@ -4290,17 +4276,19 @@ function showPresentationModal(presentationId = null) {
   
   handlePresentationStatusChange();
   modal.classList.add('show');
+  modal.style.display = 'flex';
 }
 
 function closePresentationModal() {
   const modal = document.getElementById('presentation-modal');
   if (modal) {
     modal.classList.remove('show');
+    modal.style.display = 'none';
   }
   editingPresentationId = null;
 }
 
-// CORREÇÃO: Add editPresentation function (was missing)
+// CORREÇÃO: Add missing editPresentation function
 function editPresentation(presentationId) {
   showPresentationModal(presentationId);
 }
@@ -4897,19 +4885,14 @@ function initializeDashboardCharts() {
   const ctx = document.getElementById('implantationsYearChart');
   if (!ctx) return;
   
-  // CORREÇÃO 1: Dados fixos conforme especificação
-  const years = ['2016', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'];
-  const counts = [1, 9, 6, 0, 8, 5, 3, 1, 3];
-  const colors = ['#17A2B8', '#FFA500', '#DC3545', '#F5DEB3', '#708090', '#FF6B6B', '#FFD700', '#8B4513', '#9932CC'];
-  
   implantationsYearChart = new Chart(ctx.getContext('2d'), {
     type: 'bar',
     data: {
-      labels: years,
+      labels: [],
       datasets: [{
-        label: 'Quantidade de Municípios',
-        data: counts,
-        backgroundColor: colors,
+        label: 'Implantações',
+        data: [],
+        backgroundColor: ['#1FB8CD', '#FFC185', '#B4413C', '#ECEBD5', '#5D878F', '#DB4545', '#D2BA4C', '#964325', '#944454', '#13343B'],
         borderColor: '#ffffff',
         borderWidth: 1
       }]
@@ -4930,26 +4913,45 @@ function initializeDashboardCharts() {
           beginAtZero: true,
           ticks: {
             stepSize: 1
-          },
-          title: {
-            display: true,
-            text: 'Quantidade de Municípios'
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: 'Ano'
           }
         }
       }
     }
   });
+  
+  updateDashboardCharts();
 }
 
 function updateDashboardCharts() {
-  // CORREÇÃO: Gráfico usa dados fixos, não precisa atualizar
-  // Mantido para compatibilidade
+  if (!implantationsYearChart) return;
+  
+  // Filter municipalities: Em uso, Bloqueado, Parou de utilizar (exclude Não Implantado)
+  const validStatuses = ['Em uso', 'Bloqueado', 'Parou de usar'];
+  const validMunicipalities = municipalities.filter(m => 
+    validStatuses.includes(m.status) && m.implantationDate
+  );
+  
+  // Group by year
+  const yearCounts = {};
+  validMunicipalities.forEach(m => {
+    const year = new Date(m.implantationDate).getFullYear();
+    if (!isNaN(year)) {
+      yearCounts[year] = (yearCounts[year] || 0) + 1;
+    }
+  });
+  
+  // Sort years
+  const sortedYears = Object.keys(yearCounts).sort();
+  const counts = sortedYears.map(year => yearCounts[year]);
+  
+  // Generate colors
+  const colors = ['#1FB8CD', '#FFC185', '#B4413C', '#ECEBD5', '#5D878F', '#DB4545', '#D2BA4C', '#964325', '#944454', '#13343B'];
+  const barColors = sortedYears.map((_, index) => colors[index % colors.length]);
+  
+  implantationsYearChart.data.labels = sortedYears;
+  implantationsYearChart.data.datasets[0].data = counts;
+  implantationsYearChart.data.datasets[0].backgroundColor = barColors;
+  implantationsYearChart.update();
 }
 
 // Demandas do Suporte Functions
