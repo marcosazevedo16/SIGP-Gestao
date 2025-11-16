@@ -5319,6 +5319,7 @@ function showVisitModal(visitId = null) {
     title.textContent = 'Nova Solicitação de Visita';
     document.getElementById('visit-status').value = 'Pendente';
   }
+  populateMunicipalitySelect('visit-municipality');
   
   handleVisitStatusChange();
   modal.classList.add('show');
