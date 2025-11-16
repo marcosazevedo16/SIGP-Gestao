@@ -5952,3 +5952,22 @@ function rowDataToTask(rowData) {
     observations: rowData.observations || ''
   };
 }
+
+function populateMunicipalitySelect(selectId) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  // Limpa opções antigas
+  select.innerHTML = '<option value="">Selecione um município</option>';
+
+  // Ordena municípios por nome
+  const sortedMuns = [...municipalities].sort((a, b) => a.name.localeCompare(b.name));
+
+  // Preenche com dados reais
+  sortedMuns.forEach(mun => {
+    const option = document.createElement('option');
+    option.value = mun.name;
+    option.textContent = `${mun.name} - ${mun.uf || ''}`.trim();
+    select.appendChild(option);
+  });
+}
