@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIGP Saúde - Gestão de Setor</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" class="screen active">
+    <div class="login-card">
+      <h1>SIGP Saúde</h1>
+      <h3>Gestão de Setor</h3>
+      <label>Usuário <input type="text" id="username"></label>
+      <label>Senha <input type="password" id="password"></label>
+      <div id="login-error" class="error-msg"></div>
+      <button id="login-btn" class="btn-primary">Entrar no Sistema</button>
+    </div>
+  </div>
+
+  <!-- MAIN SCREEN -->
+  <div id="main-screen" class="screen">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="logo">SIGP Saúde - Gestão de Setor</div>
+      <div class="user-info">Bem-vindo(a), <span id="logged-user">Usuário</span></div>
+      <div class="topbar-buttons">
+        <button id="home-btn" title="Tela Inicial" class="btn-icon">🏠</button>
+        <button id="theme-btn" title="Tema" class="btn-icon">🌙</button>
+        <button id="settings-btn" title="Configurações" class="btn-icon">⚙️</button>
+        <button id="logout-btn" title="Sair" class="btn-icon">🚪</button>
+      </div>
+    </header>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <ul>
+        <li class="tab-item" data-tab="dashboard">📊 Dashboard</li>
+        <li class="tab-item" data-tab="municipios">🏘️ Municípios Clientes</li>
+        <li class="tab-item" data-tab="treinamentos">📋 Treinamentos</li>
+        <li class="tab-item" data-tab="solicitacoes">💬 Solicitações</li>
+        <li class="tab-item" data-tab="apresentacoes">🎤 Apresentações</li>
+        <li class="tab-item" data-tab="demandas">🆘 Demandas</li>
+        <li class="tab-item" data-tab="visitas">🚗 Visitas</li>
+        <li class="tab-item" data-tab="producao">📦 Produção</li>
+        <li class="tab-item" data-tab="relatorios">📈 Relatórios</li>
+        <li class="tab-item" data-tab="configuracoes">⚙️ Configurações</li>
+      </ul>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main id="main-content">
+      <!-- DASHBOARD -->
+      <div id="dashboard" class="tab-content active">
+        <h2>Dashboard - Painel de Controle</h2>
+        <div class="dashboard-cards">
+          <div class="card">
+            <h3>Total de Municípios Utilizando SIGP Saúde</h3>
+            <p id="card-municipalities">35</p>
+          </div>
+          <div class="card">
+            <h3>Total de Treinamentos Realizados</h3>
+            <p id="card-trainings">1</p>
+          </div>
+          <div class="card">
+            <h3>Total de Solicitações Atendidas</h3>
+            <p id="card-requests">1</p>
+          </div>
+          <div class="card">
+            <h3>Total de Apresentações Realizadas</h3>
+            <p id="card-presentations">1</p>
+          </div>
+        </div>
+        <div id="chart-evolution" style="width: 100%; max-width: 1200px; margin: 30px auto;">
+          <h3>Evolução de Implantações por Ano</h3>
+          <canvas id="evolutionChart"></canvas>
+        </div>
+      </div>
+
+      <!-- APRESENTAÇÕES -->
+      <div id="apresentacoes" class="tab-content">
+        <h2>Apresentações do Software</h2>
+        <button id="btn-new-presentation" class="btn-primary">+ Nova Apresentação</button>
+        <div id="presentations-filters"></div>
+        <div id="presentations-count"></div>
+        <table id="presentations-table"></table>
+        <div id="presentations-charts"></div>
+      </div>
+
+      <!-- DEMANDAS -->
+      <div id="demandas" class="tab-content">
+        <h2>Demandas do Suporte</h2>
+        <button id="btn-new-demand" class="btn-primary">+ Nova Demanda</button>
+        <div id="demands-filters"></div>
+        <div id="demands-count"></div>
+        <table id="demands-table"></table>
+        <div id="demands-charts"></div>
+      </div>
+
+      <!-- VISITAS -->
+      <div id="visitas" class="tab-content">
+        <h2>Solicitações de Visitas Presenciais</h2>
+        <button id="btn-new-visit" class="btn-primary">+ Nova Solicitação de Visita</button>
+        <div id="visits-filters"></div>
+        <div id="visits-count"></div>
+        <table id="visits-table"></table>
+        <div id="visits-charts"></div>
+      </div>
+
+      <!-- PRODUÇÃO -->
+      <div id="producao" class="tab-content">
+        <h2>Controle de Envio de Produção</h2>
+        <button id="btn-new-production" class="btn-primary">+ Novo Envio</button>
+        <div id="production-filters"></div>
+        <div id="production-count"></div>
+        <table id="production-table"></table>
+        <div id="production-charts"></div>
+      </div>
+
+      <!-- OUTROS CONTEÚDOS -->
+      <div id="municipios" class="tab-content">
+        <h2>Municípios Clientes</h2>
+        <p>Conteúdo em desenvolvimento...</p>
+      </div>
+      <div id="treinamentos" class="tab-content">
+        <h2>Controle de Treinamentos</h2>
+        <p>Conteúdo em desenvolvimento...</p>
+      </div>
+      <div id="solicitacoes" class="tab-content">
+        <h2>Solicitações/Sugestões de Clientes</h2>
+        <p>Conteúdo em desenvolvimento...</p>
+      </div>
+      <div id="relatorios" class="tab-content">
+        <h2>Relatórios de Gestão</h2>
+        <p>Conteúdo em desenvolvimento...</p>
+      </div>
+      <div id="configuracoes" class="tab-content">
+        <h2>Configurações</h2>
+        <p>Conteúdo em desenvolvimento...</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODALS -->
+  <!-- APRESENTAÇÕES MODAL -->
+  <div id="modal-presentation" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeModal('modal-presentation')">&times;</span>
+      <h2>Nova Apresentação</h2>
+      <form id="form-presentation">
+        <label>Município* <select id="pres-municipality" required></select></label>
+        <label>Data Solicitação* <input type="date" id="pres-date-request" required></label>
+        <label>Solicitante <input type="text" id="pres-applicant"></label>
+        <label>Status* <select id="pres-status" required onchange="togglePresStatus()">
+          <option value="">Selecionar</option>
+          <option value="Pendente">Pendente</option>
+          <option value="Realizada">Realizada</option>
+          <option value="Cancelada">Cancelada</option>
+        </select></label>
+        <div id="pres-realization-field" style="display:none;">
+          <label>Data Realização* <input type="date" id="pres-date-realization"></label>
+        </div>
+        <label>Orientadores <div id="pres-orientadores"></div></label>
+        <label>Descrição <textarea id="pres-description" maxlength="500"></textarea></label>
+        <div class="modal-buttons">
+          <button type="button" onclick="savePresentationData()" class="btn-primary">Salvar</button>
+          <button type="button" onclick="closeModal('modal-presentation')" class="btn-secondary">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DEMANDAS MODAL -->
+  <div id="modal-demand" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeModal('modal-demand')">&times;</span>
+      <h2>Nova Demanda</h2>
+      <form id="form-demand">
+        <label>Data Solicitação* <input type="date" id="dem-date" required></label>
+        <label>Descrição* <textarea id="dem-description" maxlength="250" required oninput="updateDemCount()"></textarea><span id="dem-count">0/250</span></label>
+        <label>Prioridade* <select id="dem-priority" required>
+          <option value="">Selecionar</option>
+          <option value="Alta">Alta</option>
+          <option value="Média">Média</option>
+          <option value="Baixa">Baixa</option>
+        </select></label>
+        <label>Status* <select id="dem-status" required onchange="toggleDemandFields()">
+          <option value="">Selecionar</option>
+          <option value="Pendente">Pendente</option>
+          <option value="Realizada">Realizada</option>
+          <option value="Inviável">Inviável</option>
+        </select></label>
+        <div id="dem-realization-field" style="display:none;">
+          <label>Data Realização* <input type="date" id="dem-date-realization"></label>
+        </div>
+        <div id="dem-justification-field" style="display:none;">
+          <label>Justificativa <textarea id="dem-justification" maxlength="250"></textarea></label>
+        </div>
+        <div class="modal-buttons">
+          <button type="button" onclick="saveDemandData()" class="btn-primary">Salvar</button>
+          <button type="button" onclick="closeModal('modal-demand')" class="btn-secondary">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- VISITAS MODAL -->
+  <div id="modal-visit" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeModal('modal-visit')">&times;</span>
+      <h2>Nova Solicitação de Visita</h2>
+      <form id="form-visit">
+        <label>Município* <select id="vis-municipality" required></select></label>
+        <label>Data Solicitação* <input type="date" id="vis-date-request" required></label>
+        <label>Solicitante* <input type="text" id="vis-applicant" required></label>
+        <label>Motivo <textarea id="vis-reason" maxlength="200"></textarea></label>
+        <label>Status* <select id="vis-status" required onchange="toggleVisitFields()">
+          <option value="">Selecionar</option>
+          <option value="Pendente">Pendente</option>
+          <option value="Realizada">Realizada</option>
+          <option value="Cancelada">Cancelada</option>
+        </select></label>
+        <div id="vis-visit-date-field" style="display:none;">
+          <label>Data da Visita* <input type="date" id="vis-visit-date"></label>
+        </div>
+        <div id="vis-cancel-field" style="display:none;">
+          <label>Justificativa* <textarea id="vis-cancel-reason" required></textarea></label>
+        </div>
+        <div class="modal-buttons">
+          <button type="button" onclick="saveVisitData()" class="btn-primary">Salvar</button>
+          <button type="button" onclick="closeModal('modal-visit')" class="btn-secondary">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PRODUÇÃO MODAL -->
+  <div id="modal-production" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeModal('modal-production')">&times;</span>
+      <h2>Novo Envio de Produção</h2>
+      <form id="form-production">
+        <label>Município* <select id="prod-municipality" required></select></label>
+        <label>Profissional <input type="text" id="prod-professional"></label>
+        <label>Contato (Telefone)* <input type="tel" id="prod-contact" placeholder="(XX) 9XXXX-XXXX" maxlength="14" required oninput="formatPhoneProduction(this)"></label>
+        <label>Frequência* <select id="prod-frequency" required>
+          <option value="">Selecionar</option>
+          <option value="Diário">Diário</option>
+          <option value="Semanal">Semanal</option>
+          <option value="Quinzenal">Quinzenal</option>
+          <option value="Mensal">Mensal</option>
+        </select></label>
+        <label>Competência (mês/ano)* <input type="text" id="prod-competence" placeholder="01/2025" maxlength="7" required oninput="formatCompetenceProduction(this)"></label>
+        <label>Período (Data Inicial à Data Final)* <input type="text" id="prod-period" placeholder="01/11/2025 à 31/11/2025" maxlength="27" required oninput="formatPeriodProduction(this)"></label>
+        <label>Data de Liberação* <input type="date" id="prod-release-date" required></label>
+        <label>Data de Envio <input type="date" id="prod-send-date"></label>
+        <label>Status* <select id="prod-status" required>
+          <option value="">Selecionar</option>
+          <option value="Enviada">Enviada</option>
+          <option value="Pendente">Pendente</option>
+          <option value="Cancelada">Cancelada</option>
+        </select></label>
+        <label>Observações <textarea id="prod-observations" maxlength="150"></textarea></label>
+        <div class="modal-buttons">
+          <button type="button" onclick="saveProductionData()" class="btn-primary">Salvar</button>
+          <button type="button" onclick="closeModal('modal-production')" class="btn-secondary">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
