@@ -1019,14 +1019,12 @@ p { margin: 0 0 var(--space-16) 0; }
   box-shadow: var(--focus-ring);
 }
 
-.btn--primary,
-.btn-primary {
+.btn--primary {
   background: var(--color-primary);
   color: var(--color-btn-primary-text);
 }
 
-.btn--primary:hover,
-.btn-primary:hover {
+.btn--primary:hover {
   background: var(--color-primary-hover);
 }
 
@@ -1139,15 +1137,19 @@ select.form-control {
 
 /* App Specific Styles */
 
-/* Login Screen - SIGP Saúde Style */
+/* Login Screen - SIGP SaÃºde Style */
 .login-screen {
+  display: none;
   min-height: 100vh;
-  display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #003d5c 0%, #005580 50%, #00425f 100%);
   position: relative;
   overflow: hidden;
+}
+
+.login-screen.active {
+  display: flex;
 }
 
 .login-wrapper {
@@ -1341,9 +1343,13 @@ select.form-control {
 }
 
 .main-app {
+  display: none;
   min-height: 100vh;
-  display: flex;
   flex-direction: column;
+}
+
+.main-app.active {
+  display: flex;
 }
 
 .app-header {
@@ -1873,12 +1879,12 @@ tbody tr:hover {
   overflow: auto;
   background-color: rgba(0, 0, 0, 0.5);
   animation: fadeIn 0.3s;
-  align-items: center;
-  justify-content: center;
 }
 
 .modal.show {
-  display: flex !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @keyframes fadeIn {
@@ -2311,36 +2317,36 @@ tbody tr:hover {
 /* Responsive */
 
 /* ============================================
-   CORREÇÕES IMPLEMENTADAS - SIGP SAÚDE v4.0
+   CORREÃ‡Ã•ES IMPLEMENTADAS - SIGP SAÃšDE v4.0
    ============================================ */
 
-/* CORREÇÃO 1: Login Screen - Labels e Botão Legíveis ✓ */
+/* CORREÃ‡ÃƒO 1: Login Screen - Labels e BotÃ£o LegÃ­veis âœ“ */
 /* Login fields - Always uppercase */
 #login-username,
 #user-login {
   text-transform: uppercase;
 }
 
-/* CORREÇÃO 1: Login labels - ALWAYS DARK for readability */
+/* CORREÃ‡ÃƒO 1: Login labels - ALWAYS DARK for readability */
 .login-form-container .form-label {
   color: #000000 !important;
   font-weight: var(--font-weight-semibold);
 }
 
-/* CORREÇÃO 1: Login button text - ALWAYS WHITE */
+/* CORREÃ‡ÃƒO 1: Login button text - ALWAYS WHITE */
 .login-btn {
   color: #ffffff !important;
 }
 
-/* CORREÇÃO 2: Formatação de Telefone (XX) XXXXX-XXXX ✓ */
+/* CORREÃ‡ÃƒO 2: FormataÃ§Ã£o de Telefone (XX) XXXXX-XXXX âœ“ */
 /* Implementado via JavaScript - formatPhoneNumber() */
-/* Aplica em: Treinamentos, Municípios, Orientadores, Solicitações */
+/* Aplica em: Treinamentos, MunicÃ­pios, Orientadores, SolicitaÃ§Ãµes */
 
-/* CORREÇÃO 3: Botão Nova Apresentação Funcionando ✓ */
-/* Modal com checkboxes para seleção múltipla de orientadores */
+/* CORREÃ‡ÃƒO 3: BotÃ£o Nova ApresentaÃ§Ã£o Funcionando âœ“ */
+/* Modal com checkboxes para seleÃ§Ã£o mÃºltipla de orientadores */
 /* Implementado via JavaScript - showPresentationModal() */
 
-/* CORREÇÃO 4: Cores dos Módulos Preservadas em Backup/Restauração ✓ */
+/* CORREÃ‡ÃƒO 4: Cores dos MÃ³dulos Preservadas em Backup/RestauraÃ§Ã£o âœ“ */
 /* Cores individuais salvas no backup e restauradas corretamente */
 /* Implementado via JavaScript - createBackup() e confirmRestore() */
 
