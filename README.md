@@ -1,1 +1,1 @@
-# SIGPGestao
+# Software de Gestão de Setor
