@@ -5303,6 +5303,7 @@ function showVisitModal(visitId = null) {
   const title = document.getElementById('visit-modal-title');
   
   form.reset();
+  populateMunicipalitySelect('visit-municipality');
   editingVisitId = visitId;
   
   if (visitId) {
@@ -5641,6 +5642,7 @@ function showProductionModal(productionId = null) {
   const title = document.getElementById('production-modal-title');
   
   form.reset();
+  populateMunicipalitySelect('production-municipality');
   editingProductionId = productionId;
   
   if (productionId) {
@@ -5880,7 +5882,7 @@ function initializeProductionCharts() {
     data: {
       labels: ['Enviada', 'Pendente', 'Cancelada'],
       datasets: [{
-        data: [0, 0, 0],
+        data: [0, 1, 0],
         backgroundColor: ['#45B7D1', '#FFA07A', '#FF6B6B']
       }]
     },
