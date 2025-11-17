@@ -14,6 +14,8 @@ let isAuthenticated = false;
 let editingUserId = null;
 let userIdCounter = 2;
 
+let sortedList = [];
+
 // Municipalities List (Master) data
 let municipalitiesList = [
   { id: 1, name: 'Belo Horizonte', uf: 'MG', createdAt: '2025-01-01' },
