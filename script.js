@@ -185,83 +185,6 @@ let productionFrequencyChart = null;
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
-  
-function loadSystemData() {
-  console.log('📂 Iniciando carregamento de dados...');
-  
-  // Carregar Apresentações
-  let savedData = localStorage.getItem('presentations');
-  if (savedData) {
-    try {
-      state.presentations = JSON.parse(savedData);
-      console.log(`✅ ${state.presentations.length} Apresentações carregadas`);
-    } catch(e) {
-      console.error('❌ Erro ao carregar Apresentações');
-    }
-  }
-  
-  // Carregar Demandas
-  savedData = localStorage.getItem('demands');
-  if (savedData) {
-    try {
-      state.demands = JSON.parse(savedData);
-      console.log(`✅ ${state.demands.length} Demandas carregadas`);
-    } catch(e) {
-      console.error('❌ Erro ao carregar Demandas');
-    }
-  }
-  
-  // Carregar Visitas
-  savedData = localStorage.getItem('visits');
-  if (savedData) {
-    try {
-      state.visits = JSON.parse(savedData);
-      console.log(`✅ ${state.visits.length} Visitas carregadas`);
-    } catch(e) {
-      console.error('❌ Erro ao carregar Visitas');
-    }
-  }
-  
-  // Carregar Produções
-  savedData = localStorage.getItem('productions');
-  if (savedData) {
-    try {
-      state.productions = JSON.parse(savedData);
-      console.log(`✅ ${state.productions.length} Produções carregadas`);
-    } catch(e) {
-      console.error('❌ Erro ao carregar Produções');
-    }
-  }
-  
-  // Carregar Municípios
-  savedData = localStorage.getItem('municipalities');
-  if (savedData) {
-    try {
-      window.municipalitiesList = JSON.parse(savedData);
-      console.log(`✅ ${window.municipalitiesList.length} Municípios carregados`);
-    } catch(e) {
-      console.error('❌ Erro ao carregar Municípios');
-    }
-  }
-}
-
-// ============================================
-// SALVAR DADOS NO LOCALSTORAGE
-// ============================================
-function saveSystemData() {
-  localStorage.setItem('presentations', JSON.stringify(state.presentations || []));
-  localStorage.setItem('demands', JSON.stringify(state.demands || []));
-  localStorage.setItem('visits', JSON.stringify(state.visits || []));
-  localStorage.setItem('productions', JSON.stringify(state.productions || []));
-  localStorage.setItem('municipalities', JSON.stringify(window.municipalitiesList || []));
-  
-  console.log('💾 Dados salvos no localStorage');
-}
-
-  loadSystemData();  // ← Carrega dados ao iniciar
-  
-});
-
   initializeTheme();
   
   // Set initial state: show login screen
@@ -733,7 +656,7 @@ function renderTasks() {
             <td>
               <div class="task-actions-compact">
                 <button class="task-action-btn edit" onclick="showTaskModal(${task.id})" title="Editar">
-                  ✏️
+                 ✏️
                 </button>
                 <button class="task-action-btn delete" onclick="deleteTask(${task.id})" title="Excluir">
                   🗑️
