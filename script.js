@@ -789,6 +789,10 @@ function saveMunicipality(event) {
     municipalities.push({ id: municipalityIdCounter++, ...municipalityData });
     showToast('Município criado com sucesso!', 'success');
   }
+    // === CORREÇÃO: ATUALIZA TODOS OS SELECTS DE MUNICÍPIO ===
+  updateSortedList();
+  populateAllMunicipalitySelects();
+  // ======================================================
   
   closeMunicipalityModal();
   renderMunicipalities();
