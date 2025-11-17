@@ -14,10 +14,6 @@ let isAuthenticated = false;
 let editingUserId = null;
 let userIdCounter = 2;
 let sortedList = [];
-updateSortedList();
-saveAllData();
-updateSortedList();
-populateAllMunicipalitySelects();
 
 // Municipalities List (Master) data
 let municipalitiesList = [
@@ -227,6 +223,7 @@ function initializeApp() {
   updateMunicipalityListDropdowns();
   updateFormaApresentacaoCheckboxes();
   updateRequestMunicipalityDropdowns(sortedList);
+  populateAllMunicipalitySelects();
   updatePresentationDropdowns();
   initializeRequestCharts();
   initializePresentationCharts();
