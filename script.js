@@ -13,8 +13,11 @@ let currentUser = null;
 let isAuthenticated = false;
 let editingUserId = null;
 let userIdCounter = 2;
-
 let sortedList = [];
+updateSortedList();
+saveAllData();
+updateSortedList();
+populateAllMunicipalitySelects();
 
 // Municipalities List (Master) data
 let municipalitiesList = [
@@ -5964,7 +5967,7 @@ function populateMunicipalitySelect(selectId) {
   select.innerHTML = '<option value="">Selecione um município</option>';
 
   // Ordena municípios por nome
-  const sortedMuns = [...municipalities].sort((a, b) => a.name.localeCompare(b.name));
+  const sortedMuns = [...municipalitiesList].sort((a, b) => a.name.localeCompare(b.name));
 
   // Preenche com dados reais
   sortedMuns.forEach(mun => {
@@ -5973,4 +5976,26 @@ function populateMunicipalitySelect(selectId) {
     option.textContent = `${mun.name} - ${mun.uf || ''}`.trim();
     select.appendChild(option);
   });
+}
+
+function updateSortedList() {
+  sortedList = municipalitiesList
+    ? [...municipalitiesList].sort((a, b) => a.name.localeCompare(b.name))
+    : [];
+  console.log('sortedList atualizada:', sortedList);
+}
+function populateAllMunicipalitySelects() {
+  const selectIds = [
+    'visit-municipality',
+    'production-municipality',
+    'training-municipality',
+    'demand-municipality'
+    // adicione outros se tiver
+  ];
+
+  selectIds.forEach(id => {
+    populateMunicipalitySelect(id);
+  });
+
+  console.log('Todos os selects de município foram atualizados!');
 }
