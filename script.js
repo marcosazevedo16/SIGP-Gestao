@@ -6294,6 +6294,22 @@ function populateAllMunicipalitySelects() {
   console.log('Todos os selects de município foram atualizados!');
 }
 
+// === FUNÇÃO TEMPORÁRIA PARA v4.3: Inicializar dados seguros (rode UMA VEZ só) ===
+function inicializarDadosV43() {
+  // Verifica se users tem o formato antigo (sem salt/hash)
+  if (users && users.length > 0 && !users[0].salt) {
+    alert('Detectado dados antigos. Inicializando v4.3 com segurança total...');
+    users = DADOS_PADRAO.users;  // Força os dados novos com hash
+    salvarNoArmazenamento('users', users);
+    console.log('✓ Dados v4.3 inicializados com sucesso!');
+  }
+}
+
+// Chama a função no carregamento (só uma vez)
+document.addEventListener('DOMContentLoaded', function() {
+  inicializarDadosV43();  // ← Adicione isso aqui
+  // ... resto do seu código original ...
+});
 // =====================================================
 // INICIALIZAÇÃO FINAL v4.3
 // =====================================================
