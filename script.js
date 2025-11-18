@@ -385,6 +385,7 @@ function handleLogout() {
     currentUser = null;
     deletarDoArmazenamento('currentUser');
     checkAuthentication();
+    showToast('Desconectado com sucesso!', 'success');
   }
 }
 
