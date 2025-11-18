@@ -1,120 +1,5 @@
-// Authentication and Users
-let users = recuperarDoArmazenamento('users', [
-  {
-    id: 1,
-    login: 'ADMIN',
-    name: 'Administrador',
-    password: 'saude2025',
-    permission: 'Administrador',
-    status: 'Ativo'
-  }
-];
-let currentUser = null;
-let isAuthenticated = false;
-let editingUserId = null;
-let userIdCounter = 2;
-let sortedList = [];
-
-// Municipalities List (Master) data
-let municipalitiesList = recuperarDoArmazenamento('municipalitiesList', [
-  { id: 1, name: 'Belo Horizonte', uf: 'MG', createdAt: '2025-01-01' },
-  { id: 2, name: 'São Paulo', uf: 'SP', createdAt: '2025-01-01' }
-];
-let municipalitiesListIdCounter = 3;
-let editingMunicipalityListId = null;
-
-// Cargos/Funções data
-let cargos = recuperarDoArmazenamento('cargos', [
-  { id: 1, name: 'Recepcionista', description: '', createdAt: '2025-01-01' },
-  { id: 2, name: 'Agente Comunitário de Saúde', description: '', createdAt: '2025-01-01' },
-  { id: 3, name: 'Técnico(a)/Auxiliar de Enfermagem', description: '', createdAt: '2025-01-01' },
-  { id: 4, name: 'Enfermeiro(a)', description: '', createdAt: '2025-01-01' },
-  { id: 5, name: 'Médico(a)', description: '', createdAt: '2025-01-01' },
-  { id: 6, name: 'Dentista', description: '', createdAt: '2025-01-01' },
-  { id: 7, name: 'Técnico(a)/Auxiliar em Saúde Bucal', description: '', createdAt: '2025-01-01' },
-  { id: 8, name: 'Psicólogo(a)', description: '', createdAt: '2025-01-01' },
-  { id: 9, name: 'Nutricionista', description: '', createdAt: '2025-01-01' },
-  { id: 10, name: 'Secretário(a)', description: '', createdAt: '2025-01-01' },
-  { id: 11, name: 'Coordenador(a)', description: '', createdAt: '2025-01-01' },
-  { id: 12, name: 'Almoxarifado', description: '', createdAt: '2025-01-01' },
-  { id: 13, name: 'Laboratório', description: '', createdAt: '2025-01-01' },
-  { id: 14, name: 'Outros', description: '', createdAt: '2025-01-01' }
-];
-let cargoIdCounter = 15;
-let editingCargoId = null;
-
-// Orientadores data
-let orientadores = recuperarDoArmazenamento('orientadores', [
-  { id: 1, name: 'Alícia Lopes', contact: '', email: '', createdAt: '2025-01-01' },
-  { id: 2, name: 'Bruna Gomes', contact: '', email: '', createdAt: '2025-01-01' },
-  { id: 3, name: 'Filipe Gonçalves', contact: '', email: '', createdAt: '2025-01-01' },
-  { id: 4, name: 'Joey Alan', contact: '', email: '', createdAt: '2025-01-01' },
-  { id: 5, name: 'Marcos Azevedo', contact: '', email: '', createdAt: '2025-01-01' },
-  { id: 6, name: 'Wesley Lopes', contact: '', email: '', createdAt: '2025-01-01' }
-];
-let orientadorIdCounter = 7;
-let editingOrientadorId = null;
-
-// Módulos data com cores individuais
-let modulos = recuperarDoArmazenamento('modulos', [
-  { id: 1, name: 'Cadastros', abbreviation: 'CAD', color: '#FF6B6B', createdAt: '2025-01-01' },
-  { id: 2, name: 'TFD', abbreviation: 'TFD', color: '#4ECDC4', createdAt: '2025-01-01' },
-  { id: 3, name: 'Prontuário eletrônico', abbreviation: 'PRO', color: '#45B7D1', createdAt: '2025-01-01' },
-  { id: 4, name: 'Administração', abbreviation: 'ADM', color: '#FFA07A', createdAt: '2025-01-01' },
-  { id: 5, name: 'Almoxarifado', abbreviation: 'ALM', color: '#98D8C8', createdAt: '2025-01-01' },
-  { id: 6, name: 'Laboratório', abbreviation: 'LAB', color: '#F7DC6F', createdAt: '2025-01-01' },
-  { id: 7, name: 'Gestor', abbreviation: 'GES', color: '#BB8FCE', createdAt: '2025-01-01' },
-  { id: 8, name: 'Painel Indicadores', abbreviation: 'PAI', color: '#85C1E2', createdAt: '2025-01-01' },
-  { id: 9, name: 'Pronto Atendimento', abbreviation: 'PRA', color: '#F8B88B', createdAt: '2025-01-01' },
-  { id: 10, name: 'Frotas', abbreviation: 'FRO', color: '#A9DFBF', createdAt: '2025-01-01' },
-  { id: 11, name: 'Regulação', abbreviation: 'REG', color: '#F5B041', createdAt: '2025-01-01' },
-  { id: 12, name: 'CAPS', abbreviation: 'CAP', color: '#D7BFCD', createdAt: '2025-01-01' }
-];
-let moduloIdCounter = 13;
-let editingModuloId = null;
-
-// Formas de Apresentação data
-let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', [
-  { id: 1, name: 'Presencial', createdAt: '2025-01-01' },
-  { id: 2, name: 'Via AnyDesk', createdAt: '2025-01-01' },
-  { id: 3, name: 'Via TeamViewer', createdAt: '2025-01-01' },
-  { id: 4, name: 'Ligação', createdAt: '2025-01-01' },
-  { id: 5, name: 'Google Meet', createdAt: '2025-01-01' },
-  { id: 6, name: 'Zoom', createdAt: '2025-01-01' }
-];
-let formaApresentacaoIdCounter = 7;
-let editingFormaApresentacaoId = null;
-
-// Solicitações/Sugestões data
-let requests = recuperarDoArmazenamento('requests', [];
-let requestIdCounter = 1;
-let editingRequestId = null;
-
-// Apresentações data
-let presentations = recuperarDoArmazenamento('presentations', [];
-let presentationIdCounter = 1;
-let editingPresentationId = null;
-
-// Demandas data
-let demands = recuperarDoArmazenamento('demands', [];
-let demandIdCounter = 1;
-let editingDemandId = null;
-
-// Visitas data
-let visits = recuperarDoArmazenamento('visits', [];
-let visitIdCounter = 1;
-let editingVisitId = null;
-
-// Produção data
-let productions = recuperarDoArmazenamento('productions', [];
-let productionIdCounter = 1;
-let editingProductionId = null;
-
-// Theme management
-let currentTheme = 'light';
-
 // =====================================================
-// FUNÇÕES DE PERSISTÊNCIA EM LOCALSTORAGE - ADICIONADO EM 18/11/2025
+// FUNÇÕES DE PERSISTÊNCIA EM LOCALSTORAGE
 // =====================================================
 
 function salvarNoArmazenamento(chave, dados) {
@@ -125,7 +10,7 @@ function salvarNoArmazenamento(chave, dados) {
   } catch (erro) {
     console.error(`✗ Erro ao salvar ${chave}:`, erro);
     if (erro.name === 'QuotaExceededError') {
-      alert('Espaço de armazenamento cheio! Limpe o cache ou exporte os dados.');
+      alert('Espaço de armazenamento cheio!');
     }
   }
 }
@@ -174,14 +59,74 @@ function verificarArmazenamentoDisponivel() {
 }
 
 // =====================================================
-// FIM DAS FUNÇÕES DE PERSISTÊNCIA
-// =====================================================
-
-
-// =====================================================
-// DADOS PADRÃO (MODIFICADO EM 18/11/2025 - ADICIONADA PERSISTÊNCIA)
+// DADOS PADRÃO
 // =====================================================
 const DADOS_PADRAO = {
+  users: [
+    {
+      id: 1,
+      login: 'ADMIN',
+      name: 'Administrador',
+      password: 'saude2025',
+      permission: 'Administrador',
+      status: 'Ativo'
+    }
+  ],
+  municipalitiesList: [
+    { id: 1, name: 'Belo Horizonte', uf: 'MG', createdAt: '2025-01-01' },
+    { id: 2, name: 'São Paulo', uf: 'SP', createdAt: '2025-01-01' }
+  ],
+  cargos: [
+    { id: 1, name: 'Recepcionista', description: '', createdAt: '2025-01-01' },
+    { id: 2, name: 'Agente Comunitário de Saúde', description: '', createdAt: '2025-01-01' },
+    { id: 3, name: 'Técnico(a)/Auxiliar de Enfermagem', description: '', createdAt: '2025-01-01' },
+    { id: 4, name: 'Enfermeiro(a)', description: '', createdAt: '2025-01-01' },
+    { id: 5, name: 'Médico(a)', description: '', createdAt: '2025-01-01' },
+    { id: 6, name: 'Dentista', description: '', createdAt: '2025-01-01' },
+    { id: 7, name: 'Técnico(a)/Auxiliar em Saúde Bucal', description: '', createdAt: '2025-01-01' },
+    { id: 8, name: 'Psicólogo(a)', description: '', createdAt: '2025-01-01' },
+    { id: 9, name: 'Nutricionista', description: '', createdAt: '2025-01-01' },
+    { id: 10, name: 'Secretário(a)', description: '', createdAt: '2025-01-01' },
+    { id: 11, name: 'Coordenador(a)', description: '', createdAt: '2025-01-01' },
+    { id: 12, name: 'Almoxarifado', description: '', createdAt: '2025-01-01' },
+    { id: 13, name: 'Laboratório', description: '', createdAt: '2025-01-01' },
+    { id: 14, name: 'Outros', description: '', createdAt: '2025-01-01' }
+  ],
+  orientadores: [
+    { id: 1, name: 'Alícia Lopes', contact: '', email: '', createdAt: '2025-01-01' },
+    { id: 2, name: 'Bruna Gomes', contact: '', email: '', createdAt: '2025-01-01' },
+    { id: 3, name: 'Filipe Gonçalves', contact: '', email: '', createdAt: '2025-01-01' },
+    { id: 4, name: 'Joey Alan', contact: '', email: '', createdAt: '2025-01-01' },
+    { id: 5, name: 'Marcos Azevedo', contact: '', email: '', createdAt: '2025-01-01' },
+    { id: 6, name: 'Wesley Lopes', contact: '', email: '', createdAt: '2025-01-01' }
+  ],
+  modulos: [
+    { id: 1, name: 'Cadastros', abbreviation: 'CAD', color: '#FF6B6B', createdAt: '2025-01-01' },
+    { id: 2, name: 'TFD', abbreviation: 'TFD', color: '#4ECDC4', createdAt: '2025-01-01' },
+    { id: 3, name: 'Prontuário eletrônico', abbreviation: 'PRO', color: '#45B7D1', createdAt: '2025-01-01' },
+    { id: 4, name: 'Administração', abbreviation: 'ADM', color: '#FFA07A', createdAt: '2025-01-01' },
+    { id: 5, name: 'Almoxarifado', abbreviation: 'ALM', color: '#98D8C8', createdAt: '2025-01-01' },
+    { id: 6, name: 'Laboratório', abbreviation: 'LAB', color: '#F7DC6F', createdAt: '2025-01-01' },
+    { id: 7, name: 'Gestor', abbreviation: 'GES', color: '#BB8FCE', createdAt: '2025-01-01' },
+    { id: 8, name: 'Painel Indicadores', abbreviation: 'PAI', color: '#85C1E2', createdAt: '2025-01-01' },
+    { id: 9, name: 'Pronto Atendimento', abbreviation: 'PRA', color: '#F8B88B', createdAt: '2025-01-01' },
+    { id: 10, name: 'Frotas', abbreviation: 'FRO', color: '#A9DFBF', createdAt: '2025-01-01' },
+    { id: 11, name: 'Regulação', abbreviation: 'REG', color: '#F5B041', createdAt: '2025-01-01' },
+    { id: 12, name: 'CAPS', abbreviation: 'CAP', color: '#D7BFCD', createdAt: '2025-01-01' }
+  ],
+  formasApresentacao: [
+    { id: 1, name: 'Presencial', createdAt: '2025-01-01' },
+    { id: 2, name: 'Via AnyDesk', createdAt: '2025-01-01' },
+    { id: 3, name: 'Via TeamViewer', createdAt: '2025-01-01' },
+    { id: 4, name: 'Ligação', createdAt: '2025-01-01' },
+    { id: 5, name: 'Google Meet', createdAt: '2025-01-01' },
+    { id: 6, name: 'Zoom', createdAt: '2025-01-01' }
+  ],
+  requests: [],
+  presentations: [],
+  demands: [],
+  visits: [],
+  productions: [],
   tasks: [
     {
       id: 1,
@@ -212,30 +157,79 @@ const DADOS_PADRAO = {
   ]
 };
 
-// RECUPERAR DO ARMAZENAMENTO OU USAR PADRÕES
-let tasks = recuperarDoArmazenamento('tasks', DADOS_PADRAO.tasks);
-let municipalities = recuperarDoArmazenamento('municipalities', DADOS_PADRAO.municipalities);
+// =====================================================
+// INICIALIZAR VARIÁVEIS COM LOCALSTORAGE
+// =====================================================
 
-let editingTaskId = null;
-let editingMunicipalityId = null;
-let taskIdCounter = recuperarDoArmazenamento('taskIdCounter', 2);
-let municipalityIdCounter = recuperarDoArmazenamento('municipalityIdCounter', 2);
-
-// Recuperar contadores dos outros dados
+// Authentication and Users
+let users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
+let currentUser = null;
+let isAuthenticated = false;
+let editingUserId = null;
 let userIdCounter = recuperarDoArmazenamento('userIdCounter', 2);
-let municipalitiesListIdCounter = recuperarDoArmazenamento('municipalitiesListIdCounter', 3);
-let cargoIdCounter = recuperarDoArmazenamento('cargoIdCounter', 15);
-let orientadorIdCounter = recuperarDoArmazenamento('orientadorIdCounter', 7);
-let moduloIdCounter = recuperarDoArmazenamento('moduloIdCounter', 13);
-let formaApresentacaoIdCounter = recuperarDoArmazenamento('formaApresentacaoIdCounter', 7);
-let requestIdCounter = recuperarDoArmazenamento('requestIdCounter', 1);
-let presentationIdCounter = recuperarDoArmazenamento('presentationIdCounter', 1);
-let demandIdCounter = recuperarDoArmazenamento('demandIdCounter', 1);
-let visitIdCounter = recuperarDoArmazenamento('visitIdCounter', 1);
-let productionIdCounter = recuperarDoArmazenamento('productionIdCounter', 1);
+let sortedList = [];
 
-// Recuperar tema
+// Municipalities List (Master) data
+let municipalitiesList = recuperarDoArmazenamento('municipalitiesList', DADOS_PADRAO.municipalitiesList);
+let municipalitiesListIdCounter = recuperarDoArmazenamento('municipalitiesListIdCounter', 3);
+let editingMunicipalityListId = null;
+
+// Cargos/Funções data
+let cargos = recuperarDoArmazenamento('cargos', DADOS_PADRAO.cargos);
+let cargoIdCounter = recuperarDoArmazenamento('cargoIdCounter', 15);
+let editingCargoId = null;
+
+// Orientadores data
+let orientadores = recuperarDoArmazenamento('orientadores', DADOS_PADRAO.orientadores);
+let orientadorIdCounter = recuperarDoArmazenamento('orientadorIdCounter', 7);
+let editingOrientadorId = null;
+
+// Módulos data
+let modulos = recuperarDoArmazenamento('modulos', DADOS_PADRAO.modulos);
+let moduloIdCounter = recuperarDoArmazenamento('moduloIdCounter', 13);
+let editoingModuloId = null;
+
+// Formas de Apresentação data
+let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', DADOS_PADRAO.formasApresentacao);
+let formaApresentacaoIdCounter = recuperarDoArmazenamento('formaApresentacaoIdCounter', 7);
+let editingFormaApresentacaoId = null;
+
+// Solicitações/Sugestões data
+let requests = recuperarDoArmazenamento('requests', DADOS_PADRAO.requests);
+let requestIdCounter = recuperarDoArmazenamento('requestIdCounter', 1);
+let editingRequestId = null;
+
+// Apresentações data
+let presentations = recuperarDoArmazenamento('presentations', DADOS_PADRAO.presentations);
+let presentationIdCounter = recuperarDoArmazenamento('presentationIdCounter', 1);
+let editingPresentationId = null;
+
+// Demandas data
+let demands = recuperarDoArmazenamento('demands', DADOS_PADRAO.demands);
+let demandIdCounter = recuperarDoArmazenamento('demandIdCounter', 1);
+let editingDemandId = null;
+
+// Visitas data
+let visits = recuperarDoArmazenamento('visits', DADOS_PADRAO.visits);
+let visitIdCounter = recuperarDoArmazenamento('visitIdCounter', 1);
+let editingVisitId = null;
+
+// Produção data
+let productions = recuperarDoArmazenamento('productions', DADOS_PADRAO.productions);
+let productionIdCounter = recuperarDoArmazenamento('productionIdCounter', 1);
+let editingProductionId = null;
+
+// Theme management
 let currentTheme = recuperarDoArmazenamento('currentTheme', 'light');
+
+// Data storage in memory
+let tasks = recuperarDoArmazenamento('tasks', DADOS_PADRAO.tasks);
+let editingTaskId = null;
+let taskIdCounter = recuperarDoArmazenamento('taskIdCounter', 2);
+
+let municipalities = recuperarDoArmazenamento('municipalities', DADOS_PADRAO.municipalities);
+let editingMunicipalityId = null;
+let municipalityIdCounter = recuperarDoArmazenamento('municipalityIdCounter', 2);
 
 
 // Module abbreviations map - dynamically built from modulos
