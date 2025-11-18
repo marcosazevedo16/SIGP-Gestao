@@ -1,5 +1,5 @@
 // Authentication and Users
-let users = [
+let users = recuperarDoArmazenamento('users', [
   {
     id: 1,
     login: 'ADMIN',
@@ -16,7 +16,7 @@ let userIdCounter = 2;
 let sortedList = [];
 
 // Municipalities List (Master) data
-let municipalitiesList = [
+let municipalitiesList = recuperarDoArmazenamento('municipalitiesList', [
   { id: 1, name: 'Belo Horizonte', uf: 'MG', createdAt: '2025-01-01' },
   { id: 2, name: 'São Paulo', uf: 'SP', createdAt: '2025-01-01' }
 ];
@@ -24,7 +24,7 @@ let municipalitiesListIdCounter = 3;
 let editingMunicipalityListId = null;
 
 // Cargos/Funções data
-let cargos = [
+let cargos = recuperarDoArmazenamento('cargos', [
   { id: 1, name: 'Recepcionista', description: '', createdAt: '2025-01-01' },
   { id: 2, name: 'Agente Comunitário de Saúde', description: '', createdAt: '2025-01-01' },
   { id: 3, name: 'Técnico(a)/Auxiliar de Enfermagem', description: '', createdAt: '2025-01-01' },
@@ -44,7 +44,7 @@ let cargoIdCounter = 15;
 let editingCargoId = null;
 
 // Orientadores data
-let orientadores = [
+let orientadores = recuperarDoArmazenamento('orientadores', [
   { id: 1, name: 'Alícia Lopes', contact: '', email: '', createdAt: '2025-01-01' },
   { id: 2, name: 'Bruna Gomes', contact: '', email: '', createdAt: '2025-01-01' },
   { id: 3, name: 'Filipe Gonçalves', contact: '', email: '', createdAt: '2025-01-01' },
@@ -56,7 +56,7 @@ let orientadorIdCounter = 7;
 let editingOrientadorId = null;
 
 // Módulos data com cores individuais
-let modulos = [
+let modulos = recuperarDoArmazenamento('modulos', [
   { id: 1, name: 'Cadastros', abbreviation: 'CAD', color: '#FF6B6B', createdAt: '2025-01-01' },
   { id: 2, name: 'TFD', abbreviation: 'TFD', color: '#4ECDC4', createdAt: '2025-01-01' },
   { id: 3, name: 'Prontuário eletrônico', abbreviation: 'PRO', color: '#45B7D1', createdAt: '2025-01-01' },
@@ -74,7 +74,7 @@ let moduloIdCounter = 13;
 let editingModuloId = null;
 
 // Formas de Apresentação data
-let formasApresentacao = [
+let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', [
   { id: 1, name: 'Presencial', createdAt: '2025-01-01' },
   { id: 2, name: 'Via AnyDesk', createdAt: '2025-01-01' },
   { id: 3, name: 'Via TeamViewer', createdAt: '2025-01-01' },
@@ -86,68 +86,157 @@ let formaApresentacaoIdCounter = 7;
 let editingFormaApresentacaoId = null;
 
 // Solicitações/Sugestões data
-let requests = [];
+let requests = recuperarDoArmazenamento('requests', [];
 let requestIdCounter = 1;
 let editingRequestId = null;
 
 // Apresentações data
-let presentations = [];
+let presentations = recuperarDoArmazenamento('presentations', [];
 let presentationIdCounter = 1;
 let editingPresentationId = null;
 
 // Demandas data
-let demands = [];
+let demands = recuperarDoArmazenamento('demands', [];
 let demandIdCounter = 1;
 let editingDemandId = null;
 
 // Visitas data
-let visits = [];
+let visits = recuperarDoArmazenamento('visits', [];
 let visitIdCounter = 1;
 let editingVisitId = null;
 
 // Produção data
-let productions = [];
+let productions = recuperarDoArmazenamento('productions', [];
 let productionIdCounter = 1;
 let editingProductionId = null;
 
 // Theme management
 let currentTheme = 'light';
 
-// Data storage in memory
-let tasks = [
-  {
-    id: 1,
-    dateRequested: '2025-10-25',
-    datePerformed: '2025-10-28',
-    municipality: 'Belo Horizonte - MG',
-    requestedBy: 'Maria',
-    performedBy: 'Marcos Azevedo',
-    trainedName: 'Ana Silva',
-    trainedPosition: 'Enfermeiro(a)',
-    contact: '(38) 99187-2144',
-    status: 'Concluído',
-    observations: 'Treinamento concluído com sucesso'
-  }
-];
+// =====================================================
+// FUNÇÕES DE PERSISTÊNCIA EM LOCALSTORAGE - ADICIONADO EM 18/11/2025
+// =====================================================
 
-let municipalities = [
-  {
-    id: 1,
-    name: 'Exemplo de Município',
-    modules: ['Cadastros', 'TFD'],
-    manager: 'João Silva',
-    contact: '(31) 98765-4321',
-    implantationDate: '2023-01-15',
-    lastVisit: '2025-10-28',
-    status: 'Em uso',
-    stoppageDate: null
+function salvarNoArmazenamento(chave, dados) {
+  try {
+    const dadosJSON = JSON.stringify(dados);
+    localStorage.setItem(chave, dadosJSON);
+    console.log(`✓ Salvo: ${chave} (${dadosJSON.length} bytes)`);
+  } catch (erro) {
+    console.error(`✗ Erro ao salvar ${chave}:`, erro);
+    if (erro.name === 'QuotaExceededError') {
+      alert('Espaço de armazenamento cheio! Limpe o cache ou exporte os dados.');
+    }
   }
-];
+}
+
+function recuperarDoArmazenamento(chave, valorPadrao = null) {
+  try {
+    const dados = localStorage.getItem(chave);
+    if (dados) {
+      return JSON.parse(dados);
+    }
+    return valorPadrao;
+  } catch (erro) {
+    console.error(`✗ Erro ao recuperar ${chave}:`, erro);
+    return valorPadrao;
+  }
+}
+
+function deletarDoArmazenamento(chave) {
+  try {
+    localStorage.removeItem(chave);
+    console.log(`✓ Deletado: ${chave}`);
+  } catch (erro) {
+    console.error(`✗ Erro ao deletar ${chave}:`, erro);
+  }
+}
+
+function limparTodoArmazenamento() {
+  try {
+    localStorage.clear();
+    console.log('✓ Armazenamento local completamente limpo');
+  } catch (erro) {
+    console.error('✗ Erro ao limpar armazenamento:', erro);
+  }
+}
+
+function verificarArmazenamentoDisponivel() {
+  try {
+    const teste = '__teste__';
+    localStorage.setItem(teste, teste);
+    localStorage.removeItem(teste);
+    return true;
+  } catch (erro) {
+    console.error('localStorage não está disponível:', erro);
+    return false;
+  }
+}
+
+// =====================================================
+// FIM DAS FUNÇÕES DE PERSISTÊNCIA
+// =====================================================
+
+
+// =====================================================
+// DADOS PADRÃO (MODIFICADO EM 18/11/2025 - ADICIONADA PERSISTÊNCIA)
+// =====================================================
+const DADOS_PADRAO = {
+  tasks: [
+    {
+      id: 1,
+      dateRequested: '2025-10-25',
+      datePerformed: '2025-10-28',
+      municipality: 'Belo Horizonte - MG',
+      requestedBy: 'Maria',
+      performedBy: 'Marcos Azevedo',
+      trainedName: 'Ana Silva',
+      trainedPosition: 'Enfermeiro(a)',
+      contact: '(38) 99187-2144',
+      status: 'Concluído',
+      observations: 'Treinamento concluído com sucesso'
+    }
+  ],
+  municipalities: [
+    {
+      id: 1,
+      name: 'Exemplo de Município',
+      modules: ['Cadastros', 'TFD'],
+      manager: 'João Silva',
+      contact: '(31) 98765-4321',
+      implantationDate: '2023-01-15',
+      lastVisit: '2025-10-28',
+      status: 'Em uso',
+      stoppageDate: null
+    }
+  ]
+};
+
+// RECUPERAR DO ARMAZENAMENTO OU USAR PADRÕES
+let tasks = recuperarDoArmazenamento('tasks', DADOS_PADRAO.tasks);
+let municipalities = recuperarDoArmazenamento('municipalities', DADOS_PADRAO.municipalities);
 
 let editingTaskId = null;
 let editingMunicipalityId = null;
-let taskIdCounter = 2;
-let municipalityIdCounter = 2;
+let taskIdCounter = recuperarDoArmazenamento('taskIdCounter', 2);
+let municipalityIdCounter = recuperarDoArmazenamento('municipalityIdCounter', 2);
+
+// Recuperar contadores dos outros dados
+let userIdCounter = recuperarDoArmazenamento('userIdCounter', 2);
+let municipalitiesListIdCounter = recuperarDoArmazenamento('municipalitiesListIdCounter', 3);
+let cargoIdCounter = recuperarDoArmazenamento('cargoIdCounter', 15);
+let orientadorIdCounter = recuperarDoArmazenamento('orientadorIdCounter', 7);
+let moduloIdCounter = recuperarDoArmazenamento('moduloIdCounter', 13);
+let formaApresentacaoIdCounter = recuperarDoArmazenamento('formaApresentacaoIdCounter', 7);
+let requestIdCounter = recuperarDoArmazenamento('requestIdCounter', 1);
+let presentationIdCounter = recuperarDoArmazenamento('presentationIdCounter', 1);
+let demandIdCounter = recuperarDoArmazenamento('demandIdCounter', 1);
+let visitIdCounter = recuperarDoArmazenamento('visitIdCounter', 1);
+let productionIdCounter = recuperarDoArmazenamento('productionIdCounter', 1);
+
+// Recuperar tema
+let currentTheme = recuperarDoArmazenamento('currentTheme', 'light');
+
 
 // Module abbreviations map - dynamically built from modulos
 function getModuleAbbreviations() {
@@ -346,6 +435,7 @@ function handleChangePassword(event) {
   const userIndex = users.findIndex(u => u.id === currentUser.id);
   if (userIndex !== -1) {
     users[userIndex].password = newPwd;
+    salvarNoArmazenamento('users', users);
   }
   
   closeChangePasswordModal();
@@ -542,9 +632,12 @@ function saveTask(event) {
   if (editingTaskId) {
     const index = tasks.findIndex(t => t.id === editingTaskId);
     tasks[index] = { ...tasks[index], ...taskData };
+    salvarNoArmazenamento('tasks', tasks);
     showToast('Treinamento atualizado com sucesso!', 'success');
   } else {
     tasks.push({ id: taskIdCounter++, ...taskData });
+    salvarNoArmazenamento('tasks', tasks);
+    salvarNoArmazenamento('taskIdCounter', taskIdCounter);
     showToast('Treinamento criado com sucesso!', 'success');
   }
   
@@ -557,6 +650,7 @@ function saveTask(event) {
 function deleteTask(taskId) {
   if (confirm('Tem certeza que deseja excluir este treinamento?')) {
     tasks = tasks.filter(t => t.id !== taskId);
+    salvarNoArmazenamento('tasks', tasks);
     renderTasks();
     updateTaskStats();
     updateDashboardStats();
@@ -1278,6 +1372,7 @@ function initializeTheme() {
 
 function toggleTheme() {
   currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+  salvarNoArmazenamento('currentTheme', currentTheme);
   applyTheme(currentTheme);
   updateThemeButton();
   updateCharts();
