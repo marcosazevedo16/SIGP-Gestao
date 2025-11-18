@@ -1,5 +1,11 @@
 // =====================================================
 // SIGP SAÚDE v4.3 - VERSÃO FINAL 100% SEGURA
+// VERIFICAÇÃO DE SEGURANÇA: CryptoJS DEVE estar carregado
+if (typeof CryptoJS === 'undefined') {
+    console.error('❌ ERRO CRÍTICO: CryptoJS não foi carregado!');
+    alert('ERRO: Biblioteca de criptografia não carregada.');
+}
+
 // Marcos Azevedo - 18/11/2025
 // Todas as senhas agora são armazenadas com hash + salt
 // Primeiro login do ADMIN força troca de senha
@@ -10,13 +16,14 @@ const SALT_LENGTH = 16;
 
 // Gera salt aleatório para cada usuário
 function generateSalt() {
-  return CryptoJS.lib.WordArray.random(SALT_LENGTH).toString();
+    return CryptoJS.lib.WordArray.random(SALT_LENGTH).toString();
 }
 
 // Hash da senha com salt (SHA-256)
 function hashPassword(password, salt) {
-  return CryptoJS.SHA256(salt + password).toString();
+    return CryptoJS.SHA256(salt + password).toString();
 }
+
 
 // =====================================================
 // FUNÇÕES DE PERSISTÊNCIA EM LOCALSTORAGE
@@ -76,6 +83,25 @@ function verificarArmazenamentoDisponivel() {
     console.error('localStorage não está disponível:', erro);
     return false;
   }
+}
+// Função para mostrar mensagens (toasts)
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    const bgColor = type === 'success' ? '#10b981' : 
+                   type === 'error' ? '#ef4444' : '#3b82f6';
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        z-index: 1000;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
 }
 
 // =====================================================
@@ -384,6 +410,11 @@ function handleChangePassword(event) {
     errorDiv.textContent = 'Erro: usuário não autenticado.';
     return;
   }
+  
+  if (!currentPwd || !newPwd || !confirmPwd) {
+    errorDiv.textContent = 'Todos os campos são obrigatórios.';
+    return;
+}
 
   // Verificação com hash atual
   const currentHash = hashPassword(currentPwd, currentUser.salt);
@@ -533,30 +564,6 @@ function updateUserInterface() {
   if (backupManagementBtn) backupManagementBtn.style.display = isNormalUser ? 'flex' : 'none';
   if (adminDivider) adminDivider.style.display = isAdmin ? 'block' : 'none';
 }
-
-function handleLogin(event) {
-  event.preventDefault();
-  const username = document.getElementById('login-username').value.toUpperCase();
-  const password = document.getElementById('login-password').value;
-  const errorDiv = document.getElementById('login-error');
-  
-  // Find user by login (case-insensitive)
-  const user = users.find(u => u.login.toUpperCase() === username);
-  
-  if (!user) {
-    errorDiv.textContent = 'Login não encontrado.';
-    return;
-  }
-  
-  if (user.status === 'Inativo') {
-    errorDiv.textContent = 'Usuário inativo. Entre em contato com o administrador.';
-    return;
-  }
-  
-  if (user.password !== password) {
-    errorDiv.textContent = 'Senha incorreta.';
-    return;
-  }
   
   // Login successful
   currentUser = user;
@@ -565,14 +572,6 @@ function handleLogin(event) {
   document.getElementById('login-username').value = '';
   document.getElementById('login-password').value = '';
   checkAuthentication();
-}
-
-function handleLogout() {
-  if (confirm('Tem certeza que deseja sair?')) {
-    isAuthenticated = false;
-    currentUser = null;
-    checkAuthentication();
-  }
 }
 
 function showChangePasswordModal() {
@@ -596,14 +595,20 @@ function handleChangePassword(event) {
     errorDiv.textContent = 'Erro: usuário não autenticado.';
     return;
   }
+
+  if (!currentPwd || !newPwd || !confirmPwd) {
+    errorDiv.textContent = 'Todos os campos são obrigatórios.';
+    return;
+}
   
-  if (currentPwd !== currentUser.password) {
+ const currentHash = hashPassword(currentPwd, currentUser.salt);
+if (currentHash !== currentUser.passwordHash) {
     errorDiv.textContent = 'Senha atual incorreta.';
     return;
   }
   
-  if (newPwd.length < 4) {
-    errorDiv.textContent = 'A nova senha deve ter pelo menos 4 caracteres.';
+  if (newPwd.length < 6) {
+    errorDiv.textContent = 'A nova senha deve ter pelo menos 6 caracteres.';
     return;
   }
   
