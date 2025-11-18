@@ -1,15 +1,13 @@
 // =====================================================
 // SIGP SAÚDE v4.3 - VERSÃO FINAL 100% SEGURA
+// Marcos Azevedo - 18/11/2025
+// =====================================================
+
 // VERIFICAÇÃO DE SEGURANÇA: CryptoJS DEVE estar carregado
 if (typeof CryptoJS === 'undefined') {
     console.error('❌ ERRO CRÍTICO: CryptoJS não foi carregado!');
     alert('ERRO: Biblioteca de criptografia não carregada.');
 }
-
-// Marcos Azevedo - 18/11/2025
-// Todas as senhas agora são armazenadas com hash + salt
-// Primeiro login do ADMIN força troca de senha
-// =====================================================
 
 // Configurações de segurança
 const SALT_LENGTH = 16;
@@ -18,12 +16,12 @@ const SALT_LENGTH = 16;
 function generateSalt() {
     return CryptoJS.lib.WordArray.random(SALT_LENGTH).toString();
 }
-
 // Hash da senha com salt (SHA-256)
 function hashPassword(password, salt) {
     return CryptoJS.SHA256(salt + password).toString();
 }
-
+// =====================================================
+// DADOS PADRÃO v4.3
 
 // =====================================================
 // FUNÇÕES DE PERSISTÊNCIA EM LOCALSTORAGE
@@ -105,13 +103,37 @@ function showToast(message, type = 'info') {
 }
 
 // =====================================================
+// Função showToast - Mensagens Flutuantes
+// =====================================================
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    const bgColor = type === 'success' ? '#10b981' : 
+                   type === 'error' ? '#ef4444' : '#3b82f6';
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        z-index: 1000;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// =====================================================
 // DADOS PADRÃO v4.3 - SENHA HASHEADA
 // =====================================================
+
 const DADOS_PADRAO = {
-  users: [
-    {
-      id: 1,
-      login: 'ADMIN',
+    users: [
+        {
+            id: 1,
+            login: 'ADMIN',
+
       name: 'Administrador',
       salt: 'f3a9c8e2d1b7m5n9p4q8r6t2v1x5y7z0',
       passwordHash: 'c98f6b380e7fd8d5899fb3e46a84e3de7f47dff5ff2ebbf7ef0f0a3306d9eebd', // hash de "saude2025"
@@ -433,6 +455,17 @@ function handleChangePassword(event) {
     errorDiv.textContent = 'As senhas não coincidem.';
     return;
   }
+  // Update user password
+  currentUser.password = newPwd;
+  const userIndex = users.findIndex(u => u.id === currentUser.id);
+  if (userIndex !== -1) {
+    users[userIndex].password = newPwd;
+    salvarNoArmazenamento('users', users);
+  }
+  
+  closeChangePasswordModal();
+  showToast('Senha alterada com sucesso!', 'success');
+}
 
   // Gera novo salt e hash
   currentUser.salt = generateSalt();
@@ -446,7 +479,6 @@ function handleChangePassword(event) {
     salvarNoArmazenamento('users', users);
   }
   salvarNoArmazenamento('currentUser', currentUser);
-
   closeChangePasswordModal();
   showToast('Senha alterada com sucesso!', 'success');
 }
@@ -583,51 +615,6 @@ function showChangePasswordModal() {
 
 function closeChangePasswordModal() {
   document.getElementById('change-password-modal').classList.remove('show');
-}
-
-function handleChangePassword(event) {
-  event.preventDefault();
-  const currentPwd = document.getElementById('current-password').value;
-  const newPwd = document.getElementById('new-password').value;
-  const confirmPwd = document.getElementById('confirm-password').value;
-  const errorDiv = document.getElementById('change-password-error');
-  
-  if (!currentUser) {
-    errorDiv.textContent = 'Erro: usuário não autenticado.';
-    return;
-  }
-
-  if (!currentPwd || !newPwd || !confirmPwd) {
-    errorDiv.textContent = 'Todos os campos são obrigatórios.';
-    return;
-}
-  
- const currentHash = hashPassword(currentPwd, currentUser.salt);
-if (currentHash !== currentUser.passwordHash) {
-    errorDiv.textContent = 'Senha atual incorreta.';
-    return;
-  }
-  
-  if (newPwd.length < 6) {
-    errorDiv.textContent = 'A nova senha deve ter pelo menos 6 caracteres.';
-    return;
-  }
-  
-  if (newPwd !== confirmPwd) {
-    errorDiv.textContent = 'As senhas não coincidem.';
-    return;
-  }
-  
-  // Update user password
-  currentUser.password = newPwd;
-  const userIndex = users.findIndex(u => u.id === currentUser.id);
-  if (userIndex !== -1) {
-    users[userIndex].password = newPwd;
-    salvarNoArmazenamento('users', users);
-  }
-  
-  closeChangePasswordModal();
-  showToast('Senha alterada com sucesso!', 'success');
 }
 
 // Tab navigation
