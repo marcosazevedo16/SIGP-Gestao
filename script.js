@@ -6306,14 +6306,13 @@ function inicializarDadosV43() {
 }
 
 // Chama a função no carregamento (só uma vez)
-document.addEventListener('DOMContentLoaded', function() {
-  inicializarDadosV43();  // ← Adicione isso aqui
-  // ... resto do seu código original ...
+
 });
 // =====================================================
 // INICIALIZAÇÃO FINAL v4.3
 // =====================================================
 document.addEventListener('DOMContentLoaded', function() {
+  inicializarDadosV43();
   initializeTheme();
 
   // Set initial state: show login screen
