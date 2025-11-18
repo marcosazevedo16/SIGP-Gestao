@@ -5395,7 +5395,13 @@ function showVisitModal(visitId = null) {
   const form = document.getElementById('visit-form');
   const title = document.getElementById('visit-modal-title');
   
-  form.reset();
+  form.reset();// Garantia de carregamento
+if (municipalitiesList.length === 0) {
+  showToast('Carregando municípios...', 'info');
+  setTimeout(() => populateMunicipalitySelect('visit-municipality'), 100);
+} else {
+  populateMunicipalitySelect('visit-municipality');
+}
   updateAllMunicipalityDropdowns(); // ← ADICIONE
   populateMunicipalitySelect('visit-municipality');
   editingVisitId = visitId;
@@ -5736,6 +5742,12 @@ function showProductionModal(productionId = null) {
   const title = document.getElementById('production-modal-title');
   
   form.reset();
+  if (municipalitiesList.length === 0) {
+  showToast('Carregando municípios...', 'info');
+  setTimeout(() => populateMunicipalitySelect('production-municipality'), 100);
+} else {
+  populateMunicipalitySelect('production-municipality');
+}
   updateAllMunicipalityDropdowns(); // ← ADICIONE
   populateMunicipalitySelect('production-municipality');
   editingProductionId = productionId;
