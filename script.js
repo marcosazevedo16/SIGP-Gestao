@@ -607,12 +607,6 @@ function updateUserInterface() {
   checkAuthentication();
 }
 
-function showChangePasswordModal() {
-  document.getElementById('change-password-modal').classList.add('show');
-  document.getElementById('change-password-form').reset();
-  document.getElementById('change-password-error').textContent = '';
-}
-
 function closeChangePasswordModal() {
   document.getElementById('change-password-modal').classList.remove('show');
 }
