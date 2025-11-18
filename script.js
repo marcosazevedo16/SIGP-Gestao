@@ -481,7 +481,6 @@ function handleChangePassword(event) {
   salvarNoArmazenamento('currentUser', currentUser);
   closeChangePasswordModal();
   showToast('Senha alterada com sucesso!', 'success');
-}
 
 // =====================================================
 // CRIAÇÃO/EDIÇÃO DE USUÁRIO COM HASH v4.3
