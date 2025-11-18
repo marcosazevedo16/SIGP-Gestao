@@ -5396,6 +5396,7 @@ function showVisitModal(visitId = null) {
   const title = document.getElementById('visit-modal-title');
   
   form.reset();
+  updateAllMunicipalityDropdowns(); // ← ADICIONE
   populateMunicipalitySelect('visit-municipality');
   editingVisitId = visitId;
   
@@ -5735,6 +5736,7 @@ function showProductionModal(productionId = null) {
   const title = document.getElementById('production-modal-title');
   
   form.reset();
+  updateAllMunicipalityDropdowns(); // ← ADICIONE
   populateMunicipalitySelect('production-municipality');
   editingProductionId = productionId;
   
