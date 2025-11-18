@@ -81,26 +81,6 @@ function verificarArmazenamentoDisponivel() {
     console.error('localStorage não está disponível:', erro);
     return false;
   }
-}
-// Função para mostrar mensagens (toasts)
-function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.textContent = message;
-    const bgColor = type === 'success' ? '#10b981' : 
-                   type === 'error' ? '#ef4444' : '#3b82f6';
-    toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: ${bgColor};
-        color: white;
-        padding: 12px 20px;
-        border-radius: 6px;
-        z-index: 1000;
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
 
 // =====================================================
 // Função showToast - Mensagens Flutuantes
