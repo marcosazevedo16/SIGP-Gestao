@@ -5,7 +5,7 @@ Sistema completo de gestão para setor de saúde, com dashboard, treinamentos, d
 ## Como Usar
 1. Clone o repo: `git clone https://github.com/marcosazevedo16/SIGP-Gestao.git`
 2. Abra `index.html` no navegador.
-3. Login: **ADMIN** / **saude2025**
+3. Login: **** / ****
 
 ## Funcionalidades
 - Persistência local (localStorage)
