@@ -6276,9 +6276,6 @@ function forcarInicializacaoV43() {
 }
 
 // =====================================================
-// VERIFICA AUTENTICAÇÃO AO CARREGAR A PÁGINA (VERSÃO CORRIGIDA)
-// =====================================================
-// =====================================================
 // FUNÇÕES FINAIS – ORDEM CORRETA (TUDO ANTES DO DOMContentLoaded)
 // =====================================================
 
@@ -6303,7 +6300,7 @@ function checkAuthentication() {
   }
 }
 
-// 2. Login
+// 2. Login (versão limpa e sem erros de sintaxe)
 function handleLogin(event) {
   event.preventDefault();
   const username = document.getElementById('login-username').value.trim().toUpperCase();
@@ -6332,7 +6329,6 @@ function handleLogin(event) {
   if (user.mustChangePassword) {
     setTimeout(() => showChangePasswordModal(true), 600);
   } else {
-    {
     initializeApp();
     navigateTo('dashboard');
     showToast('Login realizado com sucesso!', 'success');
@@ -6342,8 +6338,13 @@ function handleLogin(event) {
 // 3. Troca de senha obrigatória (corrigida e segura)
 function showChangePasswordModal(force = false) {
   const modal = document.getElementById('change-password-modal');
-  const form  = document.getElementById('change-password-form');
+  const form = document.getElementById('change-password-form');
   const closeBtn = modal?.querySelector('.close');
+
+  if (!modal || !form) {
+    console.error('Modal ou formulário de troca de senha não encontrado!');
+    return;
+  }
 
   modal.style.display = 'block';
 
@@ -6356,7 +6357,7 @@ function showChangePasswordModal(force = false) {
     const conf = document.getElementById('confirm-password').value;
 
     if (nova.length < 6) return alert('Senha deve ter no mínimo 6 caracteres');
-    if (nova !== conf)   return alert('As senhas não coincidem');
+    if (nova !== conf) return alert('As senhas não coincidem');
 
     const idx = users.findIndex(u => u.id === currentUser.id);
     if (idx !== -1) {
@@ -6383,11 +6384,12 @@ function showChangePasswordModal(force = false) {
   };
 }
 
-// 4. Inicialização do app (você já tem essa função em algum lugar – se não tiver, cole também)
+// 4. Inicialização do app (função mínima se não existir)
 function initializeApp() {
+  // Carrega dados e atualiza UI
   updateHeaderUserInfo();
-  loadDashboardStats();
-  // ... resto do seu initializeApp original
+  loadDashboardStats(); // Se existir, senão remova
+  // Adicione aqui qualquer outro init que você tenha
 }
 
 function updateHeaderUserInfo() {
