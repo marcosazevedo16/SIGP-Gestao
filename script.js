@@ -6277,34 +6277,64 @@ function populateAllMunicipalitySelects() {
 }
 
 // =====================================================
-// MIGRAÇÃO FORÇADA v4.3 — FUNCIONA ATÉ NO PIOR NAVEGADOR
+// MIGRAÇÃO v4.3 — VERSÃO FINAL SEM ERROS DE REFERÊNCIA
 // =====================================================
 function forcarInicializacaoV43() {
-  console.log('Iniciando forçarInicializacaoV43...');
-  
-  // Se não tem users OU não tem o ADMIN com hash → força tudo
+  console.log('Iniciando migração v4.3...');
+
+  // Define a constante LOCALMENTE na função (evita erro de "not defined")
+  const DADOS_PADRAO_LOCAL = {
+    users: [
+      {
+        id: 1,
+        login: 'ADMIN',
+        name: 'Administrador',
+        salt: 'f3a9c8e2d1b7m5n9p4q8r6t2v1x5y7z0',
+        passwordHash: 'c98f6b380e7fd8d5899fb3e46a84e3de7f47dff5ff2ebbf7ef0f0a3306d9eebd', // hash correto de "saude2025"
+        permission: 'Administrador',
+        status: 'Ativo',
+        mustChangePassword: true
+      }
+    ],
+    // Adicione aqui os outros arrays se precisar (mas para login só users basta)
+    municipalitiesList: [], // placeholders vazios
+    cargos: [],
+    orientadores: [],
+    modulos: [],
+    formasApresentacao: [],
+    requests: [],
+    presentations: [],
+    demands: [],
+    visits: [],
+    productions: [],
+    tasks: [],
+    municipalities: []
+  };
+
   const dadosAtuais = localStorage.getItem('users');
   if (!dadosAtuais || dadosAtuais === '[]' || !JSON.parse(dadosAtuais)[0]?.passwordHash) {
-    console.log('Dados antigos ou vazios detectados. Aplicando v4.3...');
+    console.log('Dados vazios/antigos detectados. Salvando v4.3...');
     
-    localStorage.setItem('users', JSON.stringify(DADOS_PADRAO.users));
-    console.log('ADMIN com hash salvo com sucesso!');
+    localStorage.setItem('users', JSON.stringify(DADOS_PADRAO_LOCAL.users));
+    localStorage.setItem('municipalitiesList', JSON.stringify(DADOS_PADRAO_LOCAL.municipalitiesList));
+    // ... repita para os outros arrays se quiser inicializar tudo
+    console.log('v4.3 salva com sucesso!');
     
-    alert('SIGP Saúde v4.3 ativado com segurança total!\n\nLogin: ADMIN\nSenha: saude2025\n\nVocê será obrigado a trocar a senha no primeiro acesso.');
+    alert('SIGP Saúde v4.3 ativado!\n\nLogin: ADMIN\nSenha: saude2025\n\nTroque a senha no primeiro acesso.');
   }
-  
-  // Força a variável global
+
+  // Carrega as variáveis globais
   users = JSON.parse(localStorage.getItem('users') || '[]');
   console.log('Users carregados:', users);
 }
 
 // =====================================================
-// INICIALIZAÇÃO FINAL
+// INICIALIZAÇÃO FINAL (SIMPLIFICADA E SEM ERROS)
 // =====================================================
 document.addEventListener('DOMContentLoaded', function () {
-  forcarInicializacaoV43();
-  initializeTheme();
+  forcarInicializacaoV43();  // Migração primeiro
+  initializeTheme();         // Tema
   document.getElementById('login-screen').classList.add('active');
   document.getElementById('main-app').classList.remove('active');
-  checkAuthentication();
+  checkAuthentication();     // Login por último
 });
