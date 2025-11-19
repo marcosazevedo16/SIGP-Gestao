@@ -242,6 +242,11 @@ let editingModuloId = null;  // ← CORRIGIDO: era "editoingModuloId"
 let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', DADOS_PADRAO.formasApresentacao);
 let formaApresentacaoIdCounter = recuperarDoArmazenamento('formaApresentacaoIdCounter', 7);
 let editingFormaApresentacaoId = null;
+    
+// =====================================================
+// TEMA CLARO/ESCURO
+// =====================================================
+let currentTheme = recuperarDoArmazenamento('theme', 'light');
 
 // Solicitações/Sugestões data
 let requests = recuperarDoArmazenamento('requests', DADOS_PADRAO.requests);
@@ -337,64 +342,64 @@ function checkAuthentication() {
 }
 
 // =====================================================
-// LOGIN SEGURO v4.3 — VERSÃO FINAL CORRIGIDA
+// LOGIN SEGURO v4.3 — VERSÃO FINAL CORRIGIDA E LIMPA
 // =====================================================
 function handleLogin(event) {
   event.preventDefault();
-    function handleLogin(event) {
-  event.preventDefault();
-  
-  // === DEBUG TEMPORÁRIO - APAGUE DEPOIS ===
+
+  // === DEBUG TEMPORÁRIO (pode apagar depois) ===
   console.log('DEBUG: Iniciando login...');
-  console.log('DEBUG: Username digitado:', document.getElementById('login-username').value);
-  console.log('DEBUG: Password digitado:', document.getElementById('login-password').value);
-  console.log('DEBUG: Users no momento:', users);
-  console.log('DEBUG: CryptoJS disponível?', typeof CryptoJS !== 'undefined');
+  console.log('Username:', document.getElementById('login-username').value);
+  console.log('Users carregados:', users);
   // === FIM DEBUG ===
-  
-  const username = document.getElementById('login-username').value.toUpperCase().trim();
-  // ... resto da função exatamente como está ...
-}
-  
-  const username = document.getElementById('login-username').value.toUpperCase().trim();
+
+  const username = document.getElementById('login-username').value.trim().toUpperCase();
   const password = document.getElementById('login-password').value;
   const errorDiv = document.getElementById('login-error');
 
-  // FORÇA RECARREGAR USUÁRIOS DO LOCALSTORAGE NA HORA DO LOGIN
+  if (!username || !password) {
+    errorDiv.textContent = 'Preencha usuário e senha';
+    return;
+  }
+
+  // Recarrega usuários do localStorage (segurança extra)
+  users = recuperarDoArmazenamento('users') || [];
 
   const user = users.find(u => u.login.toUpperCase() === username && u.status === 'Ativo');
 
   if (!user) {
-    errorDiv.textContent = 'Usuário não encontrado ou inativo.';
+    errorDiv.textContent = 'Usuário não encontrado ou inativo';
+    document.getElementById('login-password').value = '';
     return;
   }
 
   const inputHash = hashPassword(password, user.salt);
+
   if (inputHash !== user.passwordHash) {
-    errorDiv.textContent = 'Senha incorreta.';
+    errorDiv.textContent = 'Senha incorreta';
+    document.getElementById('login-password').value = '';
     return;
   }
 
-  // Login com sucesso
-  currentUser = user;
+  // LOGIN BEM-SUCEDIDO
+  errorDiv.textContent = '';
+  currentUser = { id: user.id, name: user.name, login: user.login, permission: user.permission || 'Usuário' };
   isAuthenticated = true;
   salvarNoArmazenamento('currentUser', currentUser);
 
-  errorDiv.textContent = '';
-  document.getElementById('login-username').value = '';
-  document.getElementById('login-password').value = '';
-
   document.getElementById('login-screen').classList.remove('active');
-  document.getElementById('main-app').style.display = 'block';
+  document.getElementById('main-app').classList.add('active');
 
   if (user.mustChangePassword) {
     setTimeout(() => {
-      alert('Por segurança, você deve alterar sua senha agora.');
-      showChangePasswordModal();
-    }, 400);
-  } else {
-    initializeApp();
+      alert('Primeiro acesso detectado!\n\nPor segurança, altere sua senha agora.');
+      showChangePasswordModal(true);
+    }, 500);
   }
+
+  initializeApp();
+  navigateTo('dashboard');
+  showToast('Login realizado com sucesso!', 'success');
 }
 
 function handleLogout() {
