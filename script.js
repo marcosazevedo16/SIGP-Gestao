@@ -336,48 +336,51 @@ function checkAuthentication() {
   }
 }
 
-// LOGIN SEGURO v4.3
+// =====================================================
+// LOGIN SEGURO v4.3 — VERSÃO FINAL CORRIGIDA
+// =====================================================
 function handleLogin(event) {
   event.preventDefault();
-  const username = document.getElementById('login-username').value.toUpperCase();
+  
+  const username = document.getElementById('login-username').value.toUpperCase().trim();
   const password = document.getElementById('login-password').value;
   const errorDiv = document.getElementById('login-error');
 
-  // Find user by login (case-insensitive)
-  const user = users.find(u => u.login.toUpperCase() === username);
+  // FORÇA RECARREGAR USUÁRIOS DO LOCALSTORAGE NA HORA DO LOGIN
+  users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
+
+  const user = users.find(u => u.login.toUpperCase() === username && u.status === 'Ativo');
 
   if (!user) {
-    errorDiv.textContent = 'Login não encontrado.';
+    errorDiv.textContent = 'Usuário não encontrado ou inativo.';
     return;
   }
 
-  if (user.status === 'Inativo') {
-    errorDiv.textContent = 'Usuário inativo. Entre em contato com o administrador.';
-    return;
-  }
-
-  // Verificação com hash v4.3
   const inputHash = hashPassword(password, user.salt);
   if (inputHash !== user.passwordHash) {
     errorDiv.textContent = 'Senha incorreta.';
     return;
   }
 
-  // Login successful
+  // Login com sucesso
   currentUser = user;
   isAuthenticated = true;
   salvarNoArmazenamento('currentUser', currentUser);
+
   errorDiv.textContent = '';
   document.getElementById('login-username').value = '';
   document.getElementById('login-password').value = '';
-  checkAuthentication();
 
-  // Força troca de senha se for o primeiro login
+  document.getElementById('login-screen').classList.remove('active');
+  document.getElementById('main-app').style.display = 'block';
+
   if (user.mustChangePassword) {
     setTimeout(() => {
-      alert('Bem-vindo! Por segurança, altere sua senha agora.');
+      alert('Por segurança, você deve alterar sua senha agora.');
       showChangePasswordModal();
-    }, 500);
+    }, 400);
+  } else {
+    initializeApp();
   }
 }
 
