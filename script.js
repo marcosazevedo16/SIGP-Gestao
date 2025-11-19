@@ -6305,93 +6305,120 @@ function checkAuthentication() {
 // =====================================================
 
 function handleLogin(event) {
-
   event.preventDefault();
 
   // === DEBUG TEMPORÁRIO (pode apagar depois) ===
 
   console.log('DEBUG: Iniciando login...');
-
   console.log('Username:', document.getElementById('login-username').value);
-
   console.log('Users carregados:', users);
 
   // === FIM DEBUG ===
 
   const username = document.getElementById('login-username').value.trim().toUpperCase();
-
   const password = document.getElementById('login-password').value;
-
   const errorDiv = document.getElementById('login-error');
-
   if (!username || !password) {
-
     errorDiv.textContent = 'Preencha usuário e senha';
-
     return;
-
   }
 
   // Recarrega usuários do localStorage (segurança extra)
 
   users = recuperarDoArmazenamento('users') || [];
-
   const user = users.find(u => u.login.toUpperCase() === username && u.status === 'Ativo');
-
   if (!user) {
-
     errorDiv.textContent = 'Usuário não encontrado ou inativo';
-
     document.getElementById('login-password').value = '';
-
     return;
-
   }
 
   const inputHash = hashPassword(password, user.salt);
-
   if (inputHash !== user.passwordHash) {
-
     errorDiv.textContent = 'Senha incorreta';
-
     document.getElementById('login-password').value = '';
-
     return;
-
   }
 
   // LOGIN BEM-SUCEDIDO
 
   errorDiv.textContent = '';
-
   currentUser = { id: user.id, name: user.name, login: user.login, permission: user.permission || 'Usuário' };
-
   isAuthenticated = true;
-
   salvarNoArmazenamento('currentUser', currentUser);
-
   document.getElementById('login-screen').classList.remove('active');
-
   document.getElementById('main-app').classList.add('active');
-
   if (user.mustChangePassword) {
-
     setTimeout(() => {
-
       alert('Primeiro acesso detectado!\n\nPor segurança, altere sua senha agora.');
-
       showChangePasswordModal(true);
-
     }, 500);
-
   }
 
   initializeApp();
-
   navigateTo('dashboard');
-
   showToast('Login realizado com sucesso!', 'success');
+}
 
+// =====================================================
+// MODAL DE TROCA DE SENHA OBRIGATÓRIA
+// =====================================================
+function showChangePasswordModal(force = false) {
+  const modal = document.getElementById('change-password-modal');
+  const closeBtn = document.querySelector('#change-password-modal .close');
+  const form = document.getElementById('change-password-form');
+
+  if (!modal) {
+    console.error('Modal de troca de senha não encontrado no HTML!');
+    return;
+  }
+
+  modal.style.display = 'block';
+
+  // Fecha ao clicar no X
+  closeBtn.onclick = () => {
+    if (!force) modal.style.display = 'none';
+  };
+
+  // Fecha ao clicar fora do modal
+  window.onclick = (e) => {
+    if (e.target === modal && !force) {
+      modal.style.display = 'none';
+    }
+  };
+
+  // Submissão do formulário
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const novaSenha = document.getElementById('new-password').value;
+    const confirma = document.getElementById('confirm-password').value;
+
+    if (novaSenha.length < 6) {
+      alert('A senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+    if (novaSenha !== confirma) {
+      alert('As senhas não coincidem.');
+      return;
+    }
+
+    // Atualiza o usuário no array e no localStorage
+    const userIndex = users.findIndex(u => u.id === currentUser.id);
+    if (userIndex !== -1) {
+      users[userIndex].passwordHash = hashPassword(novaSenha, users[userIndex].salt);
+      users[userIndex].mustChangePassword = false;
+      salvarNoArmazenamento('users', users);
+    }
+
+    // Atualiza currentUser
+    currentUser.mustChangePassword = false;
+    salvarNoArmazenamento('currentUser', currentUser);
+
+    alert('Senha alterada com sucesso! Bem-vindo ao SIGP Saúde v4.3');
+    modal.style.display = 'none';
+    initializeApp();
+    navigateTo('dashboard');
+  };
 }
 
 // ← DEPOIS DISSO, o DOMContentLoaded pode chamar a função tranquilamente
