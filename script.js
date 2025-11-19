@@ -6273,8 +6273,6 @@ function inicializarDadosV43() {
 
 // Chama a função no carregamento (só uma vez)
 
-});
-
 // =====================================================
 // INICIALIZAÇÃO FINAL v4.3
 // =====================================================
