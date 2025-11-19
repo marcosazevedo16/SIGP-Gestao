@@ -491,6 +491,27 @@ function initializeApp() {
   updateMunicipalityStats();
   updateUserStats();
   initializeCharts();
+    // ADICIONE estas linhas DEPOIS de initializeCharts():
+if (typeof initializeDashboardCharts === 'function') {
+  initializeDashboardCharts();
+}
+
+if (typeof initializeDemandCharts === 'function') {
+  initializeDemandCharts();
+}
+
+if (typeof initializeVisitCharts === 'function') {
+  initializeVisitCharts();
+}
+
+if (typeof initializeProductionCharts === 'function') {
+  initializeProductionCharts();
+}
+
+if (typeof initializePresentationCharts === 'function') {
+  initializePresentationCharts();
+}
+
   initializeFilters();
   updateThemeButton();
   updateCargoDropdowns();
