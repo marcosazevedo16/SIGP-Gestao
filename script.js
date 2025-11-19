@@ -6363,33 +6363,28 @@ function handleLogin(event) {
 // =====================================================
 // MODAL DE TROCA DE SENHA OBRIGATÓRIA
 // =====================================================
+// =====================================================
+// MODAL DE TROCA DE SENHA OBRIGATÓRIA (VERSÃO 100% FUNCIONAL)
+// =====================================================
 function showChangePasswordModal(force = false) {
   const modal = document.getElementById('change-password-modal');
-  const closeBtn = document.querySelector('#change-password-modal .close');
   const form = document.getElementById('change-password-form');
 
-  if (!modal) {
-    console.error('Modal de troca de senha não encontrado no HTML!');
+  if (!modal || !form) {
+    console.error('Modal ou formulário de troca de senha não encontrado!');
     return;
   }
 
   modal.style.display = 'block';
 
-  // Fecha ao clicar no X
-  closeBtn.onclick = () => {
-    if (!force) modal.style.display = 'none';
-  };
-
-  // Fecha ao clicar fora do modal
-  window.onclick = (e) => {
-    if (e.target === modal && !force) {
-      modal.style.display = 'none';
-    }
-  };
+  // Impede fechar se for primeiro acesso
+  modal.querySelector('.close').onclick = () => !force || null;
+  window.onclick = (e) => { if (e.target === modal && !force) modal.style.display = 'none'; };
 
   // Submissão do formulário
   form.onsubmit = (e) => {
     e.preventDefault();
+
     const novaSenha = document.getElementById('new-password').value;
     const confirma = document.getElementById('confirm-password').value;
 
@@ -6402,7 +6397,7 @@ function showChangePasswordModal(force = false) {
       return;
     }
 
-    // Atualiza o usuário no array e no localStorage
+    // Atualiza no array de users
     const userIndex = users.findIndex(u => u.id === currentUser.id);
     if (userIndex !== -1) {
       users[userIndex].passwordHash = hashPassword(novaSenha, users[userIndex].salt);
@@ -6410,14 +6405,29 @@ function showChangePasswordModal(force = false) {
       salvarNoArmazenamento('users', users);
     }
 
-    // Atualiza currentUser
+    // Atualiza currentUser e remove flag
     currentUser.mustChangePassword = false;
     salvarNoArmazenamento('currentUser', currentUser);
 
+    // FORÇA O ESTADO DE AUTENTICADO NOVAMENTE
+    isAuthenticated = true;
+    salvarNoArmazenamento('isAuthenticated', true);  // ← linha essencial!
+
     alert('Senha alterada com sucesso! Bem-vindo ao SIGP Saúde v4.3');
+
     modal.style.display = 'none';
+    form.reset();
+
+    // NÃO chama initializeApp() aqui (ele pode limpar coisas)
+    // Só esconde o login e mostra o app
+    document.getElementById('login-screen').classList.remove('active');
+    document.getElementById('main-app').classList.add('active');
+    document.getElementById('logged-user-name').textContent = currentUser.name || currentUser.login;
+
+    // Só agora inicializa o resto
     initializeApp();
     navigateTo('dashboard');
+    showToast('Login realizado com sucesso!', 'success');
   };
 }
 
