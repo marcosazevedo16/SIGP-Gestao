@@ -6262,6 +6262,10 @@ function populateAllMunicipalitySelects() {
 
 // === FUNÇÃO TEMPORÁRIA PARA v4.3: Inicializar dados seguros (rode UMA VEZ só) ===
 function inicializarDadosV43() {
+ if (!users || users.length === 0) {
+    users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
+  }
+
   // Verifica se users tem o formato antigo (sem salt/hash)
   if (users && users.length > 0 && !users[0].salt) {
     alert('Detectado dados antigos. Inicializando v4.3 com segurança total...');
