@@ -211,7 +211,7 @@ const DADOS_PADRAO = {
 // =====================================================
 
 // Authentication and Users
-let users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
+let users = []; // deixa vazio por enquanto — vamos carregar só na hora certa
 let currentUser = recuperarDoArmazenamento('currentUser') || null;
 let isAuthenticated = !!currentUser;
 let editingUserId = null;
@@ -347,7 +347,6 @@ function handleLogin(event) {
   const errorDiv = document.getElementById('login-error');
 
   // FORÇA RECARREGAR USUÁRIOS DO LOCALSTORAGE NA HORA DO LOGIN
-  users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
 
   const user = users.find(u => u.login.toUpperCase() === username && u.status === 'Ativo');
 
@@ -6284,7 +6283,7 @@ function inicializarDadosV43() {
     users = usersAtuais; // ← já está na v4.3
   }
 
-  // ESSA É A LINHA QUE FALTAVA (força a variável global ficar atualizada)
+  // FORÇA A VARIÁVEL GLOBAL FICAR ATUALIZADA SEMPRE (só uma vez, aqui dentro)
   users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
 }
 // =====================================================
