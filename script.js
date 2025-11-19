@@ -343,67 +343,6 @@ function checkAuthentication() {
   }
 }
 
-// =====================================================
-// LOGIN SEGURO v4.3 — VERSÃO FINAL CORRIGIDA E LIMPA
-// =====================================================
-function handleLogin(event) {
-  event.preventDefault();
-
-  // === DEBUG TEMPORÁRIO (pode apagar depois) ===
-  console.log('DEBUG: Iniciando login...');
-  console.log('Username:', document.getElementById('login-username').value);
-  console.log('Users carregados:', users);
-  // === FIM DEBUG ===
-
-  const username = document.getElementById('login-username').value.trim().toUpperCase();
-  const password = document.getElementById('login-password').value;
-  const errorDiv = document.getElementById('login-error');
-
-  if (!username || !password) {
-    errorDiv.textContent = 'Preencha usuário e senha';
-    return;
-  }
-
-  // Recarrega usuários do localStorage (segurança extra)
-  users = recuperarDoArmazenamento('users') || [];
-
-  const user = users.find(u => u.login.toUpperCase() === username && u.status === 'Ativo');
-
-  if (!user) {
-    errorDiv.textContent = 'Usuário não encontrado ou inativo';
-    document.getElementById('login-password').value = '';
-    return;
-  }
-
-  const inputHash = hashPassword(password, user.salt);
-
-  if (inputHash !== user.passwordHash) {
-    errorDiv.textContent = 'Senha incorreta';
-    document.getElementById('login-password').value = '';
-    return;
-  }
-
-  // LOGIN BEM-SUCEDIDO
-  errorDiv.textContent = '';
-  currentUser = { id: user.id, name: user.name, login: user.login, permission: user.permission || 'Usuário' };
-  isAuthenticated = true;
-  salvarNoArmazenamento('currentUser', currentUser);
-
-  document.getElementById('login-screen').classList.remove('active');
-  document.getElementById('main-app').classList.add('active');
-
-  if (user.mustChangePassword) {
-    setTimeout(() => {
-      alert('Primeiro acesso detectado!\n\nPor segurança, altere sua senha agora.');
-      showChangePasswordModal(true);
-    }, 500);
-  }
-
-  initializeApp();
-  navigateTo('dashboard');
-  showToast('Login realizado com sucesso!', 'success');
-}
-
 function handleLogout() {
   if (confirm('Tem certeza que deseja sair?')) {
     isAuthenticated = false;
@@ -6357,6 +6296,102 @@ function checkAuthentication() {
     document.getElementById('login-screen').classList.add('active');
     document.getElementById('main-app').classList.remove('active');
   }
+}
+
+// =====================================================
+
+// LOGIN SEGURO v4.3 — VERSÃO FINAL CORRIGIDA E LIMPA
+
+// =====================================================
+
+function handleLogin(event) {
+
+  event.preventDefault();
+
+  // === DEBUG TEMPORÁRIO (pode apagar depois) ===
+
+  console.log('DEBUG: Iniciando login...');
+
+  console.log('Username:', document.getElementById('login-username').value);
+
+  console.log('Users carregados:', users);
+
+  // === FIM DEBUG ===
+
+  const username = document.getElementById('login-username').value.trim().toUpperCase();
+
+  const password = document.getElementById('login-password').value;
+
+  const errorDiv = document.getElementById('login-error');
+
+  if (!username || !password) {
+
+    errorDiv.textContent = 'Preencha usuário e senha';
+
+    return;
+
+  }
+
+  // Recarrega usuários do localStorage (segurança extra)
+
+  users = recuperarDoArmazenamento('users') || [];
+
+  const user = users.find(u => u.login.toUpperCase() === username && u.status === 'Ativo');
+
+  if (!user) {
+
+    errorDiv.textContent = 'Usuário não encontrado ou inativo';
+
+    document.getElementById('login-password').value = '';
+
+    return;
+
+  }
+
+  const inputHash = hashPassword(password, user.salt);
+
+  if (inputHash !== user.passwordHash) {
+
+    errorDiv.textContent = 'Senha incorreta';
+
+    document.getElementById('login-password').value = '';
+
+    return;
+
+  }
+
+  // LOGIN BEM-SUCEDIDO
+
+  errorDiv.textContent = '';
+
+  currentUser = { id: user.id, name: user.name, login: user.login, permission: user.permission || 'Usuário' };
+
+  isAuthenticated = true;
+
+  salvarNoArmazenamento('currentUser', currentUser);
+
+  document.getElementById('login-screen').classList.remove('active');
+
+  document.getElementById('main-app').classList.add('active');
+
+  if (user.mustChangePassword) {
+
+    setTimeout(() => {
+
+      alert('Primeiro acesso detectado!\n\nPor segurança, altere sua senha agora.');
+
+      showChangePasswordModal(true);
+
+    }, 500);
+
+  }
+
+  initializeApp();
+
+  navigateTo('dashboard');
+
+  showToast('Login realizado com sucesso!', 'success');
+
 }
 
 // ← DEPOIS DISSO, o DOMContentLoaded pode chamar a função tranquilamente
