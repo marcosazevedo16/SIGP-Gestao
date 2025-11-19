@@ -6480,3 +6480,45 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('main-app').classList.remove('active');
   checkAuthentication();
 });
+
+function navigateTo(page) {
+  // Esconde todas as seções
+  document.querySelectorAll('.app-section').forEach(s => s.classList.remove('active'));
+  // Remove active dos botões
+  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+
+  // Mostra a página certa
+  const section = document.getElementById(page + '-section');
+  if (section) section.classList.add('active');
+
+  // Marca o botão como ativo
+  const btn = document.querySelector(`.sidebar-btn[onclick="navigateTo('${page}')"]`);
+  if (btn) btn.classList.add('active');
+
+  // Atualiza título
+  const title = document.getElementById('page-title');
+  if (title && btn) title.textContent = btn.textContent.trim();
+}
+
+// Logout definitivo
+function logout() {
+  if (confirm('Deseja realmente sair do sistema?')) {
+    deletarDoArmazenamento('currentUser');
+    deletarDoArmazenamento('isAuthenticated');
+    currentUser = null;
+    isAuthenticated = false;
+
+    document.getElementById('login-screen').classList.add('active');
+    document.getElementById('main-app').classList.remove('active');
+
+    showToast('Sessão encerrada com sucesso', 'info');
+    location.reload(); // força reload limpo
+  }
+}
+
+// Garante que o dashboard abra na primeira entrada
+function initializeApp() {
+  updateHeaderUserInfo();
+  navigateTo('dashboard');
+  if (typeof loadDashboardStats === 'function') loadDashboardStats();
+}
