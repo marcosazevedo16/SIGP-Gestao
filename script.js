@@ -6278,10 +6278,14 @@ function forcarInicializacaoV43() {
 // =====================================================
 // VERIFICA AUTENTICAÇÃO AO CARREGAR A PÁGINA (VERSÃO CORRIGIDA)
 // =====================================================
+// =====================================================
+// FUNÇÕES FINAIS – ORDEM CORRETA (TUDO ANTES DO DOMContentLoaded)
+// =====================================================
+
+// 1. Verifica autenticação
 function checkAuthentication() {
-  // PRIMEIRO: recupera do localStorage
   const savedUser = recuperarDoArmazenamento('currentUser');
-  const savedAuth = recuperarDoArmazenamento('isAuthenticated'); // ← NOVO!
+  const savedAuth = recuperarDoArmazenamento('isAuthenticated');
 
   if (savedUser && savedAuth === true) {
     currentUser = savedUser;
@@ -6299,144 +6303,105 @@ function checkAuthentication() {
   }
 }
 
-// =====================================================
-
-// LOGIN SEGURO v4.3 — VERSÃO FINAL CORRIGIDA E LIMPA
-
-// =====================================================
-
+// 2. Login
 function handleLogin(event) {
   event.preventDefault();
-
-  // === DEBUG TEMPORÁRIO (pode apagar depois) ===
-
-  console.log('DEBUG: Iniciando login...');
-  console.log('Username:', document.getElementById('login-username').value);
-  console.log('Users carregados:', users);
-
-  // === FIM DEBUG ===
-
   const username = document.getElementById('login-username').value.trim().toUpperCase();
   const password = document.getElementById('login-password').value;
   const errorDiv = document.getElementById('login-error');
-  if (!username || !password) {
-    errorDiv.textContent = 'Preencha usuário e senha';
-    return;
-  }
 
-  // Recarrega usuários do localStorage (segurança extra)
+  if (!username || !password) return errorDiv.textContent = 'Preencha usuário e senha';
 
   users = recuperarDoArmazenamento('users') || [];
   const user = users.find(u => u.login.toUpperCase() === username && u.status === 'Ativo');
-  if (!user) {
-    errorDiv.textContent = 'Usuário não encontrado ou inativo';
-    document.getElementById('login-password').value = '';
-    return;
-  }
+  if (!user) return errorDiv.textContent = 'Usuário não encontrado ou inativo';
 
   const inputHash = hashPassword(password, user.salt);
-  if (inputHash !== user.passwordHash) {
-    errorDiv.textContent = 'Senha incorreta';
-    document.getElementById('login-password').value = '';
-    return;
-  }
+  if (inputHash !== user.passwordHash) return errorDiv.textContent = 'Senha incorreta';
 
-  // LOGIN BEM-SUCEDIDO
-
+  // Login bem-sucedido
   errorDiv.textContent = '';
   currentUser = { id: user.id, name: user.name, login: user.login, permission: user.permission || 'Usuário' };
   isAuthenticated = true;
   salvarNoArmazenamento('currentUser', currentUser);
+  salvarNoArmazenamento('isAuthenticated', true);
+
   document.getElementById('login-screen').classList.remove('active');
   document.getElementById('main-app').classList.add('active');
+
   if (user.mustChangePassword) {
-    setTimeout(() => {
-      alert('Primeiro acesso detectado!\n\nPor segurança, altere sua senha agora.');
-      showChangePasswordModal(true);
-    }, 500);
-  }
-
-  initializeApp();
-  navigateTo('dashboard');
-  showToast('Login realizado com sucesso!', 'success');
-}
-
-// =====================================================
-// MODAL DE TROCA DE SENHA OBRIGATÓRIA
-// =====================================================
-// =====================================================
-// MODAL DE TROCA DE SENHA OBRIGATÓRIA (VERSÃO 100% FUNCIONAL)
-// =====================================================
-function showChangePasswordModal(force = false) {
-  const modal = document.getElementById('change-password-modal');
-  const form = document.getElementById('change-password-form');
-
-  if (!modal || !form) {
-    console.error('Modal ou formulário de troca de senha não encontrado!');
-    return;
-  }
-
-  modal.style.display = 'block';
-
-  // Impede fechar se for primeiro acesso
-  modal.querySelector('.close').onclick = () => !force || null;
-  window.onclick = (e) => { if (e.target === modal && !force) modal.style.display = 'none'; };
-
-  // Submissão do formulário
-  form.onsubmit = (e) => {
-    e.preventDefault();
-
-    const novaSenha = document.getElementById('new-password').value;
-    const confirma = document.getElementById('confirm-password').value;
-
-    if (novaSenha.length < 6) {
-      alert('A senha deve ter no mínimo 6 caracteres.');
-      return;
-    }
-    if (novaSenha !== confirma) {
-      alert('As senhas não coincidem.');
-      return;
-    }
-
-    // Atualiza no array de users
-    const userIndex = users.findIndex(u => u.id === currentUser.id);
-    if (userIndex !== -1) {
-      users[userIndex].passwordHash = hashPassword(novaSenha, users[userIndex].salt);
-      users[userIndex].mustChangePassword = false;
-      salvarNoArmazenamento('users', users);
-    }
-
-    // Atualiza currentUser e remove flag
-    currentUser.mustChangePassword = false;
-    salvarNoArmazenamento('currentUser', currentUser);
-
-    // FORÇA O ESTADO DE AUTENTICADO NOVAMENTE
-    isAuthenticated = true;
-    salvarNoArmazenamento('isAuthenticated', true);  // ← linha essencial!
-
-    alert('Senha alterada com sucesso! Bem-vindo ao SIGP Saúde v4.3');
-
-    modal.style.display = 'none';
-    form.reset();
-
-    // NÃO chama initializeApp() aqui (ele pode limpar coisas)
-    // Só esconde o login e mostra o app
-    document.getElementById('login-screen').classList.remove('active');
-    document.getElementById('main-app').classList.add('active');
-    document.getElementById('logged-user-name').textContent = currentUser.name || currentUser.login;
-
-    // Só agora inicializa o resto
+    setTimeout(() => showChangePasswordModal(true), 600);
+  } else {
+    {
     initializeApp();
     navigateTo('dashboard');
     showToast('Login realizado com sucesso!', 'success');
+  }
+}
+
+// 3. Troca de senha obrigatória (corrigida e segura)
+function showChangePasswordModal(force = false) {
+  const modal = document.getElementById('change-password-modal');
+  const form  = document.getElementById('change-password-form');
+  const closeBtn = modal?.querySelector('.close');
+
+  modal.style.display = 'block';
+
+  if (closeBtn) closeBtn.onclick = () => { if (!force) modal.style.display = 'none'; };
+  window.onclick = (e) => { if (e.target === modal && !force) modal.style.display = 'none'; };
+
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const nova = document.getElementById('new-password').value;
+    const conf = document.getElementById('confirm-password').value;
+
+    if (nova.length < 6) return alert('Senha deve ter no mínimo 6 caracteres');
+    if (nova !== conf)   return alert('As senhas não coincidem');
+
+    const idx = users.findIndex(u => u.id === currentUser.id);
+    if (idx !== -1) {
+      users[idx].passwordHash = hashPassword(nova, users[idx].salt);
+      users[idx].mustChangePassword = false;
+      salvarNoArmazenamento('users', users);
+    }
+
+    delete currentUser.mustChangePassword;
+    salvarNoArmazenamento('currentUser', currentUser);
+    salvarNoArmazenamento('isAuthenticated', true);
+
+    alert('Senha alterada com sucesso!');
+    modal.style.display = 'none';
+    form.reset();
+
+    document.getElementById('login-screen').classList.remove('active');
+    document.getElementById('main-app').classList.add('active');
+    document.getElementById('logged-user-name').textContent = currentUser.name;
+
+    initializeApp();
+    navigateTo('dashboard');
+    showToast('Bem-vindo ao SIGP Saúde!', 'success');
   };
 }
 
-// ← DEPOIS DISSO, o DOMContentLoaded pode chamar a função tranquilamente
-document.addEventListener('DOMContentLoaded', function () {
+// 4. Inicialização do app (você já tem essa função em algum lugar – se não tiver, cole também)
+function initializeApp() {
+  updateHeaderUserInfo();
+  loadDashboardStats();
+  // ... resto do seu initializeApp original
+}
+
+function updateHeaderUserInfo() {
+  const el = document.getElementById('logged-user-name');
+  if (el && currentUser) el.textContent = currentUser.name || currentUser.login;
+}
+
+// =====================================================
+// DOM PRONTO – tudo acima já está definido
+// =====================================================
+document.addEventListener('DOMContentLoaded', () => {
   forcarInicializacaoV43();
   initializeTheme();
   document.getElementById('login-screen').classList.add('active');
   document.getElementById('main-app').classList.remove('active');
-  checkAuthentication();   // ← agora funciona!
+  checkAuthentication();
 });
