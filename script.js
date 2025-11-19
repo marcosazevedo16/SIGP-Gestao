@@ -6263,61 +6263,34 @@ function populateAllMunicipalitySelects() {
 }
 
 // =====================================================
-// FUNÇÃO DE MIGRAÇÃO v4.3 - VERSÃO FINAL 100% FUNCIONAL
+// MIGRAÇÃO FORÇADA v4.3 — FUNCIONA ATÉ NO PIOR NAVEGADOR
 // =====================================================
-function inicializarDadosV43() {
-  let usersAtuais = recuperarDoArmazenamento('users');
-
-  if (!usersAtuais || usersAtuais.length === 0) {
-    alert('Primeira inicialização detectada. Configurando SIGP Saúde v4.3 com segurança total...');
-    users = DADOS_PADRAO.users;
-    salvarNoArmazenamento('users', users);
-    console.log('Dados v4.3 criados do zero!');
+function forcarInicializacaoV43() {
+  console.log('Iniciando forçarInicializacaoV43...');
+  
+  // Se não tem users OU não tem o ADMIN com hash → força tudo
+  const dadosAtuais = localStorage.getItem('users');
+  if (!dadosAtuais || dadosAtuais === '[]' || !JSON.parse(dadosAtuais)[0]?.passwordHash) {
+    console.log('Dados antigos ou vazios detectados. Aplicando v4.3...');
+    
+    localStorage.setItem('users', JSON.stringify(DADOS_PADRAO.users));
+    console.log('ADMIN com hash salvo com sucesso!');
+    
+    alert('SIGP Saúde v4.3 ativado com segurança total!\n\nLogin: ADMIN\nSenha: saude2025\n\nVocê será obrigado a trocar a senha no primeiro acesso.');
   }
-  else if (usersAtuais[0] && !usersAtuais[0].salt) {
-    alert('Dados antigos detectados! Migrando automaticamente para v4.3 com segurança total...');
-    users = DADOS_PADRAO.users;
-    salvarNoArmazenamento('users', users);
-    console.log('Migração v4.3 concluída com sucesso!');
-  } else {
-    users = usersAtuais; // ← já está na v4.3
-  }
-
-  // FORÇA A VARIÁVEL GLOBAL FICAR ATUALIZADA SEMPRE (só uma vez, aqui dentro)
-  users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
-}
-// =====================================================
-// AVISO DE SEGURANÇA NO BACKUP (opcional, mas bonito)
-// =====================================================
-function createBackup() {
-  // Seu código original de backup aqui...
-  // (mantenha exatamente como estava)
-
-  // Só adiciona esta linha no final da função original:
-  showToast('Backup criado com sucesso! Dados protegidos com hash de segurança.', 'success');
-// === DEBUG TEMPORÁRIO PARA v4.3 ===
-console.log('DEBUG: Script carregado. Users:', users);
-console.log('DEBUG: CryptoJS disponível?', typeof CryptoJS !== 'undefined');
-console.log('DEBUG: DADOS_PADRAO.users[0]:', DADOS_PADRAO.users[0]);
-
-// Testa o login manualmente
-function testeLogin() {
-  console.log('DEBUG: Testando login...');
-  users = recuperarDoArmazenamento('users');
-  console.log('DEBUG: Users do localStorage:', users);
-  const admin = users.find(u => u.login === 'ADMIN');
-  console.log('DEBUG: Admin encontrado?', admin);
-  if (admin) {
-    const hashTeste = hashPassword('saude2025', admin.salt);
-    console.log('DEBUG: Hash gerado para saude2025:', hashTeste);
-    console.log('DEBUG: Hash esperado:', admin.passwordHash);
-    console.log('DEBUG: Match?', hashTeste === admin.passwordHash);
-  }
+  
+  // Força a variável global
+  users = JSON.parse(localStorage.getItem('users') || '[]');
+  console.log('Users carregados:', users);
 }
 
-// Chama o teste ao carregar
-document.addEventListener('DOMContentLoaded', function() {
-  testeLogin();
-  // ... resto do seu código ...
+// =====================================================
+// INICIALIZAÇÃO FINAL
+// =====================================================
+document.addEventListener('DOMContentLoaded', function () {
+  forcarInicializacaoV43();
+  initializeTheme();
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('main-app').classList.remove('active');
+  checkAuthentication();
 });
-}
