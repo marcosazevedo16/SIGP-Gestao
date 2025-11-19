@@ -6276,14 +6276,15 @@ function forcarInicializacaoV43() {
 }
 
 // =====================================================
-// INICIALIZAÇÃO FINAL (SIMPLIFICADA E SEM ERROS)
-// =====================================================
-// =====================================================
-// VERIFICA AUTENTICAÇÃO AO CARREGAR A PÁGINA
+// VERIFICA AUTENTICAÇÃO AO CARREGAR A PÁGINA (VERSÃO CORRIGIDA)
 // =====================================================
 function checkAuthentication() {
-  currentUser = recuperarDoArmazenamento('currentUser');
-  if (currentUser && isAuthenticated !== false) {
+  // PRIMEIRO: recupera do localStorage
+  const savedUser = recuperarDoArmazenamento('currentUser');
+  const savedAuth = recuperarDoArmazenamento('isAuthenticated'); // ← NOVO!
+
+  if (savedUser && savedAuth === true) {
+    currentUser = savedUser;
     isAuthenticated = true;
     document.getElementById('login-screen').classList.remove('active');
     document.getElementById('main-app').classList.add('active');
