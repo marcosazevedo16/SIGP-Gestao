@@ -78,9 +78,10 @@
                 <button class="btn btn--outline btn--sm" id="home-btn" onclick="navigateToHome()" title="Tela Inicial">
                     🏠 Tela Inicial
                 </button>
-                <button class="btn btn--outline btn--sm" id="theme-toggle" onclick="toggleTheme()" title="Alternar Tema">
-                    🌙 Tema
-                </button>
+             <button class="btn btn--outline btn--sm" id="theme-toggle" onclick="toggleTheme()" title="Alternar Tema">
+  <span id="theme-icon">🌙</span>
+</button>
+
                 <div class="settings-dropdown">
                     <button class="btn btn--outline btn--sm" id="settings-btn" onclick="toggleSettingsMenu()" title="Configurações">
                         ⚙️ Configurações
@@ -97,7 +98,7 @@
                         <button class="settings-menu-item" id="backup-menu-btn" style="display: none;" onclick="navigateToBackupManagement()">💾 Backup e Restauração</button>
                     </div>
                 </div>
-                <button class="btn btn--secondary btn--sm" onclick="handleLogout()">
+                <button class="btn btn--primary btn--sm" onclick="handleLogout()">Sair</button>
                     🚪 Sair
                 </button>
             </div>
