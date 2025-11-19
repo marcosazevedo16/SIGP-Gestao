@@ -6261,45 +6261,29 @@ function populateAllMunicipalitySelects() {
 }
 
 // =====================================================
-// FUNÇÃO DE MIGRAÇÃO v4.3 - VERSÃO 100% FUNCIONAL
+// FUNÇÃO DE MIGRAÇÃO v4.3 - VERSÃO FINAL 100% FUNCIONAL
 // =====================================================
 function inicializarDadosV43() {
-  // Força a leitura direta do localStorage (não depende da variável global ainda)
   let usersAtuais = recuperarDoArmazenamento('users');
 
-  // Se não existe ou está vazio → inicializa com os dados padrão v4.3
   if (!usersAtuais || usersAtuais.length === 0) {
     alert('Primeira inicialização detectada. Configurando SIGP Saúde v4.3 com segurança total...');
     users = DADOS_PADRAO.users;
     salvarNoArmazenamento('users', users);
     console.log('Dados v4.3 criados do zero!');
-    return;
   }
-
-  // Se existe, mas é versão antiga (sem salt) → migra automaticamente
-  if (usersAtuais[0] && !usersAtuais[0].salt) {
+  else if (usersAtuais[0] && !usersAtuais[0].salt) {
     alert('Dados antigos detectados! Migrando automaticamente para v4.3 com segurança total...');
-    users = DADOS_PADRAO.users;  // Força o ADMIN com hash + salt
+    users = DADOS_PADRAO.users;
     salvarNoArmazenamento('users', users);
     console.log('Migração v4.3 concluída com sucesso!');
   } else {
-    // Já está na v4.3 → só carrega normalmente
-    users = usersAtuais;
+    users = usersAtuais; // ← já está na v4.3
   }
+
+  // ESSA É A LINHA QUE FALTAVA (força a variável global ficar atualizada)
+  users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
 }
-
-// =====================================================
-// INICIALIZAÇÃO FINAL v4.3 (ORDEM PERFEITA)
-// =====================================================
-document.addEventListener('DOMContentLoaded', function () {
-  inicializarDadosV43();        // ← 1º: garante que users está seguro
-  initializeTheme();            // ← 2º: tema
-  // Mostra tela de login
-  document.getElementById('login-screen').classList.add('active');
-  document.getElementById('main-app').classList.remove('active');
-  checkAuthentication();        // ← 3º: agora sim, verifica login com segurança
-});
-
 // =====================================================
 // AVISO DE SEGURANÇA NO BACKUP (opcional, mas bonito)
 // =====================================================
