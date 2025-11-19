@@ -6396,6 +6396,79 @@ function updateHeaderUserInfo() {
   const el = document.getElementById('logged-user-name');
   if (el && currentUser) el.textContent = currentUser.name || currentUser.login;
 }
+// =====================================================
+// NAVEGAÇÃO, LOGOUT E FUNÇÕES FALTANTES (ADICIONE AQUI)
+// =====================================================
+
+// Função principal de navegação (usada por todos os botões do menu lateral)
+function navigateTo(page) {
+  // Esconde todas as seções
+  document.querySelectorAll('.app-section').forEach(sec => sec.classList.remove('active'));
+  
+  // Remove classe active dos botões do sidebar
+  document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('active'));
+
+  // Mostra a seção desejada
+  const section = document.getElementById(page + '-section');
+  if (section) section.classList.add('active');
+
+  // Marca o botão clicado como ativo
+  const btn = document.querySelector(`.sidebar-btn[onclick="navigateTo('${page}')"]`);
+  if (btn) btn.classList.add('active');
+
+  // Atualiza o título da página (opcional)
+  const titleEl = document.getElementById('page-title');
+  if (titleEl) titleEl.textContent = btn ? btn.textContent.trim() : 'SIGP Saúde';
+
+  console.log(`Navegado para: ${page}`);
+}
+
+// Função de logout (botão "Sair" no header)
+function logout() {
+  if (!confirm('Deseja realmente sair do sistema?')) return;
+
+  // Limpa autenticação
+  deletarDoArmazenamento('currentUser');
+  deletarDoArmazenamento('isAuthenticated');
+
+  currentUser = null;
+  isAuthenticated = false;
+
+  // Volta para tela de login
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('main-app').classList.remove('active');
+
+  // Limpa campos
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-error').textContent = '';
+
+  showToast('Você saiu do sistema', 'info');
+}
+
+// Expande o initializeApp para garantir que o dashboard abra na primeira vez
+function initializeApp() {
+  updateHeaderUserInfo();
+  navigateTo('dashboard'); // Garante que o dashboard carregue
+
+  // Se você tem gráficos ou estatísticas, chame aqui:
+  if (typeof loadDashboardStats === 'function') loadDashboardStats();
+  if (typeof loadMunicipiosTable === 'function') loadMunicipiosTable();
+  if (typeof loadTreinamentosTable === 'function') loadTreinamentosTable();
+
+  console.log('initializeApp() executado com sucesso');
+}
+
+// =====================================================
+// DOM PRONTO – tudo acima já está definido
+// =====================================================
+document.addEventListener('DOMContentLoaded', () => {
+  forcarInicializacaoV43();
+  initializeTheme();
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('main-app').classList.remove('active');
+  checkAuthentication();
+});
 
 // =====================================================
 // DOM PRONTO – tudo acima já está definido
