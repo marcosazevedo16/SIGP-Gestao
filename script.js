@@ -273,9 +273,6 @@ let productions = recuperarDoArmazenamento('productions', DADOS_PADRAO.productio
 let productionIdCounter = recuperarDoArmazenamento('productionIdCounter', 1);
 let editingProductionId = null;
 
-// Theme management
-let currentTheme = recuperarDoArmazenamento('currentTheme', 'light');
-
 // Data storage in memory
 let tasks = recuperarDoArmazenamento('tasks', DADOS_PADRAO.tasks);
 let editingTaskId = null;
