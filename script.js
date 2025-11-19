@@ -6339,10 +6339,31 @@ function forcarInicializacaoV43() {
 // =====================================================
 // INICIALIZAÇÃO FINAL (SIMPLIFICADA E SEM ERROS)
 // =====================================================
+// =====================================================
+// VERIFICA AUTENTICAÇÃO AO CARREGAR A PÁGINA
+// =====================================================
+function checkAuthentication() {
+  currentUser = recuperarDoArmazenamento('currentUser');
+  if (currentUser && isAuthenticated !== false) {
+    isAuthenticated = true;
+    document.getElementById('login-screen').classList.remove('active');
+    document.getElementById('main-app').classList.add('active');
+    document.getElementById('logged-user-name').textContent = currentUser.name || currentUser.login;
+    initializeApp();
+    navigateTo('dashboard');
+  } else {
+    isAuthenticated = false;
+    currentUser = null;
+    document.getElementById('login-screen').classList.add('active');
+    document.getElementById('main-app').classList.remove('active');
+  }
+}
+
+// ← DEPOIS DISSO, o DOMContentLoaded pode chamar a função tranquilamente
 document.addEventListener('DOMContentLoaded', function () {
-  forcarInicializacaoV43();  // Migração primeiro
-  initializeTheme();         // Tema
+  forcarInicializacaoV43();
+  initializeTheme();
   document.getElementById('login-screen').classList.add('active');
   document.getElementById('main-app').classList.remove('active');
-  checkAuthentication();     // Login por último
+  checkAuthentication();   // ← agora funciona!
 });
