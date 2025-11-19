@@ -341,6 +341,20 @@ function checkAuthentication() {
 // =====================================================
 function handleLogin(event) {
   event.preventDefault();
+    function handleLogin(event) {
+  event.preventDefault();
+  
+  // === DEBUG TEMPORÁRIO - APAGUE DEPOIS ===
+  console.log('DEBUG: Iniciando login...');
+  console.log('DEBUG: Username digitado:', document.getElementById('login-username').value);
+  console.log('DEBUG: Password digitado:', document.getElementById('login-password').value);
+  console.log('DEBUG: Users no momento:', users);
+  console.log('DEBUG: CryptoJS disponível?', typeof CryptoJS !== 'undefined');
+  // === FIM DEBUG ===
+  
+  const username = document.getElementById('login-username').value.toUpperCase().trim();
+  // ... resto da função exatamente como está ...
+}
   
   const username = document.getElementById('login-username').value.toUpperCase().trim();
   const password = document.getElementById('login-password').value;
