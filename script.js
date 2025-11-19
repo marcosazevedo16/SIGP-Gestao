@@ -21,6 +21,11 @@ function hashPassword(password, salt) {
     return CryptoJS.SHA256(salt + password).toString();
 }
 // =====================================================
+// TEMA CLARO/ESCURO - DECLARAÇÃO INICIAL
+// =====================================================
+let currentTheme = recuperarDoArmazenamento('theme', 'light');
+
+// =====================================================
 // DADOS PADRÃO v4.3
 
 // =====================================================
@@ -1532,30 +1537,31 @@ function showToast(message, type = 'success') {
 // Theme Functions
 
 function initializeTheme() {
-  const savedTheme = currentTheme;
-  applyTheme(savedTheme);
+  const savedTheme = recuperarDoArmazenamento('theme');
+  if (savedTheme) {
+    currentTheme = savedTheme;
+  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    currentTheme = 'dark';
+  }
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  updateThemeToggleButton(); // agora existe
 }
 
 function toggleTheme() {
   currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-  salvarNoArmazenamento('currentTheme', currentTheme);
-  applyTheme(currentTheme);
-  updateThemeButton();
-  updateCharts();
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  salvarNoArmazenamento('theme', currentTheme); // chave correta: 'theme'
+  updateThemeToggleButton(); // usa a função certa
   showToast(`Tema ${currentTheme === 'light' ? 'claro' : 'escuro'} ativado`, 'success');
 }
 
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-}
-
-function updateThemeButton() {
+// Função que estava faltando (o erro estava aqui!)
+function updateThemeToggleButton() {
   const btn = document.getElementById('theme-toggle');
   if (btn) {
-    btn.innerHTML = currentTheme === 'light' ? '🌙 Tema' : '☀️ Tema';
+    btn.innerHTML = currentTheme === 'light' ? 'Escuro' : 'Claro';
   }
 }
-
 // PDF Generation Functions
 
 async function generateTasksPDF() {
