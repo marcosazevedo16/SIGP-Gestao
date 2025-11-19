@@ -6295,4 +6295,29 @@ function createBackup() {
 
   // Só adiciona esta linha no final da função original:
   showToast('Backup criado com sucesso! Dados protegidos com hash de segurança.', 'success');
+// === DEBUG TEMPORÁRIO PARA v4.3 ===
+console.log('DEBUG: Script carregado. Users:', users);
+console.log('DEBUG: CryptoJS disponível?', typeof CryptoJS !== 'undefined');
+console.log('DEBUG: DADOS_PADRAO.users[0]:', DADOS_PADRAO.users[0]);
+
+// Testa o login manualmente
+function testeLogin() {
+  console.log('DEBUG: Testando login...');
+  users = recuperarDoArmazenamento('users');
+  console.log('DEBUG: Users do localStorage:', users);
+  const admin = users.find(u => u.login === 'ADMIN');
+  console.log('DEBUG: Admin encontrado?', admin);
+  if (admin) {
+    const hashTeste = hashPassword('saude2025', admin.salt);
+    console.log('DEBUG: Hash gerado para saude2025:', hashTeste);
+    console.log('DEBUG: Hash esperado:', admin.passwordHash);
+    console.log('DEBUG: Match?', hashTeste === admin.passwordHash);
+  }
+}
+
+// Chama o teste ao carregar
+document.addEventListener('DOMContentLoaded', function() {
+  testeLogin();
+  // ... resto do seu código ...
+});
 }
