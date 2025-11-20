@@ -1,291 +1,152 @@
-// =====================================================
-// SIGP SAÚDE v4.3 - VERSÃO FINAL 100% SEGURA
-// Marcos Azevedo - 18/11/2025
-// =====================================================
-
-// VERIFICAÇÃO DE SEGURANÇA: CryptoJS DEVE estar carregado
-if (typeof CryptoJS === 'undefined') {
-    console.error('❌ ERRO CRÍTICO: CryptoJS não foi carregado!');
-    alert('ERRO: Biblioteca de criptografia não carregada.');
-}
-
-// Configurações de segurança
-const SALT_LENGTH = 16;
-
-// Gera salt aleatório para cada usuário
-function generateSalt() {
-    return CryptoJS.lib.WordArray.random(SALT_LENGTH).toString();
-}
-// Hash da senha com salt (SHA-256)
-function hashPassword(password, salt) {
-    return CryptoJS.SHA256(salt + password).toString();
-}
-// =====================================================
-// TEMA CLARO/ESCURO - DECLARAÇÃO INICIAL
-// =====================================================
-let currentTheme = recuperarDoArmazenamento('theme', 'light');
-
-// =====================================================
-// DADOS PADRÃO v4.3
-
-// =====================================================
-// FUNÇÕES DE PERSISTÊNCIA EM LOCALSTORAGE
-// =====================================================
-
-function salvarNoArmazenamento(chave, dados) {
-  try {
-    const dadosJSON = JSON.stringify(dados);
-    localStorage.setItem(chave, dadosJSON);
-    console.log(`✓ Salvo: ${chave} (${dadosJSON.length} bytes)`);
-  } catch (erro) {
-    console.error(`✗ Erro ao salvar ${chave}:`, erro);
-    if (erro.name === 'QuotaExceededError') {
-      alert('Espaço de armazenamento cheio! Faça backup e limpe os dados antigos.');
-    }
-  }
-}
-
-function recuperarDoArmazenamento(chave, valorPadrao = null) {
-  try {
-    const dados = localStorage.getItem(chave);
-    if (dados) {
-      return JSON.parse(dados);
-    }
-    return valorPadrao;
-  } catch (erro) {
-    console.error(`✗ Erro ao recuperar ${chave}:`, erro);
-    return valorPadrao;
-  }
-}
-
-function deletarDoArmazenamento(chave) {
-  try {
-    localStorage.removeItem(chave);
-    console.log(`✓ Deletado: ${chave}`);
-  } catch (erro) {
-    console.error(`✗ Erro ao deletar ${chave}:`, erro);
-  }
-}
-
-function limparTodoArmazenamento() {
-  try {
-    localStorage.clear();
-    console.log('✓ Armazenamento local completamente limpo');
-  } catch (erro) {
-    console.error('✗ Erro ao limpar armazenamento:', erro);
-  }
-}
-
-function verificarArmazenamentoDisponivel() {
-  try {
-    const teste = '__teste__';
-    localStorage.setItem(teste, teste);
-    localStorage.removeItem(teste);
-    return true;
-  } catch (erro) {
-    console.error('localStorage não está disponível:', erro);
-    return false;
-  }
-
-// =====================================================
-// Função showToast - Mensagens Flutuantes
-// =====================================================
-function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.textContent = message;
-    const bgColor = type === 'success' ? '#10b981' : 
-                   type === 'error' ? '#ef4444' : '#3b82f6';
-    toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: ${bgColor};
-        color: white;
-        padding: 12px 20px;
-        border-radius: 6px;
-        z-index: 1000;
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-
-// =====================================================
-// DADOS PADRÃO v4.3 - SENHA HASHEADA
-// =====================================================
-
-const DADOS_PADRAO = {
-    users: [
-        {
-            id: 1,
-            login: 'ADMIN',
-
-      name: 'Administrador',
-      salt: 'f3a9c8e2d1b7m5n9p4q8r6t2v1x5y7z0',
-      passwordHash: 'c98f6b380e7fd8d5899fb3e46a84e3de7f47dff5ff2ebbf7ef0f0a3306d9eebd', // hash de "saude2025"
-      permission: 'Administrador',
-      status: 'Ativo',
-      mustChangePassword: true  // Força troca no primeiro login
-    }
-  ],
-  municipalitiesList: [
-    { id: 1, name: 'Belo Horizonte', uf: 'MG', createdAt: '2025-01-01' },
-    { id: 2, name: 'São Paulo', uf: 'SP', createdAt: '2025-01-01' }
-  ],
-  cargos: [
-    { id: 1, name: 'Recepcionista', description: '', createdAt: '2025-01-01' },
-    { id: 2, name: 'Agente Comunitário de Saúde', description: '', createdAt: '2025-01-01' },
-    { id: 3, name: 'Técnico(a)/Auxiliar de Enfermagem', description: '', createdAt: '2025-01-01' },
-    { id: 4, name: 'Enfermeiro(a)', description: '', createdAt: '2025-01-01' },
-    { id: 5, name: 'Médico(a)', description: '', createdAt: '2025-01-01' },
-    { id: 6, name: 'Dentista', description: '', createdAt: '2025-01-01' },
-    { id: 7, name: 'Técnico(a)/Auxiliar em Saúde Bucal', description: '', createdAt: '2025-01-01' },
-    { id: 8, name: 'Psicólogo(a)', description: '', createdAt: '2025-01-01' },
-    { id: 9, name: 'Nutricionista', description: '', createdAt: '2025-01-01' },
-    { id: 10, name: 'Secretário(a)', description: '', createdAt: '2025-01-01' },
-    { id: 11, name: 'Coordenador(a)', description: '', createdAt: '2025-01-01' },
-    { id: 12, name: 'Almoxarifado', description: '', createdAt: '2025-01-01' },
-    { id: 13, name: 'Laboratório', description: '', createdAt: '2025-01-01' },
-    { id: 14, name: 'Outros', description: '', createdAt: '2025-01-01' }
-  ],
-  orientadores: [
-    { id: 1, name: 'Alícia Lopes', contact: '', email: '', createdAt: '2025-01-01' },
-    { id: 2, name: 'Bruna Gomes', contact: '', email: '', createdAt: '2025-01-01' },
-    { id: 3, name: 'Filipe Gonçalves', contact: '', email: '', createdAt: '2025-01-01' },
-    { id: 4, name: 'Joey Alan', contact: '', email: '', createdAt: '2025-01-01' },
-    { id: 5, name: 'Marcos Azevedo', contact: '', email: '', createdAt: '2025-01-01' },
-    { id: 6, name: 'Wesley Lopes', contact: '', email: '', createdAt: '2025-01-01' }
-  ],
-  modulos: [
-    { id: 1, name: 'Cadastros', abbreviation: 'CAD', color: '#FF6B6B', createdAt: '2025-01-01' },
-    { id: 2, name: 'TFD', abbreviation: 'TFD', color: '#4ECDC4', createdAt: '2025-01-01' },
-    { id: 3, name: 'Prontuário eletrônico', abbreviation: 'PRO', color: '#45B7D1', createdAt: '2025-01-01' },
-    { id: 4, name: 'Administração', abbreviation: 'ADM', color: '#FFA07A', createdAt: '2025-01-01' },
-    { id: 5, name: 'Almoxarifado', abbreviation: 'ALM', color: '#98D8C8', createdAt: '2025-01-01' },
-    { id: 6, name: 'Laboratório', abbreviation: 'LAB', color: '#F7DC6F', createdAt: '2025-01-01' },
-    { id: 7, name: 'Gestor', abbreviation: 'GES', color: '#BB8FCE', createdAt: '2025-01-01' },
-    { id: 8, name: 'Painel Indicadores', abbreviation: 'PAI', color: '#85C1E2', createdAt: '2025-01-01' },
-    { id: 9, name: 'Pronto Atendimento', abbreviation: 'PRA', color: '#F8B88B', createdAt: '2025-01-01' },
-    { id: 10, name: 'Frotas', abbreviation: 'FRO', color: '#A9DFBF', createdAt: '2025-01-01' },
-    { id: 11, name: 'Regulação', abbreviation: 'REG', color: '#F5B041', createdAt: '2025-01-01' },
-    { id: 12, name: 'CAPS', abbreviation: 'CAP', color: '#D7BFCD', createdAt: '2025-01-01' }
-  ],
-  formasApresentacao: [
-    { id: 1, name: 'Presencial', createdAt: '2025-01-01' },
-    { id: 2, name: 'Via AnyDesk', createdAt: '2025-01-01' },
-    { id: 3, name: 'Via TeamViewer', createdAt: '2025-01-01' },
-    { id: 4, name: 'Ligação', createdAt: '2025-01-01' },
-    { id: 5, name: 'Google Meet', createdAt: '2025-01-01' },
-    { id: 6, name: 'Zoom', createdAt: '2025-01-01' }
-  ],
-  requests: [],
-  presentations: [],
-  demands: [],
-  visits: [],
-  productions: [],
-  tasks: [
-    {
-      id: 1,
-      dateRequested: '2025-10-25',
-      datePerformed: '2025-10-28',
-      municipality: 'Belo Horizonte - MG',
-      requestedBy: 'Maria',
-      performedBy: 'Marcos Azevedo',
-      trainedName: 'Ana Silva',
-      trainedPosition: 'Enfermeiro(a)',
-      contact: '(38) 99187-2144',
-      status: 'Concluído',
-      observations: 'Treinamento concluído com sucesso'
-    }
-  ],
-  municipalities: [
-    {
-      id: 1,
-      name: 'Exemplo de Município',
-      modules: ['Cadastros', 'TFD'],
-      manager: 'João Silva',
-      contact: '(31) 98765-4321',
-      implantationDate: '2023-01-15',
-      lastVisit: '2025-10-28',
-      status: 'Em uso',
-      stoppageDate: null
-    }
-  ]
-};
-// =====================================================
-// INICIALIZAR VARIÁVEIS COM LOCALSTORAGE
-// =====================================================
-
 // Authentication and Users
-let users = []; // deixa vazio por enquanto — vamos carregar só na hora certa
-let currentUser = recuperarDoArmazenamento('currentUser') || null;
-let isAuthenticated = !!currentUser;
+let users = [
+  {
+    id: 1,
+    login: 'ADMIN',
+    name: 'Administrador',
+    password: 'saude2025',
+    permission: 'Administrador',
+    status: 'Ativo'
+  }
+];
+let currentUser = null;
+let isAuthenticated = false;
 let editingUserId = null;
-let userIdCounter = recuperarDoArmazenamento('userIdCounter', 2);
-let sortedList = [];
+let userIdCounter = 2;
 
 // Municipalities List (Master) data
-let municipalitiesList = recuperarDoArmazenamento('municipalitiesList', DADOS_PADRAO.municipalitiesList);
-let municipalitiesListIdCounter = recuperarDoArmazenamento('municipalitiesListIdCounter', 3);
+let municipalitiesList = [
+  { id: 1, name: 'Belo Horizonte', uf: 'MG', createdAt: '2025-01-01' },
+  { id: 2, name: 'São Paulo', uf: 'SP', createdAt: '2025-01-01' }
+];
+let municipalitiesListIdCounter = 3;
 let editingMunicipalityListId = null;
 
 // Cargos/Funções data
-let cargos = recuperarDoArmazenamento('cargos', DADOS_PADRAO.cargos);
-let cargoIdCounter = recuperarDoArmazenamento('cargoIdCounter', 15);
+let cargos = [
+  { id: 1, name: 'Recepcionista', description: '', createdAt: '2025-01-01' },
+  { id: 2, name: 'Agente Comunitário de Saúde', description: '', createdAt: '2025-01-01' },
+  { id: 3, name: 'Técnico(a)/Auxiliar de Enfermagem', description: '', createdAt: '2025-01-01' },
+  { id: 4, name: 'Enfermeiro(a)', description: '', createdAt: '2025-01-01' },
+  { id: 5, name: 'Médico(a)', description: '', createdAt: '2025-01-01' },
+  { id: 6, name: 'Dentista', description: '', createdAt: '2025-01-01' },
+  { id: 7, name: 'Técnico(a)/Auxiliar em Saúde Bucal', description: '', createdAt: '2025-01-01' },
+  { id: 8, name: 'Psicólogo(a)', description: '', createdAt: '2025-01-01' },
+  { id: 9, name: 'Nutricionista', description: '', createdAt: '2025-01-01' },
+  { id: 10, name: 'Secretário(a)', description: '', createdAt: '2025-01-01' },
+  { id: 11, name: 'Coordenador(a)', description: '', createdAt: '2025-01-01' },
+  { id: 12, name: 'Almoxarifado', description: '', createdAt: '2025-01-01' },
+  { id: 13, name: 'Laboratório', description: '', createdAt: '2025-01-01' },
+  { id: 14, name: 'Outros', description: '', createdAt: '2025-01-01' }
+];
+let cargoIdCounter = 15;
 let editingCargoId = null;
 
 // Orientadores data
-let orientadores = recuperarDoArmazenamento('orientadores', DADOS_PADRAO.orientadores);
-let orientadorIdCounter = recuperarDoArmazenamento('orientadorIdCounter', 7);
+let orientadores = [
+  { id: 1, name: 'Alícia Lopes', contact: '', email: '', createdAt: '2025-01-01' },
+  { id: 2, name: 'Bruna Gomes', contact: '', email: '', createdAt: '2025-01-01' },
+  { id: 3, name: 'Filipe Gonçalves', contact: '', email: '', createdAt: '2025-01-01' },
+  { id: 4, name: 'Joey Alan', contact: '', email: '', createdAt: '2025-01-01' },
+  { id: 5, name: 'Marcos Azevedo', contact: '', email: '', createdAt: '2025-01-01' },
+  { id: 6, name: 'Wesley Lopes', contact: '', email: '', createdAt: '2025-01-01' }
+];
+let orientadorIdCounter = 7;
 let editingOrientadorId = null;
 
-// Módulos data (typo corrigido)
-let modulos = recuperarDoArmazenamento('modulos', DADOS_PADRAO.modulos);
-let moduloIdCounter = recuperarDoArmazenamento('moduloIdCounter', 13);
-let editingModuloId = null;  // ← CORRIGIDO: era "editoingModuloId"
+// Módulos data com cores individuais
+let modulos = [
+  { id: 1, name: 'Cadastros', abbreviation: 'CAD', color: '#FF6B6B', createdAt: '2025-01-01' },
+  { id: 2, name: 'TFD', abbreviation: 'TFD', color: '#4ECDC4', createdAt: '2025-01-01' },
+  { id: 3, name: 'Prontuário eletrônico', abbreviation: 'PRO', color: '#45B7D1', createdAt: '2025-01-01' },
+  { id: 4, name: 'Administração', abbreviation: 'ADM', color: '#FFA07A', createdAt: '2025-01-01' },
+  { id: 5, name: 'Almoxarifado', abbreviation: 'ALM', color: '#98D8C8', createdAt: '2025-01-01' },
+  { id: 6, name: 'Laboratório', abbreviation: 'LAB', color: '#F7DC6F', createdAt: '2025-01-01' },
+  { id: 7, name: 'Gestor', abbreviation: 'GES', color: '#BB8FCE', createdAt: '2025-01-01' },
+  { id: 8, name: 'Painel Indicadores', abbreviation: 'PAI', color: '#85C1E2', createdAt: '2025-01-01' },
+  { id: 9, name: 'Pronto Atendimento', abbreviation: 'PRA', color: '#F8B88B', createdAt: '2025-01-01' },
+  { id: 10, name: 'Frotas', abbreviation: 'FRO', color: '#A9DFBF', createdAt: '2025-01-01' },
+  { id: 11, name: 'Regulação', abbreviation: 'REG', color: '#F5B041', createdAt: '2025-01-01' },
+  { id: 12, name: 'CAPS', abbreviation: 'CAP', color: '#D7BFCD', createdAt: '2025-01-01' }
+];
+let moduloIdCounter = 13;
+let editingModuloId = null;
 
 // Formas de Apresentação data
-let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', DADOS_PADRAO.formasApresentacao);
-let formaApresentacaoIdCounter = recuperarDoArmazenamento('formaApresentacaoIdCounter', 7);
+let formasApresentacao = [
+  { id: 1, name: 'Presencial', createdAt: '2025-01-01' },
+  { id: 2, name: 'Via AnyDesk', createdAt: '2025-01-01' },
+  { id: 3, name: 'Via TeamViewer', createdAt: '2025-01-01' },
+  { id: 4, name: 'Ligação', createdAt: '2025-01-01' },
+  { id: 5, name: 'Google Meet', createdAt: '2025-01-01' },
+  { id: 6, name: 'Zoom', createdAt: '2025-01-01' }
+];
+let formaApresentacaoIdCounter = 7;
 let editingFormaApresentacaoId = null;
-    
-// =====================================================
-// TEMA CLARO/ESCURO
-// =====================================================
-let currentTheme = recuperarDoArmazenamento('theme', 'light');
 
 // Solicitações/Sugestões data
-let requests = recuperarDoArmazenamento('requests', DADOS_PADRAO.requests);
-let requestIdCounter = recuperarDoArmazenamento('requestIdCounter', 1);
+let requests = [];
+let requestIdCounter = 1;
 let editingRequestId = null;
 
 // Apresentações data
-let presentations = recuperarDoArmazenamento('presentations', DADOS_PADRAO.presentations);
-let presentationIdCounter = recuperarDoArmazenamento('presentationIdCounter', 1);
+let presentations = [];
+let presentationIdCounter = 1;
 let editingPresentationId = null;
 
 // Demandas data
-let demands = recuperarDoArmazenamento('demands', DADOS_PADRAO.demands);
-let demandIdCounter = recuperarDoArmazenamento('demandIdCounter', 1);
+let demands = [];
+let demandIdCounter = 1;
 let editingDemandId = null;
 
 // Visitas data
-let visits = recuperarDoArmazenamento('visits', DADOS_PADRAO.visits);
-let visitIdCounter = recuperarDoArmazenamento('visitIdCounter', 1);
+let visits = [];
+let visitIdCounter = 1;
 let editingVisitId = null;
 
 // Produção data
-let productions = recuperarDoArmazenamento('productions', DADOS_PADRAO.productions);
-let productionIdCounter = recuperarDoArmazenamento('productionIdCounter', 1);
+let productions = [];
+let productionIdCounter = 1;
 let editingProductionId = null;
 
-// Data storage in memory
-let tasks = recuperarDoArmazenamento('tasks', DADOS_PADRAO.tasks);
-let editingTaskId = null;
-let taskIdCounter = recuperarDoArmazenamento('taskIdCounter', 2);
+// Theme management
+let currentTheme = 'light';
 
-let municipalities = recuperarDoArmazenamento('municipalities', DADOS_PADRAO.municipalities);
+// Data storage in memory
+let tasks = [
+  {
+    id: 1,
+    dateRequested: '2025-10-25',
+    datePerformed: '2025-10-28',
+    municipality: 'Belo Horizonte - MG',
+    requestedBy: 'Maria',
+    performedBy: 'Marcos Azevedo',
+    trainedName: 'Ana Silva',
+    trainedPosition: 'Enfermeiro(a)',
+    contact: '(38) 99187-2144',
+    status: 'Concluído',
+    observations: 'Treinamento concluído com sucesso'
+  }
+];
+
+let municipalities = [
+  {
+    id: 1,
+    name: 'Exemplo de Município',
+    modules: ['Cadastros', 'TFD'],
+    manager: 'João Silva',
+    contact: '(31) 98765-4321',
+    implantationDate: '2023-01-15',
+    lastVisit: '2025-10-28',
+    status: 'Em uso',
+    stoppageDate: null
+  }
+];
+
+let editingTaskId = null;
 let editingMunicipalityId = null;
-let municipalityIdCounter = recuperarDoArmazenamento('municipalityIdCounter', 2);
+let taskIdCounter = 2;
+let municipalityIdCounter = 2;
 
 // Module abbreviations map - dynamically built from modulos
 function getModuleAbbreviations() {
@@ -324,163 +185,30 @@ let productionFrequencyChart = null;
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
   initializeTheme();
-
-  // Set initial state: show login screen
-  document.getElementById('login-screen').classList.add('active');
-  document.getElementById('main-app').classList.remove('active');
-
   checkAuthentication();
+  
+  // Initialize modal event listeners
+  const presentationModal = document.getElementById('presentation-modal');
+  if (presentationModal) {
+    presentationModal.addEventListener('click', function(e) {
+      if (e.target === presentationModal) {
+        closePresentationModal();
+      }
+    });
+  }
 });
 
 function checkAuthentication() {
   if (!isAuthenticated) {
-    document.getElementById('login-screen').classList.add('active');
-    document.getElementById('main-app').classList.remove('active');
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('main-app').style.display = 'none';
   } else {
-    document.getElementById('login-screen').classList.remove('active');
-    document.getElementById('main-app').classList.add('active');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
     initializeApp();
   }
 }
 
-function handleLogout() {
-  if (confirm('Tem certeza que deseja sair?')) {
-    isAuthenticated = false;
-    currentUser = null;
-    deletarDoArmazenamento('currentUser');
-    checkAuthentication();
-    showToast('Desconectado com sucesso!', 'success');
-  }
-}
-
-// TROCA DE SENHA SEGURA v4.3
-function showChangePasswordModal() {
-  document.getElementById('change-password-modal').classList.add('show');
-  document.getElementById('change-password-form').reset();
-  document.getElementById('change-password-error').textContent = '';
-}
-
-function closeChangePasswordModal() {
-  document.getElementById('change-password-modal').classList.remove('show');
-}
-
-function handleChangePassword(event) {
-  event.preventDefault();
-  const currentPwd = document.getElementById('current-password').value;
-  const newPwd = document.getElementById('new-password').value;
-  const confirmPwd = document.getElementById('confirm-password').value;
-  const errorDiv = document.getElementById('change-password-error');
-
-  if (!currentUser) {
-    errorDiv.textContent = 'Erro: usuário não autenticado.';
-    return;
-  }
-  
-  if (!currentPwd || !newPwd || !confirmPwd) {
-    errorDiv.textContent = 'Todos os campos são obrigatórios.';
-    return;
-}
-
-  // Verificação com hash atual
-  const currentHash = hashPassword(currentPwd, currentUser.salt);
-  if (currentHash !== currentUser.passwordHash) {
-    errorDiv.textContent = 'Senha atual incorreta.';
-    return;
-  }
-
-  if (newPwd.length < 6) {
-    errorDiv.textContent = 'A nova senha deve ter pelo menos 6 caracteres.';
-    return;
-  }
-
-  if (newPwd !== confirmPwd) {
-    errorDiv.textContent = 'As senhas não coincidem.';
-    return;
-  }
-  // Update user password
-  currentUser.password = newPwd;
-  const userIndex = users.findIndex(u => u.id === currentUser.id);
-  if (userIndex !== -1) {
-    users[userIndex].password = newPwd;
-    salvarNoArmazenamento('users', users);
-  }
-  
-  closeChangePasswordModal();
-  showToast('Senha alterada com sucesso!', 'success');
-}
-
-  // Gera novo salt e hash
-  currentUser.salt = generateSalt();
-  currentUser.passwordHash = hashPassword(newPwd, currentUser.salt);
-  currentUser.mustChangePassword = false;
-
-  // Atualiza array e salva
-  const userIndex = users.findIndex(u => u.id === currentUser.id);
-  if (userIndex !== -1) {
-    users[userIndex] = currentUser;
-    salvarNoArmazenamento('users', users);
-  }
-  salvarNoArmazenamento('currentUser', currentUser);
-  closeChangePasswordModal();
-  showToast('Senha alterada com sucesso!', 'success');
-
-// =====================================================
-// CRIAÇÃO/EDIÇÃO DE USUÁRIO COM HASH v4.3
-// =====================================================
-function saveUser(event) {
-  event.preventDefault();
-  const errorDiv = document.getElementById('user-error');
-
-  const userData = {
-    login: document.getElementById('user-login').value.trim().toUpperCase(),
-    name: document.getElementById('user-name').value.trim(),
-    password: document.getElementById('user-password').value,
-    permission: document.getElementById('user-permission').value,
-    status: document.getElementById('user-status').value
-  };
-
-  // Validate login uniqueness for new users (case-insensitive)
-  if (!editingUserId) {
-    const loginExists = users.some(u => u.login.toUpperCase() === userData.login);
-    if (loginExists) {
-      errorDiv.textContent = 'Este login já está em uso. Escolha outro.';
-      return;
-    }
-  }
-
-  // Gera salt e hash para nova senha
-  const salt = generateSalt();
-  const passwordHash = hashPassword(userData.password, salt);
-
-  const fullUserData = {
-    ...userData,
-    salt,
-    passwordHash,
-    mustChangePassword: editingUserId ? false : true  // Novos usuários devem trocar senha
-  };
-
-  if (editingUserId) {
-    const index = users.findIndex(u => u.id === editingUserId);
-    users[index] = { ...users[index], ...fullUserData };
-
-    // Update currentUser if editing themselves
-    if (currentUser && currentUser.id === editingUserId) {
-      currentUser = users[index];
-      updateUserInterface();
-    }
-
-    showToast('Usuário atualizado com sucesso!', 'success');
-  } else {
-    users.push({ id: userIdCounter++, ...fullUserData });
-    showToast('Usuário criado com sucesso!', 'success');
-  }
-
-  closeUserModal();
-  renderUsers();
-  updateUserStats();
-  salvarNoArmazenamento('users', users);
-  salvarNoArmazenamento('userIdCounter', userIdCounter);
-}
 function initializeApp() {
   updateUserInterface();
   initializeTabs();
@@ -491,27 +219,6 @@ function initializeApp() {
   updateMunicipalityStats();
   updateUserStats();
   initializeCharts();
-    // ADICIONE estas linhas DEPOIS de initializeCharts():
-if (typeof initializeDashboardCharts === 'function') {
-  initializeDashboardCharts();
-}
-
-if (typeof initializeDemandCharts === 'function') {
-  initializeDemandCharts();
-}
-
-if (typeof initializeVisitCharts === 'function') {
-  initializeVisitCharts();
-}
-
-if (typeof initializeProductionCharts === 'function') {
-  initializeProductionCharts();
-}
-
-if (typeof initializePresentationCharts === 'function') {
-  initializePresentationCharts();
-}
-
   initializeFilters();
   updateThemeButton();
   updateCargoDropdowns();
@@ -520,7 +227,6 @@ if (typeof initializePresentationCharts === 'function') {
   updateMunicipalityListDropdowns();
   updateFormaApresentacaoCheckboxes();
   updateRequestMunicipalityDropdowns(sortedList);
-  populateAllMunicipalitySelects();
   updatePresentationDropdowns();
   initializeRequestCharts();
   initializePresentationCharts();
@@ -559,18 +265,99 @@ function updateUserInterface() {
   if (backupManagementBtn) backupManagementBtn.style.display = isNormalUser ? 'flex' : 'none';
   if (adminDivider) adminDivider.style.display = isAdmin ? 'block' : 'none';
 }
+
+function handleLogin(event) {
+  event.preventDefault();
+  const username = document.getElementById('login-username').value.toUpperCase();
+  const password = document.getElementById('login-password').value;
+  const errorDiv = document.getElementById('login-error');
   
-  // Login successful
+  // Find user by login (case-insensitive)
+  const user = users.find(u => u.login.toUpperCase() === username);
+  
+  if (!user) {
+    errorDiv.textContent = 'Login não encontrado.';
+    return;
+  }
+  
+  if (user.status === 'Inativo') {
+    errorDiv.textContent = 'Usuário inativo. Entre em contato com o administrador.';
+    return;
+  }
+  
+  if (user.password !== password) {
+    errorDiv.textContent = 'Senha incorreta.';
+    return;
+  }
+  
+  // Login successful - CORREÇÃO: Properly show main app
   currentUser = user;
   isAuthenticated = true;
   errorDiv.textContent = '';
   document.getElementById('login-username').value = '';
   document.getElementById('login-password').value = '';
-  checkAuthentication();
+  
+  // Hide login, show main app
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  
+  initializeApp();
+}
+
+function handleLogout() {
+  if (confirm('Tem certeza que deseja sair?')) {
+    isAuthenticated = false;
+    currentUser = null;
+    checkAuthentication();
+  }
+}
+
+function showChangePasswordModal() {
+  document.getElementById('change-password-modal').classList.add('show');
+  document.getElementById('change-password-form').reset();
+  document.getElementById('change-password-error').textContent = '';
 }
 
 function closeChangePasswordModal() {
   document.getElementById('change-password-modal').classList.remove('show');
+}
+
+function handleChangePassword(event) {
+  event.preventDefault();
+  const currentPwd = document.getElementById('current-password').value;
+  const newPwd = document.getElementById('new-password').value;
+  const confirmPwd = document.getElementById('confirm-password').value;
+  const errorDiv = document.getElementById('change-password-error');
+  
+  if (!currentUser) {
+    errorDiv.textContent = 'Erro: usuário não autenticado.';
+    return;
+  }
+  
+  if (currentPwd !== currentUser.password) {
+    errorDiv.textContent = 'Senha atual incorreta.';
+    return;
+  }
+  
+  if (newPwd.length < 4) {
+    errorDiv.textContent = 'A nova senha deve ter pelo menos 4 caracteres.';
+    return;
+  }
+  
+  if (newPwd !== confirmPwd) {
+    errorDiv.textContent = 'As senhas não coincidem.';
+    return;
+  }
+  
+  // Update user password
+  currentUser.password = newPwd;
+  const userIndex = users.findIndex(u => u.id === currentUser.id);
+  if (userIndex !== -1) {
+    users[userIndex].password = newPwd;
+  }
+  
+  closeChangePasswordModal();
+  showToast('Senha alterada com sucesso!', 'success');
 }
 
 // Tab navigation
@@ -647,13 +434,29 @@ function navigateToUserManagement() {
   updateUserStats();
   renderRequests();
   updateRequestStats();
-  updateRequestCharts();
   renderPresentations();
   updatePresentationStats();
-  updatePresentationCharts();
   initializeRequestFilters();
   initializePresentationFilters();
   updateDashboardStats();
+  
+  // Initialize all charts after data is loaded
+  setTimeout(() => {
+    if (typeof Chart !== 'undefined') {
+      initializeRequestCharts();
+      initializePresentationCharts();
+      initializeDemandCharts();
+      initializeVisitCharts();
+      initializeProductionCharts();
+      initializeDashboardCharts();
+      updateRequestCharts();
+      updatePresentationCharts();
+      updateDemandCharts();
+      updateVisitCharts();
+      updateProductionCharts();
+      updateCharts();
+    }
+  }, 200);
   
   console.log('Sistema inicializado com sucesso');
   console.log('Total de módulos:', modulos.length);
@@ -763,12 +566,9 @@ function saveTask(event) {
   if (editingTaskId) {
     const index = tasks.findIndex(t => t.id === editingTaskId);
     tasks[index] = { ...tasks[index], ...taskData };
-    salvarNoArmazenamento('tasks', tasks);
     showToast('Treinamento atualizado com sucesso!', 'success');
   } else {
     tasks.push({ id: taskIdCounter++, ...taskData });
-    salvarNoArmazenamento('tasks', tasks);
-    salvarNoArmazenamento('taskIdCounter', taskIdCounter);
     showToast('Treinamento criado com sucesso!', 'success');
   }
   
@@ -781,7 +581,6 @@ function saveTask(event) {
 function deleteTask(taskId) {
   if (confirm('Tem certeza que deseja excluir este treinamento?')) {
     tasks = tasks.filter(t => t.id !== taskId);
-    salvarNoArmazenamento('tasks', tasks);
     renderTasks();
     updateTaskStats();
     updateDashboardStats();
@@ -881,7 +680,7 @@ function renderTasks() {
             <td>
               <div class="task-actions-compact">
                 <button class="task-action-btn edit" onclick="showTaskModal(${task.id})" title="Editar">
-                 ✏️
+                  ✏️
                 </button>
                 <button class="task-action-btn delete" onclick="deleteTask(${task.id})" title="Excluir">
                   🗑️
@@ -1014,10 +813,6 @@ function saveMunicipality(event) {
     municipalities.push({ id: municipalityIdCounter++, ...municipalityData });
     showToast('Município criado com sucesso!', 'success');
   }
-    // === CORREÇÃO: ATUALIZA TODOS OS SELECTS DE MUNICÍPIO ===
-  updateSortedList();
-  populateAllMunicipalitySelects();
-  // ======================================================
   
   closeMunicipalityModal();
   renderMunicipalities();
@@ -1497,31 +1292,29 @@ function showToast(message, type = 'success') {
 // Theme Functions
 
 function initializeTheme() {
-  const savedTheme = recuperarDoArmazenamento('theme');
-  if (savedTheme) {
-    currentTheme = savedTheme;
-  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    currentTheme = 'dark';
-  }
-  document.documentElement.setAttribute('data-theme', currentTheme);
-  updateThemeToggleButton(); // agora existe
+  const savedTheme = currentTheme;
+  applyTheme(savedTheme);
 }
 
 function toggleTheme() {
   currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', currentTheme);
-  salvarNoArmazenamento('theme', currentTheme); // chave correta: 'theme'
-  updateThemeToggleButton(); // usa a função certa
+  applyTheme(currentTheme);
+  updateThemeButton();
+  updateCharts();
   showToast(`Tema ${currentTheme === 'light' ? 'claro' : 'escuro'} ativado`, 'success');
 }
 
-// Função que estava faltando (o erro estava aqui!)
-function updateThemeToggleButton() {
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+}
+
+function updateThemeButton() {
   const btn = document.getElementById('theme-toggle');
   if (btn) {
-    btn.innerHTML = currentTheme === 'light' ? 'Escuro' : 'Claro';
+    btn.innerHTML = currentTheme === 'light' ? '🌙 Tema' : '☀️ Tema';
   }
 }
+
 // PDF Generation Functions
 
 async function generateTasksPDF() {
@@ -1935,9 +1728,6 @@ function initializeFilters() {
     const requestModal = document.getElementById('request-modal');
     const presentationModal = document.getElementById('presentation-modal');
     const formaApresentacaoModal = document.getElementById('forma-apresentacao-modal');
-    const demandModal = document.getElementById('demand-modal');
-    const visitModal = document.getElementById('visit-modal');
-    const productionModal = document.getElementById('production-modal');
     
     if (event.target === requestModal) {
       closeRequestModal();
@@ -1947,15 +1737,6 @@ function initializeFilters() {
     }
     if (event.target === formaApresentacaoModal) {
       closeFormaApresentacaoModal();
-    }
-    if (event.target === demandModal) {
-      closeDemandModal();
-    }
-    if (event.target === visitModal) {
-      closeVisitModal();
-    }
-    if (event.target === productionModal) {
-      closeProductionModal();
     }
   });
 }
@@ -4462,7 +4243,7 @@ function showPresentationModal(presentationId = null) {
     return;
   }
   
-  // Explicitly show modal
+  // Reset modal display
   modal.style.display = 'flex';
   
   form.reset();
@@ -4509,19 +4290,17 @@ function showPresentationModal(presentationId = null) {
   
   handlePresentationStatusChange();
   modal.classList.add('show');
-  modal.style.display = 'flex';
 }
 
 function closePresentationModal() {
   const modal = document.getElementById('presentation-modal');
   if (modal) {
     modal.classList.remove('show');
-    modal.style.display = 'none';
   }
   editingPresentationId = null;
 }
 
-// CORREÇÃO: Add missing editPresentation function
+// CORREÇÃO: Add editPresentation function (was missing)
 function editPresentation(presentationId) {
   showPresentationModal(presentationId);
 }
@@ -5118,14 +4897,19 @@ function initializeDashboardCharts() {
   const ctx = document.getElementById('implantationsYearChart');
   if (!ctx) return;
   
+  // CORREÇÃO 1: Dados fixos conforme especificação
+  const years = ['2016', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'];
+  const counts = [1, 9, 6, 0, 8, 5, 3, 1, 3];
+  const colors = ['#17A2B8', '#FFA500', '#DC3545', '#F5DEB3', '#708090', '#FF6B6B', '#FFD700', '#8B4513', '#9932CC'];
+  
   implantationsYearChart = new Chart(ctx.getContext('2d'), {
     type: 'bar',
     data: {
-      labels: [],
+      labels: years,
       datasets: [{
-        label: 'Implantações',
-        data: [],
-        backgroundColor: ['#1FB8CD', '#FFC185', '#B4413C', '#ECEBD5', '#5D878F', '#DB4545', '#D2BA4C', '#964325', '#944454', '#13343B'],
+        label: 'Quantidade de Municípios',
+        data: counts,
+        backgroundColor: colors,
         borderColor: '#ffffff',
         borderWidth: 1
       }]
@@ -5146,45 +4930,26 @@ function initializeDashboardCharts() {
           beginAtZero: true,
           ticks: {
             stepSize: 1
+          },
+          title: {
+            display: true,
+            text: 'Quantidade de Municípios'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Ano'
           }
         }
       }
     }
   });
-  
-  updateDashboardCharts();
 }
 
 function updateDashboardCharts() {
-  if (!implantationsYearChart) return;
-  
-  // Filter municipalities: Em uso, Bloqueado, Parou de utilizar (exclude Não Implantado)
-  const validStatuses = ['Em uso', 'Bloqueado', 'Parou de usar'];
-  const validMunicipalities = municipalities.filter(m => 
-    validStatuses.includes(m.status) && m.implantationDate
-  );
-  
-  // Group by year
-  const yearCounts = {};
-  validMunicipalities.forEach(m => {
-    const year = new Date(m.implantationDate).getFullYear();
-    if (!isNaN(year)) {
-      yearCounts[year] = (yearCounts[year] || 0) + 1;
-    }
-  });
-  
-  // Sort years
-  const sortedYears = Object.keys(yearCounts).sort();
-  const counts = sortedYears.map(year => yearCounts[year]);
-  
-  // Generate colors
-  const colors = ['#1FB8CD', '#FFC185', '#B4413C', '#ECEBD5', '#5D878F', '#DB4545', '#D2BA4C', '#964325', '#944454', '#13343B'];
-  const barColors = sortedYears.map((_, index) => colors[index % colors.length]);
-  
-  implantationsYearChart.data.labels = sortedYears;
-  implantationsYearChart.data.datasets[0].data = counts;
-  implantationsYearChart.data.datasets[0].backgroundColor = barColors;
-  implantationsYearChart.update();
+  // CORREÇÃO: Gráfico usa dados fixos, não precisa atualizar
+  // Mantido para compatibilidade
 }
 
 // Demandas do Suporte Functions
@@ -5533,15 +5298,7 @@ function showVisitModal(visitId = null) {
   const form = document.getElementById('visit-form');
   const title = document.getElementById('visit-modal-title');
   
-  form.reset();// Garantia de carregamento
-if (municipalitiesList.length === 0) {
-  showToast('Carregando municípios...', 'info');
-  setTimeout(() => populateMunicipalitySelect('visit-municipality'), 100);
-} else {
-  populateMunicipalitySelect('visit-municipality');
-}
-  updateAllMunicipalityDropdowns(); // ← ADICIONE
-  populateMunicipalitySelect('visit-municipality');
+  form.reset();
   editingVisitId = visitId;
   
   if (visitId) {
@@ -5560,7 +5317,6 @@ if (municipalitiesList.length === 0) {
     title.textContent = 'Nova Solicitação de Visita';
     document.getElementById('visit-status').value = 'Pendente';
   }
-  populateMunicipalitySelect('visit-municipality');
   
   handleVisitStatusChange();
   modal.classList.add('show');
@@ -5880,14 +5636,6 @@ function showProductionModal(productionId = null) {
   const title = document.getElementById('production-modal-title');
   
   form.reset();
-  if (municipalitiesList.length === 0) {
-  showToast('Carregando municípios...', 'info');
-  setTimeout(() => populateMunicipalitySelect('production-municipality'), 100);
-} else {
-  populateMunicipalitySelect('production-municipality');
-}
-  updateAllMunicipalityDropdowns(); // ← ADICIONE
-  populateMunicipalitySelect('production-municipality');
   editingProductionId = productionId;
   
   if (productionId) {
@@ -6127,7 +5875,7 @@ function initializeProductionCharts() {
     data: {
       labels: ['Enviada', 'Pendente', 'Cancelada'],
       datasets: [{
-        data: [0, 1, 0],
+        data: [0, 0, 0],
         backgroundColor: ['#45B7D1', '#FFA07A', '#FF6B6B']
       }]
     },
@@ -6201,345 +5949,4 @@ function rowDataToTask(rowData) {
     status: rowData.status,
     observations: rowData.observations || ''
   };
-}
-
-function populateMunicipalitySelect(selectId) {
-  const select = document.getElementById(selectId);
-  if (!select) return;
-
-  // Limpa opções antigas
-  select.innerHTML = '<option value="">Selecione um município</option>';
-
-  // Ordena municípios por nome
-  const sortedMuns = [...municipalitiesList].sort((a, b) => a.name.localeCompare(b.name));
-
-  // Preenche com dados reais
-  sortedMuns.forEach(mun => {
-    const option = document.createElement('option');
-    option.value = mun.name;
-    option.textContent = `${mun.name} - ${mun.uf || ''}`.trim();
-    select.appendChild(option);
-  });
-}
-
-function updateSortedList() {
-  sortedList = municipalitiesList
-    ? [...municipalitiesList].sort((a, b) => a.name.localeCompare(b.name))
-    : [];
-  console.log('sortedList atualizada:', sortedList);
-}
-function populateAllMunicipalitySelects() {
-  const selectIds = [
-    'visit-municipality',
-    'production-municipality',
-    'training-municipality',
-    'demand-municipality'
-    // adicione outros se tiver
-  ];
-
-  selectIds.forEach(id => {
-    populateMunicipalitySelect(id);
-  });
-
-  console.log('Todos os selects de município foram atualizados!');
-}
-
-// =====================================================
-// MIGRAÇÃO v4.3 — VERSÃO FINAL SEM ERROS DE REFERÊNCIA
-// =====================================================
-function forcarInicializacaoV43() {
-  console.log('Iniciando migração v4.3...');
-
-  // Define a constante LOCALMENTE na função (evita erro de "not defined")
-  const DADOS_PADRAO_LOCAL = {
-    users: [
-      {
-        id: 1,
-        login: 'ADMIN',
-        name: 'Administrador',
-        salt: 'f3a9c8e2d1b7m5n9p4q8r6t2v1x5y7z0',
-        passwordHash: 'c98f6b380e7fd8d5899fb3e46a84e3de7f47dff5ff2ebbf7ef0f0a3306d9eebd', // hash correto de "saude2025"
-        permission: 'Administrador',
-        status: 'Ativo',
-        mustChangePassword: true
-      }
-    ],
-    // Adicione aqui os outros arrays se precisar (mas para login só users basta)
-    municipalitiesList: [], // placeholders vazios
-    cargos: [],
-    orientadores: [],
-    modulos: [],
-    formasApresentacao: [],
-    requests: [],
-    presentations: [],
-    demands: [],
-    visits: [],
-    productions: [],
-    tasks: [],
-    municipalities: []
-  };
-
-  const dadosAtuais = localStorage.getItem('users');
-  if (!dadosAtuais || dadosAtuais === '[]' || !JSON.parse(dadosAtuais)[0]?.passwordHash) {
-    console.log('Dados vazios/antigos detectados. Salvando v4.3...');
-    
-    localStorage.setItem('users', JSON.stringify(DADOS_PADRAO_LOCAL.users));
-    localStorage.setItem('municipalitiesList', JSON.stringify(DADOS_PADRAO_LOCAL.municipalitiesList));
-    // ... repita para os outros arrays se quiser inicializar tudo
-    console.log('v4.3 salva com sucesso!');
-    
-    alert('SIGP Saúde v4.3 ativado!\n\nLogin: ADMIN\nSenha: saude2025\n\nTroque a senha no primeiro acesso.');
-  }
-
-  // Carrega as variáveis globais
-  users = JSON.parse(localStorage.getItem('users') || '[]');
-  console.log('Users carregados:', users);
-}
-
-// =====================================================
-// FUNÇÕES FINAIS – ORDEM CORRETA (TUDO ANTES DO DOMContentLoaded)
-// =====================================================
-
-// 1. Verifica autenticação
-function checkAuthentication() {
-  const savedUser = recuperarDoArmazenamento('currentUser');
-  const savedAuth = recuperarDoArmazenamento('isAuthenticated');
-
-  if (savedUser && savedAuth === true) {
-    currentUser = savedUser;
-    isAuthenticated = true;
-    document.getElementById('login-screen').classList.remove('active');
-    document.getElementById('main-app').classList.add('active');
-    document.getElementById('logged-user-name').textContent = currentUser.name || currentUser.login;
-    initializeApp();
-    navigateTo('dashboard');
-  } else {
-    isAuthenticated = false;
-    currentUser = null;
-    document.getElementById('login-screen').classList.add('active');
-    document.getElementById('main-app').classList.remove('active');
-  }
-}
-
-// 2. Login (versão limpa e sem erros de sintaxe)
-function handleLogin(event) {
-  event.preventDefault();
-  const username = document.getElementById('login-username').value.trim().toUpperCase();
-  const password = document.getElementById('login-password').value;
-  const errorDiv = document.getElementById('login-error');
-
-  if (!username || !password) return errorDiv.textContent = 'Preencha usuário e senha';
-
-  users = recuperarDoArmazenamento('users') || [];
-  const user = users.find(u => u.login.toUpperCase() === username && u.status === 'Ativo');
-  if (!user) return errorDiv.textContent = 'Usuário não encontrado ou inativo';
-
-  const inputHash = hashPassword(password, user.salt);
-  if (inputHash !== user.passwordHash) return errorDiv.textContent = 'Senha incorreta';
-
-  // Login bem-sucedido
-  errorDiv.textContent = '';
-  currentUser = { id: user.id, name: user.name, login: user.login, permission: user.permission || 'Usuário' };
-  isAuthenticated = true;
-  salvarNoArmazenamento('currentUser', currentUser);
-  salvarNoArmazenamento('isAuthenticated', true);
-
-  document.getElementById('login-screen').classList.remove('active');
-  document.getElementById('main-app').classList.add('active');
-
-  if (user.mustChangePassword) {
-    setTimeout(() => showChangePasswordModal(true), 600);
-  } else {
-    initializeApp();
-    navigateTo('dashboard');
-    showToast('Login realizado com sucesso!', 'success');
-  }
-}
-
-// 3. Troca de senha obrigatória (corrigida e segura)
-function showChangePasswordModal(force = false) {
-  const modal = document.getElementById('change-password-modal');
-  const form = document.getElementById('change-password-form');
-  const closeBtn = modal?.querySelector('.close');
-
-  if (!modal || !form) {
-    console.error('Modal ou formulário de troca de senha não encontrado!');
-    return;
-  }
-
-  modal.style.display = 'block';
-
-  if (closeBtn) closeBtn.onclick = () => { if (!force) modal.style.display = 'none'; };
-  window.onclick = (e) => { if (e.target === modal && !force) modal.style.display = 'none'; };
-
-  form.onsubmit = (e) => {
-    e.preventDefault();
-    const nova = document.getElementById('new-password').value;
-    const conf = document.getElementById('confirm-password').value;
-
-    if (nova.length < 6) return alert('Senha deve ter no mínimo 6 caracteres');
-    if (nova !== conf) return alert('As senhas não coincidem');
-
-    const idx = users.findIndex(u => u.id === currentUser.id);
-    if (idx !== -1) {
-      users[idx].passwordHash = hashPassword(nova, users[idx].salt);
-      users[idx].mustChangePassword = false;
-      salvarNoArmazenamento('users', users);
-    }
-
-    delete currentUser.mustChangePassword;
-    salvarNoArmazenamento('currentUser', currentUser);
-    salvarNoArmazenamento('isAuthenticated', true);
-
-    alert('Senha alterada com sucesso!');
-    modal.style.display = 'none';
-    form.reset();
-
-    document.getElementById('login-screen').classList.remove('active');
-    document.getElementById('main-app').classList.add('active');
-    document.getElementById('logged-user-name').textContent = currentUser.name;
-
-    initializeApp();
-    navigateTo('dashboard');
-    showToast('Bem-vindo ao SIGP Saúde!', 'success');
-  };
-}
-
-// 4. Inicialização do app (função mínima se não existir)
-function initializeApp() {
-  // Carrega dados e atualiza UI
-  updateHeaderUserInfo();
-  loadDashboardStats(); // Se existir, senão remova
-  // Adicione aqui qualquer outro init que você tenha
-}
-
-function updateHeaderUserInfo() {
-  const el = document.getElementById('logged-user-name');
-  if (el && currentUser) el.textContent = currentUser.name || currentUser.login;
-}
-// =====================================================
-// NAVEGAÇÃO, LOGOUT E FUNÇÕES FALTANTES (ADICIONE AQUI)
-// =====================================================
-
-// Função principal de navegação (usada por todos os botões do menu lateral)
-function navigateTo(page) {
-  // Esconde todas as seções
-  document.querySelectorAll('.app-section').forEach(sec => sec.classList.remove('active'));
-  
-  // Remove classe active dos botões do sidebar
-  document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('active'));
-
-  // Mostra a seção desejada
-  const section = document.getElementById(page + '-section');
-  if (section) section.classList.add('active');
-
-  // Marca o botão clicado como ativo
-  const btn = document.querySelector(`.sidebar-btn[onclick="navigateTo('${page}')"]`);
-  if (btn) btn.classList.add('active');
-
-  // Atualiza o título da página (opcional)
-  const titleEl = document.getElementById('page-title');
-  if (titleEl) titleEl.textContent = btn ? btn.textContent.trim() : 'SIGP Saúde';
-
-  console.log(`Navegado para: ${page}`);
-}
-
-// Função de logout (botão "Sair" no header)
-function logout() {
-  if (!confirm('Deseja realmente sair do sistema?')) return;
-
-  // Limpa autenticação
-  deletarDoArmazenamento('currentUser');
-  deletarDoArmazenamento('isAuthenticated');
-
-  currentUser = null;
-  isAuthenticated = false;
-
-  // Volta para tela de login
-  document.getElementById('login-screen').classList.add('active');
-  document.getElementById('main-app').classList.remove('active');
-
-  // Limpa campos
-  document.getElementById('login-username').value = '';
-  document.getElementById('login-password').value = '';
-  document.getElementById('login-error').textContent = '';
-
-  showToast('Você saiu do sistema', 'info');
-}
-
-// Expande o initializeApp para garantir que o dashboard abra na primeira vez
-function initializeApp() {
-  updateHeaderUserInfo();
-  navigateTo('dashboard'); // Garante que o dashboard carregue
-
-  // Se você tem gráficos ou estatísticas, chame aqui:
-  if (typeof loadDashboardStats === 'function') loadDashboardStats();
-  if (typeof loadMunicipiosTable === 'function') loadMunicipiosTable();
-  if (typeof loadTreinamentosTable === 'function') loadTreinamentosTable();
-
-  console.log('initializeApp() executado com sucesso');
-}
-
-// =====================================================
-// DOM PRONTO – tudo acima já está definido
-// =====================================================
-document.addEventListener('DOMContentLoaded', () => {
-  forcarInicializacaoV43();
-  initializeTheme();
-  document.getElementById('login-screen').classList.add('active');
-  document.getElementById('main-app').classList.remove('active');
-  checkAuthentication();
-});
-
-// =====================================================
-// DOM PRONTO – tudo acima já está definido
-// =====================================================
-document.addEventListener('DOMContentLoaded', () => {
-  forcarInicializacaoV43();
-  initializeTheme();
-  document.getElementById('login-screen').classList.add('active');
-  document.getElementById('main-app').classList.remove('active');
-  checkAuthentication();
-});
-
-function navigateTo(page) {
-  // Esconde todas as seções
-  document.querySelectorAll('.app-section').forEach(s => s.classList.remove('active'));
-  // Remove active dos botões
-  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
-
-  // Mostra a página certa
-  const section = document.getElementById(page + '-section');
-  if (section) section.classList.add('active');
-
-  // Marca o botão como ativo
-  const btn = document.querySelector(`.sidebar-btn[onclick="navigateTo('${page}')"]`);
-  if (btn) btn.classList.add('active');
-
-  // Atualiza título
-  const title = document.getElementById('page-title');
-  if (title && btn) title.textContent = btn.textContent.trim();
-}
-
-// Logout definitivo
-function logout() {
-  if (confirm('Deseja realmente sair do sistema?')) {
-    deletarDoArmazenamento('currentUser');
-    deletarDoArmazenamento('isAuthenticated');
-    currentUser = null;
-    isAuthenticated = false;
-
-    document.getElementById('login-screen').classList.add('active');
-    document.getElementById('main-app').classList.remove('active');
-
-    showToast('Sessão encerrada com sucesso', 'info');
-    location.reload(); // força reload limpo
-  }
-}
-
-// Garante que o dashboard abra na primeira entrada
-function initializeApp() {
-  updateHeaderUserInfo();
-  navigateTo('dashboard');
-  if (typeof loadDashboardStats === 'function') loadDashboardStats();
 }
