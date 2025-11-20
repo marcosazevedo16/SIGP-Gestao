@@ -29,8 +29,36 @@ let currentTheme = recuperarDoArmazenamento('theme', 'light');
 // DADOS PADRÃO v4.3
 
 // =====================================================
-// FUNÇÕES DE PERSISTÊNCIA EM LOCALSTORAGE
+// FUNÇÕES DE AUTENTICAÇÃO E INICIALIZAÇÃO
 // =====================================================
+
+// CORREÇÃO DE SEGURANÇA: Inicializa o usuário padrão de forma segura
+function initializeDefaultUser() {
+  let currentUsers = recuperarDoArmazenamento('users');
+  
+  // Se não houver usuários no localStorage, inicializa com DADOS_PADRAO
+  if (!currentUsers || currentUsers.length === 0) {
+    console.log('Primeira inicialização: Criando usuário padrão seguro.');
+    
+    // Usuário padrão do DADOS_PADRAO
+    const defaultUser = DADOS_PADRAO.users[0];
+    
+    // Se o salt e hash não foram definidos (como corrigimos no DADOS_PADRAO),
+    // geramos um salt e hash seguros para a senha padrão "saude2025"
+    if (!defaultUser.salt || !defaultUser.passwordHash) {
+      const defaultPassword = 'saude2025'; // Senha padrão
+      defaultUser.salt = generateSalt();
+      defaultUser.passwordHash = hashPassword(defaultPassword, defaultPassword); // Usar a senha para gerar o hash
+      console.log('Salt e Hash gerados para o usuário padrão ADMIN.');
+    }
+    
+    // Salva o usuário padrão seguro
+    salvarNoArmazenamento('users', DADOS_PADRAO.users);
+  }
+}
+
+// CORREÇÃO: Chamada da função de inicialização antes de qualquer tentativa de login
+initializeDefaultUser();
 
 function salvarNoArmazenamento(chave, dados) {
   try {
@@ -120,8 +148,8 @@ const DADOS_PADRAO = {
             login: 'ADMIN',
 
       name: 'Administrador',
-      salt: 'f3a9c8e2d1b7m5n9p4q8r6t2v1x5y7z0',
-      passwordHash: 'c98f6b380e7fd8d5899fb3e46a84e3de7f47dff5ff2ebbf7ef0f0a3306d9eebd', // hash de "saude2025"
+      salt: null,
+      passwordHash: null, // hash de "saude2025" - será gerado no init
       permission: 'Administrador',
       status: 'Ativo',
       mustChangePassword: true  // Força troca no primeiro login
@@ -219,6 +247,18 @@ const DADOS_PADRAO = {
 let users = []; // deixa vazio por enquanto — vamos carregar só na hora certa
 let currentUser = recuperarDoArmazenamento('currentUser') || null;
 let isAuthenticated = !!currentUser;
+
+// CORREÇÃO: Força a reavaliação da autenticação no início
+if (isAuthenticated) {
+  // Se o usuário estiver no localStorage, mas o token de autenticação não estiver,
+  // ou se a sessão for antiga, forçamos a reautenticação.
+  const savedAuth = recuperarDoArmazenamento('isAuthenticated');
+  if (savedAuth !== true) {
+    currentUser = null;
+    isAuthenticated = false;
+    deletarDoArmazenamento('currentUser');
+  }
+}
 let editingUserId = null;
 let userIdCounter = recuperarDoArmazenamento('userIdCounter', 2);
 let sortedList = [];
@@ -248,10 +288,7 @@ let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', DADOS_PA
 let formaApresentacaoIdCounter = recuperarDoArmazenamento('formaApresentacaoIdCounter', 7);
 let editingFormaApresentacaoId = null;
     
-// =====================================================
-// TEMA CLARO/ESCURO
-// =====================================================
-let currentTheme = recuperarDoArmazenamento('theme', 'light');
+
 
 // Solicitações/Sugestões data
 let requests = recuperarDoArmazenamento('requests', DADOS_PADRAO.requests);
@@ -491,27 +528,6 @@ function initializeApp() {
   updateMunicipalityStats();
   updateUserStats();
   initializeCharts();
-    // ADICIONE estas linhas DEPOIS de initializeCharts():
-if (typeof initializeDashboardCharts === 'function') {
-  initializeDashboardCharts();
-}
-
-if (typeof initializeDemandCharts === 'function') {
-  initializeDemandCharts();
-}
-
-if (typeof initializeVisitCharts === 'function') {
-  initializeVisitCharts();
-}
-
-if (typeof initializeProductionCharts === 'function') {
-  initializeProductionCharts();
-}
-
-if (typeof initializePresentationCharts === 'function') {
-  initializePresentationCharts();
-}
-
   initializeFilters();
   updateThemeButton();
   updateCargoDropdowns();
@@ -1623,7 +1639,7 @@ async function generateTasksPDF() {
     showToast('PDF gerado com sucesso!', 'success');
   } catch (error) {
     console.error('Error generating PDF:', error);
-    showToast('Erro ao gerar PDF', 'error');
+    showToast('Erro ao gerar PDF: ' + error.message, 'error');
   }
 }
 
@@ -1738,7 +1754,7 @@ async function generateMunicipalitiesPDF() {
     showToast('PDF gerado com sucesso!', 'success');
   } catch (error) {
     console.error('Error generating PDF:', error);
-    showToast('Erro ao gerar PDF', 'error');
+    showToast('Erro ao gerar PDF: ' + error.message, 'error');
   }
 }
 
@@ -6324,25 +6340,47 @@ function checkAuthentication() {
 // 2. Login (versão limpa e sem erros de sintaxe)
 function handleLogin(event) {
   event.preventDefault();
-  const username = document.getElementById('login-username').value.trim().toUpperCase();
+  const username = document.getElementById('login-username').value;
   const password = document.getElementById('login-password').value;
-  const errorDiv = document.getElementById('login-error');
+  const errorElement = document.getElementById('login-error');
 
-  if (!username || !password) return errorDiv.textContent = 'Preencha usuário e senha';
+  errorElement.textContent = '';
 
-  users = recuperarDoArmazenamento('users') || [];
-  const user = users.find(u => u.login.toUpperCase() === username && u.status === 'Ativo');
-  if (!user) return errorDiv.textContent = 'Usuário não encontrado ou inativo';
+  // CORREÇÃO: Carregar usuários do armazenamento (estava usando a variável global users que é inicializada como vazia)
+  const users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
 
-  const inputHash = hashPassword(password, user.salt);
-  if (inputHash !== user.passwordHash) return errorDiv.textContent = 'Senha incorreta';
+  const user = users.find(u => u.login.toUpperCase() === username.toUpperCase() && u.status === 'Ativo');
 
-  // Login bem-sucedido
-  errorDiv.textContent = '';
-  currentUser = { id: user.id, name: user.name, login: user.login, permission: user.permission || 'Usuário' };
-  isAuthenticated = true;
-  salvarNoArmazenamento('currentUser', currentUser);
-  salvarNoArmazenamento('isAuthenticated', true);
+  if (!user) {
+    errorElement.textContent = 'Usuário não encontrado ou inativo.';
+    return;
+  }
+
+  // 2. Hash da senha fornecida com o salt do usuário
+  const hashedPassword = hashPassword(password, user.salt);
+
+  // 3. Comparação segura
+  if (hashedPassword === user.passwordHash) {
+    // Login bem-sucedido
+    currentUser = user;
+    isAuthenticated = true; // CORREÇÃO: Atualizar a variável global isAuthenticated
+    salvarNoArmazenamento('currentUser', currentUser);
+    salvarNoArmazenamento('isAuthenticated', true); // CORREÇÃO: Salvar o estado de autenticação
+    errorElement.textContent = '';
+    showToast(`Bem-vindo(a), ${currentUser.name}!`, 'success');
+    
+    // 4. Verificar se a senha precisa ser trocada
+    if (currentUser.mustChangePassword) {
+      showChangePasswordModal(true); // Força a troca de senha
+    } else {
+      initializeApp();
+    }
+
+  } else {
+    // Login falhou
+    errorElement.textContent = 'Senha incorreta.';
+  }
+
 
   document.getElementById('login-screen').classList.remove('active');
   document.getElementById('main-app').classList.add('active');
