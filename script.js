@@ -381,13 +381,8 @@ function checkAuthentication() {
 }
 
 function handleLogout() {
-  if (confirm('Tem certeza que deseja sair?')) {
-    isAuthenticated = false;
-    currentUser = null;
-    deletarDoArmazenamento('currentUser');
-    checkAuthentication();
-    showToast('Desconectado com sucesso!', 'success');
-  }
+  // Chamada para a função de logout principal
+  logout();
 }
 
 // TROCA DE SENHA SEGURA v4.3
@@ -6484,25 +6479,7 @@ function navigateTo(page) {
 
 // Função de logout (botão "Sair" no header)
 function logout() {
-  if (!confirm('Deseja realmente sair do sistema?')) return;
-
-  // Limpa autenticação
-  deletarDoArmazenamento('currentUser');
-  deletarDoArmazenamento('isAuthenticated');
-
-  currentUser = null;
-  isAuthenticated = false;
-
-  // Volta para tela de login
-  document.getElementById('login-screen').classList.add('active');
-  document.getElementById('main-app').classList.remove('active');
-
-  // Limpa campos
-  document.getElementById('login-username').value = '';
-  document.getElementById('login-password').value = '';
-  document.getElementById('login-error').textContent = '';
-
-  showToast('Você saiu do sistema', 'info');
+  if (!confir;
 }
 
 // Expande o initializeApp para garantir que o dashboard abra na primeira vez
