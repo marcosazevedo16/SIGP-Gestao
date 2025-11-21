@@ -1,28 +1,26 @@
 // =====================================================
-// SIGP SAÚDE v5.0 - VERSÃO COMPLETA E RESTAURADA
-// Gestão de Setor - Local First
+// SIGP SAÚDE v5.1 - CORREÇÃO DE MENUS E MÁSCARAS
 // =====================================================
 
 // 1. VERIFICAÇÃO DE DEPENDÊNCIAS
 if (typeof CryptoJS === 'undefined') {
-    alert('ERRO CRÍTICO: Biblioteca CryptoJS não carregada. Verifique sua conexão ou o HTML.');
+    alert('ERRO CRÍTICO: Biblioteca CryptoJS não carregada.');
 }
 
 // =====================================================
-// 2. CONFIGURAÇÕES E UTILITÁRIOS GERAIS
+// 2. CONFIGURAÇÕES E UTILITÁRIOS
 // =====================================================
 const SALT_LENGTH = 16;
 
 function generateSalt() { return CryptoJS.lib.WordArray.random(SALT_LENGTH).toString(); }
 function hashPassword(password, salt) { return CryptoJS.SHA256(salt + password).toString(); }
 
-// Persistência
+// Armazenamento
 function salvarNoArmazenamento(chave, dados) {
     try {
         localStorage.setItem(chave, JSON.stringify(dados));
     } catch (erro) {
-        console.error(`Erro ao salvar ${chave}:`, erro);
-        if (erro.name === 'QuotaExceededError') alert('⚠️ Espaço de armazenamento cheio!');
+        if (erro.name === 'QuotaExceededError') alert('⚠️ Armazenamento cheio!');
     }
 }
 
@@ -35,14 +33,12 @@ function recuperarDoArmazenamento(chave, valorPadrao = null) {
 
 function deletarDoArmazenamento(chave) { localStorage.removeItem(chave); }
 
-// Formatação de Data
 function formatDate(dateString) {
     if (!dateString) return '-';
     const [ano, mes, dia] = dateString.split('-');
     return `${dia}/${mes}/${ano}`;
 }
 
-// Toast Notification
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     if(!toast) return;
@@ -52,67 +48,52 @@ function showToast(message, type = 'info') {
 }
 
 // =====================================================
-// 3. MÁSCARAS E FORMATAÇÃO (REGRAS DE NEGÓCIO)
+// 3. MÁSCARAS E REGRAS DE FORMATAÇÃO (CORRIGIDO)
 // =====================================================
 
-// Formata Telefone: (XX) 9XXXX-XXXX
-function formatPhoneNumber(value) {
-    let v = value.replace(/\D/g, "");
+// Máscara de Telefone: (XX) 9XXXX-XXXX
+function maskPhone(e) {
+    let v = e.target.value.replace(/\D/g, "");
     v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
     v = v.replace(/(\d)(\d{4})$/, "$1-$2");
-    return v.substring(0, 15);
+    e.target.value = v.substring(0, 15);
 }
 
-// Aplica máscara de telefone em inputs
-function applyPhoneMasks() {
-    const phoneInputs = ['municipality-contact', 'task-contact', 'orientador-contact', 'request-contact', 'production-contact'];
-    phoneInputs.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) {
-            el.addEventListener('input', (e) => { e.target.value = formatPhoneNumber(e.target.value); });
-        }
-    });
-}
-
-// Máscara Competência (MM/AAAA)
+// Máscara Competência: 10/2025
 function maskCompetencia(e) {
     let v = e.target.value.replace(/\D/g, "");
-    if (v.length > 6) v = v.substring(0, 6);
     if (v.length > 2) v = v.replace(/^(\d{2})(\d)/, "$1/$2");
-    e.target.value = v;
+    e.target.value = v.substring(0, 7); // Limita MM/AAAA
 }
 
-// Máscara Período (DD/MM à DD/MM)
+// Máscara Período: 01/10 à 31/10
 function maskPeriodo(e) {
-    let v = e.target.value;
-    // Permite apenas números, barra e 'à'
-    // Lógica simplificada: o usuário digita os números e o sistema formata
-    // Exemplo simples: DD/MM à DD/MM
-    // Implementação robusta exigiria controle de cursor, aqui faremos básico:
-    if(!v.includes('à')) {
-       // Se não tem o separador, não tenta formatar complexo ainda
-    }
+    let v = e.target.value.replace(/\D/g, ""); // Remove tudo que não é dígito
+    
+    // Formata progressivamente
+    if (v.length > 2) v = v.replace(/^(\d{2})(\d)/, "$1/$2"); // 01/1
+    if (v.length > 4) v = v.replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2 à $3"); // 01/10 à 3
+    if (v.length > 6) v = v.replace(/ à (\d{2})(\d)/, " à $1/$2"); // 01/10 à 31/1
+    
+    e.target.value = v.substring(0, 15); // Limita tamanho total
 }
-// Melhor abordagem para período: Placeholder e instrução, ou máscara rígida:
-function setupProductionMasks() {
+
+// Ativar todas as máscaras
+function setupMasks() {
+    // Telefones (Todos os IDs de telefone do sistema)
+    const phoneIds = ['municipality-contact', 'task-contact', 'orientador-contact', 'request-contact', 'production-contact'];
+    phoneIds.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.addEventListener('input', maskPhone);
+    });
+
+    // Produção - Competência
     const elComp = document.getElementById('production-competence');
     if(elComp) elComp.addEventListener('input', maskCompetencia);
 
+    // Produção - Período
     const elPeriod = document.getElementById('production-period');
-    if(elPeriod) {
-        elPeriod.addEventListener('blur', (e) => {
-            // Validação simples ao sair do campo
-            const val = e.target.value;
-            if(val && !val.includes('à')) {
-                // Tenta formatar se o usuário digitou tudo junto "01103110" -> "01/10 à 31/10"
-                const nums = val.replace(/\D/g, "");
-                if(nums.length === 8) {
-                    e.target.value = `${nums.substr(0,2)}/${nums.substr(2,2)} à ${nums.substr(4,2)}/${nums.substr(6,2)}`;
-                }
-            }
-        });
-        elPeriod.placeholder = "01/10 à 31/10";
-    }
+    if(elPeriod) elPeriod.addEventListener('input', maskPeriodo);
 }
 
 // =====================================================
@@ -128,9 +109,8 @@ const DADOS_PADRAO = {
     ]
 };
 
-// Carregamento de Dados
 let users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
-// Correção senha admin
+// Correção senha admin se necessário
 if (users[0].login === 'ADMIN' && !users[0].passwordHash) {
     users[0].salt = generateSalt();
     users[0].passwordHash = hashPassword('saude2025', users[0].salt);
@@ -142,9 +122,9 @@ let isAuthenticated = !!currentUser;
 let currentTheme = recuperarDoArmazenamento('theme', 'light');
 let editingId = null;
 
-// Arrays de Dados (Carrega ou inicia vazio)
+// Arrays de Dados
 let municipalities = recuperarDoArmazenamento('municipalities', []);
-let municipalitiesList = recuperarDoArmazenamento('municipalitiesList', []); // Lista Mestra
+let municipalitiesList = recuperarDoArmazenamento('municipalitiesList', []); 
 let tasks = recuperarDoArmazenamento('tasks', []);
 let requests = recuperarDoArmazenamento('requests', []);
 let demands = recuperarDoArmazenamento('demands', []);
@@ -157,11 +137,8 @@ let orientadores = recuperarDoArmazenamento('orientadores', []);
 let modulos = recuperarDoArmazenamento('modulos', DADOS_PADRAO.modulos);
 let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', []);
 
-// Contadores de ID
-let counters = recuperarDoArmazenamento('counters', {
-    mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1
-});
-
+// IDs
+let counters = recuperarDoArmazenamento('counters', { mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1 });
 function getNextId(key) {
     const id = counters[key]++;
     salvarNoArmazenamento('counters', counters);
@@ -169,14 +146,49 @@ function getNextId(key) {
 }
 
 // =====================================================
-// 5. AUTENTICAÇÃO E NAVEGAÇÃO
+// 5. AUTENTICAÇÃO E INTERFACE (CORREÇÃO DOS MENUS)
 // =====================================================
+function updateUserInterface() {
+    if (!currentUser) return;
+
+    // 1. Atualiza nome
+    const elName = document.getElementById('logged-user-name');
+    if(elName) elName.textContent = currentUser.name;
+
+    // 2. Lógica de Exibição dos Botões de Menu (CORREÇÃO AQUI)
+    const isAdmin = currentUser.permission === 'Administrador';
+    
+    // Lista de IDs dos botões no menu dropdown
+    const menuItems = [
+        { id: 'user-management-menu-btn', adminOnly: true },
+        { id: 'cargo-management-menu-btn', adminOnly: false },
+        { id: 'orientador-management-menu-btn', adminOnly: false },
+        { id: 'modulo-management-menu-btn', adminOnly: false },
+        { id: 'municipality-list-management-menu-btn', adminOnly: false },
+        { id: 'forma-apresentacao-management-menu-btn', adminOnly: false },
+        { id: 'backup-menu-btn', adminOnly: false },
+        { id: 'admin-divider', adminOnly: true } // A linha divisória
+    ];
+
+    menuItems.forEach(item => {
+        const el = document.getElementById(item.id);
+        if(el) {
+            // Se for adminOnly, só mostra se for admin. Se não, mostra pra todo mundo.
+            if (item.adminOnly && !isAdmin) {
+                el.style.display = 'none';
+            } else {
+                el.style.display = 'flex'; // ou 'block' para o divider
+                if (item.id === 'admin-divider') el.style.display = 'block';
+            }
+        }
+    });
+}
+
 function checkAuthentication() {
     if (isAuthenticated && currentUser) {
         document.getElementById('login-screen').classList.remove('active');
         document.getElementById('main-app').classList.add('active');
         updateUserInterface();
-        // Não chama initializeApp aqui para evitar loop, chama apenas se necessário
     } else {
         document.getElementById('login-screen').classList.add('active');
         document.getElementById('main-app').classList.remove('active');
@@ -194,8 +206,8 @@ function handleLogin(e) {
         isAuthenticated = true;
         salvarNoArmazenamento('currentUser', currentUser);
         checkAuthentication();
-        initializeApp(); // Carrega tudo após login
-        showToast('Login realizado com sucesso!', 'success');
+        initializeApp(); 
+        showToast(`Bem-vindo, ${user.name}!`, 'success');
     } else {
         document.getElementById('login-error').textContent = 'Dados incorretos.';
     }
@@ -208,53 +220,24 @@ function handleLogout() {
     }
 }
 
-// Navegação Principal
+// Navegação
 function navigateToHome() {
-    // Fecha menus
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
-    
-    // Ativa Dashboard
     document.getElementById('dashboard-section').classList.add('active');
+    
     const dashBtn = document.querySelector('[data-tab="dashboard"]');
     if(dashBtn) dashBtn.classList.add('active');
     
     updateDashboardStats();
-    updateCharts();
+    // Se tiver gráficos, chama updateCharts() aqui
 }
 
-function initializeTabs() {
-    document.querySelectorAll('.sidebar-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabName = btn.dataset.tab;
-            
-            document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            const target = document.getElementById(`${tabName}-section`);
-            if(target) target.classList.add('active');
-
-            // Recarrega dados da aba específica
-            if(tabName === 'municipios') renderMunicipalities();
-            if(tabName === 'tarefas') renderTasks();
-            if(tabName === 'solicitacoes') renderRequests();
-            if(tabName === 'demandas') renderDemands();
-            if(tabName === 'visitas') renderVisits();
-            if(tabName === 'producao') renderProductions();
-            if(tabName === 'apresentacoes') renderPresentations();
-            if(tabName === 'dashboard') { updateDashboardStats(); updateCharts(); }
-        });
-    });
-}
-
-// Menu de Configurações
 function toggleSettingsMenu() {
-    const menu = document.getElementById('settings-menu');
-    menu.classList.toggle('show');
+    document.getElementById('settings-menu').classList.toggle('show');
 }
 
-// Funções de Navegação do Menu de Configurações
+// Helpers de Navegação do Menu
 function navigateToUserManagement() { toggleSettingsMenu(); openTab('usuarios-section'); renderUsers(); }
 function navigateToCargoManagement() { toggleSettingsMenu(); openTab('cargos-section'); renderCargos(); }
 function navigateToOrientadorManagement() { toggleSettingsMenu(); openTab('orientadores-section'); renderOrientadores(); }
@@ -271,33 +254,29 @@ function openTab(sectionId) {
 }
 
 // =====================================================
-// 6. MÓDULOS DE GESTÃO (CRUDs)
+// 6. CRUDs E LÓGICA DE NEGÓCIO
 // =====================================================
 
-// --- MUNICÍPIOS CLIENTES ---
+// --- MUNICÍPIOS (CARTEIRA) ---
 function showMunicipalityModal(id = null) {
     const modal = document.getElementById('municipality-modal');
-    const form = document.getElementById('municipality-form');
-    form.reset();
+    document.getElementById('municipality-form').reset();
     editingId = id;
-
-    // Popula select do formulário com a Lista Mestra
+    
+    // Popula o select com a Lista Mestra
     const select = document.getElementById('municipality-name');
     populateSelect(select, municipalitiesList, 'name', 'name');
 
     if(id) {
         const item = municipalities.find(m => m.id === id);
         if(item) {
-            select.value = item.name; // Tenta setar valor
+            select.value = item.name;
             document.getElementById('municipality-status').value = item.status;
             document.getElementById('municipality-manager').value = item.manager;
             document.getElementById('municipality-contact').value = item.contact;
             document.getElementById('municipality-implantation-date').value = item.implantationDate;
             document.getElementById('municipality-last-visit').value = item.lastVisit;
-            // Módulos
-            if(item.modules) {
-                document.querySelectorAll('.module-checkbox').forEach(cb => cb.checked = item.modules.includes(cb.value));
-            }
+            if(item.modules) document.querySelectorAll('.module-checkbox').forEach(cb => cb.checked = item.modules.includes(cb.value));
         }
     }
     modal.classList.add('show');
@@ -325,7 +304,7 @@ function saveMunicipality(e) {
     salvarNoArmazenamento('municipalities', municipalities);
     document.getElementById('municipality-modal').classList.remove('show');
     renderMunicipalities();
-    updateGlobalDropdowns(); // Atualiza selects em outras abas
+    updateGlobalDropdowns();
     showToast('Município salvo!');
 }
 
@@ -339,11 +318,8 @@ function renderMunicipalities() {
         if(filterStatus && m.status !== filterStatus) return false;
         return true;
     });
-
-    // Ordenar
     filtered.sort((a,b) => a.name.localeCompare(b.name));
 
-    // Renderiza
     if(filtered.length === 0) {
         container.innerHTML = '<div class="empty-state">Nenhum município encontrado.</div>';
     } else {
@@ -362,216 +338,63 @@ function renderMunicipalities() {
             </tr>`).join('');
         container.innerHTML = `<table><thead><th>Município</th><th>Módulos</th><th>Gestor</th><th>Contato</th><th>Implantação</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
-    
-    // Atualiza contadores da aba
-    document.getElementById('total-municipalities').textContent = municipalities.length;
-    document.getElementById('active-municipalities').textContent = municipalities.filter(m => m.status === 'Em uso').length;
+    // Atualiza contadores
+    const countDiv = document.getElementById('municipalities-results-count');
+    if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML = `<strong>${filtered.length}</strong> registros.`; }
 }
 
-// --- SOLICITAÇÕES/SUGESTÕES ---
-function showRequestModal(id = null) {
-    const modal = document.getElementById('request-modal');
-    document.getElementById('request-form').reset();
+// --- TREINAMENTOS ---
+function showTaskModal(id = null) {
+    const modal = document.getElementById('task-modal');
+    document.getElementById('task-form').reset();
     editingId = id;
-    
+    updateGlobalDropdowns();
     if(id) {
-        const req = requests.find(r => r.id === id);
-        if(req) {
-            document.getElementById('request-date').value = req.date;
-            document.getElementById('request-municipality').value = req.municipality;
-            document.getElementById('request-requester').value = req.requester;
-            document.getElementById('request-contact').value = req.contact;
-            document.getElementById('request-description').value = req.description;
-            document.getElementById('request-status').value = req.status;
+        const t = tasks.find(x => x.id === id);
+        if(t) {
+            document.getElementById('task-date-requested').value = t.dateRequested;
+            document.getElementById('task-municipality').value = t.municipality;
+            document.getElementById('task-requested-by').value = t.requestedBy;
+            document.getElementById('task-performed-by').value = t.performedBy;
+            document.getElementById('task-trained-name').value = t.trainedName;
+            document.getElementById('task-trained-position').value = t.trainedPosition;
+            document.getElementById('task-status').value = t.status;
+            document.getElementById('task-observations').value = t.observations;
+            document.getElementById('task-contact').value = t.contact;
         }
     }
     modal.classList.add('show');
 }
 
-function saveRequest(e) {
+function saveTask(e) {
     e.preventDefault();
     const data = {
-        date: document.getElementById('request-date').value,
-        municipality: document.getElementById('request-municipality').value,
-        requester: document.getElementById('request-requester').value,
-        contact: document.getElementById('request-contact').value,
-        description: document.getElementById('request-description').value,
-        status: document.getElementById('request-status').value,
-        user: currentUser.name
+        dateRequested: document.getElementById('task-date-requested').value,
+        datePerformed: document.getElementById('task-date-performed').value,
+        municipality: document.getElementById('task-municipality').value,
+        requestedBy: document.getElementById('task-requested-by').value,
+        performedBy: document.getElementById('task-performed-by').value,
+        trainedName: document.getElementById('task-trained-name').value,
+        trainedPosition: document.getElementById('task-trained-position').value,
+        contact: document.getElementById('task-contact').value,
+        status: document.getElementById('task-status').value,
+        observations: document.getElementById('task-observations').value,
     };
-    
-    saveGeneric('requests', 'req', data, renderRequests, 'request-modal');
+    saveGeneric('tasks', 'task', data, renderTasks, 'task-modal');
 }
 
-function renderRequests() {
-    const container = document.getElementById('requests-table');
-    const filterStatus = document.getElementById('filter-request-status').value;
-    
-    let filtered = requests.filter(r => {
-        if(filterStatus && r.status !== filterStatus) return false;
-        return true;
-    });
-    
-    renderTableGeneric(container, filtered, ['Data', 'Município', 'Solicitante', 'Descrição', 'Status', 'Ações'], (item) => `
-        <td>${formatDate(item.date)}</td>
+function renderTasks() {
+    const container = document.getElementById('tasks-table');
+    renderTableGeneric(container, tasks, ['Data Sol.', 'Município', 'Solicitante', 'Instrutor', 'Treinado', 'Status', 'Ações'], (item) => `
+        <td>${formatDate(item.dateRequested)}</td>
         <td>${item.municipality}</td>
-        <td>${item.requester}</td>
-        <td>${item.description}</td>
+        <td>${item.requestedBy}</td>
+        <td>${item.performedBy}</td>
+        <td>${item.trainedName}</td>
         <td>${item.status}</td>
         <td>
-            <button class="btn btn--sm" onclick="showRequestModal(${item.id})">✏️</button>
-            <button class="btn btn--sm" onclick="deleteItem('requests', ${item.id}, renderRequests)">🗑️</button>
-        </td>
-    `);
-}
-
-// --- APRESENTAÇÕES ---
-function showPresentationModal(id = null) {
-    const modal = document.getElementById('presentation-modal');
-    document.getElementById('presentation-form').reset();
-    editingId = id;
-    
-    // Popula checkboxes de orientadores
-    const orientadorDiv = document.getElementById('presentation-orientador-checkboxes');
-    if(orientadorDiv) {
-        orientadorDiv.innerHTML = orientadores.map(o => 
-            `<label><input type="checkbox" value="${o.name}" class="orientador-check"> ${o.name}</label>`
-        ).join('');
-    }
-    // Popula formas
-    const formasDiv = document.getElementById('presentation-forms-checkboxes');
-    if(formasDiv) {
-         formasDiv.innerHTML = formasApresentacao.map(f => 
-            `<label><input type="checkbox" value="${f.name}" class="forma-check"> ${f.name}</label>`
-        ).join('');
-    }
-
-    if(id) {
-        const p = presentations.find(x => x.id === id);
-        if(p) {
-            document.getElementById('presentation-municipality').value = p.municipality;
-            document.getElementById('presentation-date-solicitacao').value = p.dateSolicitacao;
-            document.getElementById('presentation-requester').value = p.requester;
-            document.getElementById('presentation-status').value = p.status;
-            // Marcar checkboxes... (simplificado)
-        }
-    }
-    modal.classList.add('show');
-}
-
-function savePresentation(e) {
-    e.preventDefault();
-    const selectedOrientadores = Array.from(document.querySelectorAll('.orientador-check:checked')).map(cb => cb.value);
-    const selectedFormas = Array.from(document.querySelectorAll('.forma-check:checked')).map(cb => cb.value);
-    
-    const data = {
-        municipality: document.getElementById('presentation-municipality').value,
-        dateSolicitacao: document.getElementById('presentation-date-solicitacao').value,
-        requester: document.getElementById('presentation-requester').value,
-        status: document.getElementById('presentation-status').value,
-        orientadores: selectedOrientadores,
-        forms: selectedFormas,
-        description: document.getElementById('presentation-description').value
-    };
-    saveGeneric('presentations', 'pres', data, renderPresentations, 'presentation-modal');
-}
-
-function renderPresentations() {
-    const container = document.getElementById('presentations-table');
-    renderTableGeneric(container, presentations, ['Data', 'Município', 'Solicitante', 'Status', 'Orientadores', 'Ações'], (item) => `
-        <td>${formatDate(item.dateSolicitacao)}</td>
-        <td>${item.municipality}</td>
-        <td>${item.requester}</td>
-        <td>${item.status}</td>
-        <td>${item.orientadores ? item.orientadores.join(', ') : ''}</td>
-        <td>
-            <button class="btn btn--sm" onclick="showPresentationModal(${item.id})">✏️</button>
-            <button class="btn btn--sm" onclick="deleteItem('presentations', ${item.id}, renderPresentations)">🗑️</button>
-        </td>
-    `);
-}
-
-// --- DEMANDAS SUPORTE ---
-function showDemandModal(id = null) {
-    const modal = document.getElementById('demand-modal');
-    document.getElementById('demand-form').reset();
-    editingId = id;
-    if(id) {
-        const d = demands.find(x => x.id === id);
-        if(d) {
-            document.getElementById('demand-date').value = d.date;
-            document.getElementById('demand-description').value = d.description;
-            document.getElementById('demand-priority').value = d.priority;
-            document.getElementById('demand-status').value = d.status;
-        }
-    }
-    modal.classList.add('show');
-}
-
-function saveDemand(e) {
-    e.preventDefault();
-    const data = {
-        date: document.getElementById('demand-date').value,
-        description: document.getElementById('demand-description').value,
-        priority: document.getElementById('demand-priority').value,
-        status: document.getElementById('demand-status').value,
-        user: currentUser.name
-    };
-    saveGeneric('demands', 'dem', data, renderDemands, 'demand-modal');
-}
-
-function renderDemands() {
-    const container = document.getElementById('demands-table');
-    renderTableGeneric(container, demands, ['Data', 'Descrição', 'Prioridade', 'Status', 'Ações'], (item) => `
-        <td>${formatDate(item.date)}</td>
-        <td>${item.description}</td>
-        <td>${item.priority}</td>
-        <td>${item.status}</td>
-        <td>
-            <button class="btn btn--sm" onclick="showDemandModal(${item.id})">✏️</button>
-            <button class="btn btn--sm" onclick="deleteItem('demands', ${item.id}, renderDemands)">🗑️</button>
-        </td>
-    `);
-}
-
-// --- VISITAS ---
-function showVisitModal(id = null) {
-    const modal = document.getElementById('visit-modal');
-    document.getElementById('visit-form').reset();
-    editingId = id;
-    if(id) {
-        const v = visits.find(x => x.id === id);
-        if(v) {
-            document.getElementById('visit-municipality').value = v.municipality;
-            document.getElementById('visit-date').value = v.date;
-            document.getElementById('visit-applicant').value = v.applicant;
-            document.getElementById('visit-status').value = v.status;
-        }
-    }
-    modal.classList.add('show');
-}
-
-function saveVisit(e) {
-    e.preventDefault();
-    const data = {
-        municipality: document.getElementById('visit-municipality').value,
-        date: document.getElementById('visit-date').value,
-        applicant: document.getElementById('visit-applicant').value,
-        status: document.getElementById('visit-status').value
-    };
-    saveGeneric('visits', 'visit', data, renderVisits, 'visit-modal');
-}
-
-function renderVisits() {
-    const container = document.getElementById('visits-table');
-    renderTableGeneric(container, visits, ['Data', 'Município', 'Solicitante', 'Status', 'Ações'], (item) => `
-        <td>${formatDate(item.date)}</td>
-        <td>${item.municipality}</td>
-        <td>${item.applicant}</td>
-        <td>${item.status}</td>
-        <td>
-            <button class="btn btn--sm" onclick="showVisitModal(${item.id})">✏️</button>
-            <button class="btn btn--sm" onclick="deleteItem('visits', ${item.id}, renderVisits)">🗑️</button>
+            <button class="btn btn--sm" onclick="showTaskModal(${item.id})">✏️</button>
+            <button class="btn btn--sm" onclick="deleteItem('tasks', ${item.id}, renderTasks)">🗑️</button>
         </td>
     `);
 }
@@ -585,12 +408,13 @@ function showProductionModal(id = null) {
         const p = productions.find(x => x.id === id);
         if(p) {
             document.getElementById('production-municipality').value = p.municipality;
+            document.getElementById('production-contact').value = p.contact;
             document.getElementById('production-frequency').value = p.frequency;
             document.getElementById('production-competence').value = p.competence;
             document.getElementById('production-period').value = p.period;
             document.getElementById('production-release-date').value = p.releaseDate;
+            document.getElementById('production-send-date').value = p.sendDate;
             document.getElementById('production-status').value = p.status;
-            document.getElementById('production-contact').value = p.contact;
         }
     }
     modal.classList.add('show');
@@ -605,6 +429,7 @@ function saveProduction(e) {
         competence: document.getElementById('production-competence').value,
         period: document.getElementById('production-period').value,
         releaseDate: document.getElementById('production-release-date').value,
+        sendDate: document.getElementById('production-send-date').value,
         status: document.getElementById('production-status').value
     };
     saveGeneric('productions', 'prod', data, renderProductions, 'production-modal');
@@ -624,120 +449,105 @@ function renderProductions() {
     `);
 }
 
-// --- TREINAMENTOS (TASKS) ---
-function showTaskModal(id = null) {
-    const modal = document.getElementById('task-modal');
-    document.getElementById('task-form').reset();
-    editingId = id;
-    if(id) {
-        const t = tasks.find(x => x.id === id);
-        if(t) {
-            document.getElementById('task-date-requested').value = t.dateRequested;
-            document.getElementById('task-municipality').value = t.municipality;
-            document.getElementById('task-requested-by').value = t.requestedBy;
-            document.getElementById('task-performed-by').value = t.performedBy;
-            document.getElementById('task-status').value = t.status;
-        }
-    }
-    modal.classList.add('show');
-}
+// --- OUTROS MÓDULOS (Padrão) ---
+function showRequestModal(id){ showGenericFormModal('request', id, requests); }
+function saveRequest(e){ e.preventDefault(); saveGeneric('requests', 'req', getFormData('request', ['date','municipality','requester','contact','description','status']), renderRequests, 'request-modal'); }
+function renderRequests(){ renderTableGeneric(document.getElementById('requests-table'), requests, ['Data','Município','Solicitante','Status','Ações'], (i)=>`<td>${formatDate(i.date)}</td><td>${i.municipality}</td><td>${i.requester}</td><td>${i.status}</td><td><button class="btn btn--sm" onclick="showRequestModal(${i.id})">✏️</button><button class="btn btn--sm" onclick="deleteItem('requests', ${i.id}, renderRequests)">🗑️</button></td>`); }
 
-function saveTask(e) {
-    e.preventDefault();
-    const data = {
-        dateRequested: document.getElementById('task-date-requested').value,
-        datePerformed: document.getElementById('task-date-performed').value,
-        municipality: document.getElementById('task-municipality').value,
-        requestedBy: document.getElementById('task-requested-by').value,
-        performedBy: document.getElementById('task-performed-by').value,
-        status: document.getElementById('task-status').value,
-        // Adicionar outros campos conforme necessário
-    };
-    saveGeneric('tasks', 'task', data, renderTasks, 'task-modal');
-}
+function showDemandModal(id){ showGenericFormModal('demand', id, demands); }
+function saveDemand(e){ e.preventDefault(); saveGeneric('demands', 'dem', getFormData('demand', ['date','description','priority','status']), renderDemands, 'demand-modal'); }
+function renderDemands(){ renderTableGeneric(document.getElementById('demands-table'), demands, ['Data','Descrição','Prioridade','Status','Ações'], (i)=>`<td>${formatDate(i.date)}</td><td>${i.description}</td><td>${i.priority}</td><td>${i.status}</td><td><button class="btn btn--sm" onclick="showDemandModal(${i.id})">✏️</button><button class="btn btn--sm" onclick="deleteItem('demands', ${i.id}, renderDemands)">🗑️</button></td>`); }
 
-function renderTasks() {
-    const container = document.getElementById('tasks-table');
-    renderTableGeneric(container, tasks, ['Data Sol.', 'Município', 'Solicitante', 'Status', 'Ações'], (item) => `
-        <td>${formatDate(item.dateRequested)}</td>
-        <td>${item.municipality}</td>
-        <td>${item.requestedBy}</td>
-        <td>${item.status}</td>
-        <td>
-            <button class="btn btn--sm" onclick="showTaskModal(${item.id})">✏️</button>
-            <button class="btn btn--sm" onclick="deleteItem('tasks', ${item.id}, renderTasks)">🗑️</button>
-        </td>
-    `);
-}
+function showVisitModal(id){ showGenericFormModal('visit', id, visits); }
+function saveVisit(e){ e.preventDefault(); saveGeneric('visits', 'visit', getFormData('visit', ['municipality','date','applicant','status']), renderVisits, 'visit-modal'); }
+function renderVisits(){ renderTableGeneric(document.getElementById('visits-table'), visits, ['Data','Município','Solicitante','Status','Ações'], (i)=>`<td>${formatDate(i.date)}</td><td>${i.municipality}</td><td>${i.applicant}</td><td>${i.status}</td><td><button class="btn btn--sm" onclick="showVisitModal(${i.id})">✏️</button><button class="btn btn--sm" onclick="deleteItem('visits', ${i.id}, renderVisits)">🗑️</button></td>`); }
+
+function showPresentationModal(id){ showGenericFormModal('presentation', id, presentations); /* Add checkboxes logic if needed */ }
+function savePresentation(e){ e.preventDefault(); saveGeneric('presentations', 'pres', getFormData('presentation', ['municipality','date-solicitacao','requester','status']), renderPresentations, 'presentation-modal'); }
+function renderPresentations(){ renderTableGeneric(document.getElementById('presentations-table'), presentations, ['Município','Solicitante','Status','Ações'], (i)=>`<td>${i.municipality}</td><td>${i.requester}</td><td>${i.status}</td><td><button class="btn btn--sm" onclick="showPresentationModal(${i.id})">✏️</button><button class="btn btn--sm" onclick="deleteItem('presentations', ${i.id}, renderPresentations)">🗑️</button></td>`); }
 
 // --- CONFIGURAÇÕES (CRUDs Básicos) ---
-function showUserModal(id=null) { /* Implementar similar aos anteriores */ }
-function saveUser(e) { /* Implementar similar */ }
-function renderUsers() { /* Implementar similar */ }
+// Municípios Lista Mestra
+function renderMunicipalityList(){ renderConfigTable('municipalities-list-table', municipalitiesList, 'showMunicipalityListModal', 'deleteItem', 'municipalitiesList'); }
+function showMunicipalityListModal(id){ showGenericConfigModal('municipality-list', id, municipalitiesList, ['name','uf']); }
+function saveMunicipalityList(e){ e.preventDefault(); saveGeneric('municipalitiesList', 'munList', {name: document.getElementById('municipality-list-name').value, uf: document.getElementById('municipality-list-uf').value}, renderMunicipalityList, 'municipality-list-modal'); updateGlobalDropdowns(); }
 
-function showCargoModal(id=null) { showGenericModal('cargo', id, cargos); }
-function saveCargo(e) { e.preventDefault(); saveConfigGeneric('cargos', 'cargo', { name: document.getElementById('cargo-name').value }, renderCargos); }
-function renderCargos() { renderConfigGeneric('cargos-table', cargos, 'showCargoModal', 'deleteItem', 'cargos'); }
+// Outros Configs
+function renderCargos(){ renderConfigTable('cargos-table', cargos, 'showCargoModal', 'deleteItem', 'cargos'); }
+function showCargoModal(id){ showGenericConfigModal('cargo', id, cargos, ['name']); }
+function saveCargo(e){ e.preventDefault(); saveGeneric('cargos', 'cargo', {name: document.getElementById('cargo-name').value}, renderCargos, 'cargo-modal'); }
 
-function showOrientadorModal(id=null) { showGenericModal('orientador', id, orientadores); }
-function saveOrientador(e) { e.preventDefault(); saveConfigGeneric('orientadores', 'orient', { name: document.getElementById('orientador-name').value }, renderOrientadores); }
-function renderOrientadores() { renderConfigGeneric('orientadores-table', orientadores, 'showOrientadorModal', 'deleteItem', 'orientadores'); }
+function renderOrientadores(){ renderConfigTable('orientadores-table', orientadores, 'showOrientadorModal', 'deleteItem', 'orientadores'); }
+function showOrientadorModal(id){ showGenericConfigModal('orientador', id, orientadores, ['name']); }
+function saveOrientador(e){ e.preventDefault(); saveGeneric('orientadores', 'orient', {name: document.getElementById('orientador-name').value}, renderOrientadores, 'orientador-modal'); }
 
-// --- AUXILIARES DE CRUD ---
-function saveGeneric(arrayName, idPrefix, data, renderFunc, modalId) {
-    let arr = arrayName === 'requests' ? requests : 
-              arrayName === 'presentations' ? presentations : 
-              arrayName === 'demands' ? demands :
-              arrayName === 'visits' ? visits :
-              arrayName === 'productions' ? productions : 
-              arrayName === 'tasks' ? tasks : [];
-              
+function renderModulos(){ renderConfigTable('modulos-table', modulos, 'showModuloModal', 'deleteItem', 'modulos'); }
+function showModuloModal(id){ showGenericConfigModal('modulo', id, modulos, ['name']); }
+function saveModulo(e){ e.preventDefault(); saveGeneric('modulos', 'mod', {name: document.getElementById('modulo-name').value}, renderModulos, 'modulo-modal'); }
+
+function renderFormas(){ renderConfigTable('formas-apresentacao-table', formasApresentacao, 'showFormaApresentacaoModal', 'deleteItem', 'formasApresentacao'); }
+function showFormaApresentacaoModal(id){ showGenericConfigModal('forma-apresentacao', id, formasApresentacao, ['name']); }
+function saveFormaApresentacao(e){ e.preventDefault(); saveGeneric('formasApresentacao', 'forma', {name: document.getElementById('forma-apresentacao-name').value}, renderFormas, 'forma-apresentacao-modal'); }
+
+function renderUsers(){ renderConfigTable('users-table', users, 'showUserModal', 'deleteItem', 'users'); }
+// Users tem modal específico, mas pode adaptar
+
+// =====================================================
+// 7. HELPERS GENÉRICOS (PARA REDUZIR CÓDIGO)
+// =====================================================
+function saveGeneric(arrName, idKey, data, renderFunc, modalId) {
+    let arr = eval(arrName); // Acesso à variável global
     if(editingId) {
         const idx = arr.findIndex(x => x.id === editingId);
         arr[idx] = { ...arr[idx], ...data };
     } else {
-        arr.push({ id: getNextId(idPrefix), ...data });
+        arr.push({ id: getNextId(idKey), ...data });
     }
-    salvarNoArmazenamento(arrayName, arr);
+    salvarNoArmazenamento(arrName, arr);
     document.getElementById(modalId).classList.remove('show');
     renderFunc();
-    showToast('Registro Salvo!', 'success');
-    updateDashboardStats(); // Atualiza dashboard se necessário
+    showToast('Registro salvo!', 'success');
+    updateGlobalDropdowns();
+    updateDashboardStats();
 }
 
-function deleteItem(arrayName, id, renderFunc) {
+function deleteItem(arrName, id, renderFunc) {
     if(confirm('Excluir registro?')) {
-        let arr = recuperarDoArmazenamento(arrayName, []);
-        arr = arr.filter(x => x.id !== id);
-        salvarNoArmazenamento(arrayName, arr);
+        let arr = eval(arrName);
+        const newArr = arr.filter(x => x.id !== id);
         
-        // Atualiza array em memória
-        if(arrayName === 'requests') requests = arr;
-        if(arrayName === 'presentations') presentations = arr;
-        if(arrayName === 'demands') demands = arr;
-        if(arrayName === 'visits') visits = arr;
-        if(arrayName === 'productions') productions = arr;
-        if(arrayName === 'tasks') tasks = arr;
-        if(arrayName === 'municipalities') municipalities = arr;
-        if(arrayName === 'cargos') cargos = arr;
-        if(arrayName === 'orientadores') orientadores = arr;
-        
+        // Hack para atualizar a variável global correta
+        switch(arrName) {
+            case 'municipalities': municipalities = newArr; break;
+            case 'tasks': tasks = newArr; break;
+            case 'requests': requests = newArr; break;
+            case 'demands': demands = newArr; break;
+            case 'visits': visits = newArr; break;
+            case 'productions': productions = newArr; break;
+            case 'presentations': presentations = newArr; break;
+            case 'cargos': cargos = newArr; break;
+            case 'orientadores': orientadores = newArr; break;
+            case 'modulos': modulos = newArr; break;
+            case 'formasApresentacao': formasApresentacao = newArr; break;
+            case 'municipalitiesList': municipalitiesList = newArr; break;
+        }
+        salvarNoArmazenamento(arrName, newArr);
         renderFunc();
+        updateGlobalDropdowns();
+        updateDashboardStats();
         showToast('Excluído.', 'info');
     }
 }
 
-function renderTableGeneric(container, data, headers, rowGenerator) {
+function renderTableGeneric(container, data, headers, rowFn) {
     if(!container) return;
-    if(data.length === 0) {
-        container.innerHTML = '<div class="empty-state">Nenhum registro.</div>';
-        return;
-    }
-    const headerHTML = headers.map(h => `<th>${h}</th>`).join('');
-    const rowsHTML = data.map(item => `<tr>${rowGenerator(item)}</tr>`).join('');
-    container.innerHTML = `<table><thead><tr>${headerHTML}</tr></thead><tbody>${rowsHTML}</tbody></table>`;
+    if(!data || data.length === 0) { container.innerHTML = '<div class="empty-state">Nenhum registro.</div>'; return; }
     
-    // Atualiza contador se existir na tela
+    const h = headers.map(t=>`<th>${t}</th>`).join('');
+    const b = data.map(i => `<tr>${rowFn(i)}</tr>`).join('');
+    container.innerHTML = `<table><thead><tr>${h}</tr></thead><tbody>${b}</tbody></table>`;
+    
+    // Atualiza contador vizinho se existir
     const countDiv = container.previousElementSibling;
     if(countDiv && countDiv.classList.contains('results-count')) {
         countDiv.style.display = 'block';
@@ -745,107 +555,91 @@ function renderTableGeneric(container, data, headers, rowGenerator) {
     }
 }
 
-// --- AUXILIARES CONFIGURAÇÃO ---
-function showGenericModal(prefix, id, arrayData) {
+function showGenericFormModal(prefix, id, arr) {
     const modal = document.getElementById(`${prefix}-modal`);
     document.getElementById(`${prefix}-form`).reset();
     editingId = id;
+    updateGlobalDropdowns();
     if(id) {
-        const item = arrayData.find(x => x.id === id);
-        if(item) document.getElementById(`${prefix}-name`).value = item.name;
+        const item = arr.find(x => x.id === id);
+        if(item) {
+            // Preenchimento básico: tenta achar inputs com id "prefix-key"
+            Object.keys(item).forEach(key => {
+                const el = document.getElementById(`${prefix}-${key}`);
+                if(el) el.value = item[key];
+            });
+        }
     }
     modal.classList.add('show');
 }
 
-function saveConfigGeneric(arrayName, idPrefix, data, renderFunc) {
-    let arr = arrayName === 'cargos' ? cargos : orientadores; // Adicione outros
-    if(editingId) {
-        const idx = arr.findIndex(x => x.id === editingId);
-        arr[idx] = { ...arr[idx], ...data };
-    } else {
-        arr.push({ id: getNextId(idPrefix), ...data });
+function getFormData(prefix, fields) {
+    let d = {};
+    fields.forEach(f => {
+        const el = document.getElementById(`${prefix}-${f}`);
+        if(el) d[f] = el.value;
+    });
+    return d;
+}
+
+function renderConfigTable(contId, data, editFnName, delFnName, arrName) {
+    const c = document.getElementById(contId);
+    if(!c) return;
+    if(data.length === 0) { c.innerHTML = '<div class="empty-state">Vazio.</div>'; return; }
+    const rows = data.map(i => `<tr><td>${i.name}</td><td><button class="btn btn--sm" onclick="${editFnName}(${i.id})">✏️</button><button class="btn btn--sm" onclick="${delFnName}('${arrName}', ${i.id}, ${editFnName.replace('show','render').replace('Modal','s')})">🗑️</button></td></tr>`).join('');
+    c.innerHTML = `<table><thead><th>Nome</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+}
+
+function showGenericConfigModal(prefix, id, arr, fields) {
+    const m = document.getElementById(`${prefix}-modal`);
+    document.getElementById(`${prefix}-form`).reset();
+    editingId = id;
+    if(id) {
+        const item = arr.find(x => x.id === id);
+        fields.forEach(f => document.getElementById(`${prefix}-${f}`).value = item[f]);
     }
-    salvarNoArmazenamento(arrayName, arr);
-    document.querySelector('.modal.show').classList.remove('show');
-    renderFunc();
-    showToast('Salvo!');
-    updateGlobalDropdowns(); // Importante para atualizar selects nas outras telas
-}
-
-function renderConfigGeneric(containerId, data, editFunc, deleteFunc, arrayName) {
-    const container = document.getElementById(containerId);
-    renderTableGeneric(container, data, ['Nome', 'Ações'], (item) => `
-        <td>${item.name}</td>
-        <td>
-            <button class="btn btn--sm" onclick="${editFunc}(${item.id})">✏️</button>
-            <button class="btn btn--sm" onclick="deleteItem('${arrayName}', ${item.id}, ${editFunc.replace('show', 'render').replace('Modal', 's')})">🗑️</button>
-        </td>
-    `);
+    m.classList.add('show');
 }
 
 // =====================================================
-// 7. DASHBOARD E GRÁFICOS
+// 8. DROPDOWNS E AUXILIARES
 // =====================================================
+function populateSelect(select, data, valKey, textKey) {
+    if(!select) return;
+    const current = select.value;
+    let html = '<option value="">Selecione...</option>';
+    data.sort((a,b)=>a[textKey].localeCompare(b[textKey])).forEach(i => {
+        html += `<option value="${i[valKey]}">${i[textKey]}</option>`;
+    });
+    select.innerHTML = html;
+    select.value = current;
+}
+
+function updateGlobalDropdowns() {
+    // Popula select de municípios nas telas operacionais
+    const muns = municipalities.filter(m => m.status === 'Em uso');
+    ['task-municipality','request-municipality','visit-municipality','production-municipality','presentation-municipality'].forEach(id => {
+        populateSelect(document.getElementById(id), muns, 'name', 'name');
+    });
+    
+    // Filtros
+    populateSelect(document.getElementById('filter-municipality-name'), municipalities, 'name', 'name');
+    // Filtros de Módulo
+    populateSelect(document.getElementById('filter-municipality-module'), modulos, 'name', 'name');
+}
+
 function updateDashboardStats() {
-    // Contadores
     document.getElementById('dashboard-municipalities-in-use').textContent = municipalities.filter(m => m.status === 'Em uso').length;
     document.getElementById('dashboard-trainings-completed').textContent = tasks.filter(t => t.status === 'Concluído').length;
     document.getElementById('dashboard-requests-completed').textContent = requests.filter(r => r.status === 'Realizado').length;
     document.getElementById('dashboard-presentations-completed').textContent = presentations.filter(p => p.status === 'Realizada').length;
 }
 
-function updateCharts() {
-    // Placeholder simples para Chart.js se existir
-    const ctx = document.getElementById('implantationsYearChart');
-    if(ctx && window.Chart) {
-        // Destruir anterior se existir (lógica simplificada)
-        // Requer Chart.js carregado
-        // new Chart(ctx, ... config ...);
-    }
+function updateBackupInfo() {
+    document.getElementById('backup-info-municipalities').textContent = municipalities.length;
+    document.getElementById('backup-info-trainings').textContent = tasks.length;
+    document.getElementById('backup-info-cargos').textContent = cargos.length;
 }
-
-function initializeDashboardCharts() {
-    // Inicializa vazio
-}
-
-// =====================================================
-// 8. HELPERS DE UI
-// =====================================================
-function updateGlobalDropdowns() {
-    // Atualiza todos os <select> que pedem município
-    const municipalitySelects = ['task-municipality', 'request-municipality', 'visit-municipality', 'production-municipality', 'presentation-municipality'];
-    const activeMunicipalities = municipalities.filter(m => m.status !== 'Não Implantado'); // Ou todos, depende da regra
-    
-    municipalitySelects.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) populateSelect(el, activeMunicipalities, 'name', 'name');
-    });
-    
-    // Atualiza filtro da aba municípios
-    const filterMun = document.getElementById('filter-municipality-name');
-    if(filterMun) populateSelect(filterMun, municipalities, 'name', 'name', true);
-}
-
-function populateSelect(selectElement, dataArray, valueKey, textKey, includeAllOption = false) {
-    const currentVal = selectElement.value;
-    let html = includeAllOption ? '<option value="">Todos</option>' : '<option value="">Selecione...</option>';
-    
-    // Ordena
-    const sorted = [...dataArray].sort((a,b) => a[textKey].localeCompare(b[textKey]));
-    
-    html += sorted.map(item => `<option value="${item[valueKey]}">${item[textKey]}</option>`).join('');
-    selectElement.innerHTML = html;
-    
-    // Tenta restaurar valor selecionado
-    if(currentVal) selectElement.value = currentVal;
-}
-
-function closeAllModals() {
-    document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
-}
-
-// Fechar modal ao clicar no X ou cancelar (vinculação genérica)
-// Os botões no HTML já chamam functions específicas, mas podemos adicionar listener global para o X genérico se tiver classe comum
 
 // =====================================================
 // 9. INICIALIZAÇÃO
@@ -853,59 +647,28 @@ function closeAllModals() {
 function initializeApp() {
     updateUserInterface();
     initializeTabs();
-    initializeTheme();
-    applyPhoneMasks();
-    setupProductionMasks();
+    setupMasks(); // Ativa máscaras
     
-    // Carregar dados iniciais
+    renderMunicipalities();
+    renderTasks();
+    // Outros renders conforme aba ativa
+    
     updateGlobalDropdowns();
     updateDashboardStats();
-    initializeDashboardCharts();
     
-    // Verifica se alguma aba já deve estar aberta
-    const activeBtn = document.querySelector('.sidebar-btn.active');
-    if(activeBtn) {
-        const tab = activeBtn.dataset.tab;
-        // Simula clique para carregar
-        if(tab === 'dashboard') updateDashboardStats();
-        if(tab === 'municipios') renderMunicipalities();
-    } else {
-        // Padrão Dashboard
-        navigateToHome();
-    }
+    // Navega para a Home ou Aba Ativa
+    const active = document.querySelector('.sidebar-btn.active');
+    if(!active) navigateToHome();
 }
 
-function updateUserInterface() {
-    if(currentUser) {
-        const el = document.getElementById('logged-user-name');
-        if(el) el.textContent = currentUser.name;
-    }
-}
-
-// Event Listeners Globais
 document.addEventListener('DOMContentLoaded', () => {
     checkAuthentication();
     
-    // Fecha modais ao clicar fora
-    window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.classList.remove('show');
-        }
-    }
+    // Listener para fechar modais no X e fora
+    window.onclick = (e) => { if(e.target.classList.contains('modal')) e.target.classList.remove('show'); };
+    document.querySelectorAll('.close-btn').forEach(b => b.onclick = function(){ this.closest('.modal').classList.remove('show'); });
+    document.querySelectorAll('.btn--secondary').forEach(b => { if(b.textContent.includes('Cancelar')) b.onclick = function(){ this.closest('.modal').classList.remove('show'); } });
     
-    // Fecha modal no botão X (se não tiver onclick no HTML)
-    document.querySelectorAll('.close-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            btn.closest('.modal').classList.remove('show');
-        });
-    });
-    
-    // Fecha modal no botão Cancelar
-    document.querySelectorAll('.btn--secondary').forEach(btn => {
-        if(btn.textContent.includes('Cancelar')) {
-            btn.addEventListener('click', () => {
-                btn.closest('.modal').classList.remove('show');
-            });
-        }
-    });
+    // Listener para Abas do Sidebar
+    initializeTabs();
 });
