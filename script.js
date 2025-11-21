@@ -653,7 +653,32 @@ function closePresentationModal() { document.getElementById('presentation-modal'
 // Versões
 function showVersionModal(id=null){ editingId=id; document.getElementById('version-form').reset(); if(id){const v=systemVersions.find(x=>x.id===id); document.getElementById('version-date').value=v.date; document.getElementById('version-number').value=v.version; document.getElementById('version-type').value=v.type; document.getElementById('version-module').value=v.module; document.getElementById('version-description').value=v.description;} document.getElementById('version-modal').classList.add('show'); }
 function saveVersion(e){ e.preventDefault(); const data={date:document.getElementById('version-date').value, version:document.getElementById('version-number').value, type:document.getElementById('version-type').value, module:document.getElementById('version-module').value, description:document.getElementById('version-description').value, author:currentUser.name}; if(editingId){const i=systemVersions.findIndex(x=>x.id===editingId); systemVersions[i]={...systemVersions[i],...data};}else{systemVersions.push({id:getNextId('ver'),...data});} salvarNoArmazenamento('systemVersions',systemVersions); document.getElementById('version-modal').classList.remove('show'); renderVersions(); showToast('Salvo!'); }
-function renderVersions(){ const c=document.getElementById('versions-table'); if(systemVersions.length===0){c.innerHTML='Vazio';return;} const r=systemVersions.map(v=>`<tr><td>${formatDate(v.date)}</td><td>${v.version}</td><td>${v.type}</td><td>${v.module}</td><td>${v.description}</td><td><button class="btn btn--sm" onclick="showVersionModal(${v.id})">✏️</button><button class="btn btn--sm" onclick="deleteVersion(${v.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Data</th><th>Versão</th><th>Tipo</th><th>Módulo</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
+function renderVersions() { 
+    const c = document.getElementById('versions-table'); 
+    // CORREÇÃO: Verifica se 'c' existe ANTES de tentar usar .innerHTML
+    if(!c) return; 
+    
+    if(systemVersions.length === 0){
+        c.innerHTML = '<div class="empty-state">Nenhuma versão registrada.</div>';
+        return;
+    } 
+    
+    const r = systemVersions.map(v => `
+        <tr>
+            <td>${formatDate(v.date)}</td>
+            <td>${v.version}</td>
+            <td>${v.type}</td>
+            <td>${v.module}</td>
+            <td>${v.description}</td>
+            <td>
+                <button class="btn btn--sm" onclick="showVersionModal(${v.id})">✏️</button>
+                <button class="btn btn--sm" onclick="deleteVersion(${v.id})">🗑️</button>
+            </td>
+        </tr>
+    `).join(''); 
+    
+    c.innerHTML = `<table><thead><th>Data</th><th>Versão</th><th>Tipo</th><th>Módulo</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; 
+}
 function deleteVersion(id){ if(confirm('Excluir?')){ systemVersions=systemVersions.filter(x=>x.id!==id); salvarNoArmazenamento('systemVersions',systemVersions); renderVersions(); }}
 function closeVersionModal() { document.getElementById('version-modal').classList.remove('show'); }
 
@@ -912,3 +937,50 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.close-btn').forEach(b => b.onclick = function(){ this.closest('.modal').classList.remove('show'); });
     document.querySelectorAll('.btn--secondary').forEach(b => { if(b.textContent.includes('Cancelar')) b.onclick = function(){ this.closest('.modal').classList.remove('show'); } });
 });
+
+// =====================================================
+// 17. FUNÇÕES DE LIMPEZA DE FILTROS (RESTAURADAS)
+// Cole isso no final do seu script.js
+// =====================================================
+
+function clearTaskFilters() {
+    if(document.getElementById('filter-task-municipality')) document.getElementById('filter-task-municipality').value = '';
+    if(document.getElementById('filter-task-status')) document.getElementById('filter-task-status').value = '';
+    renderTasks();
+}
+
+function clearRequestFilters() {
+    if(document.getElementById('filter-request-municipality')) document.getElementById('filter-request-municipality').value = '';
+    if(document.getElementById('filter-request-status')) document.getElementById('filter-request-status').value = '';
+    renderRequests();
+}
+
+function clearDemandFilters() {
+    if(document.getElementById('filter-demand-status')) document.getElementById('filter-demand-status').value = '';
+    if(document.getElementById('filter-demand-priority')) document.getElementById('filter-demand-priority').value = '';
+    renderDemands();
+}
+
+function clearVisitFilters() {
+    if(document.getElementById('filter-visit-municipality')) document.getElementById('filter-visit-municipality').value = '';
+    if(document.getElementById('filter-visit-status')) document.getElementById('filter-visit-status').value = '';
+    renderVisits();
+}
+
+function clearProductionFilters() {
+    if(document.getElementById('filter-production-municipality')) document.getElementById('filter-production-municipality').value = '';
+    if(document.getElementById('filter-production-status')) document.getElementById('filter-production-status').value = '';
+    renderProductions();
+}
+
+function clearPresentationFilters() {
+    if(document.getElementById('filter-presentation-municipality')) document.getElementById('filter-presentation-municipality').value = '';
+    if(document.getElementById('filter-presentation-status')) document.getElementById('filter-presentation-status').value = '';
+    renderPresentations();
+}
+
+function clearMunicipalityFilters() {
+    if(document.getElementById('filter-municipality-name')) document.getElementById('filter-municipality-name').value = '';
+    if(document.getElementById('filter-municipality-status')) document.getElementById('filter-municipality-status').value = '';
+    renderMunicipalities();
+}
