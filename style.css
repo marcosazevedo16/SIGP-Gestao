@@ -2473,26 +2473,32 @@ tbody tr:hover {
 
 ```css
 /* ==========================================================================
-   📱 ESTILO MOBILE - MENU LATERAL DESLIZANTE (HAMBÚRGUER)
+   📱 ESTILO MOBILE CORRIGIDO - MENU LATERAL (HAMBÚRGUER) v2
+   Substitua o bloco @media anterior por este.
    ========================================================================== */
 
-/* Botão do Menu (Só aparece no celular) */
+/* Botão do Menu (Visível em qualquer tema) */
 .mobile-menu-toggle {
     display: none; /* Escondido no PC */
     font-size: 1.2rem;
     padding: 8px 12px;
     margin-right: 10px;
-    border: 1px solid rgba(255,255,255,0.3);
-    color: white;
+    border: 1px solid rgba(255,255,255,0.5); /* Borda visível */
+    background-color: rgba(0,0,0,0.2); /* Fundo leve para contraste */
+    color: white !important; /* Texto sempre branco pois o header é azul */
+    z-index: 110;
+    cursor: pointer;
+    border-radius: 4px;
 }
 
-/* Fundo escuro quando o menu abre */
+/* Overlay Escuro de Fundo */
 .sidebar-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 95; /* Atrás do menu, na frente do conteúdo */
+    background: rgba(0,0,0,0.6);
+    z-index: 95;
+    backdrop-filter: blur(2px); /* Efeito de desfoque chique */
 }
 
 /* Ajustes para telas pequenas (Celular/Tablet) */
@@ -2500,68 +2506,109 @@ tbody tr:hover {
     
     /* Mostra o botão de menu */
     .mobile-menu-toggle {
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    /* Layout Principal */
+    /* Layout Principal em Coluna */
     .app-layout {
         flex-direction: column;
     }
 
-    /* Cabeçalho */
+    /* Cabeçalho Ajustado */
     .app-header {
-        padding: 10px;
+        padding: 10px 15px;
+        position: sticky; /* Fixa no topo */
+        top: 0;
+        z-index: 101;
     }
     
     .header-content {
-        flex-direction: row; /* Mantém botão e título na mesma linha se der */
+        flex-direction: row;
         flex-wrap: wrap;
         align-items: center;
+        gap: 10px;
     }
 
-    /* O Menu Lateral (Escondido por padrão) */
+    /* O Menu Lateral (Gaveta) */
     .sidebar {
         position: fixed;
         top: 0;
-        left: -280px; /* Escondido fora da tela à esquerda */
-        width: 280px;
-        height: 100vh; /* Altura total */
-        background-color: #003d5c;
-        transition: left 0.3s ease-in-out; /* Animação suave */
-        z-index: 100; /* Fica acima de tudo */
-        box-shadow: 2px 0 10px rgba(0,0,0,0.5);
-        padding-top: 20px;
+        left: -300px; /* Escondido fora da tela */
+        width: 280px; /* Largura confortável */
+        height: 100vh; /* Altura total da tela */
+        background-color: #003d5c; /* Cor do menu */
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Animação suave */
+        z-index: 100;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+        padding-top: 60px; /* Espaço para não cobrir o topo */
+        overflow-y: auto; /* Rolagem se o menu for longo */
     }
 
-    /* Quando a classe 'active' é adicionada via JS, o menu aparece */
+    /* Quando o menu abre */
     .sidebar.mobile-open {
         left: 0;
     }
 
-    /* Itens do Menu (Maiores para clicar com o dedo) */
+    /* Itens do Menu (Vertical e Grande) */
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column !important; /* Força ficar um embaixo do outro */
+        width: 100%;
+        padding: 0;
+    }
+
     .sidebar-btn {
-        padding: 15px 20px; /* Mais gordinho */
-        font-size: 16px; /* Letra maior */
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-        border-left: 4px solid transparent; /* Borda na esquerda */
+        display: flex;
+        align-items: center;
+        justify-content: flex-start; /* Alinha à esquerda */
+        width: 100%; /* Ocupa toda a largura */
+        padding: 16px 20px; /* Área de toque grande */
+        font-size: 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        border-left: 6px solid transparent; /* Marcador lateral */
+        color: rgba(255,255,255,0.8);
+        background: transparent;
+    }
+
+    .sidebar-btn:active {
+        background-color: rgba(255,255,255,0.1);
+    }
+
+    .sidebar-btn.active {
+        background-color: rgba(255,255,255,0.15);
+        border-left-color: #40A9FF; /* Destaque azul claro */
+        color: white;
+        font-weight: 600;
+    }
+
+    /* Ícone do botão */
+    .sidebar-icon {
+        font-size: 20px;
+        margin-right: 15px;
+        width: 24px;
+        text-align: center;
     }
 
     /* Conteúdo Principal */
     .main-content {
-        margin-left: 0; /* Remove a margem da esquerda */
+        margin-left: 0;
         width: 100%;
         padding: 15px;
+        padding-top: 20px;
     }
 
-    /* Tabelas com rolagem horizontal */
+    /* Tabelas com rolagem */
     .tasks-table, 
     .municipalities-table {
         display: block;
+        width: 100%;
         overflow-x: auto;
-        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
     }
-
-    /* Mostra o overlay quando menu aberto */
+    
+    /* Mostra o fundo escuro quando aberto */
     .sidebar-overlay.active {
         display: block;
     }
