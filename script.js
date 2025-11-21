@@ -1,6 +1,6 @@
 // =====================================================
-// SIGP SAÚDE v8.0 - VERSÃO EXPLÍCITA (SEM OTIMIZAÇÕES)
-// Código detalhado para garantir funcionamento de todas as abas
+// SIGP SAÚDE v9.0 - VERSÃO COMPLETA & DETALHADA
+// Correções: Duplicidade, Edição Completa, Gráficos e Listagens
 // =====================================================
 
 // 1. VERIFICAÇÃO DE SEGURANÇA
@@ -12,6 +12,7 @@ if (typeof CryptoJS === 'undefined') {
 // 2. CONFIGURAÇÕES E UTILITÁRIOS
 // =====================================================
 const SALT_LENGTH = 16;
+let chartInstance = null; // Variável para controlar o gráfico e evitar sobreposição
 
 function generateSalt() { return CryptoJS.lib.WordArray.random(SALT_LENGTH).toString(); }
 function hashPassword(password, salt) { return CryptoJS.SHA256(salt + password).toString(); }
@@ -222,7 +223,7 @@ function initializeTabs() {
                 if(tabId === 'producao') renderProductions();
                 if(tabId === 'apresentacoes') renderPresentations();
                 if(tabId === 'versoes') renderVersions();
-                if(tabId === 'dashboard') updateDashboardStats();
+                if(tabId === 'dashboard') { updateDashboardStats(); initializeDashboardCharts(); }
             }
         };
     });
@@ -354,7 +355,7 @@ function saveUser(e) {
     if (!editingId) {
         // Verificar Duplicidade
         if (users.some(u => u.login === login)) {
-            alert('Login já existe!');
+            alert('Login já existe! Escolha outro.');
             return;
         }
         // Novo
@@ -560,13 +561,14 @@ function renderTasks() {
             <td>${t.municipality}</td>
             <td>${t.requestedBy}</td>
             <td>${t.performedBy}</td>
+            <td>${t.trainedName}</td>
             <td>${t.status}</td>
             <td>
                 <button class="btn btn--sm" onclick="showTaskModal(${t.id})">✏️</button>
                 <button class="btn btn--sm" onclick="deleteTask(${t.id})">🗑️</button>
             </td>
         </tr>`).join('');
-    c.innerHTML = `<table><thead><th>Data</th><th>Município</th><th>Solicitante</th><th>Instrutor</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+    c.innerHTML = `<table><thead><th>Data</th><th>Município</th><th>Solicitante</th><th>Instrutor</th><th>Treinado</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     document.getElementById('total-tasks').textContent = tasks.length;
 }
 
@@ -594,6 +596,7 @@ function showProductionModal(id=null) {
         document.getElementById('production-competence').value = p.competence;
         document.getElementById('production-period').value = p.period;
         document.getElementById('production-release-date').value = p.releaseDate;
+        document.getElementById('production-send-date').value = p.sendDate;
         document.getElementById('production-status').value = p.status;
     }
     document.getElementById('production-modal').classList.add('show');
@@ -660,7 +663,7 @@ function closeVisitModal() { document.getElementById('visit-modal').classList.re
 // Demandas
 function showDemandModal(id=null){ editingId=id; document.getElementById('demand-form').reset(); if(id){const d=demands.find(x=>x.id===id); document.getElementById('demand-date').value=d.date; document.getElementById('demand-description').value=d.description; document.getElementById('demand-priority').value=d.priority; document.getElementById('demand-status').value=d.status;} document.getElementById('demand-modal').classList.add('show'); }
 function saveDemand(e){ e.preventDefault(); const data={date:document.getElementById('demand-date').value, description:document.getElementById('demand-description').value, priority:document.getElementById('demand-priority').value, status:document.getElementById('demand-status').value}; if(editingId){const i=demands.findIndex(x=>x.id===editingId); demands[i]={...demands[i],...data};}else{demands.push({id:getNextId('dem'),...data});} salvarNoArmazenamento('demands',demands); document.getElementById('demand-modal').classList.remove('show'); renderDemands(); showToast('Salvo!'); }
-function renderDemands(){ const c=document.getElementById('demands-table'); if(demands.length===0){c.innerHTML='Vazio';return;} const r=demands.map(d=>`<tr><td>${formatDate(d.date)}</td><td>${d.priority}</td><td>${d.status}</td><td><button class="btn btn--sm" onclick="showDemandModal(${d.id})">✏️</button><button class="btn btn--sm" onclick="deleteDemand(${d.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Data</th><th>Prioridade</th><th>Status</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
+function renderDemands(){ const c=document.getElementById('demands-table'); if(demands.length===0){c.innerHTML='Vazio';return;} const r=demands.map(d=>`<tr><td>${formatDate(d.date)}</td><td>${d.priority}</td><td>${d.status}</td><td>${d.description}</td><td><button class="btn btn--sm" onclick="showDemandModal(${d.id})">✏️</button><button class="btn btn--sm" onclick="deleteDemand(${d.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Data</th><th>Prioridade</th><th>Status</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
 function deleteDemand(id){ if(confirm('Excluir?')){ demands=demands.filter(x=>x.id!==id); salvarNoArmazenamento('demands',demands); renderDemands(); }}
 function closeDemandModal() { document.getElementById('demand-modal').classList.remove('show'); }
 
@@ -693,27 +696,57 @@ function renderMunicipalityList(){ const c=document.getElementById('municipaliti
 function deleteMunicipalityList(id){ if(confirm('Excluir?')){ municipalitiesList=municipalitiesList.filter(x=>x.id!==id); salvarNoArmazenamento('municipalitiesList',municipalitiesList); renderMunicipalityList(); updateGlobalDropdowns(); }}
 function closeMunicipalityListModal() { document.getElementById('municipality-list-modal').classList.remove('show'); }
 
-// Cargos, Orientadores, Modulos
-function showCargoModal(id=null){ editingId=id; document.getElementById('cargo-form').reset(); if(id){const c=cargos.find(x=>x.id===id); document.getElementById('cargo-name').value=c.name;} document.getElementById('cargo-modal').classList.add('show'); }
-function saveCargo(e){ e.preventDefault(); const data={name:document.getElementById('cargo-name').value}; if(editingId){const i=cargos.findIndex(x=>x.id===editingId); cargos[i]={...cargos[i],...data};}else{cargos.push({id:getNextId('cargo'),...data});} salvarNoArmazenamento('cargos',cargos); document.getElementById('cargo-modal').classList.remove('show'); renderCargos(); }
-function renderCargos(){ const c=document.getElementById('cargos-table'); const r=cargos.map(x=>`<tr><td>${x.name}</td><td><button class="btn btn--sm" onclick="showCargoModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteCargo(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Cargo</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
+// Cargos
+function showCargoModal(id=null){ editingId=id; document.getElementById('cargo-form').reset(); 
+    if(id){const c=cargos.find(x=>x.id===id); document.getElementById('cargo-name').value=c.name; if(document.getElementById('cargo-description')) document.getElementById('cargo-description').value=c.description;} 
+    document.getElementById('cargo-modal').classList.add('show'); }
+function saveCargo(e){ 
+    e.preventDefault(); 
+    const name = document.getElementById('cargo-name').value;
+    const desc = document.getElementById('cargo-description') ? document.getElementById('cargo-description').value : '';
+    // Duplicate Check
+    if(!editingId && cargos.some(c=>c.name===name)) { alert('Cargo já existe!'); return; }
+    const data={name:name, description:desc}; 
+    if(editingId){const i=cargos.findIndex(x=>x.id===editingId); cargos[i]={...cargos[i],...data};}else{cargos.push({id:getNextId('cargo'),...data});} salvarNoArmazenamento('cargos',cargos); document.getElementById('cargo-modal').classList.remove('show'); renderCargos(); }
+function renderCargos(){ const c=document.getElementById('cargos-table'); const r=cargos.map(x=>`<tr><td>${x.name}</td><td>${x.description||'-'}</td><td><button class="btn btn--sm" onclick="showCargoModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteCargo(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Cargo</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
 function deleteCargo(id){ if(confirm('Excluir?')){ cargos=cargos.filter(x=>x.id!==id); salvarNoArmazenamento('cargos',cargos); renderCargos(); }}
 function closeCargoModal() { document.getElementById('cargo-modal').classList.remove('show'); }
 
-function showOrientadorModal(id=null){ editingId=id; document.getElementById('orientador-form').reset(); if(id){const o=orientadores.find(x=>x.id===id); document.getElementById('orientador-name').value=o.name; document.getElementById('orientador-contact').value=o.contact;} document.getElementById('orientador-modal').classList.add('show'); }
-function saveOrientador(e){ e.preventDefault(); const data={name:document.getElementById('orientador-name').value, contact:document.getElementById('orientador-contact').value}; if(editingId){const i=orientadores.findIndex(x=>x.id===editingId); orientadores[i]={...orientadores[i],...data};}else{orientadores.push({id:getNextId('orient'),...data});} salvarNoArmazenamento('orientadores',orientadores); document.getElementById('orientador-modal').classList.remove('show'); renderOrientadores(); }
-function renderOrientadores(){ const c=document.getElementById('orientadores-table'); const r=orientadores.map(x=>`<tr><td>${x.name}</td><td>${x.contact}</td><td><button class="btn btn--sm" onclick="showOrientadorModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteOrientador(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Nome</th><th>Contact</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
+// Orientadores
+function showOrientadorModal(id=null){ editingId=id; document.getElementById('orientador-form').reset(); 
+    if(id){const o=orientadores.find(x=>x.id===id); document.getElementById('orientador-name').value=o.name; document.getElementById('orientador-contact').value=o.contact; if(document.getElementById('orientador-email')) document.getElementById('orientador-email').value=o.email;} 
+    document.getElementById('orientador-modal').classList.add('show'); }
+function saveOrientador(e){ 
+    e.preventDefault(); 
+    const name = document.getElementById('orientador-name').value;
+    const contact = document.getElementById('orientador-contact').value;
+    const email = document.getElementById('orientador-email') ? document.getElementById('orientador-email').value : '';
+    // Duplicate Check
+    if(!editingId && orientadores.some(o=>o.name===name)) { alert('Orientador já existe!'); return; }
+    const data={name:name, contact:contact, email:email}; 
+    if(editingId){const i=orientadores.findIndex(x=>x.id===editingId); orientadores[i]={...orientadores[i],...data};}else{orientadores.push({id:getNextId('orient'),...data});} salvarNoArmazenamento('orientadores',orientadores); document.getElementById('orientador-modal').classList.remove('show'); renderOrientadores(); }
+function renderOrientadores(){ const c=document.getElementById('orientadores-table'); const r=orientadores.map(x=>`<tr><td>${x.name}</td><td>${x.contact}</td><td>${x.email||'-'}</td><td><button class="btn btn--sm" onclick="showOrientadorModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteOrientador(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Nome</th><th>Contato</th><th>Email</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
 function deleteOrientador(id){ if(confirm('Excluir?')){ orientadores=orientadores.filter(x=>x.id!==id); salvarNoArmazenamento('orientadores',orientadores); renderOrientadores(); }}
 function closeOrientadorModal() { document.getElementById('orientador-modal').classList.remove('show'); }
 
-function showModuloModal(id=null){ editingId=id; document.getElementById('modulo-form').reset(); if(id){const m=modulos.find(x=>x.id===id); document.getElementById('modulo-name').value=m.name;} document.getElementById('modulo-modal').classList.add('show'); }
-function saveModulo(e){ e.preventDefault(); const data={name:document.getElementById('modulo-name').value}; if(editingId){const i=modulos.findIndex(x=>x.id===editingId); modulos[i]={...modulos[i],...data};}else{modulos.push({id:getNextId('mod'),...data});} salvarNoArmazenamento('modulos',modulos); document.getElementById('modulo-modal').classList.remove('show'); renderModulos(); }
-function renderModulos(){ const c=document.getElementById('modulos-table'); const r=modulos.map(x=>`<tr><td>${x.name}</td><td><button class="btn btn--sm" onclick="showModuloModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteModulo(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Módulo</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
+// Módulos
+function showModuloModal(id=null){ editingId=id; document.getElementById('modulo-form').reset(); 
+    if(id){const m=modulos.find(x=>x.id===id); document.getElementById('modulo-name').value=m.name; if(document.getElementById('modulo-abbreviation')) document.getElementById('modulo-abbreviation').value=m.abbreviation;} 
+    document.getElementById('modulo-modal').classList.add('show'); }
+function saveModulo(e){ 
+    e.preventDefault(); 
+    const name = document.getElementById('modulo-name').value;
+    const abbr = document.getElementById('modulo-abbreviation') ? document.getElementById('modulo-abbreviation').value : '';
+    if(!editingId && modulos.some(m=>m.name===name)) { alert('Módulo já existe!'); return; }
+    const data={name:name, abbreviation:abbr}; 
+    if(editingId){const i=modulos.findIndex(x=>x.id===editingId); modulos[i]={...modulos[i],...data};}else{modulos.push({id:getNextId('mod'),...data});} salvarNoArmazenamento('modulos',modulos); document.getElementById('modulo-modal').classList.remove('show'); renderModulos(); }
+function renderModulos(){ const c=document.getElementById('modulos-table'); const r=modulos.map(x=>`<tr><td>${x.name}</td><td>${x.abbreviation||'-'}</td><td><button class="btn btn--sm" onclick="showModuloModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteModulo(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Módulo</th><th>Abrev.</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
 function deleteModulo(id){ if(confirm('Excluir?')){ modulos=modulos.filter(x=>x.id!==id); salvarNoArmazenamento('modulos',modulos); renderModulos(); }}
 function closeModuloModal() { document.getElementById('modulo-modal').classList.remove('show'); }
 
+// Formas Apresentação
 function showFormaApresentacaoModal(id=null){ editingId=id; document.getElementById('forma-apresentacao-form').reset(); if(id){const f=formasApresentacao.find(x=>x.id===id); document.getElementById('forma-apresentacao-name').value=f.name;} document.getElementById('forma-apresentacao-modal').classList.add('show'); }
-function saveFormaApresentacao(e){ e.preventDefault(); const data={name:document.getElementById('forma-apresentacao-name').value}; if(editingId){const i=formasApresentacao.findIndex(x=>x.id===editingId); formasApresentacao[i]={...formasApresentacao[i],...data};}else{formasApresentacao.push({id:getNextId('forma'),...data});} salvarNoArmazenamento('formasApresentacao',formasApresentacao); document.getElementById('forma-apresentacao-modal').classList.remove('show'); renderFormas(); }
+function saveFormaApresentacao(e){ e.preventDefault(); const name = document.getElementById('forma-apresentacao-name').value; if(!editingId && formasApresentacao.some(f=>f.name===name)) { alert('Forma já existe!'); return; } const data={name:name}; if(editingId){const i=formasApresentacao.findIndex(x=>x.id===editingId); formasApresentacao[i]={...formasApresentacao[i],...data};}else{formasApresentacao.push({id:getNextId('forma'),...data});} salvarNoArmazenamento('formasApresentacao',formasApresentacao); document.getElementById('forma-apresentacao-modal').classList.remove('show'); renderFormas(); }
 function renderFormas(){ const c=document.getElementById('formas-apresentacao-table'); const r=formasApresentacao.map(x=>`<tr><td>${x.name}</td><td><button class="btn btn--sm" onclick="showFormaApresentacaoModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteForma(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Forma</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
 function deleteForma(id){ if(confirm('Excluir?')){ formasApresentacao=formasApresentacao.filter(x=>x.id!==id); salvarNoArmazenamento('formasApresentacao',formasApresentacao); renderFormas(); }}
 function closeFormaApresentacaoModal() { document.getElementById('forma-apresentacao-modal').classList.remove('show'); }
@@ -733,13 +766,11 @@ function populateSelect(select, data, valKey, textKey) {
 }
 
 function updateGlobalDropdowns() {
-    // Atualiza select de municípios nas telas de produção/task/etc com os ATIVOS
     const activeMuns = municipalities.filter(m => m.status === 'Em uso');
     ['task-municipality','request-municipality','visit-municipality','production-municipality','presentation-municipality'].forEach(id => {
         populateSelect(document.getElementById(id), activeMuns, 'name', 'name');
     });
     
-    // Filtro
     populateSelect(document.getElementById('filter-municipality-name'), municipalities, 'name', 'name');
 }
 
@@ -751,34 +782,49 @@ function updateDashboardStats() {
 }
 
 function updateBackupInfo() {
-    document.getElementById('backup-info-municipalities').textContent = municipalities.length;
-    document.getElementById('backup-info-trainings').textContent = tasks.length;
-    // Atualize outros IDs conforme existam no HTML
+    if(document.getElementById('backup-info-municipalities')) document.getElementById('backup-info-municipalities').textContent = municipalities.length;
+    if(document.getElementById('backup-info-trainings')) document.getElementById('backup-info-trainings').textContent = tasks.length;
 }
 
 function initializeDashboardCharts() {
     const ctx = document.getElementById('implantationsYearChart');
-    if(ctx && window.Chart) {
-        const dataMap = {};
-        municipalities.forEach(m => {
-            if(m.implantationDate) {
-                const y = m.implantationDate.split('-')[0];
-                dataMap[y] = (dataMap[y] || 0) + 1;
-            }
-        });
-        
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(dataMap),
-                datasets: [{
-                    label: 'Implantações',
-                    data: Object.values(dataMap),
-                    backgroundColor: '#1FB8CD'
-                }]
-            }
-        });
+    if(!ctx || !window.Chart) return;
+
+    // Destruir instância anterior se existir
+    if(chartInstance) {
+        chartInstance.destroy();
     }
+
+    const dataMap = {};
+    municipalities.forEach(m => {
+        if(m.implantationDate) {
+            const y = m.implantationDate.split('-')[0];
+            dataMap[y] = (dataMap[y] || 0) + 1;
+        }
+    });
+    
+    // Ordenar anos
+    const years = Object.keys(dataMap).sort();
+    const counts = years.map(y => dataMap[y]);
+
+    chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: years,
+            datasets: [{
+                label: 'Implantações',
+                data: counts,
+                backgroundColor: '#C85250' // Cor próxima da imagem
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+            }
+        }
+    });
 }
 
 // =====================================================
@@ -790,24 +836,20 @@ function initializeApp() {
     initializeTabs();
     applyMasks();
     
-    // Renders iniciais
     renderMunicipalities();
     renderTasks();
     renderVersions();
-    // Renderize outros conforme necessário
     
     updateGlobalDropdowns();
     updateDashboardStats();
     initializeDashboardCharts();
     
-    // Vai para Dashboard se nada ativo
     if(!document.querySelector('.sidebar-btn.active')) navigateToHome();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     checkAuthentication();
     
-    // Fechar modais com X e Cancelar
     window.onclick = (e) => { if(e.target.classList.contains('modal')) e.target.classList.remove('show'); };
     document.querySelectorAll('.close-btn').forEach(b => b.onclick = function(){ this.closest('.modal').classList.remove('show'); });
     document.querySelectorAll('.btn--secondary').forEach(b => { if(b.textContent.includes('Cancelar')) b.onclick = function(){ this.closest('.modal').classList.remove('show'); } });
