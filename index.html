@@ -36,17 +36,20 @@
                     <h2 class="login-form-title">Acesso ao Sistema</h2>
                     <p class="login-form-subtitle">Digite sua senha para continuar</p>
                     <form id="login-form" onsubmit="handleLogin(event)">
-                        <div class="form-group">
-                            <label class="form-label">Login</label>
-                            <input type="text" ... id="login-username" autocomplete="username">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Senha</label>
-                            <input type="password" ... id="login-password" autocomplete="current-password">
-                        </div>
-                        <div id="login-error" class="login-error"></div>
-                        <button type="submit" class="btn btn--primary btn--full-width login-btn">Entrar no Sistema</button>
-                    </form>
+    <div class="form-group">
+        <label class="form-label">Login</label>
+        <input type="text" class="form-control" id="login-username" required placeholder="DIGITE SEU LOGIN" autocomplete="username">
+    </div>
+    
+    <div class="form-group">
+        <label class="form-label">Senha</label>
+        <input type="password" class="form-control" id="login-password" required placeholder="Digite sua senha" autocomplete="current-password">
+    </div>
+    
+    <div id="login-error" class="login-error"></div>
+    
+    <button type="submit" class="btn btn--primary btn--full-width login-btn">Entrar no Sistema</button>
+</form>
 
                 </div>
             </div>
