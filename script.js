@@ -2445,3 +2445,40 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.close-btn').forEach(function(b) { b.onclick = function(){ this.closest('.modal').classList.remove('show'); }; });
     document.querySelectorAll('.btn--secondary').forEach(function(b) { if(b.textContent.includes('Cancelar')) b.onclick = function(){ this.closest('.modal').classList.remove('show'); }; });
 });
+
+// =====================================================
+// FUNÇÕES DO MENU MOBILE (Adicione no final do script.js)
+// =====================================================
+
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('mobile-overlay');
+    
+    // Cria o overlay se não existir
+    if (!overlay) {
+        const newOverlay = document.createElement('div');
+        newOverlay.id = 'mobile-overlay';
+        newOverlay.className = 'sidebar-overlay';
+        newOverlay.onclick = toggleMobileMenu; // Clicar fora fecha o menu
+        document.body.appendChild(newOverlay);
+    }
+
+    // Alterna classes
+    sidebar.classList.toggle('mobile-open');
+    const currentOverlay = document.getElementById('mobile-overlay');
+    if(currentOverlay) currentOverlay.classList.toggle('active');
+}
+
+// Fecha o menu automaticamente ao clicar em um item
+document.querySelectorAll('.sidebar-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Se estiver no mobile (menu aberto), fecha
+        if (window.innerWidth <= 900) {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar.classList.contains('mobile-open')) {
+                toggleMobileMenu();
+            }
+        }
+    });
+});
+
