@@ -346,15 +346,19 @@ function applyMasks() {
             e.target.value = formatPeriodo(e.target.value);
         });
     }
-    
-    // Auto-refresh nos filtros
+
+    // Auto-refresh nos filtros (CORREÇÃO: input para digitar, change para selecionar)
     const filters = document.querySelectorAll('.filters-section select, .filters-section input');
     filters.forEach(function(el) {
+        // Para digitar e filtrar na hora
+        el.addEventListener('input', function() {
+            const activeTab = document.querySelector('.tab-content.active');
+            if (activeTab) refreshCurrentTab(activeTab.id);
+        });
+        // Para dropdowns
         el.addEventListener('change', function() {
             const activeTab = document.querySelector('.tab-content.active');
-            if (activeTab) {
-                refreshCurrentTab(activeTab.id);
-            }
+            if (activeTab) refreshCurrentTab(activeTab.id);
         });
     });
 }
@@ -959,6 +963,11 @@ function renderMunicipalities() {
     const filtered = getFilteredMunicipalities();
     const c = document.getElementById('municipalities-table');
     
+    // Garante que o filtro de dropdown esteja preenchido corretamente ao abrir
+    if(document.getElementById('filter-municipality-name').options.length <= 1) {
+        populateFilterSelects();
+    }
+
     const counter = document.getElementById('municipalities-results-count');
     if (counter) {
         counter.style.display = 'block';
@@ -969,37 +978,67 @@ function renderMunicipalities() {
         c.innerHTML = '<div class="empty-state">Nenhum município encontrado com os filtros selecionados.</div>';
     } else {
         const rows = filtered.map(function(m) {
-            // AJUSTE 8: Módulos todos azuis (#005580)
+            // Lógica para Data de Bloqueio/Parada
+            let dataFim = '-';
+            let corDataFim = 'inherit';
+            
+            if (m.status === 'Bloqueado' && m.dateBlocked) {
+                dataFim = formatDate(m.dateBlocked);
+                corDataFim = '#C85250'; // Vermelho
+            } else if (m.status === 'Parou de usar' && m.dateStopped) {
+                dataFim = formatDate(m.dateStopped);
+                corDataFim = '#E68161'; // Laranja
+            }
+
+            // Badges de Módulos
             const modulesBadges = m.modules.map(function(modName) {
                 const modConfig = modulos.find(function(x) { return x.name === modName; });
                 const abbrev = modConfig ? modConfig.abbreviation : modName.substring(0,3).toUpperCase();
-                return `<span style="background:#005580;color:white;padding:2px 6px;border-radius:4px;font-size:10px;margin-right:2px;" title="${modName}">${abbrev}</span>`;
+                return `<span style="background:#005580;color:white;padding:1px 4px;border-radius:3px;font-size:9px;margin-right:2px;display:inline-block;margin-bottom:2px;" title="${modName}">${abbrev}</span>`;
             }).join('');
             
-            // AJUSTE 8: Cores de Status
-            let statusColor = '#005580'; // Azul (Em uso)
-            if (m.status === 'Bloqueado') statusColor = '#C85250'; // Vermelho
-            if (m.status === 'Parou de usar') statusColor = '#E68161'; // Laranja
-            if (m.status === 'Não Implantado') statusColor = '#79C2A9'; // Verde
+            // Cores de Status
+            let statusColor = '#005580'; 
+            if (m.status === 'Bloqueado') statusColor = '#C85250';
+            if (m.status === 'Parou de usar') statusColor = '#E68161';
+            if (m.status === 'Não Implantado') statusColor = '#79C2A9';
 
             return `<tr>
-                <td><strong>${m.name}</strong></td>
-                <td>${modulesBadges}</td>
-                <td>${m.manager}</td>
+                <td style="font-weight:600; color:#003d5c;">${m.name}</td>
+                <td style="max-width: 120px; white-space: normal;">${modulesBadges}</td>
+                <td style="font-size:12px;">${m.manager}</td>
                 <td>${m.contact}</td>
                 <td>${formatDate(m.implantationDate)}</td>
                 <td>${formatDate(m.lastVisit)}</td>
-                <td>${calculateTimeInUse(m.implantationDate)}</td>
-                <td>${calculateDaysSince(m.lastVisit)}</td>
-                <td><span style="background:${statusColor};color:white;padding:4px 8px;border-radius:12px;font-size:11px;">${m.status}</span></td>
+                <td style="font-size:11px;">${calculateTimeInUse(m.implantationDate)}</td>
+                <td style="font-size:11px;">${calculateDaysSince(m.lastVisit)}</td>
+                <td><span style="background:${statusColor};color:white;padding:3px 8px;border-radius:10px;font-size:10px;white-space:nowrap;">${m.status}</span></td>
+                <td style="color:${corDataFim}; font-weight:500; font-size:11px;">${dataFim}</td>
                 <td>
-                    <button class="btn btn--sm" onclick="showMunicipalityModal(${m.id})">✏️</button>
-                    <button class="btn btn--sm" onclick="deleteMunicipality(${m.id})">🗑️</button>
+                    <button class="btn btn--sm" onclick="showMunicipalityModal(${m.id})" title="Editar">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteMunicipality(${m.id})" title="Excluir">🗑️</button>
                 </td>
             </tr>`;
         }).join('');
         
-        c.innerHTML = `<table><thead><th>Município</th><th>Módulos</th><th>Gestor</th><th>Contato</th><th>Implantação</th><th>Última Visita</th><th>Tempo de Uso</th><th>Dias s/ Visita</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+        // Cabeçalho da Tabela Atualizado
+        c.innerHTML = `
+        <table class="compact-table">
+            <thead>
+                <th>Município</th>
+                <th>Módulos em Uso</th>
+                <th>Gestor(a) de Saúde Atual</th>
+                <th>Contato</th>
+                <th>Data<br>Implantação</th>
+                <th>Última Visita<br>Presencial</th>
+                <th>Tempo de Uso</th>
+                <th>Dias s/ Visita</th>
+                <th>Status</th>
+                <th>Data Bloqueio/<br>Parou de usar</th>
+                <th>Ações</th>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>`;
     }
     
     updateMunicipalityCharts(filtered);
