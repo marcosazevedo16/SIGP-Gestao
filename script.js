@@ -973,7 +973,8 @@ function renderMunicipalities() {
             const modulesBadges = m.modules.map(function(modName) {
                 const modConfig = modulos.find(function(x) { return x.name === modName; });
                 const abbrev = modConfig ? modConfig.abbreviation : modName.substring(0,3).toUpperCase();
-                return `<span style="background:#005580;color:white;padding:2px 6px;border-radius:4px;font-size:10px;margin-right:2px;" title="${modName}">${abbrev}</span>`;
+                // Versão ajustada para usar classe CSS .module-tag
+            return `<span class="module-tag" style="background-color:${color}; color:#fff;" title="${modName}">${abbrev}</span>`;
             }).join('');
             
             // AJUSTE 8: Cores de Status
