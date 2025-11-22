@@ -2513,6 +2513,60 @@ tbody tr:hover {
 }
 
 /* ==========================================================================
+   CORREÇÃO DE TABELAS E BADGES (AJUSTE VISUAL)
+   ========================================================================== */
+
+/* 1. Badges de Módulos (Quadrinhos) mais compactos */
+.module-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px; /* Menos espaço entre eles */
+    align-items: center;
+    max-width: 180px; /* Limita largura para não estourar */
+}
+
+.module-tag {
+    font-size: 9px !important; /* Letra menor */
+    padding: 1px 4px !important; /* Mais fino */
+    border-radius: 3px;
+    line-height: 1.2;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* 2. Coluna de Status (Não quebrar linha) */
+.status-badge {
+    white-space: nowrap; /* Impede quebra de linha (Parou de usar) */
+    font-size: 11px;
+    padding: 4px 8px;
+    display: inline-block;
+}
+
+/* 3. Ajuste Geral da Tabela de Municípios */
+#municipalities-table td {
+    vertical-align: middle;
+    padding: 8px 6px; /* Menos padding lateral */
+    font-size: 13px;
+}
+
+/* Garante largura mínima para colunas importantes */
+#municipalities-table th:nth-child(1), /* Nome */
+#municipalities-table td:nth-child(1) {
+    min-width: 140px;
+}
+
+#municipalities-table th:nth-child(2), /* Módulos */
+#municipalities-table td:nth-child(2) {
+    min-width: 120px;
+}
+
+#municipalities-table th:last-child, /* Ações */
+#municipalities-table td:last-child {
+    min-width: 80px;
+    text-align: center;
+}
+
+/* ==========================================================================
    📱 REGRAS APENAS PARA CELULAR (Telas até 900px)
    Aqui nós montamos o layout mobile e mostramos o botão.
    ========================================================================== */
