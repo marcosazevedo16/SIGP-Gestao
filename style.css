@@ -2488,27 +2488,106 @@ tbody tr:hover {
 }
 
 /* ==========================================================================
-   🖥️ REGRAS APENAS PARA COMPUTADOR (Telas maiores que 900px)
-   Aqui nós garantimos que o botão suma e o layout fique alinhado.
+   🖥️ COMPUTADOR (Telas maiores que 900px) - V16 (Ajuste de Texto e Cor)
+   Sidebar fina que expande, com quebra de linha nos textos e Menu claro.
    ========================================================================== */
 @media (min-width: 901px) {
-    /* ESCONDER O BOTÃO NA FORÇA BRUTA */
+    
+    /* Esconde o botão de menu do mobile */
     button.mobile-menu-toggle,
-    .mobile-menu-toggle,
-    .app-header .mobile-menu-toggle {
+    .mobile-menu-toggle {
         display: none !important;
-        visibility: hidden !important;
-        width: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border: none !important;
+    }
+
+    /* Sidebar fechada (padrão) */
+    .sidebar {
+        width: 70px !important;
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-x: hidden;
+        z-index: 1000;
+        background-color: #003d5c;
+        white-space: nowrap;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    }
+
+    /* Sidebar aberta (ao passar o mouse) - Aumentada para 300px */
+    .sidebar:hover {
+        width: 300px !important;
+        box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+    }
+
+    /* Conteúdo principal se ajusta */
+    .main-content {
+        margin-left: 70px !important;
+        width: calc(100% - 70px) !important;
+        transition: margin-left 0.3s ease;
+    }
+
+    /* Estilo dos botões da sidebar */
+    .sidebar-btn {
+        padding: 10px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center; /* Centraliza ícone quando fechado */
+        min-height: 50px; /* Altura mínima, mas pode crescer */
+        height: auto; /* Permite crescer se quebrar linha */
+        position: relative;
+    }
+
+    /* Ícone sempre visível e centralizado na sua coluna */
+    .sidebar-icon {
+        margin: 0;
+        min-width: 70px; /* Ocupa a largura da barra fechada */
+        font-size: 20px;
+        text-align: center;
+        flex-shrink: 0; /* Não deixa o ícone esmagar */
+    }
+
+    /* Texto do botão (some quando fechado) */
+    .sidebar-btn span:last-child {
+        opacity: 0;
+        visibility: hidden;
+        position: absolute;
+        left: 70px;
+        transition: opacity 0.2s ease;
+        white-space: nowrap;
+    }
+
+    /* REGRAS AO PASSAR O MOUSE (ABERTO) */
+    .sidebar:hover .sidebar-btn {
+        justify-content: flex-start; /* Alinha tudo à esquerda */
     }
     
-    /* Garante o alinhamento do título no PC */
-    .header-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+    .sidebar:hover .sidebar-btn span:last-child {
+        opacity: 1;
+        visibility: visible;
+        position: static; /* Volta ao fluxo normal para empurrar altura */
+        white-space: normal; /* PERMITE QUEBRA DE LINHA */
+        line-height: 1.2;    /* Espaçamento melhor entre linhas */
+        padding-right: 15px; /* Margem na direita para não colar na borda */
+        font-size: 13px;     /* Ajuste leve para caber melhor */
+    }
+
+    /* Ícone de "Menu" visual no topo */
+    .sidebar-nav::before {
+        content: "☰";
+        display: block;
+        text-align: center;
+        color: rgba(255,255,255,0.9); /* Mais claro */
+        font-size: 24px;
+        margin-bottom: 20px;
+        cursor: default;
+        height: 40px;
+        line-height: 40px;
+    }
+    
+    .sidebar:hover .sidebar-nav::before {
+        content: "MENU";
+        font-size: 14px;
+        font-weight: 700; /* Negrito */
+        letter-spacing: 2px;
+        color: #ffffff; /* Branco total */
+        opacity: 1;
     }
 }
 
