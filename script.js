@@ -838,12 +838,14 @@ function showMunicipalityModal(id = null) {
     editingId = id;
     document.getElementById('municipality-form').reset();
     
-    populateSelect(document.getElementById('municipality-name'), municipalitiesList, 'name', 'name');
+    // 1. Popula o dropdown com a Lista Mestra atual
+    const munSelect = document.getElementById('municipality-name');
+    populateSelect(munSelect, municipalitiesList, 'name', 'name');
     
     const statusSel = document.getElementById('municipality-status');
     statusSel.onchange = handleMunicipalityStatusChange;
 
-    // AJUSTE: Renderizar Checkboxes de Módulos Dinamicamente
+    // 2. Renderiza Checkboxes de Módulos Dinamicamente
     const checkboxContainer = document.querySelector('#municipality-form .checkbox-grid');
     if(checkboxContainer) {
         if(modulos.length > 0) {
@@ -855,10 +857,29 @@ function showMunicipalityModal(id = null) {
         }
     }
     
+    // 3. Se for Edição, preenche os dados
     if (id) {
         const m = municipalities.find(function(x) { return x.id === id; });
         if (m) {
-            document.getElementById('municipality-name').value = m.name;
+            // --- CORREÇÃO DO NOME (INÍCIO) ---
+            // Verifica se o nome do município existe nas opções do dropdown.
+            // Se não existir (veio de CSV ou backup antigo), cria a opção temporariamente para exibir corretamente.
+            let exists = false;
+            for (let i = 0; i < munSelect.options.length; i++) {
+                if (munSelect.options[i].value === m.name) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                const opt = document.createElement('option');
+                opt.value = m.name;
+                opt.textContent = m.name;
+                munSelect.appendChild(opt);
+            }
+            munSelect.value = m.name;
+            // --- CORREÇÃO DO NOME (FIM) ---
+
             document.getElementById('municipality-status').value = m.status;
             document.getElementById('municipality-manager').value = m.manager;
             document.getElementById('municipality-contact').value = m.contact;
@@ -877,11 +898,15 @@ function showMunicipalityModal(id = null) {
                     cb.checked = m.modules.includes(cb.value);
                 });
             }
+            
+            // Atualiza a visibilidade dos campos de data extra (Bloqueio/Parada)
             handleMunicipalityStatusChange();
         }
     } else {
+        // Se for Novo Cadastro, garante que campos extras fiquem ocultos
         handleMunicipalityStatusChange();
     }
+    
     document.getElementById('municipality-modal').classList.add('show');
 }
 
@@ -2626,18 +2651,50 @@ function populateSelect(select, data, valKey, textKey) {
 }
 
 function populateFilterSelects() {
-    const muns = municipalities.slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
-    const filterIds = ['filter-municipality-name','filter-task-municipality','filter-request-municipality','filter-visit-municipality','filter-production-municipality','filter-presentation-municipality'];
+    // Filtro de Municípios (Aba Municípios)
+    const munSelect = document.getElementById('filter-municipality-name');
+    if (munSelect) {
+        // Salva o valor que já estava selecionado para não perder filtro ao atualizar
+        const currentValue = munSelect.value;
+        
+        // Ordena alfabeticamente
+        const sortedMuns = municipalities.slice().sort(function(a, b) {
+            return a.name.localeCompare(b.name);
+        });
+
+        let html = '<option value="">Todos</option>';
+        sortedMuns.forEach(function(m) {
+            html += '<option value="' + m.name + '">' + m.name + '</option>';
+        });
+        
+        munSelect.innerHTML = html;
+        
+        // Restaura o valor se ainda existir
+        if (currentValue) munSelect.value = currentValue;
+    }
+
+    // Filtros das outras abas (Puxam apenas municípios ativos)
+    const activeMuns = municipalities.filter(function(m) { return m.status === 'Em uso'; }).sort(function(a,b){return a.name.localeCompare(b.name)});
     
-    filterIds.forEach(function(id) { 
-        const el = document.getElementById(id); 
-        if(el) { 
-            let html = '<option value="">Todos</option>'; 
-            muns.forEach(function(m) { 
-                html += '<option value="' + m.name + '">' + m.name + '</option>'; 
-            }); 
-            el.innerHTML = html; 
-        } 
+    const otherFilters = [
+        'filter-task-municipality',
+        'filter-request-municipality',
+        'filter-visit-municipality',
+        'filter-production-municipality',
+        'filter-presentation-municipality'
+    ];
+    
+    otherFilters.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            const currentVal = el.value;
+            let html = '<option value="">Todos</option>';
+            activeMuns.forEach(function(m) {
+                html += '<option value="' + m.name + '">' + m.name + '</option>';
+            });
+            el.innerHTML = html;
+            if(currentVal) el.value = currentVal;
+        }
     });
 }
 
