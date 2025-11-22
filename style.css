@@ -2473,18 +2473,20 @@ tbody tr:hover {
 
 ```css
 /* ==========================================================================
-   📱 ESTILO MOBILE V11 - CORREÇÃO FINAL (OCULTAR NO PC)
-   Substitua todo o bloco @media e as regras de botão anteriores por este.
+   📱 ESTILO MOBILE V12 - CORREÇÃO DEFINITIVA (PC vs CELULAR)
+   Apague todo o CSS Mobile anterior e cole este.
    ========================================================================== */
 
-/* 1. REGRA GERAL (PC): O BOTÃO DEVE SUMIR! */
-/* Usamos !important para garantir que nada faça ele aparecer em telas grandes */
+/* ----------------------------------------------------------
+   1. REGRA GERAL (PC/DESKTOP)
+   Isso garante que o botão NUNCA apareça em telas grandes.
+   ---------------------------------------------------------- */
 button.mobile-menu-toggle,
-.app-header .mobile-menu-toggle {
-    display: none !important; 
+.mobile-menu-toggle {
+    display: none !important; /* some daqui! */
 }
 
-/* Overlay Escuro (Sempre oculto por padrão) */
+/* Overlay do menu (sempre oculto por padrão) */
 .sidebar-overlay {
     display: none;
     position: fixed;
@@ -2494,15 +2496,16 @@ button.mobile-menu-toggle,
     backdrop-filter: blur(3px);
 }
 
-/* 2. APENAS NO CELULAR/TABLET (Telas menores que 900px) */
+/* ----------------------------------------------------------
+   2. REGRA ESPECÍFICA PARA CELULAR/TABLET (Max 900px)
+   Tudo aqui dentro só acontece quando a tela é pequena.
+   ---------------------------------------------------------- */
 @media (max-width: 900px) {
     
-    /* === AQUI O MÁGICA ACONTECE === */
-    /* Só agora forçamos o botão a aparecer */
-    
+    /* === FORÇA O BOTÃO A APARECER SOMENTE AQUI === */
     html body .app-header .mobile-menu-toggle,
     button.mobile-menu-toggle {
-        display: inline-flex !important; /* Aparece aqui! */
+        display: inline-flex !important; /* Aparece! */
         align-items: center;
         justify-content: center;
         font-size: 0.95rem;
@@ -2513,7 +2516,7 @@ button.mobile-menu-toggle,
         cursor: pointer;
         z-index: 1100;
         
-        /* AS CORES BRANCAS (Mantidas como você gostou) */
+        /* CORES: Texto Branco e Borda Branca (Independente do Tema) */
         color: #ffffff !important; 
         border: 1px solid rgba(255, 255, 255, 0.6) !important;
         background-color: rgba(0, 0, 0, 0.25) !important;
@@ -2521,18 +2524,18 @@ button.mobile-menu-toggle,
         text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
 
-    /* Garante ícone branco */
+    /* Ícone dentro do botão */
     button.mobile-menu-toggle * {
         color: #ffffff !important;
     }
 
-    /* Layout Principal */
+    /* Layout em Coluna */
     .app-layout {
         flex-direction: column;
         margin-top: 0;
     }
 
-    /* Cabeçalho: Sempre Azul */
+    /* Cabeçalho Azul */
     .app-header {
         padding: 12px 15px;
         position: sticky;
@@ -2548,7 +2551,6 @@ button.mobile-menu-toggle,
         color: #ffffff !important;
     }
     
-    /* Organização */
     .header-content {
         display: flex;
         flex-direction: row;
@@ -2559,37 +2561,6 @@ button.mobile-menu-toggle,
     
     .header-user-info {
         display: none !important;
-    }
-
-    /* Botões de Ação (Centralizados) */
-    .header-actions {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        margin-top: 12px;
-        gap: 8px;
-        flex-wrap: nowrap;
-    }
-    
-    .header-actions .btn {
-        font-size: 11px;
-        padding: 8px 0;
-        flex: 1;
-        min-width: 0;
-        text-align: center;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
-    .header-actions .btn--outline,
-    .header-actions .btn--secondary {
-        background-color: rgba(255,255,255,0.1) !important;
-        color: white !important;
-        border: 1px solid rgba(255,255,255,0.3) !important;
     }
 
     /* Menu Lateral (Gaveta) */
@@ -2655,7 +2626,7 @@ button.mobile-menu-toggle,
         display: block;
     }
 
-    /* Conteúdo e Tabelas */
+    /* Conteúdo */
     .main-content {
         margin-left: 0;
         width: 100%;
@@ -2663,6 +2634,35 @@ button.mobile-menu-toggle,
         padding-top: 15px;
     }
 
+    /* Botões do Topo (Alinhados) */
+    .header-actions {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-top: 12px;
+        gap: 8px;
+        flex-wrap: nowrap;
+    }
+    
+    .header-actions .btn {
+        font-size: 11px;
+        padding: 8px 0;
+        flex: 1;
+        min-width: 0;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .header-actions .btn--outline,
+    .header-actions .btn--secondary {
+        background-color: rgba(255,255,255,0.1) !important;
+        color: white !important;
+        border: 1px solid rgba(255,255,255,0.3) !important;
+    }
+
+    /* Tabelas */
     .tasks-table, .municipalities-table {
         display: block;
         width: 100%;
