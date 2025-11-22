@@ -3394,3 +3394,40 @@ table td .module-tags {
         display: inline-flex !important;
     }
 }
+/* ==========================================================================
+   AJUSTES TABELA MUNICÍPIOS (COLUNAS E QUEBRAS)
+   Adicione no FINAL do style.css
+   ========================================================================== */
+
+/* Permite que o cabeçalho da tabela quebre linha (ex: Data<br>Implantação) */
+table th {
+    vertical-align: bottom; /* Alinha texto do cabeçalho embaixo */
+    line-height: 1.2;      /* Melhora leitura de texto quebrado */
+    padding: 8px 6px;      /* Padding mais compacto */
+}
+
+/* Ajuste fino das larguras das colunas para aproximar informações */
+/* Coluna 1: Município */
+#municipalities-table td:nth-child(1) { 
+    width: 15%; 
+    min-width: 120px;
+}
+
+/* Coluna 2: Módulos (Bem compacta) */
+#municipalities-table td:nth-child(2) { 
+    width: 10%; 
+    min-width: 80px; 
+}
+
+/* Coluna 3: Gestor (Cola na coluna módulos) */
+#municipalities-table td:nth-child(3) { 
+    width: 15%; 
+}
+
+/* Colunas de Datas (Centralizadas e compactas) */
+#municipalities-table td:nth-child(5), /* Implantação */
+#municipalities-table td:nth-child(6), /* Visita */
+#municipalities-table td:nth-child(10) /* Data Fim */ { 
+    text-align: center;
+    font-size: 12px;
+}
