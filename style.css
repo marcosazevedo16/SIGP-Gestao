@@ -2473,94 +2473,132 @@ tbody tr:hover {
 
 ```css
 /* ==========================================================================
-   📱 ESTILO MOBILE V8 - CORREÇÃO FINAL DE TEMA E MENU
-   Substitua o bloco @media anterior por este.
+   📱 ESTILO MOBILE V9 - BOTÕES ALINHADOS E MENU BRANCO
+   Substitua todo o bloco @media anterior por este.
    ========================================================================== */
 
-/* Força o botão a aparecer sempre */
-.mobile-menu-toggle {
+/* Botão do Menu - REGRAS INDESTRUTÍVEIS (V8 Mantida) */
+button.mobile-menu-toggle,
+.app-header .mobile-menu-toggle {
     display: none;
+    font-size: 0.95rem;
+    padding: 0 12px;
+    margin-right: 10px;
+    height: 36px;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 1100;
+    
+    /* CORES FIXAS PARA FUNCIONAR NO TEMA CLARO */
+    color: #ffffff !important; 
+    border: 1px solid rgba(255, 255, 255, 0.6) !important;
+    background-color: rgba(0, 0, 0, 0.25) !important;
+    box-shadow: none !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
-/* Overlay Escuro */
+/* Garante ícones brancos */
+button.mobile-menu-toggle *,
+.app-header .mobile-menu-toggle * {
+    color: #ffffff !important;
+}
+
+/* Overlay */
 .sidebar-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.7);
-    z-index: 9998; /* Logo abaixo do menu */
+    z-index: 9998;
     backdrop-filter: blur(3px);
 }
 
+/* Ajustes Responsivos */
 @media (max-width: 900px) {
     
-    /* 1. BOTÃO DO MENU (Correção do Tema Claro) */
-    /* Usamos seletores bem específicos para vencer o tema claro */
-    html body .app-header .mobile-menu-toggle,
-    html[data-theme="light"] body .app-header .mobile-menu-toggle {
-        display: inline-flex !important;
+    /* 1. Botão Menu Visível */
+    button.mobile-menu-toggle {
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 1rem;
-        padding: 0 12px;
-        margin-right: 10px;
-        height: 36px;
-        border-radius: 4px;
-        cursor: pointer;
-        z-index: 101; /* Acima do header base */
-        
-        /* AS REGRAS DE COR QUE VENCEM TUDO */
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.6) !important;
-        background-color: rgba(0, 0, 0, 0.25) !important;
-        box-shadow: none !important;
     }
 
-    /* 2. Layout Principal */
+    /* 2. Layout */
     .app-layout {
         flex-direction: column;
         margin-top: 0;
     }
 
-    /* 3. Cabeçalho sempre AZUL */
+    /* 3. Cabeçalho Azul Fixo */
     .app-header {
-        padding: 10px 15px;
+        padding: 12px 15px;
         position: sticky;
         top: 0;
         z-index: 100;
         height: auto;
-        background-color: #003d5c !important; /* Força Azul */
+        background-color: #003d5c !important;
         border-bottom: 1px solid rgba(255,255,255,0.1);
         color: white !important;
     }
     
+    .app-header h1, .subtitle {
+        color: #ffffff !important;
+    }
+    
+    /* Organização do Topo: Menu + Título */
     .header-content {
+        display: flex;
         flex-direction: row;
         flex-wrap: wrap;
         align-items: center;
-        justify-content: space-between;
+        justify-content: flex-start; /* Alinha logo/título à esquerda */
     }
     
-    /* Esconde nome do usuário no celular para dar espaço */
     .header-user-info {
         display: none !important;
     }
 
-    /* 4. MENU LATERAL (GAVETA) */
+    /* 4. BOTÕES DE AÇÃO (CORREÇÃO DE ALINHAMENTO) */
+    .header-actions {
+        width: 100%;
+        display: flex;
+        justify-content: center; /* Centraliza o grupo */
+        margin-top: 12px; /* Espaço do título */
+        gap: 8px; /* Espaço entre botões */
+        flex-wrap: wrap; /* Permite quebrar linha se a tela for muito pequena */
+    }
+    
+    .header-actions .btn {
+        font-size: 11px;
+        padding: 8px 0; /* Padding lateral automático */
+        flex: 1; /* Faz todos os botões terem a mesma largura e ocuparem tudo */
+        min-width: 70px; /* Largura mínima para não esmagar */
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    /* Estilo dos botões no fundo azul */
+    .header-actions .btn--outline,
+    .header-actions .btn--secondary {
+        background-color: rgba(255,255,255,0.1) !important;
+        color: white !important;
+        border: 1px solid rgba(255,255,255,0.3) !important;
+    }
+
+    /* 5. Menu Lateral */
     .sidebar {
         position: fixed;
         top: 0;
-        /* Esconde totalmente (Largura + sombra extra) */
         left: -280px; 
-        /* Largura reduzida conforme solicitado (era 300, depois 250, agora 240) */
-        width: 240px; 
+        width: 240px;
         height: 100vh;
-        background-color: #003d5c; /* Azul do menu */
+        background-color: #003d5c;
         transition: left 0.3s ease;
-        /* Z-Index altíssimo para cobrir o cabeçalho e mostrar Dashboard */
-        z-index: 9999; 
+        z-index: 9999;
         box-shadow: 4px 0 15px rgba(0,0,0,0.6);
-        padding-top: 10px; /* Pouco padding para Dashboard aparecer logo */
+        padding-top: 10px;
         overflow-y: auto;
         display: block !important;
         border-right: 1px solid rgba(255,255,255,0.1);
@@ -2570,13 +2608,11 @@ tbody tr:hover {
         left: 0;
     }
 
-    /* 5. Itens do Menu */
     .sidebar-nav {
         display: flex;
         flex-direction: column !important;
         width: 100%;
         padding: 0;
-        margin: 0;
     }
 
     .sidebar-btn {
@@ -2591,7 +2627,7 @@ tbody tr:hover {
         color: rgba(255,255,255,0.9) !important;
         background: transparent;
         height: auto;
-        white-space: normal !important; /* Quebra linha se nome for grande */
+        white-space: normal !important;
         text-align: left;
     }
 
@@ -2620,29 +2656,6 @@ tbody tr:hover {
         width: 100%;
         padding: 10px;
         padding-top: 15px;
-    }
-
-    /* 7. Botões do Topo (Ajustados) */
-    .header-actions {
-        width: 100%;
-        justify-content: flex-end; /* Alinha à direita */
-        margin-top: 0; /* Remove margem para ficar na linha do menu */
-        gap: 5px;
-        flex-wrap: nowrap;
-    }
-    
-    .header-actions .btn {
-        font-size: 10px;
-        padding: 6px 8px;
-        flex: 0 1 auto; /* Não estica */
-    }
-    
-    /* Garante visibilidade dos botões secundários no fundo azul */
-    .header-actions .btn--outline,
-    .header-actions .btn--secondary {
-        background-color: rgba(255,255,255,0.1) !important;
-        color: white !important;
-        border: 1px solid rgba(255,255,255,0.4) !important;
     }
 
     /* Tabelas */
