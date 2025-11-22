@@ -11,6 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏥</text></svg>">
 </head>
 <body>
@@ -27,6 +28,7 @@
                 <div class="login-form-container">
                     <h2 class="login-form-title">Acesso ao Sistema</h2>
                     <p class="login-form-subtitle">Identifique-se para continuar</p>
+                    
                     <form id="login-form" onsubmit="handleLogin(event)">
                         <div class="form-group">
                             <label class="form-label">Login</label>
@@ -45,22 +47,27 @@
     </div>
 
     <div id="main-app" class="main-app">
+        
         <header class="app-header">
             <div class="header-content">
                 <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
                     <span>☰</span> Menu
                 </button>
+
                 <div class="brand-container">
-                    <h1>SIGP Saúde - Gestão de Setor</h1>
-                    <p class="subtitle">Sistema de Gestão Completo</p>
+                    <h1>SIGP Saúde</h1>
+                    <p class="subtitle">Gestão de Setor</p>
                 </div>
+                
                 <div class="header-right-group">
                     <div class="header-user-info">
                         <span class="user-welcome">Bem-vindo(a), <strong id="logged-user-name">Usuário</strong></span>
                     </div>
+                    
                     <div class="header-actions">
                         <button class="btn btn--outline" onclick="navigateToHome()" title="Tela Inicial">🏠 Tela Inicial</button>
                         <button class="btn btn--outline" id="theme-toggle" onclick="toggleTheme()" title="Alternar Tema">🌙 Tema</button>
+                        
                         <div class="settings-dropdown">
                             <button class="btn btn--outline" id="settings-btn" onclick="toggleSettingsMenu()" title="Configurações">⚙️ Configurações</button>
                             <div class="settings-menu" id="settings-menu">
@@ -75,6 +82,7 @@
                                 <button class="settings-menu-item" id="backup-menu-btn" onclick="navigateToBackupManagement()">💾 Backup e Restauração</button>
                             </div>
                         </div>
+                        
                         <button class="btn btn--secondary" onclick="handleLogout()">Sair</button>
                     </div>
                 </div>
@@ -84,19 +92,38 @@
         <div class="app-layout">
             <aside class="sidebar">
                 <nav class="sidebar-nav">
-                    <button class="sidebar-btn active" data-tab="dashboard"><span class="sidebar-icon">📊</span><span>Dashboard</span></button>
-                    <button class="sidebar-btn" data-tab="municipios"><span class="sidebar-icon">🏛</span><span>Municípios Clientes</span></button>
-                    <button class="sidebar-btn" data-tab="tarefas"><span class="sidebar-icon">✓</span><span>Controle de Treinamentos</span></button>
-                    <button class="sidebar-btn" data-tab="solicitacoes"><span class="sidebar-icon">💬</span><span>Solicitações/Sugestões de Clientes</span></button>
-                    <button class="sidebar-btn" data-tab="apresentacoes"><span class="sidebar-icon">📊</span><span>Apresentações do Software</span></button>
-                    <button class="sidebar-btn" data-tab="demandas"><span class="sidebar-icon">📞</span><span>Demandas do Suporte</span></button>
-                    <button class="sidebar-btn" data-tab="visitas"><span class="sidebar-icon">🚗</span><span>Solicitações de Visitas Presenciais</span></button>
-                    <button class="sidebar-btn" data-tab="producao"><span class="sidebar-icon">📦</span><span>Controle de Envio de Produção</span></button>
-                    <button class="sidebar-btn" data-tab="relatorios"><span class="sidebar-icon">📈</span><span>Relatórios de Gestão</span></button>
-                </nav>
+                    <button class="sidebar-btn active" data-tab="dashboard">
+                        <span class="sidebar-icon">📊</span><span>Dashboard</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="municipios">
+                        <span class="sidebar-icon">🏛</span><span>Municípios Clientes</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="tarefas">
+                        <span class="sidebar-icon">✓</span><span>Controle de Treinamentos</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="solicitacoes">
+                        <span class="sidebar-icon">💬</span><span>Solicitações/Sugestões de Clientes</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="apresentacoes">
+                        <span class="sidebar-icon">📊</span><span>Apresentações do Software</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="demandas">
+                        <span class="sidebar-icon">📞</span><span>Demandas do Suporte</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="visitas">
+                        <span class="sidebar-icon">🚗</span><span>Solicitações de Visitas Presenciais</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="producao">
+                        <span class="sidebar-icon">📦</span><span>Controle de Envio de Produção</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="relatorios">
+                        <span class="sidebar-icon">📈</span><span>Relatórios de Gestão</span>
+                    </button>
+                    </nav>
             </aside>
 
             <main class="main-content">
+                
                 <section id="dashboard-section" class="tab-content active">
                     <div class="section-header"><h2>Dashboard - Painel de Controle</h2></div>
                     <div class="stats-cards">
@@ -105,23 +132,50 @@
                         <div class="stat-card"><h3 id="dashboard-requests-completed">0</h3><p>Total de Solicitações Atendidas</p></div>
                         <div class="stat-card"><h3 id="dashboard-presentations-completed">0</h3><p>Total de Apresentações Realizadas</p></div>
                     </div>
-                    <div class="chart-card"><h4>Evolução de Implantações por Ano</h4><div style="height:400px;"><canvas id="implantationsYearChart"></canvas></div></div>
+                    <div class="chart-card">
+                        <h4>Evolução de Implantações por Ano</h4>
+                        <div style="height:400px;"><canvas id="implantationsYearChart"></canvas></div>
+                    </div>
                 </section>
 
                 <section id="municipios-section" class="tab-content">
-                    <div class="section-header"><h2>Controle de Municípios</h2><div style="display:flex;gap:10px;"><button class="btn btn--primary" onclick="showMunicipalityModal()">+ Novo Município</button><button class="btn btn--primary" onclick="triggerCSVImport()">📥 Importar CSV</button><input type="file" id="csv-import-input" accept=".csv" style="display:none;" onchange="handleCSVImport(event)"></div></div>
-                    <div class="filters-section"><div class="filters-grid">
-                        <div class="form-group"><label class="form-label">Nome do Município</label><select class="form-control" id="filter-municipality-name"><option value="">Todos</option></select></div>
-                        <div class="form-group"><label class="form-label">Status</label><select class="form-control" id="filter-municipality-status"><option value="">Todos</option><option value="Em uso">Em uso</option><option value="Bloqueado">Bloqueado</option><option value="Parou de usar">Parou de usar</option><option value="Não Implantado">Não Implantado</option></select></div>
-                        <div class="form-group"><label class="form-label">Módulo</label><select class="form-control" id="filter-municipality-module"><option value="">Todos</option></select></div>
-                        <div class="form-group"><label class="form-label">Gestor</label><input type="text" class="form-control" id="filter-municipality-manager" placeholder="Buscar por gestor"></div>
-                    </div><button class="btn btn--secondary" onclick="clearMunicipalityFilters()">Limpar Filtros</button></div>
-                    <div id="municipalities-results-count" class="results-count"></div><div class="municipalities-table" id="municipalities-table"></div>
+                    <div class="section-header">
+                        <h2>Controle de Municípios</h2>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn btn--primary" onclick="showMunicipalityModal()">+ Novo Município</button>
+                            <button class="btn btn--primary" onclick="triggerCSVImport()">📥 Importar CSV</button>
+                            <input type="file" id="csv-import-input" accept=".csv" style="display:none;" onchange="handleCSVImport(event)">
+                        </div>
+                    </div>
+                    <div class="filters-section">
+                        <div class="filters-grid">
+                            <div class="form-group"><label class="form-label">Nome do Município</label><select class="form-control" id="filter-municipality-name"><option value="">Todos</option></select></div>
+                            <div class="form-group"><label class="form-label">Status</label><select class="form-control" id="filter-municipality-status"><option value="">Todos</option><option value="Em uso">Em uso</option><option value="Bloqueado">Bloqueado</option><option value="Parou de usar">Parou de usar</option><option value="Não Implantado">Não Implantado</option></select></div>
+                            <div class="form-group"><label class="form-label">Módulo</label><select class="form-control" id="filter-municipality-module"><option value="">Todos</option></select></div>
+                            <div class="form-group"><label class="form-label">Gestor</label><input type="text" class="form-control" id="filter-municipality-manager" placeholder="Buscar por gestor"></div>
+                        </div>
+                        <button class="btn btn--secondary" onclick="clearMunicipalityFilters()">Limpar Filtros</button>
+                    </div>
+                    <div id="municipalities-results-count" class="results-count"></div>
+                    <div class="municipalities-table" id="municipalities-table"></div>
+                    
                     <div class="section-divider"></div>
                     <h3 class="section-subtitle">Dashboard e Gráficos</h3>
-                    <div class="stats-cards"><div class="stat-card"><h3 id="total-municipalities">0</h3><p>Total de Municípios</p></div><div class="stat-card"><h3 id="active-municipalities">0</h3><p>Municípios Ativos</p></div><div class="stat-card"><h3 id="inactive-municipalities">0</h3><p>Municípios Inativos</p></div><div class="stat-card"><h3 id="avg-days-last-visit">0</h3><p>Dias desde última visita (média)</p></div></div>
-                    <div class="charts-grid"><div class="chart-card"><h4>Distribuição por Status</h4><canvas id="statusChart"></canvas></div><div class="chart-card"><h4>Municípios por Módulo</h4><canvas id="modulesChart"></canvas></div><div class="chart-card chart-card--wide"><h4>Implantações ao Longo do Tempo</h4><canvas id="timelineChart"></canvas></div></div>
-                    <div class="actions-bar"><button class="btn btn--outline" onclick="exportMunicipalitiesCSV()">📥 Exportar CSV</button><button class="btn btn--primary" onclick="generateMunicipalitiesPDF()">📄 Gerar PDF</button></div>
+                    <div class="stats-cards">
+                        <div class="stat-card"><h3 id="total-municipalities">0</h3><p>Total de Municípios</p></div>
+                        <div class="stat-card"><h3 id="active-municipalities">0</h3><p>Municípios Ativos</p></div>
+                        <div class="stat-card"><h3 id="inactive-municipalities">0</h3><p>Municípios Inativos</p></div>
+                        <div class="stat-card"><h3 id="avg-days-last-visit">0</h3><p>Dias desde última visita (média)</p></div>
+                    </div>
+                    <div class="charts-grid">
+                        <div class="chart-card"><h4>Distribuição por Status</h4><canvas id="statusChart"></canvas></div>
+                        <div class="chart-card"><h4>Municípios por Módulo</h4><canvas id="modulesChart"></canvas></div>
+                        <div class="chart-card chart-card--wide"><h4>Implantações ao Longo do Tempo</h4><canvas id="timelineChart"></canvas></div>
+                    </div>
+                    <div class="actions-bar">
+                        <button class="btn btn--outline" onclick="exportMunicipalitiesCSV()">📥 Exportar CSV</button>
+                        <button class="btn btn--primary" onclick="generateMunicipalitiesPDF()">📄 Gerar PDF</button>
+                    </div>
                 </section>
 
                 <section id="tarefas-section" class="tab-content">
@@ -136,7 +190,8 @@
                         <div class="form-group"><label class="form-label">Início</label><input type="date" class="form-control" id="filter-task-date-start"></div>
                         <div class="form-group"><label class="form-label">Fim</label><input type="date" class="form-control" id="filter-task-date-end"></div>
                     </div><button class="btn btn--secondary" onclick="clearTaskFilters()">Limpar Filtros</button></div>
-                    <div id="tasks-results-count" class="results-count"></div><div class="tasks-table" id="tasks-table"></div>
+                    <div id="tasks-results-count" class="results-count"></div>
+                    <div class="tasks-table" id="tasks-table"></div>
                     <div class="section-divider"></div><h3 class="section-subtitle">Gráficos e Estatísticas</h3>
                     <div class="stats-cards"><div class="stat-card"><h3 id="total-tasks">0</h3><p>Total de Treinamentos</p></div><div class="stat-card"><h3 id="completed-tasks">0</h3><p>Concluídos</p></div><div class="stat-card"><h3 id="pending-tasks">0</h3><p>Pendentes</p></div></div>
                     <div class="actions-bar"><button class="btn btn--outline" onclick="exportTasksCSV()">📥 Exportar CSV</button><button class="btn btn--primary" onclick="generateTasksPDF()">📄 Gerar PDF</button></div>
@@ -168,7 +223,7 @@
                     <div class="form-group"><label class="form-label">Solicitante</label><input type="text" class="form-control" id="filter-presentation-requester"></div>
                     </div><button class="btn btn--secondary" onclick="clearPresentationFilters()">Limpar Filtros</button></div>
                     <div id="presentations-results-count" class="results-count"></div><div class="tasks-table" id="presentations-table"></div>
-                    <div class="stats-cards"><div class="stat-card"><h3 id="total-presentations">0</h3><p>Total</p></div></div>
+                    <div class="stats-cards"><div class="stat-card"><h3 id="total-presentations">0</h3><p>Total de Apresentações</p></div></div>
                     <div class="charts-grid"><div class="chart-card"><h4>Distribuição por Status</h4><canvas id="presentationStatusChart"></canvas></div><div class="chart-card"><h4>Por Município</h4><canvas id="presentationMunicipalityChart"></canvas></div><div class="chart-card"><h4>Por Orientador</h4><canvas id="presentationOrientadorChart"></canvas></div></div>
                     <div class="actions-bar"><button class="btn btn--outline" onclick="exportPresentationsCSV()">📥 Exportar CSV</button><button class="btn btn--primary" onclick="generatePresentationsPDF()">📄 Gerar PDF</button></div>
                 </section>
@@ -226,36 +281,33 @@
                 
                 <section id="backup-section" class="tab-content">
                     <div class="section-header"><h2>Backup e Restauração do Sistema</h2></div>
-                    
-                    <div class="backup-card">
-                        <h3>📥 Fazer Backup Completo do Sistema</h3>
-                        <p class="backup-description">Baixa um arquivo com todos os dados: Treinamentos, Municípios, Cargos, Orientadores, Módulos e Usuários</p>
-                        <button class="btn btn--primary" onclick="createBackup()">📥 Fazer Backup Agora</button>
-                    </div>
-                    
-                    <br>
-
-                    <div class="backup-card">
-                        <h3>📤 Restaurar Backup</h3>
-                        <p class="backup-description">Selecione um arquivo de backup para restaurar todos os dados do sistema</p>
-                        <button class="btn btn--primary" onclick="triggerRestoreBackup()">📤 Escolher Arquivo de Backup</button>
-                        <input type="file" id="backup-file-input" accept=".json" style="display: none;" onchange="handleBackupFileSelect(event)">
-                    </div>
-
-                    <br>
-
-                    <div class="backup-card">
-                        <h3>ℹ️ Informações do Sistema</h3>
-                        <div class="backup-info">
-                            <p><strong>Total de Treinamentos:</strong> <span id="backup-info-trainings">0</span></p>
-                            <p><strong>Total de Municípios:</strong> <span id="backup-info-municipalities">0</span></p>
-                            <p><strong>Total de Cargos/Funções:</strong> <span id="backup-info-cargos">0</span></p>
-                            <p><strong>Total de Orientadores:</strong> <span id="backup-info-orientadores">0</span></p>
-                            <p><strong>Total de Módulos:</strong> <span id="backup-info-modules">0</span></p>
-                            <p><strong>Total de Usuários:</strong> <span id="backup-info-users">0</span></p>
-                            <p><strong>Total de Solicitações/Sugestões:</strong> <span id="backup-info-requests">0</span></p>
-                            <p><strong>Total de Apresentações:</strong> <span id="backup-info-presentations">0</span></p>
-                            <p><strong>Total de Formas de Apresentação:</strong> <span id="backup-info-formas">0</span></p>
+                    <div class="backup-container">
+                        <div class="backup-card">
+                            <h3>📥 Fazer Backup Completo do Sistema</h3>
+                            <p class="backup-description">Baixa um arquivo com todos os dados: Treinamentos, Municípios, Cargos, Orientadores, Módulos e Usuários</p>
+                            <button class="btn btn--primary" onclick="createBackup()">📥 Fazer Backup Agora</button>
+                        </div>
+                        <br>
+                        <div class="backup-card">
+                            <h3>📤 Restaurar Backup</h3>
+                            <p class="backup-description">Selecione um arquivo de backup para restaurar todos os dados do sistema</p>
+                            <button class="btn btn--primary" onclick="triggerRestoreBackup()">📤 Escolher Arquivo de Backup</button>
+                            <input type="file" id="backup-file-input" accept=".json" style="display: none;" onchange="handleBackupFileSelect(event)">
+                        </div>
+                        <br>
+                        <div class="backup-card">
+                            <h3>ℹ️ Informações do Sistema</h3>
+                            <div class="backup-info">
+                                <p><strong>Total de Treinamentos:</strong> <span id="backup-info-trainings">0</span></p>
+                                <p><strong>Total de Municípios:</strong> <span id="backup-info-municipalities">0</span></p>
+                                <p><strong>Total de Cargos/Funções:</strong> <span id="backup-info-cargos">0</span></p>
+                                <p><strong>Total de Orientadores:</strong> <span id="backup-info-orientadores">0</span></p>
+                                <p><strong>Total de Módulos:</strong> <span id="backup-info-modules">0</span></p>
+                                <p><strong>Total de Usuários:</strong> <span id="backup-info-users">0</span></p>
+                                <p><strong>Total de Solicitações/Sugestões:</strong> <span id="backup-info-requests">0</span></p>
+                                <p><strong>Total de Apresentações:</strong> <span id="backup-info-presentations">0</span></p>
+                                <p><strong>Total de Formas de Apresentação:</strong> <span id="backup-info-formas">0</span></p>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -265,12 +317,18 @@
     </div>
 
     <div id="task-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Treinamento</h3><button class="close-btn" onclick="closeTaskModal()">&times;</button></div><form id="task-form" onsubmit="saveTask(event)"><div class="form-group"><label class="form-label">Município*</label><select class="form-control" id="task-municipality" required></select></div><div class="form-group"><label class="form-label">Data Solicitação*</label><input type="date" class="form-control" id="task-date-requested" required></div><div class="form-group"><label class="form-label">Data Realização</label><input type="date" class="form-control" id="task-date-performed"></div><div class="form-group"><label class="form-label">Solicitante*</label><input type="text" class="form-control" id="task-requested-by" required></div><div class="form-group"><label class="form-label">Orientador*</label><select class="form-control" id="task-performed-by" required></select></div><div class="form-group"><label class="form-label">Treinado</label><input type="text" class="form-control" id="task-trained-name"></div><div class="form-group"><label class="form-label">Cargo</label><select class="form-control" id="task-trained-position"></select></div><div class="form-group"><label class="form-label">Contato</label><input type="text" class="form-control" id="task-contact"></div><div class="form-group"><label class="form-label">Status*</label><select class="form-control" id="task-status" required><option value="Pendente">Pendente</option><option value="Concluído">Concluído</option><option value="Cancelado">Cancelado</option></select></div><div class="form-group"><label class="form-label">Obs</label><textarea class="form-control" id="task-observations"></textarea></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeTaskModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div></form></div></div>
-    <div id="municipality-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Município</h3><button class="close-btn" onclick="closeMunicipalityModal()">&times;</button></div><form id="municipality-form" onsubmit="saveMunicipality(event)"><div class="form-group"><label class="form-label">Nome*</label><select class="form-control" id="municipality-name" required></select></div><div class="form-group"><label class="form-label">Status*</label><select class="form-control" id="municipality-status" required><option value="Em uso">Em uso</option><option value="Bloqueado">Bloqueado</option><option value="Parou de usar">Parou de usar</option><option value="Não Implantado">Não Implantado</option></select></div><div class="form-group"><label class="form-label">Gestor*</label><input type="text" class="form-control" id="municipality-manager" required></div><div class="form-group"><label class="form-label">Contato*</label><input type="text" class="form-control" id="municipality-contact" required></div><div class="form-group"><label class="form-label">Implantação*</label><input type="date" class="form-control" id="municipality-implantation-date" required></div><div class="form-group"><label class="form-label">Última Visita*</label><input type="date" class="form-control" id="municipality-last-visit" required></div><div class="form-group"><label class="form-label">Módulos*</label><div class="checkbox-grid" id="municipality-modules-container"></div></div><div class="form-group" id="group-date-blocked" style="display:none;"><label class="form-label">Data Bloqueio*</label><input type="date" class="form-control" id="municipality-date-blocked"></div><div class="form-group" id="group-date-stopped" style="display:none;"><label class="form-label">Data Parou*</label><input type="date" class="form-control" id="municipality-date-stopped"></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeMunicipalityModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div></form></div></div>
+    <div id="municipality-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Município</h3><button class="close-btn" onclick="closeMunicipalityModal()">&times;</button></div><form id="municipality-form" onsubmit="saveMunicipality(event)">
+        <div class="form-group"><label class="form-label">Nome*</label><select class="form-control" id="municipality-name" required></select></div><div class="form-group"><label class="form-label">Status*</label><select class="form-control" id="municipality-status" required><option value="Em uso">Em uso</option><option value="Bloqueado">Bloqueado</option><option value="Parou de usar">Parou de usar</option><option value="Não Implantado">Não Implantado</option></select></div><div class="form-group"><label class="form-label">Gestor*</label><input type="text" class="form-control" id="municipality-manager" required></div><div class="form-group"><label class="form-label">Contato*</label><input type="text" class="form-control" id="municipality-contact" required></div><div class="form-group"><label class="form-label">Implantação*</label><input type="date" class="form-control" id="municipality-implantation-date" required></div><div class="form-group"><label class="form-label">Última Visita*</label><input type="date" class="form-control" id="municipality-last-visit" required></div><div class="form-group"><label class="form-label">Módulos*</label><div class="checkbox-grid" id="municipality-modules-container"></div></div>
+        <div class="form-group" id="group-date-blocked" style="display:none;"><label class="form-label">Data em que foi Bloqueado*</label><input type="date" class="form-control" id="municipality-date-blocked"></div>
+        <div class="form-group" id="group-date-stopped" style="display:none;"><label class="form-label">Data em que Parou de Usar*</label><input type="date" class="form-control" id="municipality-date-stopped"></div>
+        <div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeMunicipalityModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div>
+    </form></div></div>
     <div id="request-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Solicitação</h3><button class="close-btn" onclick="closeRequestModal()">&times;</button></div><form id="request-form" onsubmit="saveRequest(event)"><div class="form-group"><label class="form-label">Município*</label><select class="form-control" id="request-municipality" required></select></div><div class="form-group"><label class="form-label">Data*</label><input type="date" class="form-control" id="request-date" required></div><div class="form-group"><label class="form-label">Solicitante*</label><input type="text" class="form-control" id="request-requester" required></div><div class="form-group"><label class="form-label">Contato*</label><input type="text" class="form-control" id="request-contact"></div><div class="form-group"><label class="form-label">Descrição*</label><textarea class="form-control" id="request-description" required></textarea></div><div class="form-group"><label class="form-label">Status*</label><select class="form-control" id="request-status" required><option value="Pendente">Pendente</option><option value="Realizado">Realizado</option><option value="Inviável">Inviável</option></select></div><div class="form-group" id="group-request-date-realization" style="display:none;"><label class="form-label">Data Realização*</label><input type="date" class="form-control" id="request-date-realization"></div><div class="form-group" id="group-request-justification" style="display:none;"><label class="form-label">Justificativa*</label><textarea class="form-control" id="request-justification"></textarea></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeRequestModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div></form></div></div>
     <div id="presentation-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Apresentação</h3><button class="close-btn" onclick="closePresentationModal()">&times;</button></div><form id="presentation-form" onsubmit="savePresentation(event)"><div class="form-group"><label class="form-label">Município*</label><select class="form-control" id="presentation-municipality" required></select></div><div class="form-group"><label class="form-label">Data Sol.*</label><input type="date" class="form-control" id="presentation-date-solicitacao" required></div><div class="form-group"><label class="form-label">Solicitante</label><input type="text" class="form-control" id="presentation-requester"></div><div class="form-group"><label class="form-label">Status*</label><select class="form-control" id="presentation-status" required><option value="Pendente">Pendente</option><option value="Realizada">Realizada</option><option value="Cancelada">Cancelada</option></select></div><div class="form-group" id="presentation-date-realizacao-group"><label class="form-label">Data Realização</label><input type="date" class="form-control" id="presentation-date-realizacao"></div><div class="form-group"><label class="form-label">Orientadores</label><div class="checkbox-grid" id="presentation-orientador-checkboxes"></div></div><div class="form-group"><label class="form-label">Formas</label><div class="checkbox-grid" id="presentation-forms-checkboxes"></div></div><div class="form-group"><label class="form-label">Obs</label><textarea class="form-control" id="presentation-description"></textarea></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closePresentationModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div></form></div></div>
     <div id="demand-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Demanda</h3><button class="close-btn" onclick="closeDemandModal()">&times;</button></div><form id="demand-form" onsubmit="saveDemand(event)"><div class="form-group"><label class="form-label">Data*</label><input type="date" class="form-control" id="demand-date" required></div><div class="form-group"><label class="form-label">Descrição*</label><textarea class="form-control" id="demand-description" required></textarea></div><div class="form-group"><label class="form-label">Prioridade*</label><select class="form-control" id="demand-priority" required><option value="Alta">Alta</option><option value="Média">Média</option><option value="Baixa">Baixa</option></select></div><div class="form-group"><label class="form-label">Status*</label><select class="form-control" id="demand-status" required><option value="Pendente">Pendente</option><option value="Realizada">Realizada</option><option value="Inviável">Inviável</option></select></div><div class="form-group" id="group-demand-date-realization" style="display:none;"><label class="form-label">Data Realização*</label><input type="date" class="form-control" id="demand-date-realization"></div><div class="form-group" id="group-demand-justification" style="display:none;"><label class="form-label">Justificativa</label><textarea class="form-control" id="demand-justification"></textarea></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeDemandModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div></form></div></div>
     <div id="visit-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Visita</h3><button class="close-btn" onclick="closeVisitModal()">&times;</button></div><form id="visit-form" onsubmit="saveVisit(event)"><div class="form-group"><label class="form-label">Município*</label><select class="form-control" id="visit-municipality" required></select></div><div class="form-group"><label class="form-label">Data*</label><input type="date" class="form-control" id="visit-date" required></div><div class="form-group"><label class="form-label">Solicitante*</label><input type="text" class="form-control" id="visit-applicant" required></div><div class="form-group"><label class="form-label">Status*</label><select class="form-control" id="visit-status" required><option value="Pendente">Pendente</option><option value="Realizada">Realizada</option><option value="Cancelada">Cancelada</option></select></div><div class="form-group" id="group-visit-date-realization" style="display:none;"><label class="form-label">Data Visita*</label><input type="date" class="form-control" id="visit-date-realization"></div><div class="form-group" id="group-visit-justification" style="display:none;"><label class="form-label">Justificativa*</label><textarea class="form-control" id="visit-justification"></textarea></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeVisitModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div></form></div></div>
     <div id="production-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Produção</h3><button class="close-btn" onclick="closeProductionModal()">&times;</button></div><form id="production-form" onsubmit="saveProduction(event)"><div class="form-group"><label class="form-label">Município*</label><select class="form-control" id="production-municipality" required></select></div><div class="form-group"><label class="form-label">Contato*</label><input type="text" class="form-control" id="production-contact" required></div><div class="form-group"><label class="form-label">Freq.*</label><select class="form-control" id="production-frequency" required><option value="Mensal">Mensal</option><option value="Semanal">Semanal</option></select></div><div class="form-group"><label class="form-label">Comp.*</label><input type="text" class="form-control" id="production-competence" required></div><div class="form-group"><label class="form-label">Período*</label><input type="text" class="form-control" id="production-period" required></div><div class="form-group"><label class="form-label">Liberação*</label><input type="date" class="form-control" id="production-release-date" required></div><div class="form-group"><label class="form-label">Envio</label><input type="date" class="form-control" id="production-send-date"></div><div class="form-group"><label class="form-label">Status*</label><select class="form-control" id="production-status" required><option value="Pendente">Pendente</option><option value="Enviada">Enviada</option></select></div><div class="form-group"><label class="form-label">Obs</label><textarea class="form-control" id="production-observations"></textarea></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeProductionModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div></form></div></div>
+
     <div id="user-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Usuário</h3><button class="close-btn" onclick="closeUserModal()">&times;</button></div><form id="user-form" onsubmit="saveUser(event)"><div class="form-group"><label class="form-label">Login*</label><input type="text" class="form-control" id="user-login" required autocomplete="off"></div><div class="form-group"><label class="form-label">Nome*</label><input type="text" class="form-control" id="user-name" required></div><div class="form-group"><label class="form-label">Senha*</label><input type="password" class="form-control" id="user-password" autocomplete="new-password"></div><div class="form-group"><label class="form-label">Permissão*</label><select class="form-control" id="user-permission" required><option value="Usuário Normal">Normal</option><option value="Administrador">Admin</option></select></div><div class="form-group"><label class="form-label">Status*</label><select class="form-control" id="user-status" required><option value="Ativo">Ativo</option><option value="Inativo">Inativo</option></select></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeUserModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div></form></div></div>
     <div id="cargo-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Cargo</h3><button class="close-btn" onclick="closeCargoModal()">&times;</button></div><form id="cargo-form" onsubmit="saveCargo(event)"><div class="form-group"><label class="form-label">Nome*</label><input type="text" class="form-control" id="cargo-name" required></div><div class="form-group"><label class="form-label">Descrição</label><textarea class="form-control" id="cargo-description"></textarea></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeCargoModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div></form></div></div>
     <div id="orientador-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Orientador</h3><button class="close-btn" onclick="closeOrientadorModal()">&times;</button></div><form id="orientador-form" onsubmit="saveOrientador(event)"><div class="form-group"><label class="form-label">Nome*</label><input type="text" class="form-control" id="orientador-name" required></div><div class="form-group"><label class="form-label">Contato</label><input type="text" class="form-control" id="orientador-contact"></div><div class="form-group"><label class="form-label">Email</label><input type="email" class="form-control" id="orientador-email"></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeOrientadorModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div></form></div></div>
@@ -282,6 +340,6 @@
     <div id="restore-confirm-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>⚠️ Confirmar Restauração</h3><button class="close-btn" onclick="closeRestoreConfirmModal()">&times;</button></div><div style="padding:20px;"><p>Isso substituirá todos os dados.</p><ul id="restore-preview-list"></ul><div class="modal-actions"><button class="btn btn--secondary" onclick="closeRestoreConfirmModal()">Cancelar</button><button class="btn btn--danger" onclick="confirmRestore()">Restaurar</button></div></div></div></div>
 
     <div id="toast" class="toast"></div>
-    <script src="script.js?v=30"></script>
+    <script src="script.js?v=31"></script>
 </body>
 </html>
