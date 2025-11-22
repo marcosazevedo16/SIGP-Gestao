@@ -2473,58 +2473,58 @@ tbody tr:hover {
 
 ```css
 /* ==========================================================================
-   📱 ESTILO MOBILE V10 - MENU BRANCO E BOTÕES CENTRALIZADOS
+   📱 ESTILO MOBILE V11 - CORREÇÃO FINAL (MENU ESCONDIDO NO PC)
    Substitua todo o bloco @media anterior por este.
    ========================================================================== */
 
-/* 1. BOTÃO MENU: Regra de Alta Prioridade para Cor */
-/* Usamos seletores compostos para vencer qualquer tema */
-html body .app-header .mobile-menu-toggle,
-button.mobile-menu-toggle {
-    display: none; /* Escondido no PC */
-    font-size: 0.95rem;
-    padding: 0 12px;
-    margin-right: 10px;
-    height: 36px;
-    border-radius: 4px;
-    cursor: pointer;
-    z-index: 1100;
-    
-    /* CORES INDESTRUTÍVEIS (Branco sobre Azul) */
-    color: #ffffff !important; 
-    border: 1px solid rgba(255, 255, 255, 0.6) !important;
-    background-color: rgba(0, 0, 0, 0.25) !important;
-    box-shadow: none !important;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+/* 1. NO PC: O BOTÃO DEVE SUMIR! */
+button.mobile-menu-toggle,
+.mobile-menu-toggle {
+    display: none !important; /* Oculto por padrão em telas grandes */
 }
 
-/* Garante que o ícone/texto dentro também seja branco */
-html body .app-header .mobile-menu-toggle *,
-button.mobile-menu-toggle * {
-    color: #ffffff !important;
-}
-
-/* Overlay de Fundo Escuro */
+/* Overlay Escuro */
 .sidebar-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.7);
-    z-index: 9998; /* Logo abaixo do menu */
+    z-index: 9998;
     backdrop-filter: blur(3px);
 }
 
-/* 2. AJUSTES PARA CELULAR */
+/* 2. SOMENTE NO CELULAR (Telas < 900px) */
 @media (max-width: 900px) {
     
-    /* Força o botão a aparecer (Flex para alinhar ícone) */
-    html body .app-header .mobile-menu-toggle {
-        display: inline-flex !important;
+    /* Agora sim, mostramos o botão (Flex para alinhar) */
+    /* Usamos seletores específicos para garantir a cor BRANCA */
+    html body .app-header .mobile-menu-toggle,
+    button.mobile-menu-toggle {
+        display: inline-flex !important; /* Aparece só aqui */
         align-items: center;
         justify-content: center;
+        font-size: 0.95rem;
+        padding: 0 12px;
+        margin-right: 10px;
+        height: 36px;
+        border-radius: 4px;
+        cursor: pointer;
+        z-index: 1100;
+        
+        /* CORES INDESTRUTÍVEIS (Branco sobre Azul) */
+        color: #ffffff !important; 
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        background-color: rgba(0, 0, 0, 0.25) !important;
+        box-shadow: none !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
 
-    /* Layout */
+    /* Ícone dentro do botão */
+    button.mobile-menu-toggle * {
+        color: #ffffff !important;
+    }
+
+    /* Layout Principal */
     .app-layout {
         flex-direction: column;
         margin-top: 0;
@@ -2556,24 +2556,24 @@ button.mobile-menu-toggle * {
     }
     
     .header-user-info {
-        display: none !important; /* Esconde usuário para dar espaço */
+        display: none !important;
     }
 
-    /* 3. BOTÕES DE AÇÃO (CENTRALIZADOS E ALINHADOS) */
+    /* Botões de Ação (Centralizados) */
     .header-actions {
         width: 100%;
         display: flex;
-        justify-content: center; /* Centraliza o grupo */
+        justify-content: center;
         margin-top: 12px;
         gap: 8px;
-        flex-wrap: nowrap; /* Força linha única */
+        flex-wrap: nowrap;
     }
     
     .header-actions .btn {
         font-size: 11px;
         padding: 8px 0;
-        flex: 1; /* Distribui largura igual para os 4 botões */
-        min-width: 0; /* Permite encolher se necessário */
+        flex: 1;
+        min-width: 0;
         text-align: center;
         display: flex;
         justify-content: center;
@@ -2583,7 +2583,6 @@ button.mobile-menu-toggle * {
         text-overflow: ellipsis;
     }
     
-    /* Estilo dos botões no fundo azul */
     .header-actions .btn--outline,
     .header-actions .btn--secondary {
         background-color: rgba(255,255,255,0.1) !important;
@@ -2591,7 +2590,7 @@ button.mobile-menu-toggle * {
         border: 1px solid rgba(255,255,255,0.3) !important;
     }
 
-    /* 4. MENU LATERAL (GAVETA) */
+    /* Menu Lateral (Gaveta) */
     .sidebar {
         position: fixed;
         top: 0;
@@ -2600,7 +2599,7 @@ button.mobile-menu-toggle * {
         height: 100vh;
         background-color: #003d5c;
         transition: left 0.3s ease;
-        z-index: 9999; /* Acima de tudo */
+        z-index: 9999;
         box-shadow: 4px 0 15px rgba(0,0,0,0.6);
         padding-top: 10px;
         overflow-y: auto;
