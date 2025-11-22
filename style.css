@@ -3237,7 +3237,7 @@ table td .module-tags {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL V18 - ALINHAMENTO BOTÕES + MENU LATERAL
+   CORREÇÃO FINAL V19 - BOTÕES FINOS (30px) + HEADER ALINHADO
    Substitua o bloco anterior no final do style.css
    ========================================================================== */
 
@@ -3258,26 +3258,29 @@ table td .module-tags {
     width: 100%;
 }
 
-/* 3. ALINHAMENTO PERFEITO DOS BOTÕES (Novo Ajuste) */
-/* Força todos os botões do header a serem caixas flexíveis idênticas */
+/* 3. AJUSTE FINO DOS BOTÕES (30px de altura) */
 .header-actions .btn {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    height: 38px !important; /* Altura fixa igual para todos */
+    height: 30px !important; /* Reduzido de 38px para 30px (Mais fino) */
+    padding: 0 12px !important;
+    font-size: 12px !important; /* Tamanho de fonte equilibrado */
     line-height: 1 !important;
     vertical-align: middle !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
+    white-space: nowrap; /* Texto nunca quebra linha */
 }
 
-/* Adiciona o ícone de PORTA no botão Sair */
+/* Ícone de PORTA no botão Sair */
 .header-actions .btn:last-child::before {
     content: "🚪";
     margin-right: 6px;
-    font-size: 14px;
+    font-size: 13px; /* Levemente menor para caber nos 30px */
     line-height: 1;
     display: inline-block;
+    margin-top: -1px; /* Ajuste micrométrico para alinhar com texto */
 }
 
 /* 4. REGRAS ESPECÍFICAS PARA COMPUTADOR (> 901px) */
@@ -3290,10 +3293,10 @@ table td .module-tags {
     .header-actions {
         justify-content: flex-end;
         display: flex;
-        gap: 8px; /* Garante espaço igual entre botões */
+        gap: 8px;
     }
 
-    /* --- CORREÇÃO DO MENU LATERAL --- */
+    /* --- MENU LATERAL --- */
     
     /* Esconde botão mobile */
     button.mobile-menu-toggle, .mobile-menu-toggle { display: none !important; }
@@ -3359,7 +3362,7 @@ table td .module-tags {
         font-size: 13px;
     }
 
-    /* CABEÇALHO DO MENU LATERAL (Ajustado) */
+    /* CABEÇALHO DO MENU LATERAL */
     .sidebar-nav::before {
         content: "☰";
         display: block;
@@ -3371,9 +3374,9 @@ table td .module-tags {
         line-height: 40px;
     }
     
-    /* Força a troca de texto no Hover */
+    /* Texto MENU LATERAL no Hover */
     .sidebar:hover .sidebar-nav::before {
-        content: "MENU LATERAL" !important; /* Forçando a troca */
+        content: "MENU LATERAL" !important;
         font-size: 14px;
         font-weight: 800;
         letter-spacing: 1px;
@@ -3387,7 +3390,6 @@ table td .module-tags {
     .header-content { display: flex !important; flex-wrap: wrap; }
     .header-user-info { display: none !important; }
     
-    /* Garante que o botão mobile apareça */
     html body .app-header .mobile-menu-toggle, button.mobile-menu-toggle {
         display: inline-flex !important;
     }
