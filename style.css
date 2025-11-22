@@ -2473,14 +2473,15 @@ tbody tr:hover {
 
 ```css
 /* ==========================================================================
-   📱 ESTILO MOBILE V9 - BOTÕES ALINHADOS E MENU BRANCO
+   📱 ESTILO MOBILE V10 - MENU BRANCO E BOTÕES CENTRALIZADOS
    Substitua todo o bloco @media anterior por este.
    ========================================================================== */
 
-/* Botão do Menu - REGRAS INDESTRUTÍVEIS (V8 Mantida) */
-button.mobile-menu-toggle,
-.app-header .mobile-menu-toggle {
-    display: none;
+/* 1. BOTÃO MENU: Regra de Alta Prioridade para Cor */
+/* Usamos seletores compostos para vencer qualquer tema */
+html body .app-header .mobile-menu-toggle,
+button.mobile-menu-toggle {
+    display: none; /* Escondido no PC */
     font-size: 0.95rem;
     padding: 0 12px;
     margin-right: 10px;
@@ -2489,7 +2490,7 @@ button.mobile-menu-toggle,
     cursor: pointer;
     z-index: 1100;
     
-    /* CORES FIXAS PARA FUNCIONAR NO TEMA CLARO */
+    /* CORES INDESTRUTÍVEIS (Branco sobre Azul) */
     color: #ffffff !important; 
     border: 1px solid rgba(255, 255, 255, 0.6) !important;
     background-color: rgba(0, 0, 0, 0.25) !important;
@@ -2497,46 +2498,46 @@ button.mobile-menu-toggle,
     text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
-/* Garante ícones brancos */
-button.mobile-menu-toggle *,
-.app-header .mobile-menu-toggle * {
+/* Garante que o ícone/texto dentro também seja branco */
+html body .app-header .mobile-menu-toggle *,
+button.mobile-menu-toggle * {
     color: #ffffff !important;
 }
 
-/* Overlay */
+/* Overlay de Fundo Escuro */
 .sidebar-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.7);
-    z-index: 9998;
+    z-index: 9998; /* Logo abaixo do menu */
     backdrop-filter: blur(3px);
 }
 
-/* Ajustes Responsivos */
+/* 2. AJUSTES PARA CELULAR */
 @media (max-width: 900px) {
     
-    /* 1. Botão Menu Visível */
-    button.mobile-menu-toggle {
-        display: inline-flex;
+    /* Força o botão a aparecer (Flex para alinhar ícone) */
+    html body .app-header .mobile-menu-toggle {
+        display: inline-flex !important;
         align-items: center;
         justify-content: center;
     }
 
-    /* 2. Layout */
+    /* Layout */
     .app-layout {
         flex-direction: column;
         margin-top: 0;
     }
 
-    /* 3. Cabeçalho Azul Fixo */
+    /* Cabeçalho: Sempre Azul e Branco */
     .app-header {
         padding: 12px 15px;
         position: sticky;
         top: 0;
         z-index: 100;
         height: auto;
-        background-color: #003d5c !important;
+        background-color: #003d5c !important; /* Azul Obrigatório */
         border-bottom: 1px solid rgba(255,255,255,0.1);
         color: white !important;
     }
@@ -2545,38 +2546,41 @@ button.mobile-menu-toggle *,
         color: #ffffff !important;
     }
     
-    /* Organização do Topo: Menu + Título */
+    /* Organização: Menu + Título na mesma linha */
     .header-content {
         display: flex;
         flex-direction: row;
         flex-wrap: wrap;
         align-items: center;
-        justify-content: flex-start; /* Alinha logo/título à esquerda */
+        justify-content: flex-start;
     }
     
     .header-user-info {
-        display: none !important;
+        display: none !important; /* Esconde usuário para dar espaço */
     }
 
-    /* 4. BOTÕES DE AÇÃO (CORREÇÃO DE ALINHAMENTO) */
+    /* 3. BOTÕES DE AÇÃO (CENTRALIZADOS E ALINHADOS) */
     .header-actions {
         width: 100%;
         display: flex;
         justify-content: center; /* Centraliza o grupo */
-        margin-top: 12px; /* Espaço do título */
-        gap: 8px; /* Espaço entre botões */
-        flex-wrap: wrap; /* Permite quebrar linha se a tela for muito pequena */
+        margin-top: 12px;
+        gap: 8px;
+        flex-wrap: nowrap; /* Força linha única */
     }
     
     .header-actions .btn {
         font-size: 11px;
-        padding: 8px 0; /* Padding lateral automático */
-        flex: 1; /* Faz todos os botões terem a mesma largura e ocuparem tudo */
-        min-width: 70px; /* Largura mínima para não esmagar */
+        padding: 8px 0;
+        flex: 1; /* Distribui largura igual para os 4 botões */
+        min-width: 0; /* Permite encolher se necessário */
         text-align: center;
         display: flex;
         justify-content: center;
         align-items: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     /* Estilo dos botões no fundo azul */
@@ -2587,7 +2591,7 @@ button.mobile-menu-toggle *,
         border: 1px solid rgba(255,255,255,0.3) !important;
     }
 
-    /* 5. Menu Lateral */
+    /* 4. MENU LATERAL (GAVETA) */
     .sidebar {
         position: fixed;
         top: 0;
@@ -2596,7 +2600,7 @@ button.mobile-menu-toggle *,
         height: 100vh;
         background-color: #003d5c;
         transition: left 0.3s ease;
-        z-index: 9999;
+        z-index: 9999; /* Acima de tudo */
         box-shadow: 4px 0 15px rgba(0,0,0,0.6);
         padding-top: 10px;
         overflow-y: auto;
@@ -2650,7 +2654,7 @@ button.mobile-menu-toggle *,
         display: block;
     }
 
-    /* 6. Conteúdo */
+    /* Conteúdo e Tabelas */
     .main-content {
         margin-left: 0;
         width: 100%;
@@ -2658,7 +2662,6 @@ button.mobile-menu-toggle *,
         padding-top: 15px;
     }
 
-    /* Tabelas */
     .tasks-table, .municipalities-table {
         display: block;
         width: 100%;
