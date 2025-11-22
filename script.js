@@ -1,14 +1,13 @@
 // ============================================================================
-// SIGP SAÚDE v20.0 - VERSÃO FINAL AUDITÁVEL
-// Código totalmente expandido. Nenhuma lógica foi compactada.
-// Contém: Ajustes PDF 1 (21 itens) + PDF 2 (6 itens) + Exportação + Gráficos
+// SIGP SAÚDE v21.0 - VERSÃO FINAL COM RESTAURAÇÃO SEGURA (PREVIEW)
+// Contém: Ajustes PDF 1 e 2 + Exportação + Gráficos + Preview de Backup
 // ============================================================================
 
 // ----------------------------------------------------------------------------
 // 1. VERIFICAÇÃO DE SEGURANÇA
 // ----------------------------------------------------------------------------
 if (typeof CryptoJS === 'undefined') {
-    alert('ERRO CRÍTICO: A biblioteca CryptoJS não foi carregada. Verifique sua conexão ou o cabeçalho do HTML.');
+    alert('ERRO CRÍTICO: Biblioteca CryptoJS não carregada. Verifique sua conexão ou o HTML.');
     throw new Error('CryptoJS is missing');
 }
 
@@ -16,9 +15,9 @@ if (typeof CryptoJS === 'undefined') {
 // 2. CONFIGURAÇÕES GERAIS E VARIÁVEIS DE ESTADO
 // ----------------------------------------------------------------------------
 const SALT_LENGTH = 16;
+let pendingBackupData = null; // Variável temporária para o restore
 
 // Variáveis Globais para Instâncias de Gráficos (Chart.js)
-// Necessário para destruir o gráfico anterior antes de criar um novo
 let chartDashboard = null;
 let chartStatusMun = null;
 let chartModulesMun = null;
@@ -99,7 +98,6 @@ function formatDate(dateString) {
     if (!dateString) {
         return '-';
     }
-    // Converte YYYY-MM-DD para DD/MM/YYYY
     const partes = dateString.split('-');
     if (partes.length === 3) {
         return `${partes[2]}/${partes[1]}/${partes[0]}`;
@@ -107,16 +105,11 @@ function formatDate(dateString) {
     return dateString;
 }
 
-// Cálculo de Tempo de Uso (PDF Item 15)
 function calculateTimeInUse(dateString) {
-    if (!dateString) {
-        return '-';
-    }
+    if (!dateString) return '-';
     
     const start = new Date(dateString);
     const now = new Date();
-    
-    // Diferença em milissegundos
     const diffTime = Math.abs(now - start);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
     
@@ -137,11 +130,8 @@ function calculateTimeInUse(dateString) {
     return result;
 }
 
-// Cálculo de Dias desde a última visita (PDF Item 15)
 function calculateDaysSince(dateString) {
-    if (!dateString) {
-        return '-';
-    }
+    if (!dateString) return '-';
     
     const last = new Date(dateString);
     const now = new Date();
@@ -153,14 +143,11 @@ function calculateDaysSince(dateString) {
 
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
-    if (!toast) {
-        return;
-    }
+    if (!toast) return;
     
     toast.textContent = message;
     toast.className = 'toast';
     
-    // Força o navegador a reiniciar a animação (Reflow)
     void toast.offsetWidth;
     
     toast.classList.add(type);
@@ -176,7 +163,6 @@ function showToast(message, type = 'info') {
 // ----------------------------------------------------------------------------
 
 function downloadCSV(filename, headers, rows) {
-    // Adiciona BOM para Excel reconhecer acentos
     const csvContent = [
         headers.join(';'),
         ...rows.map(row => row.map(cell => {
@@ -218,7 +204,6 @@ function downloadPDF(title, headers, rows) {
             headStyles: { fillColor: [0, 61, 92] }
         });
     } else {
-        // Fallback se o plugin autoTable falhar
         let y = 40;
         rows.forEach(row => {
             if (y > 180) {
@@ -303,7 +288,6 @@ function applyMasks() {
         });
     }
     
-    // Auto-refresh nos filtros
     const filters = document.querySelectorAll('.filters-section select, .filters-section input');
     filters.forEach(function(el) {
         el.addEventListener('change', function() {
@@ -316,11 +300,39 @@ function applyMasks() {
 }
 
 // ----------------------------------------------------------------------------
-// 6. INJEÇÃO DE CAMPOS DINÂMICOS (REGRAS PDF)
+// 6. INJEÇÃO DE CAMPOS DINÂMICOS (INCLUINDO MODAL DE RESTORE)
 // ----------------------------------------------------------------------------
 function setupDynamicFormFields() {
     
-    // 1. Municípios: Data Bloqueio e Data Parou
+    // 0. Injeção do Modal de Confirmação de Restore (Se não existir)
+    if (!document.getElementById('restore-confirm-modal')) {
+        const modalHTML = `
+        <div id="restore-confirm-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>⚠️ Confirmar Restauração de Backup</h3>
+                    <button class="close-btn" onclick="closeRestoreConfirmModal()">&times;</button>
+                </div>
+                <div style="padding: 24px;">
+                    <div class="backup-warning" style="background-color: rgba(211, 47, 47, 0.1); border: 1px solid #d32f2f; color: #d32f2f; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <p style="margin:0;"><strong>⚠️ ATENÇÃO: Isso irá SUBSTITUIR todos os dados atuais do sistema!</strong></p>
+                    </div>
+                    <div class="backup-preview" style="background-color: var(--color-bg-1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin-top:0;">Preview dos dados que serão restaurados:</h4>
+                        <ul id="restore-preview-list" style="list-style: none; padding: 0; margin: 10px 0 0 0;">
+                        </ul>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn--secondary" onclick="closeRestoreConfirmModal()">Cancelar</button>
+                        <button type="button" class="btn btn--danger" style="background-color: #d32f2f; color: white;" onclick="confirmRestore()">⚠️ Restaurar Backup</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    // 1. Municípios
     const formMun = document.getElementById('municipality-form');
     if (formMun && !document.getElementById('municipality-date-blocked')) {
         const div = document.createElement('div');
@@ -337,7 +349,7 @@ function setupDynamicFormFields() {
         formMun.insertBefore(div, actions);
     }
 
-    // 2. Solicitações: Data Realização e Justificativa
+    // 2. Solicitações
     const formReq = document.getElementById('request-form');
     if (formReq && !document.getElementById('request-date-realization')) {
         const div = document.createElement('div');
@@ -354,7 +366,7 @@ function setupDynamicFormFields() {
         formReq.insertBefore(div, actions);
     }
 
-    // 3. Demandas: Data Realização e Justificativa
+    // 3. Demandas
     const formDem = document.getElementById('demand-form');
     if (formDem && !document.getElementById('demand-date-realization')) {
         const div = document.createElement('div');
@@ -371,7 +383,7 @@ function setupDynamicFormFields() {
         formDem.insertBefore(div, actions);
     }
 
-    // 4. Visitas: Data Realização e Justificativa
+    // 4. Visitas
     const formVis = document.getElementById('visit-form');
     if (formVis && !document.getElementById('visit-date-realization')) {
         const div = document.createElement('div');
@@ -388,7 +400,7 @@ function setupDynamicFormFields() {
         formVis.insertBefore(div, actions);
     }
     
-    // 5. Módulos: Injeção automática do campo Descrição
+    // 5. Módulos
     const formMod = document.getElementById('modulo-form');
     if (formMod && !document.getElementById('modulo-description')) {
         const div = document.createElement('div');
@@ -475,19 +487,13 @@ function initializeTheme() {
 }
 
 function toggleTheme() {
-    if (currentTheme === 'light') {
-        currentTheme = 'dark';
-    } else {
-        currentTheme = 'light';
-    }
+    currentTheme = currentTheme === 'light' ? 'dark' : 'light';
     salvarNoArmazenamento('theme', currentTheme);
     initializeTheme();
 }
 
 function updateUserInterface() {
-    if (!currentUser) {
-        return;
-    }
+    if (!currentUser) return;
     
     const elName = document.getElementById('logged-user-name');
     if (elName) {
@@ -496,11 +502,8 @@ function updateUserInterface() {
 
     const isAdmin = currentUser.permission === 'Administrador';
     
-    // Controle explícito de visibilidade dos botões do menu
     const btnUser = document.getElementById('user-management-menu-btn');
-    if (btnUser) {
-        btnUser.style.display = isAdmin ? 'flex' : 'none';
-    }
+    if (btnUser) btnUser.style.display = isAdmin ? 'flex' : 'none';
     
     const itemsToEnable = [
         'cargo-management-menu-btn',
@@ -531,24 +534,19 @@ function initializeTabs() {
         btn.onclick = function() {
             const tabId = this.getAttribute('data-tab');
             
-            // Remove active de todos os botões
             buttons.forEach(function(b) {
                 b.classList.remove('active');
             });
-            
-            // Remove active de todas as seções
             document.querySelectorAll('.tab-content').forEach(function(c) {
                 c.classList.remove('active');
             });
             
-            // Ativa o atual
             this.classList.add('active');
             const sectionId = tabId + '-section';
             const section = document.getElementById(sectionId);
             
             if (section) {
                 section.classList.add('active');
-                // Atraso mínimo para garantir que o DOM atualizou a visibilidade
                 setTimeout(function() {
                     refreshCurrentTab(sectionId);
                 }, 10);
@@ -558,7 +556,6 @@ function initializeTabs() {
 }
 
 function refreshCurrentTab(sectionId) {
-    // Antes de renderizar, atualiza os dropdowns para garantir que novos cadastros apareçam
     updateGlobalDropdowns();
 
     if (sectionId === 'municipios-section') renderMunicipalities();
@@ -577,9 +574,7 @@ function refreshCurrentTab(sectionId) {
 
 function navigateToHome() {
     const dashBtn = document.querySelector('.sidebar-btn[data-tab="dashboard"]');
-    if (dashBtn) {
-        dashBtn.click();
-    }
+    if (dashBtn) dashBtn.click();
 }
 
 function toggleSettingsMenu() {
@@ -589,7 +584,6 @@ function toggleSettingsMenu() {
     }
 }
 
-// Funções de Atalho do Menu Configurações
 function navigateToUserManagement() { toggleSettingsMenu(); openTab('usuarios-section'); renderUsers(); }
 function navigateToCargoManagement() { toggleSettingsMenu(); openTab('cargos-section'); renderCargos(); }
 function navigateToOrientadorManagement() { toggleSettingsMenu(); openTab('orientadores-section'); renderOrientadores(); }
@@ -632,7 +626,7 @@ function handleLogin(e) {
             
             checkAuthentication();
             initializeApp();
-            showToast('Bem-vindo, ' + user.name + '!', 'success');
+            showToast(`Bem-vindo, ${user.name}!`, 'success');
             return;
         }
     }
@@ -658,7 +652,6 @@ function handleLogout() {
     }
 }
 
-// Modal de Troca de Senha
 function showChangePasswordModal() {
     document.getElementById('change-password-modal').classList.add('show');
 }
@@ -693,20 +686,17 @@ function handleChangePassword(e) {
 }
 
 // ----------------------------------------------------------------------------
-// 10. MUNICÍPIOS CLIENTES (REGRAS PDF 1)
+// 10. MUNICÍPIOS CLIENTES
 // ----------------------------------------------------------------------------
 
-// Função para controlar campos baseados no status
 function handleMunicipalityStatusChange() {
     const status = document.getElementById('municipality-status').value;
     const groupBlocked = document.getElementById('group-date-blocked');
     const groupStopped = document.getElementById('group-date-stopped');
     
-    // Reseta visualização
     if (groupBlocked) groupBlocked.style.display = 'none';
     if (groupStopped) groupStopped.style.display = 'none';
     
-    // Aplica lógica PDF
     if (status === 'Bloqueado' && groupBlocked) {
         groupBlocked.style.display = 'block';
     } else if (status === 'Parou de usar' && groupStopped) {
@@ -720,7 +710,6 @@ function showMunicipalityModal(id = null) {
     
     populateSelect(document.getElementById('municipality-name'), municipalitiesList, 'name', 'name');
     
-    // Listener de Status
     const statusSel = document.getElementById('municipality-status');
     statusSel.onchange = handleMunicipalityStatusChange;
     
@@ -734,7 +723,6 @@ function showMunicipalityModal(id = null) {
             document.getElementById('municipality-implantation-date').value = m.implantationDate;
             document.getElementById('municipality-last-visit').value = m.lastVisit;
             
-            // Campos dinâmicos
             if(document.getElementById('municipality-date-blocked')) {
                 document.getElementById('municipality-date-blocked').value = m.dateBlocked || '';
             }
@@ -742,7 +730,6 @@ function showMunicipalityModal(id = null) {
                 document.getElementById('municipality-date-stopped').value = m.dateStopped || '';
             }
             
-            // Checkboxes
             if (m.modules) {
                 document.querySelectorAll('.module-checkbox').forEach(function(cb) {
                     cb.checked = m.modules.includes(cb.value);
@@ -764,19 +751,16 @@ function saveMunicipality(e) {
         return cb.value; 
     });
     
-    // Validação Duplicidade
     if (!editingId && municipalities.some(function(m) { return m.name === name; })) {
         alert('Erro: Este município já está cadastrado na carteira!');
         return;
     }
 
-    // Validação "Em Uso" (PDF)
     if (status === 'Em uso' && mods.length === 0) {
         alert('Erro: Para status "Em Uso", selecione pelo menos um módulo.');
         return;
     }
 
-    // Validação "Bloqueado" (PDF)
     const dateBlocked = document.getElementById('municipality-date-blocked') ? document.getElementById('municipality-date-blocked').value : '';
     if (status === 'Bloqueado' && !dateBlocked) {
         alert('Erro: Preencha a "Data em que foi Bloqueado".');
@@ -832,7 +816,6 @@ function renderMunicipalities() {
     const filtered = getFilteredMunicipalities();
     const c = document.getElementById('municipalities-table');
     
-    // Contador
     const counter = document.getElementById('municipalities-results-count');
     if (counter) {
         counter.style.display = 'block';
@@ -892,7 +875,6 @@ function generateMunicipalitiesPDF() {
 }
 
 function updateMunicipalityCharts(data) {
-    // Gráfico Status
     const ctxStatus = document.getElementById('statusChart');
     if (ctxStatus && window.Chart) {
         if (chartStatusMun) chartStatusMun.destroy();
@@ -914,7 +896,6 @@ function updateMunicipalityCharts(data) {
         });
     }
     
-    // Gráfico Módulos
     const ctxModules = document.getElementById('modulesChart');
     if (ctxModules && window.Chart) {
         if (chartModulesMun) chartModulesMun.destroy();
@@ -939,7 +920,6 @@ function updateMunicipalityCharts(data) {
         });
     }
 
-    // Gráfico Timeline
     const ctxTimeline = document.getElementById('timelineChart');
     if (ctxTimeline && window.Chart) {
         if (chartTimelineMun) chartTimelineMun.destroy();
@@ -966,7 +946,6 @@ function updateMunicipalityCharts(data) {
         });
     }
 
-    // Atualiza contadores
     if(document.getElementById('total-municipalities')) document.getElementById('total-municipalities').textContent = data.length;
     if(document.getElementById('active-municipalities')) document.getElementById('active-municipalities').textContent = data.filter(function(m) { return m.status === 'Em uso'; }).length;
     if(document.getElementById('inactive-municipalities')) document.getElementById('inactive-municipalities').textContent = data.filter(function(m) { return m.status !== 'Em uso'; }).length;
@@ -994,7 +973,7 @@ function clearMunicipalityFilters() {
 }
 
 // ----------------------------------------------------------------------------
-// 11. TREINAMENTOS (Itens 3, 16)
+// 11. TREINAMENTOS
 // ----------------------------------------------------------------------------
 
 function showTaskModal(id = null) {
@@ -1071,7 +1050,6 @@ function getFilteredTasks() {
         return true;
     });
 
-    // Ordenação Item 16
     return filtered.sort(function(a, b) {
         if (a.status === 'Pendente' && b.status !== 'Pendente') return -1;
         if (a.status !== 'Pendente' && b.status === 'Pendente') return 1;
@@ -1156,7 +1134,7 @@ function clearTaskFilters() {
 }
 
 // ----------------------------------------------------------------------------
-// 12. SOLICITAÇÕES (PDF Itens 2, 4, 5, 17)
+// 12. SOLICITAÇÕES
 // ----------------------------------------------------------------------------
 
 function handleRequestStatusChange() {
@@ -1173,7 +1151,6 @@ function showRequestModal(id = null) {
     const form = document.getElementById('request-form');
     form.reset();
     
-    // Item 9: Município no topo
     const fieldMun = document.getElementById('request-municipality').closest('.form-group');
     if(fieldMun) {
         form.insertBefore(fieldMun, form.firstChild);
@@ -1208,7 +1185,6 @@ function saveRequest(e) {
     e.preventDefault();
     const status = document.getElementById('request-status').value;
     
-    // Validação PDF
     if (status === 'Realizado' && !document.getElementById('request-date-realization').value) {
         alert('Data de Realização é obrigatória.'); return;
     }
@@ -1258,7 +1234,6 @@ function getFilteredRequests() {
         return true;
     });
 
-    // Ordenação Item 17
     return filtered.sort(function(a, b) {
         if (a.status === 'Pendente' && b.status !== 'Pendente') return -1;
         if (a.status !== 'Pendente' && b.status === 'Pendente') return 1;
@@ -1379,7 +1354,7 @@ function clearRequestFilters() {
 }
 
 // ----------------------------------------------------------------------------
-// 13. APRESENTAÇÕES (PDF Item 3)
+// 13. APRESENTAÇÕES
 // ----------------------------------------------------------------------------
 
 function showPresentationModal(id = null) {
@@ -1408,7 +1383,6 @@ function showPresentationModal(id = null) {
         document.getElementById('presentation-status').value = p.status;
         document.getElementById('presentation-description').value = p.description;
         
-        // Preenche campos e checks
         if (document.getElementById('presentation-date-realizacao')) {
             document.getElementById('presentation-date-realizacao').value = p.dateRealizacao || '';
         }
@@ -1432,7 +1406,6 @@ function savePresentation(e) {
     const orientadoresSel = Array.from(document.querySelectorAll('.orientador-check:checked')).map(function(c) { return c.value; });
     const formasSel = Array.from(document.querySelectorAll('.forma-check:checked')).map(function(c) { return c.value; });
     
-    // Validação Item 14 (PDF 3)
     if (status === 'Realizada') {
         if (formasSel.length === 0) { alert('Selecione pelo menos uma Forma de Apresentação.'); return; }
         if (!document.getElementById('presentation-date-realizacao').value) { alert('Informe Data Realização.'); return; }
@@ -1479,7 +1452,6 @@ function getFilteredPresentations() {
         return true;
     });
 
-    // Ordenação Item 18
     return filtered.sort(function(a,b) {
         if (a.status === 'Pendente' && b.status !== 'Pendente') return -1;
         if (a.status !== 'Pendente' && b.status === 'Pendente') return 1;
@@ -1490,11 +1462,8 @@ function getFilteredPresentations() {
 function renderPresentations() {
     const filtered = getFilteredPresentations();
     const c = document.getElementById('presentations-table');
-    const countDiv = document.getElementById('presentations-results-count');
-    if (countDiv) {
-        countDiv.innerHTML = '<strong>' + filtered.length + '</strong> apresentações';
-        countDiv.style.display = 'block';
-    }
+    document.getElementById('presentations-results-count').innerHTML = `<strong>${filtered.length}</strong> apresentações`;
+    document.getElementById('presentations-results-count').style.display = 'block';
 
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Vazio.</div>';
@@ -1523,19 +1492,17 @@ function renderPresentations() {
 }
 
 function updatePresentationCharts(data) {
-    // Item 7: Gráficos
-    const ctxStatus = document.getElementById('presentationStatusChart');
-    if (ctxStatus && window.Chart) {
+    if (document.getElementById('presentationStatusChart') && window.Chart) {
         if (chartStatusPres) chartStatusPres.destroy();
-        chartStatusPres = new Chart(ctxStatus, {
+        chartStatusPres = new Chart(document.getElementById('presentationStatusChart'), {
             type: 'pie',
             data: {
                 labels: ['Pendente', 'Realizada', 'Cancelada'],
                 datasets: [{
                     data: [
-                        data.filter(function(p) { return p.status==='Pendente'; }).length,
-                        data.filter(function(p) { return p.status==='Realizada'; }).length,
-                        data.filter(function(p) { return p.status==='Cancelada'; }).length
+                        data.filter(function(p){return p.status==='Pendente';}).length,
+                        data.filter(function(p){return p.status==='Realizada';}).length,
+                        data.filter(function(p){return p.status==='Cancelada';}).length
                     ],
                     backgroundColor: ['#FFA07A', '#45B7D1', '#FF6B6B']
                 }]
@@ -1543,29 +1510,27 @@ function updatePresentationCharts(data) {
         });
     }
 
-    const ctxMun = document.getElementById('presentationMunicipalityChart');
-    if (ctxMun && window.Chart) {
+    if (document.getElementById('presentationMunicipalityChart') && window.Chart) {
         if (chartMunPres) chartMunPres.destroy();
-        const mCounts = {};
-        data.forEach(function(p) { mCounts[p.municipality] = (mCounts[p.municipality]||0)+1; });
-        chartMunPres = new Chart(ctxMun, {
+        const mC = {}; 
+        data.forEach(function(p) { mC[p.municipality] = (mC[p.municipality]||0)+1; });
+        chartMunPres = new Chart(document.getElementById('presentationMunicipalityChart'), {
             type: 'bar',
-            data: { labels: Object.keys(mCounts), datasets: [{ label: 'Qtd', data: Object.values(mCounts), backgroundColor: '#4ECDC4' }] }
+            data: { labels: Object.keys(mC), datasets: [{ label: 'Qtd', data: Object.values(mC), backgroundColor: '#4ECDC4' }] }
         });
     }
 
-    const ctxOri = document.getElementById('presentationOrientadorChart');
-    if (ctxOri && window.Chart) {
+    if (document.getElementById('presentationOrientadorChart') && window.Chart) {
         if (chartOrientPres) chartOrientPres.destroy();
-        const oCounts = {};
+        const oC = {}; 
         data.forEach(function(p) { 
             if(p.orientadores) {
-                p.orientadores.forEach(function(o) { oCounts[o] = (oCounts[o]||0)+1; });
+                p.orientadores.forEach(function(o) { oC[o] = (oC[o]||0)+1; });
             }
         });
-        chartOrientPres = new Chart(ctxOri, {
+        chartOrientPres = new Chart(document.getElementById('presentationOrientadorChart'), {
             type: 'bar',
-            data: { labels: Object.keys(oCounts), datasets: [{ label: 'Qtd', data: Object.values(oCounts), backgroundColor: '#FF6B6B' }] }
+            data: { labels: Object.keys(oC), datasets: [{ label: 'Qtd', data: Object.values(oC), backgroundColor: '#FF6B6B' }] }
         });
     }
 }
@@ -1604,7 +1569,7 @@ function clearPresentationFilters() {
 }
 
 // ----------------------------------------------------------------------------
-// 14. DEMANDAS (PDF Item 4)
+// 14. DEMANDAS
 // ----------------------------------------------------------------------------
 function handleDemandStatusChange() {
     const status = document.getElementById('demand-status').value;
@@ -1618,7 +1583,6 @@ function handleDemandStatusChange() {
 function showDemandModal(id = null) {
     editingId = id;
     document.getElementById('demand-form').reset();
-    
     const statusSel = document.getElementById('demand-status');
     statusSel.onchange = handleDemandStatusChange;
 
@@ -1639,7 +1603,6 @@ function saveDemand(e) {
     e.preventDefault();
     const status = document.getElementById('demand-status').value;
     
-    // Validação Item 16
     if (status === 'Realizada' && !document.getElementById('demand-date-realization').value) {
         alert('Data de Realização é obrigatória.'); return;
     }
@@ -1683,7 +1646,7 @@ function getFilteredDemands() {
     });
 
     const prioMap = { 'Alta': 1, 'Média': 2, 'Baixa': 3 };
-    return filtered.sort(function(a,b) {
+    return filtered.sort(function(a, b) {
         if (prioMap[a.priority] !== prioMap[b.priority]) return prioMap[a.priority] - prioMap[b.priority];
         return new Date(a.date) - new Date(b.date);
     });
@@ -1692,11 +1655,7 @@ function getFilteredDemands() {
 function renderDemands() {
     const filtered = getFilteredDemands();
     const c = document.getElementById('demands-table');
-    const counter = document.getElementById('demands-results-count');
-    if (counter) {
-        counter.innerHTML = '<strong>' + filtered.length + '</strong> demandas';
-        counter.style.display = 'block';
-    }
+    document.getElementById('demands-results-count').innerHTML = '<strong>' + filtered.length + '</strong> demandas';
 
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Vazio.</div>';
@@ -1717,17 +1676,13 @@ function renderDemands() {
         }).join('');
         c.innerHTML = '<table><thead><th>Data</th><th>Prioridade</th><th>Status</th><th>Descrição</th><th>Realização</th><th>Usuário</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
     }
-    
-    if(document.getElementById('total-demands')) document.getElementById('total-demands').textContent = filtered.length;
     updateDemandCharts(filtered);
 }
 
 function updateDemandCharts(data) {
-    // Item 9: Gráficos
-    const ctxStatus = document.getElementById('demandStatusChart');
-    if (ctxStatus && window.Chart) {
+    if (document.getElementById('demandStatusChart') && window.Chart) {
         if (chartStatusDem) chartStatusDem.destroy();
-        chartStatusDem = new Chart(ctxStatus, {
+        chartStatusDem = new Chart(document.getElementById('demandStatusChart'), {
             type: 'pie',
             data: {
                 labels: ['Pendente', 'Realizada', 'Inviável'],
@@ -1743,25 +1698,23 @@ function updateDemandCharts(data) {
         });
     }
 
-    const ctxPrio = document.getElementById('demandPriorityChart');
-    if (ctxPrio && window.Chart) {
+    if (document.getElementById('demandPriorityChart') && window.Chart) {
         if (chartPrioDem) chartPrioDem.destroy();
         const pCounts = { 'Alta':0, 'Média':0, 'Baixa':0 };
         data.forEach(function(d) { pCounts[d.priority] = (pCounts[d.priority]||0)+1; });
         
-        chartPrioDem = new Chart(ctxPrio, {
+        chartPrioDem = new Chart(document.getElementById('demandPriorityChart'), {
             type: 'bar',
             data: { labels: Object.keys(pCounts), datasets: [{ label: 'Qtd', data: Object.values(pCounts), backgroundColor: '#FFA07A' }] }
         });
     }
 
-    const ctxUser = document.getElementById('demandUserChart');
-    if (ctxUser && window.Chart) {
+    if (document.getElementById('demandUserChart') && window.Chart) {
         if (chartUserDem) chartUserDem.destroy();
         const uCounts = {};
         data.forEach(function(d) { uCounts[d.user] = (uCounts[d.user]||0)+1; });
         
-        chartUserDem = new Chart(ctxUser, {
+        chartUserDem = new Chart(document.getElementById('demandUserChart'), {
             type: 'bar',
             data: { labels: Object.keys(uCounts), datasets: [{ label: 'Qtd', data: Object.values(uCounts), backgroundColor: '#4ECDC4' }] }
         });
@@ -1812,9 +1765,8 @@ function handleVisitStatusChange() {
     const status = document.getElementById('visit-status').value;
     const grpReal = document.getElementById('group-visit-date-realization');
     const grpJust = document.getElementById('group-visit-justification');
-    
-    if(grpReal) grpReal.style.display = (status === 'Realizada') ? 'block' : 'none';
-    if(grpJust) grpJust.style.display = (status === 'Cancelada') ? 'block' : 'none';
+    if (grpReal) grpReal.style.display = (status === 'Realizada') ? 'block' : 'none';
+    if (grpJust) grpJust.style.display = (status === 'Cancelada') ? 'block' : 'none';
 }
 
 function showVisitModal(id = null) {
@@ -1844,11 +1796,9 @@ function saveVisit(e) {
     e.preventDefault();
     const status = document.getElementById('visit-status').value;
     
-    // Validação Item 19
     if (status === 'Realizada' && !document.getElementById('visit-date-realization').value) {
         alert('Data de Realização é obrigatória.'); return;
     }
-    // Validação Item 20
     if (status === 'Cancelada' && !document.getElementById('visit-justification').value) {
         alert('Justificativa é obrigatória.'); return;
     }
@@ -1890,7 +1840,6 @@ function getFilteredVisits() {
         return true;
     });
 
-    // Ordenação Item 20
     return filtered.sort(function(a, b) {
         if (a.status === 'Pendente' && b.status !== 'Pendente') return -1;
         if (a.status !== 'Pendente' && b.status === 'Pendente') return 1;
@@ -1901,12 +1850,7 @@ function getFilteredVisits() {
 function renderVisits() {
     const filtered = getFilteredVisits();
     const c = document.getElementById('visits-table');
-    
-    const counter = document.getElementById('visits-results-count');
-    if(counter) {
-        counter.innerHTML = '<strong>' + filtered.length + '</strong> visitas';
-        counter.style.display = 'block';
-    }
+    document.getElementById('visits-results-count').innerHTML = '<strong>' + filtered.length + '</strong> visitas';
 
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Vazio.</div>';
@@ -1932,43 +1876,39 @@ function renderVisits() {
 }
 
 function updateVisitCharts(data) {
-    // Item 11: Gráficos
-    const ctxStatus = document.getElementById('visitStatusChart');
-    if (ctxStatus && window.Chart) {
+    if (document.getElementById('visitStatusChart') && window.Chart) {
         if (chartStatusVis) chartStatusVis.destroy();
-        chartStatusVis = new Chart(ctxStatus, {
+        chartStatusVis = new Chart(document.getElementById('visitStatusChart'), {
             type: 'pie',
-            data: {
-                labels: ['Pendente', 'Realizada', 'Cancelada'],
-                datasets: [{
+            data: { 
+                labels: ['Pendente', 'Realizada', 'Cancelada'], 
+                datasets: [{ 
                     data: [
-                        data.filter(function(v){return v.status==='Pendente';}).length,
-                        data.filter(function(v){return v.status==='Realizada';}).length,
+                        data.filter(function(v){return v.status==='Pendente';}).length, 
+                        data.filter(function(v){return v.status==='Realizada';}).length, 
                         data.filter(function(v){return v.status==='Cancelada';}).length
-                    ],
-                    backgroundColor: ['#FFA07A', '#45B7D1', '#FF6B6B']
-                }]
+                    ], 
+                    backgroundColor: ['#FFA07A', '#45B7D1', '#FF6B6B'] 
+                }] 
             }
         });
     }
 
-    const ctxMun = document.getElementById('visitMunicipalityChart');
-    if (ctxMun && window.Chart) {
+    if (document.getElementById('visitMunicipalityChart') && window.Chart) {
         if (chartMunVis) chartMunVis.destroy();
         const mCounts = {};
         data.forEach(function(v) { mCounts[v.municipality] = (mCounts[v.municipality]||0)+1; });
-        chartMunVis = new Chart(ctxMun, {
+        chartMunVis = new Chart(document.getElementById('visitMunicipalityChart'), {
             type: 'bar',
             data: { labels: Object.keys(mCounts), datasets: [{ label: 'Qtd', data: Object.values(mCounts), backgroundColor: '#4ECDC4' }] }
         });
     }
 
-    const ctxApp = document.getElementById('visitApplicantChart');
-    if (ctxApp && window.Chart) {
+    if (document.getElementById('visitApplicantChart') && window.Chart) {
         if (chartSolVis) chartSolVis.destroy();
         const aCounts = {};
         data.forEach(function(v) { aCounts[v.applicant] = (aCounts[v.applicant]||0)+1; });
-        chartSolVis = new Chart(ctxApp, {
+        chartSolVis = new Chart(document.getElementById('visitApplicantChart'), {
             type: 'bar',
             data: { labels: Object.keys(aCounts), datasets: [{ label: 'Qtd', data: Object.values(aCounts), backgroundColor: '#FF6B6B' }] }
         });
@@ -2011,6 +1951,7 @@ function clearVisitFilters() {
 // ----------------------------------------------------------------------------
 // 16. PRODUÇÃO
 // ----------------------------------------------------------------------------
+
 function showProductionModal(id = null) {
     editingId = id;
     document.getElementById('production-form').reset();
@@ -2064,16 +2005,23 @@ function getFilteredProductions() {
     const fStatus = document.getElementById('filter-production-status')?.value;
     const fProf = document.getElementById('filter-production-professional')?.value.toLowerCase();
     const fFreq = document.getElementById('filter-production-frequency')?.value;
+    const fRelStart = document.getElementById('filter-production-release-start')?.value;
+    const fRelEnd = document.getElementById('filter-production-release-end')?.value;
+    const fSendStart = document.getElementById('filter-production-send-start')?.value;
+    const fSendEnd = document.getElementById('filter-production-send-end')?.value;
     
     let filtered = productions.filter(function(p) {
         if (fMun && p.municipality !== fMun) return false;
         if (fStatus && p.status !== fStatus) return false;
         if (fProf && p.professional && !p.professional.toLowerCase().includes(fProf)) return false;
         if (fFreq && p.frequency !== fFreq) return false;
+        if (fRelStart && p.releaseDate < fRelStart) return false;
+        if (fRelEnd && p.releaseDate > fRelEnd) return false;
+        if (fSendStart && p.sendDate && p.sendDate < fSendStart) return false;
+        if (fSendEnd && p.sendDate && p.sendDate > fSendEnd) return false;
         return true;
     });
 
-    // Item 21: Ordenação
     const statusOrder = { 'Pendente': 1, 'Enviada': 2, 'Cancelada': 3 };
     return filtered.sort(function(a,b) {
         return (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
@@ -2083,11 +2031,7 @@ function getFilteredProductions() {
 function renderProductions() {
     const filtered = getFilteredProductions();
     const c = document.getElementById('productions-table');
-    const counter = document.getElementById('productions-results-count');
-    if(counter) {
-        counter.innerHTML = '<strong>' + filtered.length + '</strong> envios';
-        counter.style.display = 'block';
-    }
+    document.getElementById('productions-results-count').innerHTML = '<strong>' + filtered.length + '</strong> envios';
 
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Vazio.</div>';
@@ -2116,8 +2060,8 @@ function renderProductions() {
 }
 
 function updateProductionCharts(data) {
-    if(document.getElementById('productionStatusChart') && window.Chart) {
-        if(chartStatusProd) chartStatusProd.destroy();
+    if (document.getElementById('productionStatusChart') && window.Chart) {
+        if (chartStatusProd) chartStatusProd.destroy();
         chartStatusProd = new Chart(document.getElementById('productionStatusChart'), {
             type: 'pie',
             data: {
@@ -2133,12 +2077,15 @@ function updateProductionCharts(data) {
             }
         });
     }
-    if(document.getElementById('productionFrequencyChart') && window.Chart) {
-        if(chartFreqProd) chartFreqProd.destroy();
-        const fC = {}; data.forEach(function(p) { fC[p.frequency] = (fC[p.frequency]||0)+1; });
+
+    if (document.getElementById('productionFrequencyChart') && window.Chart) {
+        if (chartFreqProd) chartFreqProd.destroy();
+        const fCounts = {}; 
+        data.forEach(function(p) { fCounts[p.frequency] = (fCounts[p.frequency]||0)+1; });
+        
         chartFreqProd = new Chart(document.getElementById('productionFrequencyChart'), {
             type: 'bar',
-            data: { labels: Object.keys(fC), datasets: [{ label: 'Envios', data: Object.values(fC), backgroundColor: '#1FB8CD' }] }
+            data: { labels: Object.keys(fCounts), datasets: [{ label: 'Envios', data: Object.values(fCounts), backgroundColor: '#1FB8CD' }] }
         });
     }
 }
@@ -2149,6 +2096,7 @@ function exportProductionsCSV() {
     const rows = data.map(function(p) { return [p.municipality, p.competence, p.period, p.status]; });
     downloadCSV('producao.csv', headers, rows);
 }
+
 function generateProductionsPDF() {
     const data = getFilteredProductions();
     const headers = ['Município', 'Comp.', 'Período', 'Status'];
@@ -2169,33 +2117,22 @@ function closeProductionModal() {
 }
 
 function clearProductionFilters() {
-    ['filter-production-municipality','filter-production-status','filter-production-professional','filter-production-frequency'].forEach(function(id) {
+    ['filter-production-municipality','filter-production-status','filter-production-professional','filter-production-frequency','filter-production-release-start','filter-production-release-end','filter-production-send-start','filter-production-send-end'].forEach(function(id) {
         if(document.getElementById(id)) document.getElementById(id).value = '';
     });
     renderProductions();
 }
 
 // ----------------------------------------------------------------------------
-// 17. VERSÕES E CADASTROS BÁSICOS
+// 17. VERSÕES (CHANGELOG)
 // ----------------------------------------------------------------------------
 function showVersionModal(id = null) {
     editingId = id;
     document.getElementById('version-form').reset();
-    
-    // Popula Select
-    const modSelect = document.getElementById('version-module');
-    if(modSelect) {
-        let html = '<option value="Geral">Geral / Sistema Todo</option>';
-        modulos.forEach(function(m) { html += '<option value="' + m.name + '">' + m.name + '</option>'; });
-        modSelect.innerHTML = html;
-    }
-
     if (id) {
         const v = systemVersions.find(function(x) { return x.id === id; });
         document.getElementById('version-date').value = v.date;
         document.getElementById('version-number').value = v.version;
-        document.getElementById('version-type').value = v.type;
-        document.getElementById('version-module').value = v.module;
         document.getElementById('version-description').value = v.description;
     }
     document.getElementById('version-modal').classList.add('show');
@@ -2206,8 +2143,6 @@ function saveVersion(e) {
     const data = {
         date: document.getElementById('version-date').value,
         version: document.getElementById('version-number').value,
-        type: document.getElementById('version-type').value,
-        module: document.getElementById('version-module').value,
         description: document.getElementById('version-description').value,
         author: currentUser.name
     };
@@ -2228,26 +2163,14 @@ function renderVersions() {
     const c = document.getElementById('versions-table');
     if (!c) return;
     
-    // Filtros
-    const fType = document.getElementById('filter-version-type') ? document.getElementById('filter-version-type').value : '';
-    const fMod = document.getElementById('filter-version-module') ? document.getElementById('filter-version-module').value.toLowerCase() : '';
-
-    let filtered = systemVersions.filter(function(v) {
-        if (fType && v.type !== fType) return false;
-        if (fMod && !v.module.toLowerCase().includes(fMod)) return false;
-        return true;
-    });
-    
-    filtered.sort(function(a,b) { return new Date(b.date) - new Date(a.date); });
-
-    if (filtered.length === 0) {
-        c.innerHTML = '<div class="empty-state">Vazio.</div>';
-    } else {
-        const rows = filtered.map(function(v) {
-            return '<tr><td>' + formatDate(v.date) + '</td><td>' + v.version + '</td><td>' + v.type + '</td><td>' + v.module + '</td><td>' + v.description + '</td><td><button class="btn btn--sm" onclick="showVersionModal(' + v.id + ')">✏️</button> <button class="btn btn--sm" onclick="deleteVersion(' + v.id + ')">🗑️</button></td></tr>';
-        }).join('');
-        c.innerHTML = '<table><thead><th>Data</th><th>Versão</th><th>Tipo</th><th>Módulo</th><th>Descrição</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
+    if (systemVersions.length === 0) {
+        c.innerHTML = 'Vazio.';
+        return;
     }
+    const rows = systemVersions.map(function(v) {
+        return '<tr><td>' + formatDate(v.date) + '</td><td>' + v.version + '</td><td>' + v.description + '</td><td><button class="btn btn--sm" onclick="showVersionModal(' + v.id + ')">✏️</button> <button class="btn btn--sm" onclick="deleteVersion(' + v.id + ')">🗑️</button></td></tr>';
+    }).join('');
+    c.innerHTML = '<table><thead><th>Data</th><th>Versão</th><th>Descrição</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
 }
 
 function deleteVersion(id) {
@@ -2262,83 +2185,145 @@ function closeVersionModal() {
     document.getElementById('version-modal').classList.remove('show');
 }
 
-// Configurações: Users, Cargos, etc (Mantidos com lógica expandida)
-function showUserModal(id=null){ const m=document.getElementById('user-modal'); document.getElementById('user-form').reset(); editingId=id; document.getElementById('user-login').disabled=false; if(id){const u=users.find(x=>x.id===id); document.getElementById('user-login').value=u.login; document.getElementById('user-login').disabled=true; document.getElementById('user-name').value=u.name; document.getElementById('user-permission').value=u.permission; document.getElementById('user-status').value=u.status; document.getElementById('user-password').required=false;}else{document.getElementById('user-password').required=true;} m.classList.add('show'); }
-function saveUser(e){ e.preventDefault(); const login=document.getElementById('user-login').value.trim().toUpperCase(); if(!editingId && users.some(u=>u.login===login)){alert('Já existe');return;} const data={login, name:document.getElementById('user-name').value, permission:document.getElementById('user-permission').value, status:document.getElementById('user-status').value}; if(!editingId){data.id=getNextId('user'); data.salt=generateSalt(); data.passwordHash=hashPassword(document.getElementById('user-password').value, data.salt); users.push(data);}else{const i=users.findIndex(u=>u.id===editingId); users[i]={...users[i],...data}; if(document.getElementById('user-password').value){users[i].salt=generateSalt(); users[i].passwordHash=hashPassword(document.getElementById('user-password').value, users[i].salt);}} salvarNoArmazenamento('users',users); document.getElementById('user-modal').classList.remove('show'); renderUsers(); showToast('Salvo!'); }
-function renderUsers(){ const c=document.getElementById('users-table'); if(users.length===0){c.innerHTML='Vazio';return;} const rows=users.map(u=>`<tr><td>${u.login}</td><td>${u.name}</td><td>${u.status}</td><td><button class="btn btn--sm" onclick="showUserModal(${u.id})">✏️</button><button class="btn btn--sm" onclick="deleteUser(${u.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Login</th><th>Nome</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`; }
-function deleteUser(id) { const u=users.find(x=>x.id===id); if(u.login==='ADMIN'){alert('Não pode excluir ADMIN');return;} if(confirm('Excluir?')){users=users.filter(x=>x.id!==id); salvarNoArmazenamento('users',users); renderUsers();}}
-function closeUserModal(){document.getElementById('user-modal').classList.remove('show');}
-
-// Outros cadastros (simplificados para caber no contexto, mas funcionais)
-// (showMunicipalityListModal, saveMunicipalityList, etc... Mantidos da v14)
-
-function showMunicipalityListModal(id=null){ editingId=id; document.getElementById('municipality-list-form').reset(); if(id){const m=municipalitiesList.find(x=>x.id===id); document.getElementById('municipality-list-name').value=m.name; document.getElementById('municipality-list-uf').value=m.uf;} document.getElementById('municipality-list-modal').classList.add('show'); }
-function saveMunicipalityList(e){ e.preventDefault(); const data={name:document.getElementById('municipality-list-name').value, uf:document.getElementById('municipality-list-uf').value}; if(editingId){const i=municipalitiesList.findIndex(x=>x.id===editingId); municipalitiesList[i]={...municipalitiesList[i],...data};}else{municipalitiesList.push({id:getNextId('munList'),...data});} salvarNoArmazenamento('municipalitiesList',municipalitiesList); document.getElementById('municipality-list-modal').classList.remove('show'); renderMunicipalityList(); updateGlobalDropdowns(); showToast('Salvo!'); }
-function renderMunicipalityList(){ const c=document.getElementById('municipalities-list-table'); const r=municipalitiesList.map(m=>`<tr><td>${m.name}</td><td>${m.uf}</td><td><button class="btn btn--sm" onclick="showMunicipalityListModal(${m.id})">✏️</button><button class="btn btn--sm" onclick="deleteMunicipalityList(${m.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Nome</th><th>UF</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
-function deleteMunicipalityList(id){ if(confirm('Excluir?')){ municipalitiesList=municipalitiesList.filter(x=>x.id!==id); salvarNoArmazenamento('municipalitiesList',municipalitiesList); renderMunicipalityList(); updateGlobalDropdowns(); }}
-function closeMunicipalityListModal() { document.getElementById('municipality-list-modal').classList.remove('show'); }
-
-function showCargoModal(id=null){ editingId=id; document.getElementById('cargo-form').reset(); if(id){const c=cargos.find(x=>x.id===id); document.getElementById('cargo-name').value=c.name; if(document.getElementById('cargo-description')) document.getElementById('cargo-description').value=c.description;} document.getElementById('cargo-modal').classList.add('show'); }
-function saveCargo(e){ e.preventDefault(); const data={name:document.getElementById('cargo-name').value, description:document.getElementById('cargo-description')?document.getElementById('cargo-description').value:''}; if(editingId){const i=cargos.findIndex(x=>x.id===editingId); cargos[i]={...cargos[i],...data};}else{cargos.push({id:getNextId('cargo'),...data});} salvarNoArmazenamento('cargos',cargos); document.getElementById('cargo-modal').classList.remove('show'); renderCargos(); }
-function renderCargos(){ const c=document.getElementById('cargos-table'); const r=cargos.map(x=>`<tr><td>${x.name}</td><td>${x.description||'-'}</td><td><button class="btn btn--sm" onclick="showCargoModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteCargo(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Cargo</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
-function deleteCargo(id){ if(confirm('Excluir?')){ cargos=cargos.filter(x=>x.id!==id); salvarNoArmazenamento('cargos',cargos); renderCargos(); }}
-function closeCargoModal() { document.getElementById('cargo-modal').classList.remove('show'); }
-
-function showOrientadorModal(id=null){ editingId=id; document.getElementById('orientador-form').reset(); if(id){const o=orientadores.find(x=>x.id===id); document.getElementById('orientador-name').value=o.name; document.getElementById('orientador-contact').value=o.contact;} document.getElementById('orientador-modal').classList.add('show'); }
-function saveOrientador(e){ e.preventDefault(); const data={name:document.getElementById('orientador-name').value, contact:document.getElementById('orientador-contact').value}; if(editingId){const i=orientadores.findIndex(x=>x.id===editingId); orientadores[i]={...orientadores[i],...data};}else{orientadores.push({id:getNextId('orient'),...data});} salvarNoArmazenamento('orientadores',orientadores); document.getElementById('orientador-modal').classList.remove('show'); renderOrientadores(); }
-function renderOrientadores(){ const c=document.getElementById('orientadores-table'); const r=orientadores.map(x=>`<tr><td>${x.name}</td><td>${x.contact}</td><td><button class="btn btn--sm" onclick="showOrientadorModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteOrientador(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Nome</th><th>Contato</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
-function deleteOrientador(id){ if(confirm('Excluir?')){ orientadores=orientadores.filter(x=>x.id!==id); salvarNoArmazenamento('orientadores',orientadores); renderOrientadores(); }}
-function closeOrientadorModal() { document.getElementById('orientador-modal').classList.remove('show'); }
-
-function showModuloModal(id=null){ editingId=id; document.getElementById('modulo-form').reset(); const form=document.getElementById('modulo-form'); if(!document.getElementById('modulo-description')) { const div=document.createElement('div'); div.className='form-group'; div.innerHTML=`<label class="form-label">Descrição</label><textarea class="form-control" id="modulo-description"></textarea>`; form.insertBefore(div, form.querySelector('.modal-actions')); } if(id){const m=modulos.find(x=>x.id===id); document.getElementById('modulo-name').value=m.name; if(document.getElementById('modulo-abbreviation')) document.getElementById('modulo-abbreviation').value=m.abbreviation; if(document.getElementById('modulo-description')) document.getElementById('modulo-description').value=m.description||'';} document.getElementById('modulo-modal').classList.add('show'); }
-function saveModulo(e){ e.preventDefault(); const data={name:document.getElementById('modulo-name').value, abbreviation:document.getElementById('modulo-abbreviation')?document.getElementById('modulo-abbreviation').value:'', description:document.getElementById('modulo-description')?document.getElementById('modulo-description').value:''}; if(editingId){const i=modulos.findIndex(x=>x.id===editingId); modulos[i]={...modulos[i],...data};}else{modulos.push({id:getNextId('mod'),...data});} salvarNoArmazenamento('modulos',modulos); document.getElementById('modulo-modal').classList.remove('show'); renderModulos(); }
-function renderModulos(){ const c=document.getElementById('modulos-table'); const r=modulos.map(x=>`<tr><td>${x.name}</td><td>${x.abbreviation||'-'}</td><td><button class="btn btn--sm" onclick="showModuloModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteModulo(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Módulo</th><th>Abrev.</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
-function deleteModulo(id){ if(confirm('Excluir?')){ modulos=modulos.filter(x=>x.id!==id); salvarNoArmazenamento('modulos',modulos); renderModulos(); }}
-function closeModuloModal() { document.getElementById('modulo-modal').classList.remove('show'); }
-
-function showFormaApresentacaoModal(id=null){ editingId=id; document.getElementById('forma-apresentacao-form').reset(); if(id){const f=formasApresentacao.find(x=>x.id===id); document.getElementById('forma-apresentacao-name').value=f.name;} document.getElementById('forma-apresentacao-modal').classList.add('show'); }
-function saveFormaApresentacao(e){ e.preventDefault(); const data={name:document.getElementById('forma-apresentacao-name').value}; if(editingId){const i=formasApresentacao.findIndex(x=>x.id===editingId); formasApresentacao[i]={...formasApresentacao[i],...data};}else{formasApresentacao.push({id:getNextId('forma'),...data});} salvarNoArmazenamento('formasApresentacao',formasApresentacao); document.getElementById('forma-apresentacao-modal').classList.remove('show'); renderFormas(); }
-function renderFormas(){ const c=document.getElementById('formas-apresentacao-table'); const r=formasApresentacao.map(x=>`<tr><td>${x.name}</td><td><button class="btn btn--sm" onclick="showFormaApresentacaoModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteForma(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Forma</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
-function deleteForma(id){ if(confirm('Excluir?')){ formasApresentacao=formasApresentacao.filter(x=>x.id!==id); salvarNoArmazenamento('formasApresentacao',formasApresentacao); renderFormas(); }}
-function closeFormaApresentacaoModal() { document.getElementById('forma-apresentacao-modal').classList.remove('show'); }
-
 // ----------------------------------------------------------------------------
-// 18. BACKUP E RESTAURAÇÃO
+// 18. PREVIEW DE BACKUP (AJUSTE SOLICITADO)
 // ----------------------------------------------------------------------------
-function updateBackupInfo() {
-    if(document.getElementById('backup-info-municipalities')) document.getElementById('backup-info-municipalities').textContent = municipalities.length;
-    if(document.getElementById('backup-info-trainings')) document.getElementById('backup-info-trainings').textContent = tasks.length;
-}
-
-function createBackup() {
-    const backupData = { version: "v18.0", date: new Date().toISOString(), data: { users, municipalities, municipalitiesList, tasks, requests, demands, visits, productions, presentations, systemVersions, cargos, orientadores, modulos, formasApresentacao, counters } };
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
-    const dl = document.createElement('a');
-    dl.setAttribute("href", dataStr);
-    dl.setAttribute("download", "backup_sigp_" + new Date().toISOString().slice(0,10) + ".json");
-    document.body.appendChild(dl); dl.click(); dl.remove();
-    showToast('Backup realizado!');
-}
-
-function triggerRestoreBackup() { document.getElementById('backup-file-input').click(); }
 function handleBackupFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
+    
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
             const backup = JSON.parse(e.target.result);
-            if(backup.data && confirm('Isso substituirá TODOS os dados. Continuar?')) {
-                Object.keys(backup.data).forEach(function(key) { localStorage.setItem(key, JSON.stringify(backup.data[key])); });
-                alert('Restaurado!'); location.reload();
+            
+            if (!backup.data) {
+                alert('Arquivo de backup inválido.');
+                return;
             }
-        } catch(err) { alert('Inválido.'); }
+            
+            // Armazena temporariamente para o usuário confirmar
+            pendingBackupData = backup;
+            
+            // Preenche o preview
+            const list = document.getElementById('restore-preview-list');
+            list.innerHTML = '';
+            
+            const items = [
+                { label: 'Treinamentos', count: backup.data.trainings?.length || 0 },
+                { label: 'Municípios Clientes', count: backup.data.municipalities?.length || 0 },
+                { label: 'Municípios (Lista Mestra)', count: backup.data.municipalitiesList?.length || 0 },
+                { label: 'Solicitações/Sugestões', count: backup.data.requests?.length || 0 },
+                { label: 'Apresentações', count: backup.data.presentations?.length || 0 },
+                { label: 'Cargos/Funções', count: backup.data.cargos?.length || 0 },
+                { label: 'Orientadores', count: backup.data.orientadores?.length || 0 },
+                { label: 'Módulos', count: backup.data.modules?.length || 0 },
+                { label: 'Formas de Apresentação', count: backup.data.formasApresentacao?.length || 0 },
+                { label: 'Demandas do Suporte', count: backup.data.demands?.length || 0 },
+                { label: 'Visitas Presenciais', count: backup.data.visits?.length || 0 },
+                { label: 'Envios de Produção', count: backup.data.productions?.length || 0 },
+                { label: 'Usuários', count: backup.data.users?.length || 0 }
+            ];
+
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${item.label}:</strong> ${item.count} registro(s)`;
+                li.style.padding = '8px 0';
+                li.style.borderBottom = '1px solid #eee';
+                list.appendChild(li);
+            });
+
+            // Abre o modal de confirmação
+            document.getElementById('restore-confirm-modal').classList.add('show');
+            
+        } catch (err) {
+            alert('Erro ao ler arquivo de backup.');
+            console.error(err);
+        }
     };
     reader.readAsText(file);
 }
 
+function confirmRestore() {
+    if (!pendingBackupData) return;
+    
+    const data = pendingBackupData.data;
+    
+    // Restaura chave por chave
+    localStorage.setItem('users', JSON.stringify(data.users));
+    localStorage.setItem('municipalities', JSON.stringify(data.municipalities));
+    localStorage.setItem('municipalitiesList', JSON.stringify(data.municipalitiesList));
+    localStorage.setItem('tasks', JSON.stringify(data.trainings)); // trainings = tasks
+    localStorage.setItem('requests', JSON.stringify(data.requests));
+    localStorage.setItem('demands', JSON.stringify(data.demands));
+    localStorage.setItem('visits', JSON.stringify(data.visits));
+    localStorage.setItem('productions', JSON.stringify(data.productions));
+    localStorage.setItem('presentations', JSON.stringify(data.presentations));
+    localStorage.setItem('cargos', JSON.stringify(data.cargos));
+    localStorage.setItem('orientadores', JSON.stringify(data.orientadores));
+    localStorage.setItem('modulos', JSON.stringify(data.modules));
+    localStorage.setItem('formasApresentacao', JSON.stringify(data.formasApresentacao));
+    localStorage.setItem('counters', JSON.stringify(data.counters));
+    
+    alert('Restauração concluída com sucesso! A página será recarregada.');
+    location.reload();
+}
+
+function closeRestoreConfirmModal() {
+    document.getElementById('restore-confirm-modal').classList.remove('show');
+    pendingBackupData = null;
+}
+
+// Funções de Backup e Restore (Gatilhos)
+function updateBackupInfo() {
+    if (document.getElementById('backup-info-municipalities')) {
+        document.getElementById('backup-info-municipalities').textContent = municipalities.length;
+    }
+    if (document.getElementById('backup-info-trainings')) {
+        document.getElementById('backup-info-trainings').textContent = tasks.length;
+    }
+    // (Adicionar outros contadores aqui se desejar no painel de backup)
+}
+
+function createBackup() {
+    const backupData = {
+        version: "v21.0",
+        date: new Date().toISOString(),
+        data: {
+            users: users,
+            municipalities: municipalities,
+            municipalitiesList: municipalitiesList,
+            trainings: tasks, // task vira trainings no JSON para compatibilidade
+            requests: requests,
+            demands: demands,
+            visits: visits,
+            productions: productions,
+            presentations: presentations,
+            systemVersions: systemVersions,
+            cargos: cargos,
+            orientadores: orientadores,
+            modules: modulos,
+            formasApresentacao: formasApresentacao,
+            counters: counters
+        }
+    };
+    
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
+    const dl = document.createElement('a');
+    dl.setAttribute("href", dataStr);
+    dl.setAttribute("download", "backup_sigp_" + new Date().toISOString().slice(0,10) + ".json");
+    document.body.appendChild(dl);
+    dl.click();
+    dl.remove();
+    showToast('Backup baixado com sucesso!');
+}
+
+function triggerRestoreBackup() {
+    document.getElementById('backup-file-input').click();
+}
+
 // ----------------------------------------------------------------------------
-// 19. DASHBOARD E GRÁFICOS GERAIS
+// 19. DASHBOARD E GRÁFICOS
 // ----------------------------------------------------------------------------
 function updateDashboardStats() {
     document.getElementById('dashboard-municipalities-in-use').textContent = municipalities.filter(function(m) { return m.status === 'Em uso'; }).length;
@@ -2349,15 +2334,17 @@ function updateDashboardStats() {
 
 function initializeDashboardCharts() {
     const ctx = document.getElementById('implantationsYearChart');
-    if(!ctx || !window.Chart) return;
+    if (!ctx || !window.Chart) return;
     
-    if(chartDashboard) chartDashboard.destroy();
+    if (chartDashboard) {
+        chartDashboard.destroy();
+    }
 
     const dataMap = {};
     municipalities.forEach(function(m) {
-        if(m.implantationDate) {
-            const y = m.implantationDate.split('-')[0];
-            dataMap[y] = (dataMap[y] || 0) + 1;
+        if (m.implantationDate) {
+            const year = m.implantationDate.split('-')[0];
+            dataMap[year] = (dataMap[year] || 0) + 1;
         }
     });
     
@@ -2367,57 +2354,82 @@ function initializeDashboardCharts() {
 
     chartDashboard = new Chart(ctx, {
         type: 'bar',
-        data: { labels: years, datasets: [{ label: 'Implantações', data: counts, backgroundColor: bgColors, barPercentage: 0.6 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        data: {
+            labels: years,
+            datasets: [{
+                label: 'Implantações',
+                data: counts,
+                backgroundColor: bgColors,
+                barPercentage: 0.6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+            }
+        }
     });
 }
 
 // ----------------------------------------------------------------------------
-// 20. INICIALIZAÇÃO E HELPERS FINAIS
+// 20. INICIALIZAÇÃO DO SISTEMA
 // ----------------------------------------------------------------------------
 function populateSelect(select, data, valKey, textKey) {
-    if(!select) return;
+    if (!select) return;
     const current = select.value;
     let html = '<option value="">Selecione...</option>';
-    data.sort(function(a, b) { return a[textKey].localeCompare(b[textKey]); }).forEach(function(i) { html += '<option value="' + i[valKey] + '">' + i[textKey] + '</option>'; });
+    data.sort(function(a, b) { return a[textKey].localeCompare(b[textKey]); }).forEach(function(i) {
+        html += '<option value="' + i[valKey] + '">' + i[textKey] + '</option>';
+    });
     select.innerHTML = html;
     select.value = current;
 }
 
 function populateFilterSelects() {
-    // Popula dropdowns de filtro
     const muns = municipalities.slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
     const filterIds = ['filter-municipality-name','filter-task-municipality','filter-request-municipality','filter-visit-municipality','filter-production-municipality','filter-presentation-municipality'];
     
     filterIds.forEach(function(id) {
         const el = document.getElementById(id);
-        if(el) {
+        if (el) {
             let html = '<option value="">Todos</option>';
             muns.forEach(function(m) { html += '<option value="' + m.name + '">' + m.name + '</option>'; });
             el.innerHTML = html;
         }
     });
     
-    const oriSelect = document.getElementById('filter-task-performer');
-    if(oriSelect && oriSelect.tagName === 'SELECT') {
-        let html = '<option value="">Todos</option>';
-        orientadores.forEach(function(o) { html += '<option value="' + o.name + '">' + o.name + '</option>'; });
-        oriSelect.innerHTML = html;
-    }
+    // Filtro de Orientadores
+    const oriFilters = ['filter-task-performer', 'filter-presentation-orientador'];
+    oriFilters.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el && el.tagName === 'SELECT') {
+            let html = '<option value="">Todos</option>';
+            orientadores.forEach(function(o) { html += '<option value="' + o.name + '">' + o.name + '</option>'; });
+            el.innerHTML = html;
+        }
+    });
     
-    const cargoSelect = document.getElementById('filter-task-position');
-    if(cargoSelect) {
+    // Filtro de Cargo
+    const cargoFilter = document.getElementById('filter-task-position');
+    if(cargoFilter) {
         let html = '<option value="">Todos</option>';
         cargos.forEach(function(c) { html += '<option value="' + c.name + '">' + c.name + '</option>'; });
-        cargoSelect.innerHTML = html;
+        cargoFilter.innerHTML = html;
     }
 }
 
 function updateGlobalDropdowns() {
     const activeMuns = municipalities.filter(function(m) { return m.status === 'Em uso'; });
+    
     ['task-municipality','request-municipality','visit-municipality','production-municipality','presentation-municipality'].forEach(function(id) {
         populateSelect(document.getElementById(id), activeMuns, 'name', 'name');
     });
+    
     populateFilterSelects();
 }
 
@@ -2431,54 +2443,35 @@ function initializeApp() {
     
     renderMunicipalities();
     renderTasks();
-    renderVersions();
     
     updateDashboardStats();
     initializeDashboardCharts();
     
-    if(!document.querySelector('.sidebar-btn.active')) navigateToHome();
+    if (!document.querySelector('.sidebar-btn.active')) {
+        navigateToHome();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     checkAuthentication();
-    window.onclick = function(e) { if(e.target.classList.contains('modal')) e.target.classList.remove('show'); };
-    document.querySelectorAll('.close-btn').forEach(function(b) { b.onclick = function(){ this.closest('.modal').classList.remove('show'); }; });
-    document.querySelectorAll('.btn--secondary').forEach(function(b) { if(b.textContent.includes('Cancelar')) b.onclick = function(){ this.closest('.modal').classList.remove('show'); }; });
-});
-
-// =====================================================
-// FUNÇÕES DO MENU MOBILE (Adicione no final do script.js)
-// =====================================================
-
-function toggleMobileMenu() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.getElementById('mobile-overlay');
     
-    // Cria o overlay se não existir
-    if (!overlay) {
-        const newOverlay = document.createElement('div');
-        newOverlay.id = 'mobile-overlay';
-        newOverlay.className = 'sidebar-overlay';
-        newOverlay.onclick = toggleMobileMenu; // Clicar fora fecha o menu
-        document.body.appendChild(newOverlay);
-    }
-
-    // Alterna classes
-    sidebar.classList.toggle('mobile-open');
-    const currentOverlay = document.getElementById('mobile-overlay');
-    if(currentOverlay) currentOverlay.classList.toggle('active');
-}
-
-// Fecha o menu automaticamente ao clicar em um item
-document.querySelectorAll('.sidebar-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        // Se estiver no mobile (menu aberto), fecha
-        if (window.innerWidth <= 900) {
-            const sidebar = document.querySelector('.sidebar');
-            if (sidebar.classList.contains('mobile-open')) {
-                toggleMobileMenu();
-            }
+    window.onclick = function(e) {
+        if (e.target.classList.contains('modal')) {
+            e.target.classList.remove('show');
+        }
+    };
+    
+    document.querySelectorAll('.close-btn').forEach(function(b) {
+        b.onclick = function() {
+            this.closest('.modal').classList.remove('show');
+        };
+    });
+    
+    document.querySelectorAll('.btn--secondary').forEach(function(b) {
+        if (b.textContent.includes('Cancelar')) {
+            b.onclick = function() {
+                this.closest('.modal').classList.remove('show');
+            };
         }
     });
 });
-
