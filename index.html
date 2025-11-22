@@ -11,7 +11,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
-
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏥</text></svg>">
 </head>
 <body>
@@ -27,16 +26,15 @@
             <div class="login-right">
                 <div class="login-form-container">
                     <h2 class="login-form-title">Acesso ao Sistema</h2>
-                    <p class="login-form-subtitle">Identifique-se para continuar</p>
-                    
+                    <p class="login-form-subtitle">Digite sua senha para continuar</p>
                     <form id="login-form" onsubmit="handleLogin(event)">
                         <div class="form-group">
                             <label class="form-label">Login</label>
-                            <input type="text" class="form-control" id="login-username" required placeholder="Seu usuário" autocomplete="username">
+                            <input type="text" class="form-control" id="login-username" required placeholder="Digite seu login" autocomplete="username">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Senha</label>
-                            <input type="password" class="form-control" id="login-password" required placeholder="Sua senha" autocomplete="current-password">
+                            <input type="password" class="form-control" id="login-password" required placeholder="Digite sua senha" autocomplete="current-password">
                         </div>
                         <div id="login-error" class="login-error"></div>
                         <button type="submit" class="btn btn--primary btn--full-width login-btn">Entrar no Sistema</button>
@@ -50,39 +48,51 @@
         
         <header class="app-header">
             <div class="header-content">
-                <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
-                    <span>☰</span> Menu
-                </button>
-
-                <div>
-                    <h1>SIGP Saúde - Gestão de Setor</h1>
-                    <p class="subtitle">Sistema de Gestão Completo</p>
+                
+                <div class="header-left">
+                    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+                        <span>☰</span> Menu
+                    </button>
+                    <div class="brand-container">
+                        <h1>SIGP Saúde - Gestão de Setor</h1>
+                        <p class="subtitle">Sistema de Gestão Completo</p>
+                    </div>
                 </div>
                 
-                <div class="header-user-info">
-                    <span class="user-welcome">Bem-vindo(a), <strong id="logged-user-name">Usuário</strong></span>
-                </div>
-                
-                <div class="header-actions">
-                    <button class="btn btn--outline btn--sm" onclick="navigateToHome()" title="Tela Inicial">🏠 Tela Inicial</button>
-                    <button class="btn btn--outline btn--sm" id="theme-toggle" onclick="toggleTheme()" title="Alternar Tema">🌙 Tema</button>
-                    
-                    <div class="settings-dropdown">
-                        <button class="btn btn--outline btn--sm" id="settings-btn" onclick="toggleSettingsMenu()" title="Configurações">⚙️ Configurações</button>
-                        <div class="settings-menu" id="settings-menu">
-                            <button class="settings-menu-item" id="user-management-menu-btn" onclick="navigateToUserManagement()">👥 Gestão de Usuários</button>
-                            <button class="settings-menu-item" onclick="showChangePasswordModal()">🔒 Alterar Senha</button>
-                            <div class="settings-divider" id="admin-divider"></div>
-                            <button class="settings-menu-item" id="cargo-management-menu-btn" onclick="navigateToCargoManagement()">💼 Cadastro de Cargo/Função</button>
-                            <button class="settings-menu-item" id="orientador-management-menu-btn" onclick="navigateToOrientadorManagement()">👨‍🏫 Cadastro de Orientador</button>
-                            <button class="settings-menu-item" id="modulo-management-menu-btn" onclick="navigateToModuloManagement()">📦 Cadastro de Módulos</button>
-                            <button class="settings-menu-item" id="municipality-list-management-menu-btn" onclick="navigateToMunicipalityListManagement()">🏙️ Cadastro de Municípios</button>
-                            <button class="settings-menu-item" id="forma-apresentacao-management-menu-btn" onclick="navigateToFormaApresentacaoManagement()">📋 Formas de Apresentação</button>
-                            <button class="settings-menu-item" id="backup-menu-btn" onclick="navigateToBackupManagement()">💾 Backup e Restauração</button>
-                        </div>
+                <div class="header-right">
+                    <div class="header-user-info">
+                        <span class="user-welcome">Bem-vindo(a), <strong id="logged-user-name">Administrador</strong></span>
                     </div>
                     
-                    <button class="btn btn--secondary btn--sm" onclick="handleLogout()">Sair</button>
+                    <div class="header-actions">
+                        <button class="btn btn--outline" onclick="navigateToHome()">
+                            🏠 Tela Inicial
+                        </button>
+                        <button class="btn btn--outline" id="theme-toggle" onclick="toggleTheme()">
+                            🌙 Tema
+                        </button>
+                        
+                        <div class="settings-dropdown">
+                            <button class="btn btn--outline" id="settings-btn" onclick="toggleSettingsMenu()">
+                                ⚙️ Configurações
+                            </button>
+                            <div class="settings-menu" id="settings-menu">
+                                <button class="settings-menu-item" id="user-management-menu-btn" onclick="navigateToUserManagement()">👥 Gestão de Usuários</button>
+                                <button class="settings-menu-item" onclick="showChangePasswordModal()">🔒 Alterar Senha</button>
+                                <div class="settings-divider" id="admin-divider"></div>
+                                <button class="settings-menu-item" id="cargo-management-menu-btn" onclick="navigateToCargoManagement()">💼 Cadastro de Cargo/Função</button>
+                                <button class="settings-menu-item" id="orientador-management-menu-btn" onclick="navigateToOrientadorManagement()">👨‍🏫 Cadastro de Orientador</button>
+                                <button class="settings-menu-item" id="modulo-management-menu-btn" onclick="navigateToModuloManagement()">📦 Cadastro de Módulos</button>
+                                <button class="settings-menu-item" id="municipality-list-management-menu-btn" onclick="navigateToMunicipalityListManagement()">🏙️ Cadastro de Municípios</button>
+                                <button class="settings-menu-item" id="forma-apresentacao-management-menu-btn" onclick="navigateToFormaApresentacaoManagement()">📋 Formas de Apresentação</button>
+                                <button class="settings-menu-item" id="backup-menu-btn" onclick="navigateToBackupManagement()">💾 Backup e Restauração</button>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn--secondary" onclick="handleLogout()">
+                            🚪 Sair
+                        </button>
+                    </div>
                 </div>
             </div>
         </header>
@@ -159,10 +169,7 @@
                     <div class="section-divider"></div>
                     <h3 class="section-subtitle">Dashboard e Gráficos</h3>
                     <div class="stats-cards">
-                        <div class="stat-card"><h3 id="total-municipalities">0</h3><p>Total de Municípios</p></div>
-                        <div class="stat-card"><h3 id="active-municipalities">0</h3><p>Municípios Ativos</p></div>
-                        <div class="stat-card"><h3 id="inactive-municipalities">0</h3><p>Municípios Inativos</p></div>
-                        <div class="stat-card"><h3 id="avg-days-last-visit">0</h3><p>Dias desde última visita (média)</p></div>
+                        <div class="stat-card"><h3 id="total-municipalities">0</h3><p>Total de Municípios</p></div><div class="stat-card"><h3 id="active-municipalities">0</h3><p>Municípios Ativos</p></div><div class="stat-card"><h3 id="inactive-municipalities">0</h3><p>Municípios Inativos</p></div><div class="stat-card"><h3 id="avg-days-last-visit">0</h3><p>Dias desde última visita (média)</p></div>
                     </div>
                     <div class="charts-grid">
                         <div class="chart-card"><h4>Distribuição por Status</h4><canvas id="statusChart"></canvas></div>
@@ -170,8 +177,8 @@
                         <div class="chart-card chart-card--wide"><h4>Implantações ao Longo do Tempo</h4><canvas id="timelineChart"></canvas></div>
                     </div>
                     <div class="actions-bar">
-                        <button class="btn btn--outline btn--sm" onclick="exportMunicipalitiesCSV()">📥 Exportar CSV</button>
-                        <button class="btn btn--primary btn--sm" onclick="generateMunicipalitiesPDF()">📄 Gerar PDF</button>
+                        <button class="btn btn--outline" onclick="exportMunicipalitiesCSV()">📥 Exportar CSV</button>
+                        <button class="btn btn--primary" onclick="generateMunicipalitiesPDF()">📄 Gerar PDF</button>
                     </div>
                 </section>
 
@@ -190,7 +197,7 @@
                     <div id="tasks-results-count" class="results-count"></div><div class="tasks-table" id="tasks-table"></div>
                     <div class="section-divider"></div><h3 class="section-subtitle">Gráficos e Estatísticas</h3>
                     <div class="stats-cards"><div class="stat-card"><h3 id="total-tasks">0</h3><p>Total de Treinamentos</p></div><div class="stat-card"><h3 id="completed-tasks">0</h3><p>Concluídos</p></div><div class="stat-card"><h3 id="pending-tasks">0</h3><p>Pendentes</p></div></div>
-                    <div class="actions-bar"><button class="btn btn--outline btn--sm" onclick="exportTasksCSV()">📥 Exportar CSV</button><button class="btn btn--primary btn--sm" onclick="generateTasksPDF()">📄 Gerar PDF</button></div>
+                    <div class="actions-bar"><button class="btn btn--outline" onclick="exportTasksCSV()">📥 Exportar CSV</button><button class="btn btn--primary" onclick="generateTasksPDF()">📄 Gerar PDF</button></div>
                 </section>
 
                 <section id="solicitacoes-section" class="tab-content">
@@ -208,7 +215,7 @@
                     <div class="section-divider"></div><h3 class="section-subtitle">Gráficos e Estatísticas</h3>
                     <div class="stats-cards"><div class="stat-card"><h3 id="total-requests">0</h3><p>Total de Solicitações</p></div><div class="stat-card"><h3 id="pending-requests">0</h3><p>Pendentes</p></div><div class="stat-card"><h3 id="completed-requests">0</h3><p>Realizadas</p></div></div>
                     <div class="charts-grid"><div class="chart-card"><h4>Distribuição por Status</h4><canvas id="requestStatusChart"></canvas></div><div class="chart-card"><h4>Por Município</h4><canvas id="requestMunicipalityChart"></canvas></div><div class="chart-card"><h4>Por Solicitante</h4><canvas id="requestRequesterChart"></canvas></div></div>
-                    <div class="actions-bar"><button class="btn btn--outline btn--sm" onclick="exportRequestsCSV()">📥 Exportar CSV</button><button class="btn btn--primary btn--sm" onclick="generateRequestsPDF()">📄 Gerar PDF</button></div>
+                    <div class="actions-bar"><button class="btn btn--outline" onclick="exportRequestsCSV()">📥 Exportar CSV</button><button class="btn btn--primary" onclick="generateRequestsPDF()">📄 Gerar PDF</button></div>
                 </section>
 
                 <section id="apresentacoes-section" class="tab-content">
@@ -219,24 +226,23 @@
                     <div class="form-group"><label class="form-label">Solicitante</label><input type="text" class="form-control" id="filter-presentation-requester"></div>
                     </div><button class="btn btn--secondary" onclick="clearPresentationFilters()">Limpar Filtros</button></div>
                     <div id="presentations-results-count" class="results-count"></div><div class="tasks-table" id="presentations-table"></div>
-                    <div class="stats-cards"><div class="stat-card"><h3 id="total-presentations">0</h3><p>Total</p></div></div>
+                    <div class="stats-cards"><div class="stat-card"><h3 id="total-presentations">0</h3><p>Total de Apresentações</p></div></div>
                     <div class="charts-grid"><div class="chart-card"><h4>Distribuição por Status</h4><canvas id="presentationStatusChart"></canvas></div><div class="chart-card"><h4>Por Município</h4><canvas id="presentationMunicipalityChart"></canvas></div><div class="chart-card"><h4>Por Orientador</h4><canvas id="presentationOrientadorChart"></canvas></div></div>
-                    <div class="actions-bar"><button class="btn btn--outline btn--sm" onclick="exportPresentationsCSV()">📥 Exportar CSV</button><button class="btn btn--primary btn--sm" onclick="generatePresentationsPDF()">📄 Gerar PDF</button></div>
+                    <div class="actions-bar"><button class="btn btn--outline" onclick="exportPresentationsCSV()">📥 Exportar CSV</button><button class="btn btn--primary" onclick="generatePresentationsPDF()">📄 Gerar PDF</button></div>
                 </section>
 
                 <section id="demandas-section" class="tab-content">
                     <div class="section-header"><h2>Demandas do Suporte</h2><button class="btn btn--primary" onclick="showDemandModal()">+ Nova Demanda</button></div>
-                    <div class="filters-section"><div class="filters-grid">
-                        <div class="form-group"><label class="form-label">Status</label><select class="form-control" id="filter-demand-status"><option value="">Todos</option><option value="Pendente">Pendente</option><option value="Realizada">Realizada</option><option value="Inviável">Inviável</option></select></div>
-                        <div class="form-group"><label class="form-label">Prioridade</label><select class="form-control" id="filter-demand-priority"><option value="">Todos</option><option value="Alta">Alta</option><option value="Média">Média</option><option value="Baixa">Baixa</option></select></div>
-                        <div class="form-group"><label class="form-label">Usuário</label><input type="text" class="form-control" id="filter-demand-user"></div>
-                        <div class="form-group"><label class="form-label">Início</label><input type="date" class="form-control" id="filter-demand-date-start"></div>
-                        <div class="form-group"><label class="form-label">Fim</label><input type="date" class="form-control" id="filter-demand-date-end"></div>
+                    <div class="filters-section"><div class="filters-grid"><div class="form-group"><label class="form-label">Status</label><select class="form-control" id="filter-demand-status"><option value="">Todos</option><option value="Pendente">Pendente</option><option value="Realizada">Realizada</option><option value="Inviável">Inviável</option></select></div>
+                    <div class="form-group"><label class="form-label">Prioridade</label><select class="form-control" id="filter-demand-priority"><option value="">Todos</option><option value="Alta">Alta</option><option value="Média">Média</option><option value="Baixa">Baixa</option></select></div>
+                    <div class="form-group"><label class="form-label">Usuário</label><input type="text" class="form-control" id="filter-demand-user" placeholder="Buscar"></div>
+                    <div class="form-group"><label class="form-label">Início</label><input type="date" class="form-control" id="filter-demand-date-start"></div>
+                    <div class="form-group"><label class="form-label">Fim</label><input type="date" class="form-control" id="filter-demand-date-end"></div>
                     </div><button class="btn btn--secondary" onclick="clearDemandFilters()">Limpar Filtros</button></div>
                     <div id="demands-results-count" class="results-count"></div><div class="tasks-table" id="demands-table"></div>
                     <div class="stats-cards"><div class="stat-card"><h3 id="total-demands">0</h3><p>Total</p></div></div>
-                    <div class="charts-grid"><div class="chart-card"><h4>Status</h4><canvas id="demandStatusChart"></canvas></div><div class="chart-card"><h4>Prioridade</h4><canvas id="demandPriorityChart"></canvas></div><div class="chart-card"><h4>Por Usuário</h4><canvas id="demandUserChart"></canvas></div></div>
-                    <div class="actions-bar"><button class="btn btn--outline btn--sm" onclick="exportDemandsCSV()">📥 Exportar CSV</button><button class="btn btn--primary btn--sm" onclick="generateDemandsPDF()">📄 Gerar PDF</button></div>
+                    <div class="charts-grid"><div class="chart-card"><h4>Distribuição por Status</h4><canvas id="demandStatusChart"></canvas></div><div class="chart-card"><h4>Por Prioridade</h4><canvas id="demandPriorityChart"></canvas></div><div class="chart-card"><h4>Por Usuário</h4><canvas id="demandUserChart"></canvas></div></div>
+                    <div class="actions-bar"><button class="btn btn--outline" onclick="exportDemandsCSV()">📥 Exportar CSV</button><button class="btn btn--primary" onclick="generateDemandsPDF()">📄 Gerar PDF</button></div>
                 </section>
 
                 <section id="visitas-section" class="tab-content">
@@ -244,12 +250,12 @@
                     <div class="filters-section"><div class="filters-grid">
                         <div class="form-group"><label class="form-label">Município</label><select class="form-control" id="filter-visit-municipality"><option value="">Todos</option></select></div>
                         <div class="form-group"><label class="form-label">Status</label><select class="form-control" id="filter-visit-status"><option value="">Todos</option><option value="Pendente">Pendente</option><option value="Realizada">Realizada</option><option value="Cancelada">Cancelada</option></select></div>
-                        <div class="form-group"><label class="form-label">Solicitante</label><input type="text" class="form-control" id="filter-visit-applicant"></div>
+                        <div class="form-group"><label class="form-label">Solicitante</label><input type="text" class="form-control" id="filter-visit-applicant" placeholder="Buscar"></div>
                     </div><button class="btn btn--secondary" onclick="clearVisitFilters()">Limpar Filtros</button></div>
                     <div id="visits-results-count" class="results-count"></div><div class="tasks-table" id="visits-table"></div>
                     <div class="stats-cards"><div class="stat-card"><h3 id="total-visits">0</h3><p>Total</p></div></div>
-                    <div class="charts-grid"><div class="chart-card"><h4>Status</h4><canvas id="visitStatusChart"></canvas></div><div class="chart-card"><h4>Por Município</h4><canvas id="visitMunicipalityChart"></canvas></div></div>
-                    <div class="actions-bar"><button class="btn btn--outline btn--sm" onclick="exportVisitsCSV()">📥 Exportar CSV</button><button class="btn btn--primary btn--sm" onclick="generateVisitsPDF()">📄 Gerar PDF</button></div>
+                    <div class="charts-grid"><div class="chart-card"><h4>Distribuição por Status</h4><canvas id="visitStatusChart"></canvas></div><div class="chart-card"><h4>Por Município</h4><canvas id="visitMunicipalityChart"></canvas></div><div class="chart-card"><h4>Por Solicitante</h4><canvas id="visitApplicantChart"></canvas></div></div>
+                    <div class="actions-bar"><button class="btn btn--outline" onclick="exportVisitsCSV()">📥 Exportar CSV</button><button class="btn btn--primary" onclick="generateVisitsPDF()">📄 Gerar PDF</button></div>
                 </section>
 
                 <section id="producao-section" class="tab-content">
@@ -257,13 +263,13 @@
                     <div class="filters-section"><div class="filters-grid">
                         <div class="form-group"><label class="form-label">Município</label><select class="form-control" id="filter-production-municipality"><option value="">Todos</option></select></div>
                         <div class="form-group"><label class="form-label">Status</label><select class="form-control" id="filter-production-status"><option value="">Todos</option><option value="Enviada">Enviada</option><option value="Pendente">Pendente</option><option value="Cancelada">Cancelada</option></select></div>
-                        <div class="form-group"><label class="form-label">Profissional</label><input type="text" class="form-control" id="filter-production-professional"></div>
+                        <div class="form-group"><label class="form-label">Profissional</label><input type="text" class="form-control" id="filter-production-professional" placeholder="Buscar"></div>
                         <div class="form-group"><label class="form-label">Frequência</label><select class="form-control" id="filter-production-frequency"><option value="">Todas</option><option value="Mensal">Mensal</option><option value="Semanal">Semanal</option><option value="Diário">Diário</option></select></div>
                     </div><button class="btn btn--secondary" onclick="clearProductionFilters()">Limpar Filtros</button></div>
                     <div id="productions-results-count" class="results-count"></div><div class="tasks-table" id="productions-table"></div>
                     <div class="stats-cards"><div class="stat-card"><h3 id="total-productions">0</h3><p>Total</p></div></div>
-                    <div class="charts-grid"><div class="chart-card"><h4>Status</h4><canvas id="productionStatusChart"></canvas></div><div class="chart-card"><h4>Frequência</h4><canvas id="productionFrequencyChart"></canvas></div></div>
-                    <div class="actions-bar"><button class="btn btn--outline btn--sm" onclick="exportProductionsCSV()">📥 Exportar CSV</button><button class="btn btn--primary btn--sm" onclick="generateProductionsPDF()">📄 Gerar PDF</button></div>
+                    <div class="charts-grid"><div class="chart-card"><h4>Distribuição por Status</h4><canvas id="productionStatusChart"></canvas></div><div class="chart-card"><h4>Frequência</h4><canvas id="productionFrequencyChart"></canvas></div></div>
+                    <div class="actions-bar"><button class="btn btn--outline" onclick="exportProductionsCSV()">📥 Exportar CSV</button><button class="btn btn--primary" onclick="generateProductionsPDF()">📄 Gerar PDF</button></div>
                 </section>
 
                 <section id="relatorios-section" class="tab-content">
@@ -271,7 +277,7 @@
                     <div class="empty-state"><p>Funcionalidades em desenvolvimento.</p></div>
                 </section>
 
-                <section id="usuarios-section" class="tab-content"><div class="section-header"><h2>Gestão de Usuários</h2><button class="btn btn--primary" onclick="showUserModal()">+ Novo Usuário</button></div><div class="filters-section"><input type="text" class="form-control" id="filter-user-name" placeholder="Buscar nome"><button class="btn btn--secondary" style="margin-top:10px;" onclick="clearUserFilters()">Limpar</button></div><div id="users-table"></div><div class="stats-cards"><div class="stat-card"><h3 id="total-users">0</h3><p>Total</p></div></div></section>
+                <section id="usuarios-section" class="tab-content"><div class="section-header"><h2>Gestão de Usuários</h2><button class="btn btn--primary" onclick="showUserModal()">+ Novo Usuário</button></div><div class="filters-section"><input type="text" class="form-control" id="filter-user-name" placeholder="Buscar por nome"><button class="btn btn--secondary" style="margin-top:10px;" onclick="clearUserFilters()">Limpar</button></div><div id="users-table"></div><div class="stats-cards"><div class="stat-card"><h3 id="total-users">0</h3><p>Total</p></div></div></section>
                 <section id="cargos-section" class="tab-content"><div class="section-header"><h2>Cadastro de Cargo/Função</h2><button class="btn btn--primary" onclick="showCargoModal()">+ Novo</button></div><div id="cargos-table"></div><div id="cargos-total" class="results-count"></div></section>
                 <section id="orientadores-section" class="tab-content"><div class="section-header"><h2>Cadastro de Orientador</h2><button class="btn btn--primary" onclick="showOrientadorModal()">+ Novo</button></div><div id="orientadores-table"></div><div id="orientadores-total" class="results-count"></div></section>
                 <section id="modulos-section" class="tab-content"><div class="section-header"><h2>Cadastro de Módulos</h2><button class="btn btn--primary" onclick="showModuloModal()">+ Novo</button></div><div id="modulos-table"></div><div id="modulos-total" class="results-count"></div></section>
@@ -305,8 +311,8 @@
         <div class="form-group"><label class="form-label">Implantação*</label><input type="date" class="form-control" id="municipality-implantation-date" required></div>
         <div class="form-group"><label class="form-label">Última Visita*</label><input type="date" class="form-control" id="municipality-last-visit" required></div>
         <div class="form-group"><label class="form-label">Módulos*</label><div class="checkbox-grid" id="municipality-modules-container"></div></div>
-        <div class="form-group" id="group-date-blocked" style="display:none;"><label class="form-label">Data Bloqueio*</label><input type="date" class="form-control" id="municipality-date-blocked"></div>
-        <div class="form-group" id="group-date-stopped" style="display:none;"><label class="form-label">Data Parou*</label><input type="date" class="form-control" id="municipality-date-stopped"></div>
+        <div class="form-group" id="group-date-blocked" style="display:none;"><label class="form-label">Data em que foi Bloqueado*</label><input type="date" class="form-control" id="municipality-date-blocked"></div>
+        <div class="form-group" id="group-date-stopped" style="display:none;"><label class="form-label">Data em que Parou de Usar*</label><input type="date" class="form-control" id="municipality-date-stopped"></div>
         <div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeMunicipalityModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div>
     </form></div></div>
 
@@ -316,7 +322,7 @@
         <div class="form-group"><label class="form-label">Solicitante*</label><input type="text" class="form-control" id="request-requester" required></div>
         <div class="form-group"><label class="form-label">Contato*</label><input type="text" class="form-control" id="request-contact"></div>
         <div class="form-group"><label class="form-label">Descrição*</label><textarea class="form-control" id="request-description" required></textarea></div>
-        <div class="form-group"><label class="form-label">Status*</label><select class="form-control" id="request-status" required><option value="Pendente">Pendente</option><option value="Realizada">Realizada</option><option value="Inviável">Inviável</option></select></div>
+        <div class="form-group"><label class="form-label">Status*</label><select class="form-control" id="request-status" required><option value="Pendente">Pendente</option><option value="Realizado">Realizado</option><option value="Inviável">Inviável</option></select></div>
         <div class="form-group" id="group-request-date-realization" style="display:none;"><label class="form-label">Data Realização*</label><input type="date" class="form-control" id="request-date-realization"></div>
         <div class="form-group" id="group-request-justification" style="display:none;"><label class="form-label">Justificativa*</label><textarea class="form-control" id="request-justification"></textarea></div>
         <div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeRequestModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div>
@@ -374,10 +380,9 @@
     <div id="municipality-list-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Lista Mestra</h3><button class="close-btn" onclick="closeMunicipalityListModal()">&times;</button></div><form id="municipality-list-form" onsubmit="saveMunicipalityList(event)"><div class="form-group"><label class="form-label">Nome*</label><input type="text" class="form-control" id="municipality-list-name" required></div><div class="form-group"><label class="form-label">UF</label><input type="text" class="form-control" id="municipality-list-uf"></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeMunicipalityListModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div></form></div></div>
     <div id="forma-apresentacao-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Forma Apres.</h3><button class="close-btn" onclick="closeFormaApresentacaoModal()">&times;</button></div><form id="forma-apresentacao-form" onsubmit="saveFormaApresentacao(event)"><div class="form-group"><label class="form-label">Nome*</label><input type="text" class="form-control" id="forma-apresentacao-name" required></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeFormaApresentacaoModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div></form></div></div>
     <div id="change-password-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Senha</h3><button class="close-btn" onclick="closeChangePasswordModal()">&times;</button></div><form id="change-password-form" onsubmit="handleChangePassword(event)"><div class="form-group"><label class="form-label">Atual</label><input type="password" class="form-control" id="new-password" required></div><div class="form-group"><label class="form-label">Confirmar</label><input type="password" class="form-control" id="confirm-password" required></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeChangePasswordModal()">Cancelar</button><button type="submit" class="btn btn--primary">Salvar</button></div></form></div></div>
-    
     <div id="restore-confirm-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>⚠️ Confirmar Restauração</h3><button class="close-btn" onclick="closeRestoreConfirmModal()">&times;</button></div><div style="padding:20px;"><p>Isso substituirá todos os dados.</p><ul id="restore-preview-list"></ul><div class="modal-actions"><button class="btn btn--secondary" onclick="closeRestoreConfirmModal()">Cancelar</button><button class="btn btn--danger" onclick="confirmRestore()">Restaurar</button></div></div></div></div>
 
     <div id="toast" class="toast"></div>
-    <script src="script.js?v=27"></script>
+    <script src="script.js?v=29"></script>
 </body>
 </html>
