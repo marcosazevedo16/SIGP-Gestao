@@ -3237,58 +3237,158 @@ table td .module-tags {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL V17 - HEADER ALINHADO (GRID) + ÍCONE SAIR
-   Substitua o bloco anterior de correção por este.
+   CORREÇÃO FINAL V18 - ALINHAMENTO BOTÕES + MENU LATERAL
+   Substitua o bloco anterior no final do style.css
    ========================================================================== */
 
-/* 1. Transformar o Header em Grid para alinhamento perfeito (Esq - Centro - Dir) */
+/* 1. GRID DO HEADER (Mantém o alinhamento Esq - Centro - Dir) */
 .header-content {
     display: grid !important;
-    /* Define 3 colunas: Conteúdo Esquerda (Auto) | Meio (1 fração) | Direita (Auto) */
-    grid-template-columns: auto 1fr auto !important; 
+    grid-template-columns: auto 1fr auto !important;
     align-items: center;
     width: 100%;
     gap: 10px;
 }
 
-/* 2. Centralizar a mensagem de Bem-vindo na coluna do meio */
+/* 2. CENTRALIZAR BEM-VINDO */
 .header-user-info {
     display: flex !important;
-    justify-content: center !important; /* Centraliza horizontalmente */
+    justify-content: center !important;
     white-space: nowrap;
     width: 100%;
 }
 
-/* 3. Ajustes para PC (> 901px) */
+/* 3. ALINHAMENTO PERFEITO DOS BOTÕES (Novo Ajuste) */
+/* Força todos os botões do header a serem caixas flexíveis idênticas */
+.header-actions .btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 38px !important; /* Altura fixa igual para todos */
+    line-height: 1 !important;
+    vertical-align: middle !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Adiciona o ícone de PORTA no botão Sair */
+.header-actions .btn:last-child::before {
+    content: "🚪";
+    margin-right: 6px;
+    font-size: 14px;
+    line-height: 1;
+    display: inline-block;
+}
+
+/* 4. REGRAS ESPECÍFICAS PARA COMPUTADOR (> 901px) */
 @media (min-width: 901px) {
-    /* Removemos o padding-left gigante que empurrava tudo para a direita */
     .app-header {
-        padding-left: 20px !important; /* Espaçamento padrão */
+        padding-left: 20px !important;
         padding-right: 20px !important;
     }
 
-    /* Garante que os botões fiquem alinhados à direita na coluna deles */
     .header-actions {
         justify-content: flex-end;
         display: flex;
+        gap: 8px; /* Garante espaço igual entre botões */
+    }
+
+    /* --- CORREÇÃO DO MENU LATERAL --- */
+    
+    /* Esconde botão mobile */
+    button.mobile-menu-toggle, .mobile-menu-toggle { display: none !important; }
+
+    /* Sidebar Fechada */
+    .sidebar {
+        width: 70px !important;
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1000;
+        background-color: #003d5c;
+        white-space: nowrap;
+    }
+
+    /* Sidebar Aberta */
+    .sidebar:hover {
+        width: 300px !important;
+        box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+    }
+
+    /* Conteúdo */
+    .main-content {
+        margin-left: 70px !important;
+        width: calc(100% - 70px) !important;
+        transition: margin-left 0.3s ease;
+    }
+
+    /* Botões da Sidebar */
+    .sidebar-btn {
+        padding: 10px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 50px;
+        height: auto;
+    }
+
+    .sidebar-icon {
+        margin: 0;
+        min-width: 70px;
+        font-size: 20px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    /* Texto dos botões */
+    .sidebar-btn span:last-child {
+        opacity: 0;
+        visibility: hidden;
+        position: absolute;
+        left: 70px;
+        white-space: nowrap;
+    }
+
+    .sidebar:hover .sidebar-btn { justify-content: flex-start; }
+    
+    .sidebar:hover .sidebar-btn span:last-child {
+        opacity: 1;
+        visibility: visible;
+        position: static;
+        white-space: normal;
+        line-height: 1.2;
+        padding-right: 15px;
+        font-size: 13px;
+    }
+
+    /* CABEÇALHO DO MENU LATERAL (Ajustado) */
+    .sidebar-nav::before {
+        content: "☰";
+        display: block;
+        text-align: center;
+        color: #ffffff;
+        font-size: 24px;
+        margin-bottom: 20px;
+        height: 40px;
+        line-height: 40px;
+    }
+    
+    /* Força a troca de texto no Hover */
+    .sidebar:hover .sidebar-nav::before {
+        content: "MENU LATERAL" !important; /* Forçando a troca */
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        color: #ffffff !important;
+        text-transform: uppercase;
     }
 }
 
-/* 4. Recolocar o ícone de Porta no botão Sair (Via CSS) */
-/* Seleciona o último botão dentro de .header-actions e adiciona o ícone antes */
-.header-actions .btn:last-child::before {
-    content: "🚪"; /* Ícone de porta */
-    margin-right: 6px;
-    font-size: 14px;
-}
-
-/* Ajuste de segurança para mobile: mantém flex para não quebrar o layout do celular */
+/* 5. MOBILE (Segurança) */
 @media (max-width: 900px) {
-    .header-content {
-        display: flex !important; /* Volta para Flex no celular */
-        flex-wrap: wrap;
-    }
-    .header-user-info {
-        display: none !important; /* Esconde user info no celular para poupar espaço */
+    .header-content { display: flex !important; flex-wrap: wrap; }
+    .header-user-info { display: none !important; }
+    
+    /* Garante que o botão mobile apareça */
+    html body .app-header .mobile-menu-toggle, button.mobile-menu-toggle {
+        display: inline-flex !important;
     }
 }
