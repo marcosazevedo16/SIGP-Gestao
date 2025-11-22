@@ -2484,36 +2484,40 @@ function confirmRestore() {
     
     localStorage.clear();
     
-    // Restaura tudo explicitamente
-    localStorage.setItem('users', JSON.stringify(data.users));
-    localStorage.setItem('municipalities', JSON.stringify(data.municipalities));
-    localStorage.setItem('municipalitiesList', JSON.stringify(data.municipalitiesList));
-    localStorage.setItem('tasks', JSON.stringify(data.tasks || data.trainings));
-    localStorage.setItem('requests', JSON.stringify(data.requests));
-    localStorage.setItem('demands', JSON.stringify(data.demands));
-    localStorage.setItem('visits', JSON.stringify(data.visits));
-    localStorage.setItem('productions', JSON.stringify(data.productions));
-    localStorage.setItem('presentations', JSON.stringify(data.presentations));
-    localStorage.setItem('systemVersions', JSON.stringify(data.systemVersions));
-    localStorage.setItem('cargos', JSON.stringify(data.cargos));
-    localStorage.setItem('orientadores', JSON.stringify(data.orientadores));
-    localStorage.setItem('modulos', JSON.stringify(data.modules || data.modulos));
-    localStorage.setItem('formasApresentacao', JSON.stringify(data.formasApresentacao));
-    localStorage.setItem('counters', JSON.stringify(data.counters));
+    // Função auxiliar para evitar salvar "undefined" no localStorage
+    // Se o valor não existir, salva o valor padrão (geralmente lista vazia [])
+    const safeSave = (key, value, defaultVal = []) => {
+        localStorage.setItem(key, JSON.stringify(value || defaultVal));
+    };
     
-    // Logout forçado
+    // Restaura tudo explicitamente com proteção contra falhas
+    safeSave('users', data.users);
+    safeSave('municipalities', data.municipalities);
+    safeSave('municipalitiesList', data.municipalitiesList);
+    safeSave('tasks', data.tasks || data.trainings); // Suporte a legado (trainings)
+    safeSave('requests', data.requests);
+    safeSave('demands', data.demands);
+    safeSave('visits', data.visits);
+    safeSave('productions', data.productions);
+    safeSave('presentations', data.presentations);
+    safeSave('systemVersions', data.systemVersions);
+    safeSave('cargos', data.cargos);
+    safeSave('orientadores', data.orientadores);
+    safeSave('modulos', data.modules || data.modulos); // Suporte a legado (modules)
+    safeSave('formasApresentacao', data.formasApresentacao);
+    
+    // Counters é um objeto, então o padrão deve ser objeto, não array
+    safeSave('counters', data.counters, {
+        mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1
+    });
+    
+    // Logout forçado para garantir integridade
     deletarDoArmazenamento('currentUser');
     deletarDoArmazenamento('isAuthenticated');
     
     alert('Restauração com sucesso! Faça login novamente.');
     location.reload();
 }
-
-function closeRestoreConfirmModal() {
-    document.getElementById('restore-confirm-modal').classList.remove('show');
-    pendingBackupData = null;
-}
-
 // ----------------------------------------------------------------------------
 // 20. DASHBOARD E INICIALIZAÇÃO
 // ----------------------------------------------------------------------------
