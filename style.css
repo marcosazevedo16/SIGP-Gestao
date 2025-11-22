@@ -3237,28 +3237,58 @@ table td .module-tags {
 }
 
 /* ==========================================================================
-   CORREÇÃO DE HEADER (PC MEIA TELA)
-   Adicione isso no FINAL do arquivo style.css
+   CORREÇÃO FINAL V17 - HEADER ALINHADO (GRID) + ÍCONE SAIR
+   Substitua o bloco anterior de correção por este.
    ========================================================================== */
 
-/* 1. Permite que o conteúdo do cabeçalho "quebre" para a linha de baixo se faltar espaço */
+/* 1. Transformar o Header em Grid para alinhamento perfeito (Esq - Centro - Dir) */
 .header-content {
-    flex-wrap: wrap !important;
-    row-gap: 10px; /* Espacinho entre o título e os botões quando quebrar linha */
+    display: grid !important;
+    /* Define 3 colunas: Conteúdo Esquerda (Auto) | Meio (1 fração) | Direita (Auto) */
+    grid-template-columns: auto 1fr auto !important; 
+    align-items: center;
+    width: 100%;
+    gap: 10px;
 }
 
-/* 2. Ajustes Específicos para PC (> 901px) */
+/* 2. Centralizar a mensagem de Bem-vindo na coluna do meio */
+.header-user-info {
+    display: flex !important;
+    justify-content: center !important; /* Centraliza horizontalmente */
+    white-space: nowrap;
+    width: 100%;
+}
+
+/* 3. Ajustes para PC (> 901px) */
 @media (min-width: 901px) {
-    
-    /* Empurra o conteúdo do header para a direita para fugir da Sidebar Fixa */
+    /* Removemos o padding-left gigante que empurrava tudo para a direita */
     .app-header {
-        padding-left: 90px !important; /* 70px da sidebar + 20px de respiro */
+        padding-left: 20px !important; /* Espaçamento padrão */
+        padding-right: 20px !important;
     }
 
-    /* Ajuste dos botões para se alinharem melhor quando caírem de linha */
+    /* Garante que os botões fiquem alinhados à direita na coluna deles */
     .header-actions {
-        justify-content: flex-end; /* Tenta manter na direita */
-        margin-left: auto; /* Empurra para o canto */
-        padding-top: 4px;
+        justify-content: flex-end;
+        display: flex;
+    }
+}
+
+/* 4. Recolocar o ícone de Porta no botão Sair (Via CSS) */
+/* Seleciona o último botão dentro de .header-actions e adiciona o ícone antes */
+.header-actions .btn:last-child::before {
+    content: "🚪"; /* Ícone de porta */
+    margin-right: 6px;
+    font-size: 14px;
+}
+
+/* Ajuste de segurança para mobile: mantém flex para não quebrar o layout do celular */
+@media (max-width: 900px) {
+    .header-content {
+        display: flex !important; /* Volta para Flex no celular */
+        flex-wrap: wrap;
+    }
+    .header-user-info {
+        display: none !important; /* Esconde user info no celular para poupar espaço */
     }
 }
