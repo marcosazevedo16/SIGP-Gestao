@@ -2473,23 +2473,29 @@ tbody tr:hover {
 
 ```css
 /* ==========================================================================
-   📱 ESTILO MOBILE V3 - CORREÇÃO DE TEMA E LARGURA
+   📱 ESTILO MOBILE V5 - BOTÃO VISÍVEL E MENU AJUSTADO
    Substitua o bloco @media (max-width: 900px) antigo por este.
    ========================================================================== */
 
-/* Botão do Menu - Forçado para ser visível em QUALQUER tema */
+/* Botão do Menu - Forçado para ser BRANCO em qualquer tema */
 .mobile-menu-toggle {
     display: none; /* Escondido no PC */
     font-size: 1rem;
-    padding: 6px 10px;
-    margin-right: 8px;
-    border: 1px solid rgba(255,255,255,0.5) !important; 
+    padding: 6px 12px;
+    margin-right: 10px;
+    border: 1px solid rgba(255,255,255,0.6) !important; 
     background-color: rgba(0,0,0,0.2) !important; 
-    color: #ffffff !important; /* Texto BRANCO forçado */
-    z-index: 110;
+    color: #ffffff !important; /* ISSO CORRIGE O BOTÃO NO TEMA CLARO */
+    z-index: 200;
     cursor: pointer;
     border-radius: 4px;
-    height: 36px; /* Altura fixa para alinhar */
+    height: 38px;
+    align-items: center;
+}
+
+/* Ícone dentro do botão */
+.mobile-menu-toggle span {
+    color: #ffffff !important;
 }
 
 /* Overlay Escuro */
@@ -2498,35 +2504,32 @@ tbody tr:hover {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.7);
-    z-index: 1000; /* Atrás do menu, frente do resto */
-    backdrop-filter: blur(2px);
+    z-index: 1000;
+    backdrop-filter: blur(3px);
 }
 
 /* Ajustes para Celular */
 @media (max-width: 900px) {
     
-    /* Mostra o botão de menu */
+    /* 1. Mostra o botão de menu */
     .mobile-menu-toggle {
         display: inline-flex;
-        align-items: center;
-        justify-content: center;
     }
 
-    /* Layout Principal */
+    /* 2. Layout Principal */
     .app-layout {
         flex-direction: column;
         margin-top: 0;
     }
 
-    /* Cabeçalho - FIXO AZUL ESCURO em qualquer tema para contraste */
+    /* 3. Cabeçalho */
     .app-header {
-        padding: 8px 10px;
+        padding: 10px 15px;
         position: sticky;
         top: 0;
-        z-index: 500;
+        z-index: 100; /* Z-index menor que o menu */
         height: auto;
-        background-color: #003d5c !important; /* Força Azul sempre */
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        /* Mantém sua cor azul original */
     }
     
     .header-content {
@@ -2534,57 +2537,59 @@ tbody tr:hover {
         flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        gap: 5px;
     }
 
-    /* MENU LATERAL (GAVETA) - Ajustado */
+    /* 4. MENU LATERAL (GAVETA) CORRIGIDO */
     .sidebar {
         position: fixed;
         top: 0;
-        left: -260px; /* Escondido (Largura + sombra) */
-        width: 240px; /* LARGURA REDUZIDA (era 300px) */
+        left: -270px; /* Esconde totalmente (Largura + sombra) */
+        width: 250px; /* LARGURA REDUZIDA (era 300px) */
         height: 100vh;
-        background-color: #003d5c;
-        transition: left 0.3s ease;
-        z-index: 2000; /* ACIMA DE TUDO (Corrige itens cortados) */
+        background-color: #003d5c; /* Fundo Azul */
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 2000; /* BEM ALTO para ficar na frente do cabeçalho */
         box-shadow: 4px 0 15px rgba(0,0,0,0.6);
-        padding-top: 10px;
+        padding-top: 20px; /* Espaço no topo */
         overflow-y: auto;
+        display: block !important; /* Garante que não suma */
     }
 
-    /* Classe que abre o menu */
+    /* Abre o menu */
     .sidebar.mobile-open {
         left: 0;
     }
 
-    /* Navegação Vertical */
+    /* 5. Itens do Menu (Vertical) */
     .sidebar-nav {
         display: flex;
         flex-direction: column !important;
         width: 100%;
         padding: 0;
+        margin-top: 0;
     }
 
+    /* Estilo dos botões do menu */
     .sidebar-btn {
         display: flex;
         align-items: center;
         justify-content: flex-start;
         width: 100%;
-        padding: 12px 15px; /* Altura confortável */
-        font-size: 14px;
+        padding: 14px 15px;
+        font-size: 13px; /* Fonte ajustada para caber */
         border-bottom: 1px solid rgba(255,255,255,0.05);
-        border-left: 5px solid transparent;
-        color: rgba(255,255,255,0.9);
+        border-left: 4px solid transparent;
+        color: rgba(255,255,255,0.9) !important; /* Texto sempre claro */
         background: transparent;
         height: auto;
-        white-space: normal !important; /* Quebra de linha permitida */
+        white-space: normal !important; /* Permite quebra de linha */
         line-height: 1.3;
     }
 
     .sidebar-btn.active {
         background-color: rgba(255,255,255,0.15);
         border-left-color: #40A9FF;
-        color: white;
+        color: white !important;
         font-weight: 700;
     }
 
@@ -2594,50 +2599,52 @@ tbody tr:hover {
         min-width: 24px;
         text-align: center;
     }
+    
+    /* Esconde o texto do botão se for muito longo apenas no ícone */
+    .sidebar-btn span:last-child {
+        display: block;
+    }
 
-    /* Ajuste para o conteúdo não ficar escondido */
+    /* 6. Conteúdo Principal */
     .main-content {
         margin-left: 0;
         width: 100%;
-        padding: 10px;
-        padding-top: 20px; /* Espaço normal, header é sticky */
+        padding: 15px;
+        padding-top: 20px;
     }
 
-    /* Ajuste dos botões do topo para não quebrar layout */
+    /* 7. Botões do Topo (Ajuste fino) */
     .header-actions {
         width: 100%;
-        justify-content: space-between; /* Espalha os botões */
-        margin-top: 8px;
-        gap: 4px;
+        justify-content: space-between;
+        margin-top: 10px;
+        gap: 5px;
     }
     
     .header-actions .btn {
-        font-size: 10px;
-        padding: 6px 4px;
-        flex: 1; /* Todos com mesma largura */
+        font-size: 11px;
+        padding: 8px 4px;
+        flex: 1;
         white-space: nowrap;
-        overflow: hidden;
         text-overflow: ellipsis;
+        overflow: hidden;
     }
 
-    /* Ajuste de Tabelas */
+    /* Tabelas responsivas */
     .tasks-table, .municipalities-table {
         display: block;
         width: 100%;
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
-    /* Overlay Ativo */
+    /* Overlay */
     .sidebar-overlay.active {
         display: block;
     }
     
-    /* Ajuste de Login no Celular */
-    .login-wrapper {
-        margin: 0;
-        border-radius: 0;
-        min-height: 100vh;
-    }
+    /* Login */
+    .login-wrapper { margin: 0; border-radius: 0; min-height: 100vh; }
     .login-left { display: none; }
     .login-right { padding: 20px; }
 }
