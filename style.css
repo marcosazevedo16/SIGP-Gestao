@@ -2473,7 +2473,7 @@ tbody tr:hover {
 
 ```css
 /* ==========================================================================
-   📱 ESTILO V15 - SIDEBAR RETRÁTIL (PC) + MENU MOBILE (CELULAR)
+   📱 ESTILO V14 - CORREÇÃO DEFINITIVA PC VS CELULAR
    Substitua todo o final do arquivo style.css por este bloco.
    ========================================================================== */
 
@@ -2487,7 +2487,457 @@ tbody tr:hover {
     backdrop-filter: blur(3px);
 }
 
-/* Ajustes Globais de Tabela (Para caberem melhor no espaço ganho) */
+/* ==========================================================================
+   🖥️ REGRAS APENAS PARA COMPUTADOR (Telas maiores que 900px)
+   Aqui nós garantimos que o botão suma e o layout fique alinhado.
+   ========================================================================== */
+@media (min-width: 901px) {
+    /* ESCONDER O BOTÃO NA FORÇA BRUTA */
+    button.mobile-menu-toggle,
+    .mobile-menu-toggle,
+    .app-header .mobile-menu-toggle {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+    }
+    
+    /* Garante o alinhamento do título no PC */
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+
+/* ==========================================================================
+   CORREÇÃO DE TABELAS E BADGES (AJUSTE VISUAL)
+   ========================================================================== */
+
+/* 1. Badges de Módulos (Quadrinhos) mais compactos */
+.module-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px; /* Menos espaço entre eles */
+    align-items: center;
+    max-width: 180px; /* Limita largura para não estourar */
+}
+
+.module-tag {
+    font-size: 9px !important; /* Letra menor */
+    padding: 1px 4px !important; /* Mais fino */
+    border-radius: 3px;
+    line-height: 1.2;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* 2. Coluna de Status (Não quebrar linha) */
+.status-badge {
+    white-space: nowrap; /* Impede quebra de linha (Parou de usar) */
+    font-size: 11px;
+    padding: 4px 8px;
+    display: inline-block;
+}
+
+/* 3. Ajuste Geral da Tabela de Municípios */
+#municipalities-table td {
+    vertical-align: middle;
+    padding: 8px 6px; /* Menos padding lateral */
+    font-size: 13px;
+}
+
+/* Garante largura mínima para colunas importantes */
+#municipalities-table th:nth-child(1), /* Nome */
+#municipalities-table td:nth-child(1) {
+    min-width: 140px;
+}
+
+#municipalities-table th:nth-child(2), /* Módulos */
+#municipalities-table td:nth-child(2) {
+    min-width: 120px;
+}
+
+#municipalities-table th:last-child, /* Ações */
+#municipalities-table td:last-child {
+    min-width: 80px;
+    text-align: center;
+}
+
+/* ==========================================================================
+   📱 REGRAS APENAS PARA CELULAR (Telas até 900px)
+   Aqui nós montamos o layout mobile e mostramos o botão.
+   ========================================================================== */
+@media (max-width: 900px) {
+    
+    /* 1. BOTÃO MENU: Visível e Branco */
+    html body .app-header .mobile-menu-toggle,
+    button.mobile-menu-toggle {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        padding: 0 12px !important;
+        margin-right: 10px !important;
+        height: 36px !important;
+        width: auto !important;
+        border-radius: 4px;
+        cursor: pointer;
+        z-index: 1100;
+        visibility: visible !important;
+        
+        /* Cores Brancas Fixas */
+        color: #ffffff !important; 
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        background-color: rgba(0, 0, 0, 0.25) !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    /* Ícone dentro do botão */
+    button.mobile-menu-toggle * {
+        color: #ffffff !important;
+    }
+
+    /* 2. Layout Principal */
+    .app-layout {
+        flex-direction: column;
+        margin-top: 0;
+    }
+
+    /* 3. Cabeçalho Azul */
+    .app-header {
+        padding: 12px 15px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        height: auto;
+        background-color: #003d5c !important;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        color: white !important;
+    }
+    
+    .app-header h1, .subtitle {
+        color: #ffffff !important;
+    }
+    
+    .header-content {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+    }
+    
+    .header-user-info {
+        display: none !important;
+    }
+
+    /* 4. Menu Lateral (Gaveta) */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px; 
+        width: 240px;
+        height: 100vh;
+        background-color: #003d5c;
+        transition: left 0.3s ease;
+        z-index: 9999;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.6);
+        padding-top: 10px;
+        overflow-y: auto;
+        display: block !important;
+        border-right: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .sidebar.mobile-open {
+        left: 0;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column !important;
+        width: 100%;
+        padding: 0;
+    }
+
+    .sidebar-btn {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        width: 100%;
+        padding: 14px 15px;
+        font-size: 13px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        border-left: 4px solid transparent;
+        color: rgba(255,255,255,0.9) !important;
+        background: transparent;
+        height: auto;
+        white-space: normal !important;
+        text-align: left;
+    }
+
+    .sidebar-btn.active {
+        background-color: rgba(255,255,255,0.15);
+        border-left-color: #40A9FF;
+        color: #ffffff !important;
+        font-weight: 700;
+    }
+
+    .sidebar-icon {
+        font-size: 18px;
+        margin-right: 10px;
+        min-width: 24px;
+        text-align: center;
+        color: #ffffff !important;
+    }
+    
+    .sidebar-btn span:last-child {
+        display: block;
+    }
+
+    /* 5. Conteúdo */
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 10px;
+        padding-top: 15px;
+    }
+
+    /* 6. Botões do Topo (Alinhados) */
+    .header-actions {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-top: 12px;
+        gap: 8px;
+        flex-wrap: nowrap;
+    }
+    
+    .header-actions .btn {
+        font-size: 11px;
+        padding: 8px 0;
+        flex: 1;
+        min-width: 0;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .header-actions .btn--outline,
+    .header-actions .btn--secondary {
+        background-color: rgba(255,255,255,0.1) !important;
+        color: white !important;
+        border: 1px solid rgba(255,255,255,0.3) !important;
+    }
+
+    /* Tabelas */
+    .tasks-table, .municipalities-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .sidebar-overlay.active {
+        display: block;
+    }
+    
+    .login-wrapper { margin: 0; border-radius: 0; min-height: 100vh; }
+    .login-left { display: none; }
+    .login-right { padding: 20px; }
+}
+
+/* ==========================================================================
+   CORREÇÕES FINAIS (MENU MOBILE + BADGES)
+   Cole este bloco no FINAL do seu arquivo style.css original.
+   ========================================================================== */
+
+/* 1. ESTILOS PARA OS BADGES (Módulos Coloridos e Status) */
+.module-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    align-items: center;
+    max-width: 200px;
+}
+
+.module-tag {
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+    border-radius: 4px;
+    font-weight: bold;
+    display: inline-block;
+    color: white;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+    margin-bottom: 2px;
+}
+
+.status-badge {
+    white-space: nowrap;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    font-weight: 600;
+}
+
+/* 2. CORREÇÃO DE LARGURA DE TABELAS */
+/* Garante que as colunas não fiquem espremidas */
+table th, table td {
+    white-space: nowrap; /* Impede quebra de linha em nomes/datas */
+    vertical-align: middle;
+}
+
+/* Quebra de linha permitida apenas na coluna de módulos se for muito grande */
+table td .module-tags {
+    white-space: normal; 
+}
+
+/* ==========================================================================
+   3. MENU MOBILE (CORREÇÃO DEFINITIVA PC x CELULAR)
+   ========================================================================== */
+
+/* Oculta botão e overlay no PC (Telas Grandes) */
+button.mobile-menu-toggle,
+.mobile-menu-toggle,
+.sidebar-overlay {
+    display: none !important;
+}
+
+/* REGRAS APENAS PARA CELULAR (Até 900px) */
+@media (max-width: 900px) {
+    
+    /* Mostra Botão Menu (Branco) */
+    html body .app-header .mobile-menu-toggle,
+    button.mobile-menu-toggle {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        padding: 0 12px !important;
+        margin-right: 10px !important;
+        height: 36px !important;
+        width: auto !important;
+        border-radius: 4px;
+        cursor: pointer;
+        z-index: 1100;
+        visibility: visible !important;
+        
+        color: #ffffff !important; 
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        background-color: rgba(0, 0, 0, 0.25) !important;
+    }
+
+    button.mobile-menu-toggle * {
+        color: #ffffff !important;
+    }
+
+    /* Cabeçalho Azul Fixo */
+    .app-header {
+        padding: 10px 15px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background-color: #003d5c !important;
+        color: white !important;
+        height: auto;
+    }
+    
+    .app-header h1, .subtitle {
+        color: #ffffff !important;
+    }
+
+    .header-user-info {
+        display: none !important;
+    }
+
+    .app-layout {
+        flex-direction: column;
+        margin-top: 0;
+    }
+
+    /* Menu Lateral (Gaveta) */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px; 
+        width: 250px;
+        height: 100vh;
+        background-color: #003d5c;
+        z-index: 9999;
+        transition: left 0.3s ease;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.6);
+        display: block !important;
+        padding-top: 10px;
+        overflow-y: auto;
+    }
+
+    .sidebar.mobile-open {
+        left: 0;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        padding: 0;
+    }
+
+    .sidebar-btn {
+        width: 100%;
+        padding: 14px 15px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        color: rgba(255,255,255,0.9) !important;
+        text-align: left;
+        white-space: normal !important; /* Permite nome grande quebrar linha */
+    }
+
+    /* Botões do Topo Centralizados */
+    .header-actions {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-top: 10px;
+        gap: 8px;
+        flex-wrap: nowrap;
+    }
+
+    .header-actions .btn {
+        font-size: 11px;
+        padding: 8px 0;
+        flex: 1;
+        text-align: center;
+        min-width: 0;
+        justify-content: center;
+    }
+
+    /* Conteúdo Principal */
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 10px;
+        padding-top: 15px;
+    }
+
+    /* Overlay Ativo */
+    .sidebar-overlay.active {
+        display: block;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 9998;
+    }
+}
+
+/* ==========================================================================
+   MENU RETRÁTIL (PC) + MENU MOBILE (CELULAR)
+   Cole este bloco no FINAL do seu arquivo style.css
+   ========================================================================== */
+
+/* 1. Ajustes Globais para Tabelas (Para aproveitar o espaço extra) */
 table th, table td {
     white-space: nowrap;
     vertical-align: middle;
@@ -2496,82 +2946,92 @@ table td .module-tags {
     white-space: normal; /* Permite quebrar linha nos módulos */
 }
 
+/* Overlay do menu (fundo escuro no mobile) */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 9998;
+    backdrop-filter: blur(3px);
+}
+
 /* ==========================================================================
-   🖥️ REGRAS PARA COMPUTADOR (Telas > 900px)
-   Sidebar Retrátil: Fina por padrão, expande no hover.
+   🖥️ COMPUTADOR (Telas maiores que 900px)
+   Sidebar fina (só ícones) que abre ao passar o mouse
    ========================================================================== */
 @media (min-width: 901px) {
     
-    /* 1. Ocultar botão mobile */
+    /* Esconde o botão de menu do mobile */
     button.mobile-menu-toggle,
     .mobile-menu-toggle {
         display: none !important;
     }
 
-    /* 2. SIDEBAR RETRÁTIL */
+    /* Sidebar fechada (padrão) */
     .sidebar {
-        width: 70px; /* Largura fechada (só ícones) */
+        width: 70px !important; /* Largura fina */
         transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         overflow-x: hidden;
-        z-index: 1000; /* Fica acima do conteúdo ao abrir */
-        background-color: #003d5c; /* Garante fundo sólido */
+        z-index: 1000;
+        background-color: #003d5c;
         white-space: nowrap;
         box-shadow: 2px 0 5px rgba(0,0,0,0.1);
     }
 
-    /* 3. Expandir ao passar o mouse */
+    /* Sidebar aberta (ao passar o mouse) */
     .sidebar:hover {
-        width: 280px; /* Largura aberta */
+        width: 280px !important; /* Largura total */
         box-shadow: 5px 0 15px rgba(0,0,0,0.3);
     }
 
-    /* 4. Ajuste do Conteúdo Principal */
+    /* Conteúdo principal se ajusta */
     .main-content {
-        margin-left: 70px; /* Cola na sidebar fechada (GANHO DE ESPAÇO!) */
-        width: calc(100% - 70px);
+        margin-left: 70px !important; /* Cola na sidebar fina */
+        width: calc(100% - 70px) !important;
         transition: margin-left 0.3s ease;
     }
 
-    /* 5. Estilo dos Botões da Sidebar */
+    /* Estilo dos botões da sidebar */
     .sidebar-btn {
-        padding: 12px 0; /* Centraliza verticalmente */
-        justify-content: center; /* Centraliza ícone quando fechado */
+        padding: 12px 0;
+        justify-content: center; /* Centraliza ícone */
         height: 50px;
         position: relative;
     }
 
-    /* Ícones sempre visíveis e centralizados no modo fechado */
+    /* Ícone sempre visível e centralizado */
     .sidebar-icon {
         margin: 0;
-        min-width: 70px; /* Largura fixa para o ícone centralizar na barra fechada */
+        min-width: 70px;
         font-size: 20px;
         text-align: center;
     }
 
-    /* Texto dos botões (some quando fechado, aparece no hover) */
+    /* Texto do botão (some quando fechado) */
     .sidebar-btn span:last-child {
         opacity: 0;
         visibility: hidden;
         position: absolute;
-        left: 70px; /* Começa logo após o ícone */
+        left: 70px;
         transition: opacity 0.2s ease;
         white-space: nowrap;
     }
 
-    /* Quando passa o mouse na sidebar, mostra o texto e alinha a esquerda */
+    /* Texto aparece ao passar o mouse */
     .sidebar:hover .sidebar-btn {
-        justify-content: flex-start; /* Alinha tudo a esquerda */
+        justify-content: flex-start;
     }
     
     .sidebar:hover .sidebar-btn span:last-child {
         opacity: 1;
         visibility: visible;
-        position: static; /* Volta ao fluxo normal */
+        position: static;
     }
 
-    /* 6. Adicionar "Ícone de Menu" no topo da Sidebar (Visual) */
+    /* Ícone de "Menu" visual no topo */
     .sidebar-nav::before {
-        content: "☰"; /* Ícone de menu */
+        content: "☰";
         display: block;
         text-align: center;
         color: rgba(255,255,255,0.5);
@@ -2582,7 +3042,7 @@ table td .module-tags {
         line-height: 40px;
     }
     .sidebar:hover .sidebar-nav::before {
-        content: "MENU"; /* Muda texto ao abrir */
+        content: "MENU";
         font-size: 14px;
         font-weight: bold;
         letter-spacing: 1px;
@@ -2591,8 +3051,8 @@ table td .module-tags {
 }
 
 /* ==========================================================================
-   📱 REGRAS PARA CELULAR (Telas <= 900px)
-   Mantém o menu gaveta lateral padrão.
+   📱 CELULAR (Telas menores ou iguais a 900px)
+   Menu gaveta com botão no topo
    ========================================================================== */
 @media (max-width: 900px) {
     
@@ -2628,11 +3088,11 @@ table td .module-tags {
     .app-layout { flex-direction: column; margin-top: 0; }
     .header-user-info { display: none !important; }
 
-    /* Sidebar Mobile (Gaveta Escondida) */
+    /* Sidebar (Gaveta Escondida) */
     .sidebar {
         position: fixed;
         top: 0; left: -280px; 
-        width: 250px;
+        width: 250px !important;
         height: 100vh;
         background-color: #003d5c;
         z-index: 9999;
@@ -2645,6 +3105,7 @@ table td .module-tags {
     .sidebar.mobile-open { left: 0; }
 
     .sidebar-nav { padding: 0; }
+    .sidebar-nav::before { display: none; } /* Remove ícone visual no mobile */
 
     .sidebar-btn {
         width: 100%;
@@ -2669,17 +3130,13 @@ table td .module-tags {
     }
 
     .main-content {
-        margin-left: 0;
-        width: 100%;
+        margin-left: 0 !important;
+        width: 100% !important;
         padding: 10px 10px 50px 10px;
     }
 
-    /* Overlay */
-    .sidebar-overlay.active {
-        display: block;
-    }
+    .sidebar-overlay.active { display: block; }
 
-    /* Botões do Header Mobile */
     .header-actions {
         width: 100%;
         display: flex;
