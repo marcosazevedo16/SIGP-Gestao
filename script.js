@@ -1,307 +1,147 @@
 // ============================================================================
-// SIGP SAÚDE v30.0 - VERSÃO FINAL COMPLETA (PARTE 1/3)
-// Autor: Marcos Azevedo
+// SIGP SAÚDE - SCRIPT FINAL INTEGRADO (PARTE 1/4)
+// Contém: Configurações, Variáveis, Autenticação, Máscaras e Utilitários
 // ============================================================================
 
-// ----------------------------------------------------------------------------
 // 1. VERIFICAÇÃO DE SEGURANÇA
-// ----------------------------------------------------------------------------
 if (typeof CryptoJS === 'undefined') {
-    alert('ERRO CRÍTICO: A biblioteca CryptoJS não foi carregada. Verifique sua conexão ou o HTML.');
-    throw new Error('CryptoJS is missing');
+    alert('ERRO CRÍTICO: Biblioteca CryptoJS não carregada.');
+    throw new Error('CryptoJS missing');
 }
 
-// ----------------------------------------------------------------------------
-// 2. CONFIGURAÇÕES GERAIS E VARIÁVEIS DE ESTADO
-// ----------------------------------------------------------------------------
+// 2. CONFIGURAÇÕES GERAIS
 const SALT_LENGTH = 16;
 
-// Variável temporária para o restore de backup
+// Variáveis de Estado
+let currentUser = null;
+let isAuthenticated = false;
+let currentTheme = 'light';
 let pendingBackupData = null;
+let editingId = null; // Usado globalmente para edições
 
-// Variáveis Globais para Instâncias de Gráficos (Chart.js)
+// Variáveis de Gráficos (Instâncias do Chart.js)
 let chartDashboard = null;
-let chartStatusMun = null;
-let chartModulesMun = null;
-let chartTimelineMun = null;
-let chartStatusReq = null;
-let chartMunReq = null;
-let chartSolReq = null;
-let chartStatusPres = null;
-let chartMunPres = null;
-let chartOrientPres = null;
-let chartStatusDem = null;
-let chartPrioDem = null;
-let chartUserDem = null;
-let chartStatusVis = null;
-let chartMunVis = null;
-let chartSolVis = null;
-let chartStatusProd = null;
-let chartFreqProd = null;
+let chartStatusMun = null, chartModulesMun = null, chartTimelineMun = null;
+let chartStatusReq = null, chartMunReq = null, chartSolReq = null;
+let chartStatusPres = null, chartMunPres = null, chartOrientPres = null;
+let chartStatusDem = null, chartPrioDem = null, chartUserDem = null;
+let chartStatusVis = null, chartMunVis = null, chartSolVis = null;
+let chartStatusProd = null, chartFreqProd = null;
 
-// Paleta de Cores Padrão
-const CHART_COLORS = [
-    '#C85250', '#E7B85F', '#79C2A9', '#5E8C99', '#3B5B66', 
-    '#E68161', '#F7DC6F', '#4ECDC4', '#FF6B6B', '#A9DFBF'
-];
+// Paleta de Cores
+const CHART_COLORS = ['#C85250', '#E7B85F', '#79C2A9', '#5E8C99', '#3B5B66', '#E68161', '#F7DC6F', '#4ECDC4', '#FF6B6B', '#A9DFBF'];
 
-// ----------------------------------------------------------------------------
-// 3. FUNÇÕES DE MENU MOBILE
-// ----------------------------------------------------------------------------
-function toggleMobileMenu() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
-    
-    // Se não existir overlay, cria dinamicamente
-    if (!overlay) {
-        const newOverlay = document.createElement('div');
-        newOverlay.className = 'sidebar-overlay';
-        document.body.appendChild(newOverlay);
-        newOverlay.onclick = toggleMobileMenu;
-        
-        setTimeout(function() {
-            newOverlay.classList.toggle('active');
-            sidebar.classList.toggle('mobile-open');
-        }, 10);
-        return;
-    }
-
-    sidebar.classList.toggle('mobile-open');
-    overlay.classList.toggle('active');
-}
-
-// ----------------------------------------------------------------------------
-// 4. FUNÇÕES UTILITÁRIAS (CORE)
-// ----------------------------------------------------------------------------
-
-function generateSalt() {
-    return CryptoJS.lib.WordArray.random(SALT_LENGTH).toString();
-}
-
-function hashPassword(password, salt) {
-    return CryptoJS.SHA256(salt + password).toString();
-}
+// 3. FUNÇÕES DE ARMAZENAMENTO E SEGURANÇA
+function generateSalt() { return CryptoJS.lib.WordArray.random(SALT_LENGTH).toString(); }
+function hashPassword(password, salt) { return CryptoJS.SHA256(salt + password).toString(); }
 
 function salvarNoArmazenamento(chave, dados) {
-    try {
-        const dadosJSON = JSON.stringify(dados);
-        localStorage.setItem(chave, dadosJSON);
-    } catch (erro) {
-        console.error('Erro ao salvar:', erro);
-        if (erro.name === 'QuotaExceededError') {
-            alert('⚠️ Espaço cheio! Faça backup urgente.');
-        }
-    }
+    try { localStorage.setItem(chave, JSON.stringify(dados)); } 
+    catch (e) { if (e.name === 'QuotaExceededError') alert('Espaço cheio! Faça backup.'); }
 }
 
 function recuperarDoArmazenamento(chave, valorPadrao = null) {
-    try {
-        const dados = localStorage.getItem(chave);
-        if (dados) {
-            return JSON.parse(dados);
-        }
-        return valorPadrao;
-    } catch (erro) {
-        console.error('Erro ao recuperar:', erro);
-        return valorPadrao;
-    }
+    try { const d = localStorage.getItem(chave); return d ? JSON.parse(d) : valorPadrao; } 
+    catch (e) { return valorPadrao; }
 }
 
-function deletarDoArmazenamento(chave) {
-    localStorage.removeItem(chave);
-}
+function deletarDoArmazenamento(chave) { localStorage.removeItem(chave); }
 
+// 4. FORMATAÇÃO DE DADOS
 function formatDate(dateString) {
     if (!dateString) return '-';
-    const partes = dateString.split('-');
-    if (partes.length === 3) {
-        return `${partes[2]}/${partes[1]}/${partes[0]}`;
-    }
+    const p = dateString.split('-');
+    if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
     return dateString;
 }
 
-// Cálculo de Tempo de Uso (PDF Item 15)
 function calculateTimeInUse(dateString) {
     if (!dateString) return '-';
     const start = new Date(dateString);
     const now = new Date();
-    const diffTime = Math.abs(now - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    
+    const diffDays = Math.ceil(Math.abs(now - start) / (1000 * 60 * 60 * 24)); 
     const years = Math.floor(diffDays / 365);
     const months = Math.floor((diffDays % 365) / 30);
-    
-    let result = "";
-    if (years > 0) result += `${years} ano(s) `;
-    if (months > 0) result += `${months} mês(es)`;
-    if (years === 0 && months === 0) result = "Menos de 1 mês";
-    return result;
+    let res = "";
+    if (years > 0) res += `${years} ano(s) `;
+    if (months > 0) res += `${months} mês(es)`;
+    return res || "Recente";
 }
 
 function calculateDaysSince(dateString) {
     if (!dateString) return '-';
-    const last = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - last);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    return `${diffDays} dias`;
+    const diff = Math.ceil(Math.abs(new Date() - new Date(dateString)) / (1000 * 60 * 60 * 24)); 
+    return `${diff} dias`;
 }
 
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    if (!toast) return;
-    toast.textContent = message;
-    toast.className = 'toast';
-    void toast.offsetWidth;
-    toast.classList.add(type);
-    toast.classList.add('show');
-    setTimeout(function() { toast.classList.remove('show'); }, 3000);
+function showToast(msg, type='info') {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.className = 'toast', 3000);
 }
 
-// ----------------------------------------------------------------------------
-// 5. EXPORTAÇÃO (CSV E PDF)
-// ----------------------------------------------------------------------------
-
+// 5. EXPORTAÇÃO (CSV / PDF)
 function downloadCSV(filename, headers, rows) {
-    const csvContent = [
-        headers.join(';'),
-        ...rows.map(row => row.map(cell => `"${(cell||'').toString().replace(/"/g, '""')}"`).join(';'))
-    ].join('\n');
-
-    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvContent = [headers.join(';'), ...rows.map(r => r.map(c => `"${(c||'').toString().replace(/"/g, '""')}"`).join(';'))].join('\n');
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
+    link.href = URL.createObjectURL(new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' }));
     link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
 }
 
 function downloadPDF(title, headers, rows) {
-    if (!window.jspdf) { alert('Biblioteca PDF não carregada.'); return; }
+    if (!window.jspdf) { alert('PDF lib missing'); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape' });
-    
     doc.setFontSize(18); doc.text(title, 14, 22);
-    doc.setFontSize(10); doc.text(`Gerado em: ${new Date().toLocaleString()}`, 14, 30);
-
-    if (doc.autoTable) {
-        doc.autoTable({ head: [headers], body: rows, startY: 35, styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 61, 92] } });
-    } else {
-        let y = 40;
-        rows.forEach(row => {
-            if (y > 180) { doc.addPage(); y = 20; }
-            doc.text(row.join(' | ').substring(0, 120), 14, y);
-            y += 7;
-        });
-    }
+    doc.setFontSize(10); doc.text(`Gerado: ${new Date().toLocaleString()}`, 14, 30);
+    if (doc.autoTable) doc.autoTable({ head: [headers], body: rows, startY: 35, styles: { fontSize: 8 }, headStyles: { fillColor: [0, 61, 92] } });
     doc.save(`${title}.pdf`);
 }
 
-// ----------------------------------------------------------------------------
-// 6. MÁSCARAS E FORMATAÇÃO
-// ----------------------------------------------------------------------------
-function formatPhoneNumber(value) {
-    let v = value.replace(/\D/g, "");
-    v = v.substring(0, 11);
-    v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
-    v = v.replace(/(\d)(\d{4})$/, "$1-$2");
-    return v;
-}
-
-function formatCompetencia(value) {
-    let v = value.replace(/\D/g, "");
-    v = v.substring(0, 6);
-    if (v.length > 2) v = v.replace(/^(\d{2})(\d)/, "$1/$2");
-    return v;
-}
-
-function formatPeriodo(value) {
-    let v = value.replace(/\D/g, "");
-    v = v.substring(0, 8);
-    if (v.length > 2) v = v.replace(/^(\d{2})(\d)/, "$1/$2");
-    if (v.length > 4) v = v.replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2 à $3");
-    if (v.length > 6) v = v.replace(/ à (\d{2})(\d)/, " à $1/$2");
-    return v;
-}
+// 6. MÁSCARAS
+function formatPhoneNumber(v) { v=v.replace(/\D/g,"").substring(0,11); return v.replace(/^(\d{2})(\d)/,"($1) $2").replace(/(\d)(\d{4})$/,"$1-$2"); }
+function formatCompetencia(v) { v=v.replace(/\D/g,"").substring(0,6); return v.length>2 ? v.replace(/^(\d{2})(\d)/,"$1/$2") : v; }
+function formatPeriodo(v) { v=v.replace(/\D/g,"").substring(0,8); if(v.length>2)v=v.replace(/^(\d{2})(\d)/,"$1/$2"); if(v.length>4)v=v.replace(/^(\d{2})\/(\d{2})(\d)/,"$1/$2 à $3"); if(v.length>6)v=v.replace(/ à (\d{2})(\d)/," à $1/$2"); return v; }
 
 function applyMasks() {
-    const phoneIds = ['municipality-contact', 'task-contact', 'orientador-contact', 'request-contact', 'production-contact'];
-    phoneIds.forEach(function(id) {
+    ['municipality-contact', 'task-contact', 'orientador-contact', 'request-contact', 'production-contact'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.addEventListener('input', function(e) { e.target.value = formatPhoneNumber(e.target.value); });
+        if(el) el.addEventListener('input', (e) => e.target.value = formatPhoneNumber(e.target.value));
     });
-
     const elComp = document.getElementById('production-competence');
-    if (elComp) elComp.addEventListener('input', function(e) { e.target.value = formatCompetencia(e.target.value); });
-
+    if(elComp) elComp.addEventListener('input', (e) => e.target.value = formatCompetencia(e.target.value));
     const elPeriod = document.getElementById('production-period');
-    if (elPeriod) {
-        elPeriod.placeholder = "DD/MM à DD/MM";
-        elPeriod.addEventListener('input', function(e) { e.target.value = formatPeriodo(e.target.value); });
-    }
+    if(elPeriod) { elPeriod.placeholder = "DD/MM à DD/MM"; elPeriod.addEventListener('input', (e) => e.target.value = formatPeriodo(e.target.value)); }
     
-    // Auto-refresh filtros
-    document.querySelectorAll('.filters-section select, .filters-section input').forEach(function(el) {
-        el.addEventListener('change', function() {
-            const activeTab = document.querySelector('.tab-content.active');
-            if (activeTab) refreshCurrentTab(activeTab.id);
-        });
+    // Refresh automático nos filtros
+    document.querySelectorAll('.filters-section select, .filters-section input').forEach(el => {
+        el.addEventListener('change', () => { const at = document.querySelector('.tab-content.active'); if(at) refreshCurrentTab(at.id); });
     });
 }
 
-// ----------------------------------------------------------------------------
-// 7. INJEÇÃO DE CAMPOS DINÂMICOS (Segurança contra HTML antigo)
-// ----------------------------------------------------------------------------
-function setupDynamicFormFields() {
-    // Modal Restore
-    if (!document.getElementById('restore-confirm-modal')) {
-        const modalHTML = `<div id="restore-confirm-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3>⚠️ Confirmar Restauração de Backup</h3><button class="close-btn" onclick="closeRestoreConfirmModal()">&times;</button></div><div style="padding: 24px;"><div class="backup-warning" style="background-color: rgba(211, 47, 47, 0.1); border: 1px solid #d32f2f; color: #d32f2f; padding: 15px; border-radius: 8px; margin-bottom: 20px;"><p style="margin:0;"><strong>⚠️ ATENÇÃO: Isso irá SUBSTITUIR todos os dados atuais do sistema!</strong></p></div><div class="backup-preview" style="background-color: var(--color-bg-1); padding: 15px; border-radius: 8px; margin-bottom: 20px;"><h4 style="margin-top:0;">Preview dos dados que serão restaurados:</h4><ul id="restore-preview-list" style="list-style: none; padding: 0; margin: 10px 0 0 0;"></ul></div><div class="modal-actions"><button type="button" class="btn btn--secondary" onclick="closeRestoreConfirmModal()">Cancelar</button><button type="button" class="btn btn--danger" style="background-color: #d32f2f; color: white;" onclick="confirmRestore()">⚠️ Restaurar Backup</button></div></div></div></div>`;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-    }
-
-    // Campos PDF 1 e 2
-    const fM = document.getElementById('municipality-form');
-    if (fM && !document.getElementById('municipality-date-blocked')) {
-        const d = document.createElement('div');
-        d.innerHTML = `<div class="form-group" id="group-date-blocked" style="display:none;"><label class="form-label">Data Bloqueio*</label><input type="date" class="form-control" id="municipality-date-blocked"></div><div class="form-group" id="group-date-stopped" style="display:none;"><label class="form-label">Data Parou*</label><input type="date" class="form-control" id="municipality-date-stopped"></div>`;
-        fM.insertBefore(d, fM.querySelector('.modal-actions'));
-    }
-
-    // ... (Injeção dos outros campos para garantir compatibilidade, caso o HTML não tenha sido atualizado)
-    // (Omitido para brevidade da parte 1, mas a lógica completa está garantida na versão v26 enviada antes)
-}
-
-// ----------------------------------------------------------------------------
-// 8. CARREGAMENTO DE DADOS (STATE)
-// ----------------------------------------------------------------------------
+// 7. CARREGAMENTO DE DADOS (STATE)
 const DADOS_PADRAO = {
     users: [{ id: 1, login: 'ADMIN', name: 'Administrador', salt: null, passwordHash: null, permission: 'Administrador', status: 'Ativo', mustChangePassword: true }],
     modulos: [
-        { id: 1, name: 'Cadastros', abbreviation: 'CAD', color: '#FF6B6B', description: 'Módulo de cadastros gerais' },
-        { id: 2, name: 'TFD', abbreviation: 'TFD', color: '#4ECDC4', description: 'Tratamento Fora de Domicílio' },
-        { id: 3, name: 'Prontuário', abbreviation: 'PEC', color: '#45B7D1', description: 'Prontuário Eletrônico' },
-        { id: 4, name: 'Administração', abbreviation: 'ADM', color: '#FFA07A', description: 'Gestão administrativa' }
-    ],
-    // Inicializa arrays vazios para garantir estrutura
-    municipalities: [], municipalitiesList: [], tasks: [], requests: [], demands: [], visits: [], productions: [], presentations: [], systemVersions: [], cargos: [], orientadores: [], formasApresentacao: [],
-    counters: { mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1 }
+        { id: 1, name: 'Cadastros', abbreviation: 'CAD', color: '#005580' }, 
+        { id: 2, name: 'TFD', abbreviation: 'TFD', color: '#005580' },
+        { id: 3, name: 'Prontuário', abbreviation: 'PEC', color: '#005580' }, 
+        { id: 4, name: 'Administração', abbreviation: 'ADM', color: '#005580' }
+    ]
 };
 
-// Carrega usuários
 let users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
 if (users.length > 0 && users[0].login === 'ADMIN' && !users[0].passwordHash) {
     users[0].salt = generateSalt();
     users[0].passwordHash = hashPassword('saude2025', users[0].salt);
     salvarNoArmazenamento('users', users);
 }
+currentUser = recuperarDoArmazenamento('currentUser');
+isAuthenticated = !!currentUser;
 
-let currentUser = recuperarDoArmazenamento('currentUser');
-let isAuthenticated = !!currentUser;
-let currentTheme = recuperarDoArmazenamento('theme', 'light');
-let editingId = null;
-
-// Carregamento das Listas
 let municipalities = recuperarDoArmazenamento('municipalities', []);
 let municipalitiesList = recuperarDoArmazenamento('municipalitiesList', []);
 let tasks = recuperarDoArmazenamento('tasks', []);
@@ -310,190 +150,26 @@ let demands = recuperarDoArmazenamento('demands', []);
 let visits = recuperarDoArmazenamento('visits', []);
 let productions = recuperarDoArmazenamento('productions', []);
 let presentations = recuperarDoArmazenamento('presentations', []);
-let systemVersions = recuperarDoArmazenamento('systemVersions', []);
 let cargos = recuperarDoArmazenamento('cargos', []);
 let orientadores = recuperarDoArmazenamento('orientadores', []);
 let modulos = recuperarDoArmazenamento('modulos', DADOS_PADRAO.modulos);
 let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', []);
-let counters = recuperarDoArmazenamento('counters', DADOS_PADRAO.counters);
+let counters = recuperarDoArmazenamento('counters', { mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1 });
 
-function getNextId(key) {
-    const id = counters[key]++;
-    salvarNoArmazenamento('counters', counters);
-    return id;
-}
-// FIM DA PARTE 1
-// ----------------------------------------------------------------------------
-// 9. INTERFACE E NAVEGAÇÃO
-// ----------------------------------------------------------------------------
+function getNextId(key) { const id = counters[key]++; salvarNoArmazenamento('counters', counters); return id; }
 
-function initializeTheme() {
-    document.documentElement.setAttribute('data-theme', currentTheme);
-    const btn = document.getElementById('theme-toggle');
-    if (btn) {
-        btn.innerHTML = currentTheme === 'light' ? '🌙 Tema' : '☀️ Tema';
-    }
-}
-
-function toggleTheme() {
-    if (currentTheme === 'light') {
-        currentTheme = 'dark';
-    } else {
-        currentTheme = 'light';
-    }
-    salvarNoArmazenamento('theme', currentTheme);
-    initializeTheme();
-}
-
-function updateUserInterface() {
-    if (!currentUser) return;
-    
-    const elName = document.getElementById('logged-user-name');
-    if (elName) {
-        elName.textContent = currentUser.name;
-    }
-
-    const isAdmin = currentUser.permission === 'Administrador';
-    
-    // Controle explícito de botões restritos
-    const btnUser = document.getElementById('user-management-menu-btn');
-    if (btnUser) {
-        btnUser.style.display = isAdmin ? 'flex' : 'none';
-    }
-    
-    // Botões visíveis para todos os logados
-    const itemsToEnable = [
-        'cargo-management-menu-btn',
-        'orientador-management-menu-btn',
-        'modulo-management-menu-btn',
-        'municipality-list-management-menu-btn',
-        'forma-apresentacao-management-menu-btn',
-        'backup-menu-btn'
-    ];
-    
-    itemsToEnable.forEach(function(id) {
-        const el = document.getElementById(id);
-        if (el) {
-            el.style.display = 'flex';
-        }
-    });
-
-    const divider = document.getElementById('admin-divider');
-    if (divider) {
-        divider.style.display = isAdmin ? 'block' : 'none';
-    }
-}
-
-function initializeTabs() {
-    const buttons = document.querySelectorAll('.sidebar-btn');
-    
-    buttons.forEach(function(btn) {
-        btn.onclick = function() {
-            const tabId = this.getAttribute('data-tab');
-            
-            // Remove active de todos
-            buttons.forEach(function(b) {
-                b.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-content').forEach(function(c) {
-                c.classList.remove('active');
-            });
-            
-            // Ativa o atual
-            this.classList.add('active');
-            const sectionId = tabId + '-section';
-            const section = document.getElementById(sectionId);
-            
-            if (section) {
-                section.classList.add('active');
-                setTimeout(function() {
-                    refreshCurrentTab(sectionId);
-                }, 10);
-            }
-            
-            // Fecha menu mobile se estiver aberto
-            if (window.innerWidth <= 900) {
-                const sidebar = document.querySelector('.sidebar');
-                const overlay = document.querySelector('.sidebar-overlay');
-                if(sidebar && sidebar.classList.contains('mobile-open')) {
-                    sidebar.classList.remove('mobile-open');
-                    if(overlay) overlay.classList.remove('active');
-                }
-            }
-        };
-    });
-}
-
-function refreshCurrentTab(sectionId) {
-    updateGlobalDropdowns();
-
-    if (sectionId === 'municipios-section') renderMunicipalities();
-    if (sectionId === 'tarefas-section') renderTasks();
-    if (sectionId === 'solicitacoes-section') renderRequests();
-    if (sectionId === 'demandas-section') renderDemands();
-    if (sectionId === 'visitas-section') renderVisits();
-    if (sectionId === 'producao-section') renderProductions();
-    if (sectionId === 'apresentacoes-section') renderPresentations();
-    if (sectionId === 'versoes-section') renderVersions();
-    if (sectionId === 'dashboard-section') {
-        updateDashboardStats();
-        initializeDashboardCharts();
-    }
-}
-
-function navigateToHome() {
-    const dashBtn = document.querySelector('.sidebar-btn[data-tab="dashboard"]');
-    if (dashBtn) dashBtn.click();
-}
-
-function toggleSettingsMenu() {
-    const menu = document.getElementById('settings-menu');
-    if (menu) menu.classList.toggle('show');
-}
-
-// Navegação de Configurações
-function navigateToUserManagement() { toggleSettingsMenu(); openTab('usuarios-section'); renderUsers(); }
-function navigateToCargoManagement() { toggleSettingsMenu(); openTab('cargos-section'); renderCargos(); }
-function navigateToOrientadorManagement() { toggleSettingsMenu(); openTab('orientadores-section'); renderOrientadores(); }
-function navigateToModuloManagement() { toggleSettingsMenu(); openTab('modulos-section'); renderModulos(); }
-function navigateToMunicipalityListManagement() { toggleSettingsMenu(); openTab('municipalities-list-section'); renderMunicipalityList(); }
-function navigateToFormaApresentacaoManagement() { toggleSettingsMenu(); openTab('formas-apresentacao-section'); renderFormas(); }
-function navigateToBackupManagement() { toggleSettingsMenu(); openTab('backup-section'); updateBackupInfo(); }
-
-function openTab(sectionId) {
-    document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
-    document.querySelectorAll('.sidebar-btn').forEach(function(b) { b.classList.remove('active'); });
-    const sec = document.getElementById(sectionId);
-    if (sec) sec.classList.add('active');
-}
-
-// ----------------------------------------------------------------------------
-// 10. AUTENTICAÇÃO
-// ----------------------------------------------------------------------------
+// 8. AUTH
 function handleLogin(e) {
     e.preventDefault();
-    const login = document.getElementById('login-username').value.trim().toUpperCase();
-    const pass = document.getElementById('login-password').value;
-    
-    const user = users.find(function(u) {
-        return u.login === login && u.status === 'Ativo';
-    });
-
-    if (user) {
-        const hashedPassword = hashPassword(pass, user.salt);
-        if (hashedPassword === user.passwordHash) {
-            currentUser = user;
-            isAuthenticated = true;
-            salvarNoArmazenamento('currentUser', currentUser);
-            checkAuthentication();
-            initializeApp();
-            showToast(`Bem-vindo, ${user.name}!`, 'success');
-            return;
-        }
-    }
-    document.getElementById('login-error').textContent = 'Login ou senha incorretos.';
+    const l = document.getElementById('login-username').value.trim().toUpperCase();
+    const p = document.getElementById('login-password').value;
+    const u = users.find(x => x.login === l && x.status === 'Ativo');
+    if (u && hashPassword(p, u.salt) === u.passwordHash) {
+        currentUser = u; isAuthenticated = true;
+        salvarNoArmazenamento('currentUser', currentUser);
+        checkAuthentication(); initializeApp(); showToast('Bem-vindo!');
+    } else { document.getElementById('login-error').textContent = 'Inválido.'; }
 }
-
 function checkAuthentication() {
     if (isAuthenticated && currentUser) {
         document.getElementById('login-screen').classList.remove('active');
@@ -504,469 +180,192 @@ function checkAuthentication() {
         document.getElementById('main-app').classList.remove('active');
     }
 }
-
-function handleLogout() {
-    if (confirm('Deseja realmente sair do sistema?')) {
-        localStorage.removeItem('currentUser');
-        location.reload();
-    }
-}
-
+function handleLogout() { if(confirm('Sair?')){ localStorage.removeItem('currentUser'); location.reload(); } }
 function showChangePasswordModal() { document.getElementById('change-password-modal').classList.add('show'); }
 function closeChangePasswordModal() { document.getElementById('change-password-modal').classList.remove('show'); }
-
 function handleChangePassword(e) {
     e.preventDefault();
-    const n = document.getElementById('new-password').value;
-    const c = document.getElementById('confirm-password').value;
-    
-    if (n !== c || n.length < 4) {
-        alert('Senhas não conferem ou muito curtas.');
+    const n=document.getElementById('new-password').value;
+    const c=document.getElementById('confirm-password').value;
+    if(n!==c || n.length<4){alert('Erro senha');return;}
+    const i = users.findIndex(u=>u.id===currentUser.id);
+    users[i].salt=generateSalt(); users[i].passwordHash=hashPassword(n, users[i].salt); users[i].mustChangePassword=false;
+    salvarNoArmazenamento('users', users); currentUser = users[i]; salvarNoArmazenamento('currentUser', currentUser);
+    closeChangePasswordModal(); showToast('Senha alterada!');
+}
+// ----------------------------------------------------------------------------
+// 9. INTERFACE & MENU MOBILE
+// ----------------------------------------------------------------------------
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    if (!overlay) {
+        const d = document.createElement('div'); d.className = 'sidebar-overlay'; document.body.appendChild(d);
+        d.onclick = toggleMobileMenu;
+        setTimeout(() => { d.classList.toggle('active'); sidebar.classList.toggle('mobile-open'); }, 10);
         return;
     }
-    
-    const idx = users.findIndex(function(u) { return u.id === currentUser.id; });
-    if (idx !== -1) {
-        users[idx].salt = generateSalt();
-        users[idx].passwordHash = hashPassword(n, users[idx].salt);
-        users[idx].mustChangePassword = false;
-        salvarNoArmazenamento('users', users);
-        currentUser = users[idx];
-        salvarNoArmazenamento('currentUser', currentUser);
-        closeChangePasswordModal();
-        showToast('Senha alterada com sucesso!');
-    }
+    sidebar.classList.toggle('mobile-open'); overlay.classList.toggle('active');
+}
+function initializeTheme() {
+    currentTheme = recuperarDoArmazenamento('theme', 'light');
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    if(document.getElementById('theme-toggle')) document.getElementById('theme-toggle').textContent = currentTheme==='light'?'🌙 Tema':'☀️ Tema';
+}
+function toggleTheme() {
+    currentTheme = currentTheme==='light'?'dark':'light';
+    salvarNoArmazenamento('theme', currentTheme); initializeTheme();
+}
+function updateUserInterface() {
+    if (!currentUser) return;
+    document.getElementById('logged-user-name').textContent = currentUser.name;
+    const isAdmin = currentUser.permission === 'Administrador';
+    document.getElementById('user-management-menu-btn').style.display = isAdmin ? 'flex' : 'none';
+    const d = document.getElementById('admin-divider'); if(d) d.style.display = isAdmin?'block':'none';
+}
+function initializeTabs() {
+    document.querySelectorAll('.sidebar-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            const sec = document.getElementById(btn.dataset.tab + '-section');
+            if (sec) { sec.classList.add('active'); setTimeout(() => refreshCurrentTab(btn.dataset.tab + '-section'), 10); }
+            if (window.innerWidth <= 900) toggleMobileMenu();
+        };
+    });
+}
+function refreshCurrentTab(secId) {
+    updateGlobalDropdowns();
+    if (secId.includes('municipios')) renderMunicipalities();
+    if (secId.includes('tarefas')) renderTasks();
+    if (secId.includes('solicitacoes')) renderRequests();
+    if (secId.includes('demandas')) renderDemands();
+    if (secId.includes('visitas')) renderVisits();
+    if (secId.includes('producao')) renderProductions();
+    if (secId.includes('apresentacoes')) renderPresentations();
+    if (secId.includes('dashboard')) { updateDashboardStats(); initializeDashboardCharts(); }
+}
+function navigateToHome() { document.querySelector('[data-tab="dashboard"]').click(); }
+function toggleSettingsMenu() { document.getElementById('settings-menu').classList.toggle('show'); }
+function navigateToUserManagement() { toggleSettingsMenu(); openTab('usuarios-section'); renderUsers(); }
+function navigateToCargoManagement() { toggleSettingsMenu(); openTab('cargos-section'); renderCargos(); }
+function navigateToOrientadorManagement() { toggleSettingsMenu(); openTab('orientadores-section'); renderOrientadores(); }
+function navigateToModuloManagement() { toggleSettingsMenu(); openTab('modulos-section'); renderModulos(); }
+function navigateToMunicipalityListManagement() { toggleSettingsMenu(); openTab('municipalities-list-section'); renderMunicipalityList(); }
+function navigateToFormaApresentacaoManagement() { toggleSettingsMenu(); openTab('formas-apresentacao-section'); renderFormas(); }
+function navigateToBackupManagement() { toggleSettingsMenu(); openTab('backup-section'); updateBackupInfo(); }
+function openTab(secId) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(secId).classList.add('active');
 }
 
 // ----------------------------------------------------------------------------
-// 11. MUNICÍPIOS CLIENTES (Completo com regras PDF 1)
+// 10. MUNICÍPIOS CLIENTES
 // ----------------------------------------------------------------------------
-
 function handleMunicipalityStatusChange() {
-    const status = document.getElementById('municipality-status').value;
-    const groupBlocked = document.getElementById('group-date-blocked');
-    const groupStopped = document.getElementById('group-date-stopped');
-    
-    if (groupBlocked) groupBlocked.style.display = 'none';
-    if (groupStopped) groupStopped.style.display = 'none';
-    
-    if (status === 'Bloqueado' && groupBlocked) {
-        groupBlocked.style.display = 'block';
-    } else if (status === 'Parou de usar' && groupStopped) {
-        groupStopped.style.display = 'block';
-    }
+    const s = document.getElementById('municipality-status').value;
+    const gb = document.getElementById('group-date-blocked');
+    const gs = document.getElementById('group-date-stopped');
+    if (gb) gb.style.display = s === 'Bloqueado' ? 'block' : 'none';
+    if (gs) gs.style.display = s === 'Parou de usar' ? 'block' : 'none';
 }
-
 function showMunicipalityModal(id = null) {
-    editingId = id;
-    document.getElementById('municipality-form').reset();
+    editingId = id; document.getElementById('municipality-form').reset();
+    populateSelect('municipality-name', municipalitiesList);
+    document.getElementById('municipality-status').onchange = handleMunicipalityStatusChange;
     
-    populateSelect(document.getElementById('municipality-name'), municipalitiesList, 'name', 'name');
-    
-    const statusSel = document.getElementById('municipality-status');
-    statusSel.onchange = handleMunicipalityStatusChange;
-
-    // Renderiza checkboxes de módulos dinamicamente
-    const checkboxContainer = document.querySelector('#municipality-form .checkbox-grid');
-    if(checkboxContainer) {
-        if(modulos.length > 0) {
-            checkboxContainer.innerHTML = modulos.map(function(m) {
-                return `<label><input type="checkbox" value="${m.name}" class="module-checkbox"> ${m.name}</label>`;
-            }).join('');
-        } else {
-            checkboxContainer.innerHTML = '<p style="font-size:12px;color:gray;">Nenhum módulo cadastrado.</p>';
-        }
-    }
+    const box = document.getElementById('municipality-modules-container');
+    if(box) box.innerHTML = modulos.length ? modulos.map(m=>`<label><input type="checkbox" value="${m.name}" class="module-checkbox"> ${m.name}</label>`).join('') : 'Sem módulos.';
 
     if (id) {
-        const m = municipalities.find(function(x) { return x.id === id; });
-        if (m) {
-            document.getElementById('municipality-name').value = m.name;
-            document.getElementById('municipality-status').value = m.status;
-            document.getElementById('municipality-manager').value = m.manager;
-            document.getElementById('municipality-contact').value = m.contact;
-            document.getElementById('municipality-implantation-date').value = m.implantationDate;
-            document.getElementById('municipality-last-visit').value = m.lastVisit;
-            
-            if(document.getElementById('municipality-date-blocked')) {
-                document.getElementById('municipality-date-blocked').value = m.dateBlocked || '';
-            }
-            if(document.getElementById('municipality-date-stopped')) {
-                document.getElementById('municipality-date-stopped').value = m.dateStopped || '';
-            }
-            
-            if (m.modules) {
-                document.querySelectorAll('.module-checkbox').forEach(function(cb) {
-                    cb.checked = m.modules.includes(cb.value);
-                });
-            }
-            handleMunicipalityStatusChange();
-        }
-    } else {
+        const m = municipalities.find(x => x.id === id);
+        document.getElementById('municipality-name').value = m.name;
+        document.getElementById('municipality-status').value = m.status;
+        document.getElementById('municipality-manager').value = m.manager;
+        document.getElementById('municipality-contact').value = m.contact;
+        document.getElementById('municipality-implantation-date').value = m.implantationDate;
+        document.getElementById('municipality-last-visit').value = m.lastVisit;
+        if(document.getElementById('municipality-date-blocked')) document.getElementById('municipality-date-blocked').value = m.dateBlocked||'';
+        if(document.getElementById('municipality-date-stopped')) document.getElementById('municipality-date-stopped').value = m.dateStopped||'';
+        m.modules.forEach(mod => { const cb=document.querySelector(`.module-checkbox[value="${mod}"]`); if(cb) cb.checked=true; });
         handleMunicipalityStatusChange();
-    }
+    } else handleMunicipalityStatusChange();
     document.getElementById('municipality-modal').classList.add('show');
 }
-
 function saveMunicipality(e) {
     e.preventDefault();
     const name = document.getElementById('municipality-name').value;
     const status = document.getElementById('municipality-status').value;
-    const mods = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(function(cb) { return cb.value; });
-    
-    // Validações
-    if (!editingId && municipalities.some(function(m) { return m.name === name; })) {
-        alert('Erro: Este município já está cadastrado!');
-        return;
-    }
-    if (status === 'Em uso' && mods.length === 0) {
-        alert('Erro: Para status "Em Uso", selecione pelo menos um módulo.');
-        return;
-    }
-    const dateBlocked = document.getElementById('municipality-date-blocked') ? document.getElementById('municipality-date-blocked').value : '';
-    if (status === 'Bloqueado' && !dateBlocked) {
-        alert('Erro: Preencha a "Data em que foi Bloqueado".');
-        return;
-    }
+    const mods = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(c => c.value);
+    if (!editingId && municipalities.some(m => m.name === name)) return alert('Já existe!');
+    if (status === 'Em uso' && mods.length === 0) return alert('Selecione módulos.');
+    if (status === 'Bloqueado' && !document.getElementById('municipality-date-blocked').value) return alert('Data Bloqueio?');
 
-    const data = {
-        name: name,
-        status: status,
-        manager: document.getElementById('municipality-manager').value,
-        contact: document.getElementById('municipality-contact').value,
-        implantationDate: document.getElementById('municipality-implantation-date').value,
-        lastVisit: document.getElementById('municipality-last-visit').value,
-        modules: mods,
-        dateBlocked: dateBlocked,
-        dateStopped: document.getElementById('municipality-date-stopped') ? document.getElementById('municipality-date-stopped').value : ''
-    };
-
-    if (editingId) {
-        const i = municipalities.findIndex(function(x) { return x.id === editingId; });
-        if (i !== -1) municipalities[i] = { ...municipalities[i], ...data };
-    } else {
-        municipalities.push({ id: getNextId('mun'), ...data });
-    }
-    
-    salvarNoArmazenamento('municipalities', municipalities);
-    document.getElementById('municipality-modal').classList.remove('show');
-    renderMunicipalities();
-    updateGlobalDropdowns();
-    showToast('Município salvo com sucesso!', 'success');
+    const data = { name, status, manager: document.getElementById('municipality-manager').value, contact: document.getElementById('municipality-contact').value, implantationDate: document.getElementById('municipality-implantation-date').value, lastVisit: document.getElementById('municipality-last-visit').value, modules: mods, dateBlocked: document.getElementById('municipality-date-blocked')?.value, dateStopped: document.getElementById('municipality-date-stopped')?.value };
+    if (editingId) { const i = municipalities.findIndex(x => x.id === editingId); municipalities[i] = { ...municipalities[i], ...data }; } 
+    else { municipalities.push({ id: getNextId('mun'), ...data }); }
+    salvarNoArmazenamento('municipalities', municipalities); document.getElementById('municipality-modal').classList.remove('show'); renderMunicipalities(); updateGlobalDropdowns(); showToast('Salvo!');
 }
-
 function getFilteredMunicipalities() {
-    const fName = document.getElementById('filter-municipality-name') ? document.getElementById('filter-municipality-name').value : '';
-    const fStatus = document.getElementById('filter-municipality-status') ? document.getElementById('filter-municipality-status').value : '';
-    const fMod = document.getElementById('filter-municipality-module') ? document.getElementById('filter-municipality-module').value : '';
-    const fGest = document.getElementById('filter-municipality-manager') ? document.getElementById('filter-municipality-manager').value.toLowerCase() : '';
-
-    let filtered = municipalities.filter(function(m) {
+    const fName = document.getElementById('filter-municipality-name')?.value;
+    const fStatus = document.getElementById('filter-municipality-status')?.value;
+    const fMod = document.getElementById('filter-municipality-module')?.value;
+    const fGest = document.getElementById('filter-municipality-manager')?.value.toLowerCase();
+    return municipalities.filter(m => {
         if (fName && m.name !== fName) return false;
         if (fStatus && m.status !== fStatus) return false;
         if (fMod && !m.modules.includes(fMod)) return false;
         if (fGest && !m.manager.toLowerCase().includes(fGest)) return false;
         return true;
-    });
-    
-    return filtered.sort(function(a, b) { return a.name.localeCompare(b.name); });
+    }).sort((a,b)=>a.name.localeCompare(b.name));
 }
-
 function renderMunicipalities() {
     const filtered = getFilteredMunicipalities();
     const c = document.getElementById('municipalities-table');
-    
-    const counter = document.getElementById('municipalities-results-count');
-    if (counter) {
-        counter.style.display = 'block';
-        counter.innerHTML = '<strong>' + filtered.length + '</strong> município(s) no total';
-    }
-
-    if (filtered.length === 0) {
-        c.innerHTML = '<div class="empty-state">Nenhum município encontrado.</div>';
-    } else {
-        const rows = filtered.map(function(m) {
-            const modulesBadges = m.modules.map(function(modName) {
-                const modConfig = modulos.find(function(x) { return x.name === modName; });
-                const abbrev = modConfig ? modConfig.abbreviation : modName.substring(0,3).toUpperCase();
-                // Ajuste 8: Todos os módulos azul #005580
-                return `<span class="module-tag" style="background-color:#005580; color:#fff;" title="${modName}">${abbrev}</span>`;
-            }).join('');
-            
-            // Ajuste 8: Cores de Status
-            let statusColor = '#005580'; 
-            if (m.status === 'Bloqueado') statusColor = '#C85250';
-            if (m.status === 'Parou de usar') statusColor = '#E68161';
-            if (m.status === 'Não Implantado') statusColor = '#79C2A9';
-
-            return `<tr>
-                <td><strong>${m.name}</strong></td>
-                <td><div class="module-tags">${modulesBadges}</div></td>
-                <td>${m.manager}</td>
-                <td>${m.contact}</td>
-                <td>${formatDate(m.implantationDate)}</td>
-                <td>${formatDate(m.lastVisit)}</td>
-                <td>${calculateTimeInUse(m.implantationDate)}</td>
-                <td>${calculateDaysSince(m.lastVisit)}</td>
-                <td><span class="status-badge" style="background-color:${statusColor}; color:white;">${m.status}</span></td>
-                <td>
-                    <button class="btn btn--sm" onclick="showMunicipalityModal(${m.id})">✏️</button>
-                    <button class="btn btn--sm" onclick="deleteMunicipality(${m.id})">🗑️</button>
-                </td>
-            </tr>`;
+    document.getElementById('municipalities-results-count').innerHTML = `<strong>${filtered.length}</strong>`;
+    if (filtered.length === 0) c.innerHTML = '<div class="empty-state">Vazio.</div>';
+    else {
+        const rows = filtered.map(m => {
+            const badges = m.modules.map(mn => { const mc = modulos.find(x => x.name === mn); const ab = mc ? mc.abbreviation : mn.substring(0,3).toUpperCase(); return `<span class="module-tag" style="background:#005580;color:white;" title="${mn}">${ab}</span>`; }).join('');
+            let stColor = '#005580'; if (m.status === 'Bloqueado') stColor = '#C85250'; if (m.status === 'Parou de usar') stColor = '#E68161'; if (m.status === 'Não Implantado') stColor = '#79C2A9';
+            return `<tr><td><strong>${m.name}</strong></td><td><div class="module-tags">${badges}</div></td><td>${m.manager}</td><td>${m.contact}</td><td>${formatDate(m.implantationDate)}</td><td>${formatDate(m.lastVisit)}</td><td>${calculateTimeInUse(m.implantationDate)}</td><td>${calculateDaysSince(m.lastVisit)}</td><td><span class="status-badge" style="background:${stColor};color:white;">${m.status}</span></td><td><button class="btn btn--sm" onclick="showMunicipalityModal(${m.id})">✏️</button><button class="btn btn--sm" onclick="deleteMunicipality(${m.id})">🗑️</button></td></tr>`;
         }).join('');
-        c.innerHTML = `<table><thead><th>Município</th><th>Módulos</th><th>Gestor</th><th>Contato</th><th>Implantação</th><th>Última Visita</th><th>Tempo de Uso</th><th>Dias s/ Visita</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+        c.innerHTML = `<table><thead><th>Município</th><th>Módulos</th><th>Gestor</th><th>Contato</th><th>Implantação</th><th>Última</th><th>Tempo</th><th>Dias s/ Visita</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
     updateMunicipalityCharts(filtered);
 }
-
 function updateMunicipalityCharts(data) {
-    const ctxStatus = document.getElementById('statusChart');
-    if (ctxStatus && window.Chart) {
-        if (chartStatusMun) chartStatusMun.destroy();
-        chartStatusMun = new Chart(ctxStatus, {
-            type: 'pie',
-            data: { 
-                labels: ['Em uso', 'Bloqueado', 'Parou de usar', 'Não Implantado'], 
-                datasets: [{ 
-                    data: [
-                        data.filter(function(m) { return m.status === 'Em uso'; }).length, 
-                        data.filter(function(m) { return m.status === 'Bloqueado'; }).length, 
-                        data.filter(function(m) { return m.status === 'Parou de usar'; }).length,
-                        data.filter(function(m) { return m.status === 'Não Implantado'; }).length
-                    ], 
-                    backgroundColor: ['#4ECDC4', '#FF6B6B', '#FFA07A', '#95A5A6'] 
-                }] 
-            }
-        });
-    }
-    
-    const ctxModules = document.getElementById('modulesChart');
-    if (ctxModules && window.Chart) {
-        if (chartModulesMun) chartModulesMun.destroy();
-        const modCounts = {};
-        data.forEach(function(m) {
-            m.modules.forEach(function(mod) { modCounts[mod] = (modCounts[mod] || 0) + 1; });
-        });
-        chartModulesMun = new Chart(ctxModules, {
-            type: 'bar',
-            data: { labels: Object.keys(modCounts), datasets: [{ label: 'Qtd', data: Object.values(modCounts), backgroundColor: '#1FB8CD' }] }
-        });
-    }
-
-    const ctxTimeline = document.getElementById('timelineChart');
-    if (ctxTimeline && window.Chart) {
-        if (chartTimelineMun) chartTimelineMun.destroy();
-        const timeData = {};
-        data.forEach(function(m) { 
-            if(m.implantationDate) { const y = m.implantationDate.split('-')[0]; timeData[y] = (timeData[y]||0)+1; }
-        });
-        const sortedYears = Object.keys(timeData).sort();
-        chartTimelineMun = new Chart(ctxTimeline, {
-            type: 'line',
-            data: { labels: sortedYears, datasets: [{ label: 'Implantações', data: sortedYears.map(function(y) { return timeData[y]; }), borderColor: '#FF6B6B' }] }
-        });
-    }
-
-    if(document.getElementById('total-municipalities')) document.getElementById('total-municipalities').textContent = data.length;
-    if(document.getElementById('active-municipalities')) document.getElementById('active-municipalities').textContent = data.filter(function(m) { return m.status === 'Em uso'; }).length;
-    if(document.getElementById('inactive-municipalities')) document.getElementById('inactive-municipalities').textContent = data.filter(function(m) { return m.status !== 'Em uso'; }).length;
+    if(document.getElementById('statusChart') && window.Chart) { if(chartStatusMun) chartStatusMun.destroy(); chartStatusMun = new Chart(document.getElementById('statusChart'), { type:'pie', data:{ labels:['Em uso','Bloqueado','Parou','N. Implantado'], datasets:[{data:[data.filter(m=>m.status==='Em uso').length,data.filter(m=>m.status==='Bloqueado').length,data.filter(m=>m.status==='Parou de usar').length,data.filter(m=>m.status==='Não Implantado').length], backgroundColor:['#4ECDC4','#FF6B6B','#FFA07A','#95A5A6']}]}}); }
+    if(document.getElementById('modulesChart') && window.Chart) { if(chartModulesMun) chartModulesMun.destroy(); const mc={}; data.forEach(m=>m.modules.forEach(x=>mc[x]=(mc[x]||0)+1)); chartModulesMun = new Chart(document.getElementById('modulesChart'), { type:'bar', data:{labels:Object.keys(mc), datasets:[{label:'Qtd', data:Object.values(mc), backgroundColor:'#1FB8CD'}]}}); }
+    if(document.getElementById('timelineChart') && window.Chart) { if(chartTimelineMun) chartTimelineMun.destroy(); const td={}; data.forEach(m=>{if(m.implantationDate){const y=m.implantationDate.split('-')[0]; td[y]=(td[y]||0)+1;}}); const ys=Object.keys(td).sort(); chartTimelineMun = new Chart(document.getElementById('timelineChart'), { type:'line', data:{labels:ys, datasets:[{label:'Implantações', data:Object.values(td), borderColor:'#FF6B6B'}]}}); }
+    document.getElementById('total-municipalities').textContent = data.length; document.getElementById('active-municipalities').textContent = data.filter(m=>m.status==='Em uso').length; document.getElementById('inactive-municipalities').textContent = data.filter(m=>m.status!=='Em uso').length;
 }
-
-function deleteMunicipality(id) {
-    if (confirm('Excluir este município?')) {
-        municipalities = municipalities.filter(function(x) { return x.id !== id; });
-        salvarNoArmazenamento('municipalities', municipalities);
-        renderMunicipalities();
-        updateGlobalDropdowns();
-    }
-}
-
+function deleteMunicipality(id) { if (confirm('Excluir?')) { municipalities = municipalities.filter(x => x.id !== id); salvarNoArmazenamento('municipalities', municipalities); renderMunicipalities(); updateGlobalDropdowns(); } }
 function closeMunicipalityModal() { document.getElementById('municipality-modal').classList.remove('show'); }
-function clearMunicipalityFilters() {
-    ['filter-municipality-name', 'filter-municipality-status', 'filter-municipality-module', 'filter-municipality-manager'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; });
-    renderMunicipalities();
-}
-function exportMunicipalitiesCSV() {
-    const data = getFilteredMunicipalities();
-    const headers = ['Município', 'Módulos', 'Gestor', 'Contato', 'Implantação', 'Última Visita', 'Tempo Uso', 'Status'];
-    const rows = data.map(function(m) { return [m.name, m.modules.join(', '), m.manager, m.contact, formatDate(m.implantationDate), formatDate(m.lastVisit), calculateTimeInUse(m.implantationDate), m.status]; });
-    downloadCSV('municipios.csv', headers, rows);
-}
-function generateMunicipalitiesPDF() {
-    const data = getFilteredMunicipalities();
-    const headers = ['Município', 'Gestor', 'Contato', 'Implantação', 'Status'];
-    const rows = data.map(function(m) { return [m.name, m.manager, m.contact, formatDate(m.implantationDate), m.status]; });
-    downloadPDF('Relatório de Municípios', headers, rows);
-}
+function clearMunicipalityFilters() { ['filter-municipality-name','filter-municipality-status','filter-municipality-module','filter-municipality-manager'].forEach(id => document.getElementById(id).value=''); renderMunicipalities(); }
+function exportMunicipalitiesCSV() { const d=getFilteredMunicipalities(); const h=['Município','Status']; const r=d.map(m=>[m.name,m.status]); downloadCSV('mun.csv',h,r); }
+function generateMunicipalitiesPDF() { const d=getFilteredMunicipalities(); const h=['Município','Status']; const r=d.map(m=>[m.name,m.status]); downloadPDF('Mun',h,r); }
 
 // ----------------------------------------------------------------------------
-// 12. TREINAMENTOS (Itens 1, 2 e Correções)
-// ----------------------------------------------------------------------------
-
-function showTaskModal(id = null) {
-    editingId = id;
-    document.getElementById('task-form').reset();
-    updateGlobalDropdowns();
-    
-    // Ajuste: Mover município para o topo
-    const form = document.getElementById('task-form');
-    const fieldMun = document.getElementById('task-municipality').closest('.form-group');
-    if(fieldMun) form.insertBefore(fieldMun, form.firstChild);
-    
-    if (id) {
-        const t = tasks.find(function(x) { return x.id === id; });
-        if (t) {
-            document.getElementById('task-date-requested').value = t.dateRequested;
-            document.getElementById('task-municipality').value = t.municipality;
-            document.getElementById('task-requested-by').value = t.requestedBy;
-            document.getElementById('task-performed-by').value = t.performedBy;
-            document.getElementById('task-status').value = t.status;
-            document.getElementById('task-trained-name').value = t.trainedName || '';
-            document.getElementById('task-trained-position').value = t.trainedPosition || '';
-            document.getElementById('task-contact').value = t.contact || '';
-            document.getElementById('task-observations').value = t.observations || '';
-            document.getElementById('task-date-performed').value = t.datePerformed || '';
-        }
-    }
-    document.getElementById('task-modal').classList.add('show');
-}
-
-function saveTask(e) {
-    e.preventDefault();
-    const data = {
-        dateRequested: document.getElementById('task-date-requested').value,
-        datePerformed: document.getElementById('task-date-performed').value,
-        municipality: document.getElementById('task-municipality').value,
-        requestedBy: document.getElementById('task-requested-by').value,
-        performedBy: document.getElementById('task-performed-by').value,
-        trainedName: document.getElementById('task-trained-name').value,
-        trainedPosition: document.getElementById('task-trained-position').value,
-        contact: document.getElementById('task-contact').value,
-        status: document.getElementById('task-status').value,
-        observations: document.getElementById('task-observations').value
-    };
-
-    if (editingId) {
-        const i = tasks.findIndex(function(x) { return x.id === editingId; });
-        tasks[i] = { ...tasks[i], ...data };
-    } else {
-        tasks.push({ id: getNextId('task'), ...data });
-    }
-    salvarNoArmazenamento('tasks', tasks);
-    document.getElementById('task-modal').classList.remove('show');
-    renderTasks();
-    showToast('Treinamento salvo!', 'success');
-}
-
-function getFilteredTasks() {
-    const fMun = document.getElementById('filter-task-municipality') ? document.getElementById('filter-task-municipality').value : '';
-    const fStatus = document.getElementById('filter-task-status') ? document.getElementById('filter-task-status').value : '';
-    const fReq = document.getElementById('filter-task-requester') ? document.getElementById('filter-task-requester').value.toLowerCase() : '';
-    const fPerf = document.getElementById('filter-task-performer') ? document.getElementById('filter-task-performer').value : '';
-    const fCargo = document.getElementById('filter-task-position') ? document.getElementById('filter-task-position').value : '';
-    const fDateType = document.getElementById('filter-task-date-type') ? document.getElementById('filter-task-date-type').value : 'requested';
-    const fDateStart = document.getElementById('filter-task-date-start') ? document.getElementById('filter-task-date-start').value : '';
-    const fDateEnd = document.getElementById('filter-task-date-end') ? document.getElementById('filter-task-date-end').value : '';
-
-    let filtered = tasks.filter(function(t) {
-        if (fMun && t.municipality !== fMun) return false;
-        if (fStatus && t.status !== fStatus) return false;
-        if (fReq && !t.requestedBy.toLowerCase().includes(fReq)) return false;
-        if (fPerf && t.performedBy !== fPerf) return false;
-        if (fCargo && t.trainedPosition !== fCargo) return false;
-        const dt = (fDateType === 'performed') ? t.datePerformed : t.dateRequested;
-        if (fDateStart && dt < fDateStart) return false;
-        if (fDateEnd && dt > fDateEnd) return false;
-        return true;
-    });
-
-    return filtered.sort(function(a, b) {
-        // Ordenação: Pendentes primeiro
-        if (a.status === 'Pendente' && b.status !== 'Pendente') return -1;
-        if (a.status !== 'Pendente' && b.status === 'Pendente') return 1;
-        return new Date(a.dateRequested) - new Date(b.dateRequested);
-    });
-}
-
-function renderTasks() {
-    const filtered = getFilteredTasks();
-    const c = document.getElementById('tasks-table');
-    const counter = document.getElementById('tasks-results-count');
-    if (counter) {
-        counter.style.display = 'block';
-        counter.innerHTML = '<strong>' + filtered.length + '</strong> treinamentos';
-    }
-
-    if (filtered.length === 0) {
-        c.innerHTML = '<div class="empty-state">Nenhum treinamento encontrado.</div>';
-    } else {
-        const rows = filtered.map(function(t) {
-            return '<tr>' +
-                '<td><strong>' + t.municipality + '</strong></td>' +
-                '<td>' + formatDate(t.dateRequested) + '</td>' +
-                '<td>' + formatDate(t.datePerformed) + '</td>' +
-                '<td>' + t.requestedBy + '</td>' +
-                '<td>' + t.performedBy + '</td>' +
-                '<td>' + t.trainedName + '</td>' +
-                '<td>' + t.trainedPosition + '</td>' +
-                '<td>' + t.contact + '</td>' +
-                '<td><span class="task-status ' + (t.status === 'Concluído' ? 'completed' : 'pending') + '">' + t.status + '</span></td>' +
-                '<td>' +
-                    '<button class="btn btn--sm" onclick="showTaskModal(' + t.id + ')">✏️</button> ' +
-                    '<button class="btn btn--sm" onclick="deleteTask(' + t.id + ')">🗑️</button>' +
-                '</td>' +
-            '</tr>';
-        }).join('');
-        c.innerHTML = '<table><thead><th>Município</th><th>Data Sol.</th><th>Data Real.</th><th>Solicitante</th><th>Orientador</th><th>Profissional</th><th>Cargo</th><th>Contato</th><th>Status</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
-    }
-    
-    if(document.getElementById('total-tasks')) document.getElementById('total-tasks').textContent = filtered.length;
-    if(document.getElementById('completed-tasks')) document.getElementById('completed-tasks').textContent = filtered.filter(function(t){return t.status==='Concluído'}).length;
-    if(document.getElementById('pending-tasks')) document.getElementById('pending-tasks').textContent = filtered.filter(function(t){return t.status==='Pendente'}).length;
-    if(document.getElementById('cancelled-tasks')) document.getElementById('cancelled-tasks').textContent = filtered.filter(function(t){return t.status==='Cancelado'}).length;
-}
-
-function exportTasksCSV() {
-    const data = getFilteredTasks();
-    const headers = ['Município', 'Data Sol.', 'Data Real.', 'Solicitante', 'Orientador', 'Profissional', 'Cargo', 'Contato', 'Status'];
-    const rows = data.map(function(t) { return [t.municipality, formatDate(t.dateRequested), formatDate(t.datePerformed), t.requestedBy, t.performedBy, t.trainedName, t.trainedPosition, t.contact, t.status]; });
-    downloadCSV('treinamentos.csv', headers, rows);
-}
-function generateTasksPDF() {
-    const data = getFilteredTasks();
-    const headers = ['Município', 'Data Sol.', 'Orientador', 'Status'];
-    const rows = data.map(function(t) { return [t.municipality, formatDate(t.dateRequested), t.performedBy, t.status]; });
-    downloadPDF('Relatório Treinamentos', headers, rows);
-}
-function deleteTask(id) { if (confirm('Excluir?')) { tasks = tasks.filter(function(x) { return x.id !== id; }); salvarNoArmazenamento('tasks', tasks); renderTasks(); } }
-function closeTaskModal() { document.getElementById('task-modal').classList.remove('show'); }
-function clearTaskFilters() { ['filter-task-municipality','filter-task-status','filter-task-requester','filter-task-performer','filter-task-position','filter-task-date-start','filter-task-date-end'].forEach(function(id){if(document.getElementById(id))document.getElementById(id).value=''}); renderTasks(); }
-
-// FIM DA PARTE 2
-// =====================================================
 // 13. SOLICITAÇÕES (PDF Item 2, 4, 5, 17)
-// =====================================================
+// ----------------------------------------------------------------------------
 
 function handleRequestStatusChange() {
     const status = document.getElementById('request-status').value;
     const grpReal = document.getElementById('group-request-date-realization');
     const grpJust = document.getElementById('group-request-justification');
     
-    if (grpReal) {
-        if (status === 'Realizado') {
-            grpReal.style.display = 'block';
-        } else {
-            grpReal.style.display = 'none';
-        }
-    }
-    
-    if (grpJust) {
-        if (status === 'Inviável') {
-            grpJust.style.display = 'block';
-        } else {
-            grpJust.style.display = 'none';
-        }
+    // Reset visual
+    if (grpReal) grpReal.style.display = 'none';
+    if (grpJust) grpJust.style.display = 'none';
+
+    // Lógica de exibição
+    if (status === 'Realizado' && grpReal) {
+        grpReal.style.display = 'block';
+    } else if (status === 'Inviável' && grpJust) {
+        grpJust.style.display = 'block';
     }
 }
 
@@ -975,7 +374,7 @@ function showRequestModal(id = null) {
     const form = document.getElementById('request-form');
     form.reset();
     
-    // Move campo Município para o topo (Ajuste visual)
+    // Ajuste visual: Mover campo Município para o topo
     const fieldMun = document.getElementById('request-municipality').closest('.form-group');
     if (fieldMun) {
         form.insertBefore(fieldMun, form.firstChild);
@@ -1044,9 +443,7 @@ function saveRequest(e) {
 
     if (editingId) {
         const i = requests.findIndex(function(x) { return x.id === editingId; });
-        if (i !== -1) {
-            requests[i] = { ...requests[i], ...data };
-        }
+        if (i !== -1) requests[i] = { ...requests[i], ...data };
     } else {
         requests.push({ id: getNextId('req'), ...data });
     }
@@ -1120,9 +517,9 @@ function renderRequests() {
         c.innerHTML = '<table><thead><th>Município</th><th>Data Sol.</th><th>Data Real.</th><th>Solicitante</th><th>Contato</th><th>Descrição</th><th>Usuário</th><th>Status</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
     }
     
-    // Stats
     if(document.getElementById('total-requests')) document.getElementById('total-requests').textContent = filtered.length;
     if(document.getElementById('pending-requests')) document.getElementById('pending-requests').textContent = filtered.filter(function(r) { return r.status==='Pendente'; }).length;
+    if(document.getElementById('completed-requests')) document.getElementById('completed-requests').textContent = filtered.filter(function(r) { return r.status==='Realizado'; }).length;
     
     updateRequestCharts(filtered);
 }
@@ -1145,7 +542,42 @@ function updateRequestCharts(data) {
             }
         });
     }
-    // (Outros gráficos omitidos para brevidade da resposta, mas seguem o padrão)
+    if (document.getElementById('requestMunicipalityChart') && window.Chart) {
+        if (chartMunReq) chartMunReq.destroy();
+        const mCounts = {}; 
+        data.forEach(function(r) { mCounts[r.municipality] = (mCounts[r.municipality]||0)+1; });
+        chartMunReq = new Chart(document.getElementById('requestMunicipalityChart'), {
+            type: 'bar', 
+            data: { labels: Object.keys(mCounts), datasets: [{ label: 'Qtd', data: Object.values(mCounts), backgroundColor: '#4ECDC4' }] }
+        });
+    }
+    if (document.getElementById('requestRequesterChart') && window.Chart) {
+        if (chartSolReq) chartSolReq.destroy();
+        const sCounts = {}; 
+        data.forEach(function(r) { sCounts[r.requester] = (sCounts[r.requester]||0)+1; });
+        chartSolReq = new Chart(document.getElementById('requestRequesterChart'), {
+            type: 'bar', 
+            data: { labels: Object.keys(sCounts), datasets: [{ label: 'Qtd', data: Object.values(sCounts), backgroundColor: '#FF6B6B' }] }
+        });
+    }
+}
+
+function exportRequestsCSV() {
+    const data = getFilteredRequests();
+    const headers = ['Município', 'Data Sol.', 'Data Real.', 'Solicitante', 'Contato', 'Descrição', 'Status', 'Usuário'];
+    const rows = data.map(function(r) { 
+        return [r.municipality, formatDate(r.date), formatDate(r.dateRealization), r.requester, r.contact, r.description, r.status, r.user]; 
+    });
+    downloadCSV('solicitacoes.csv', headers, rows);
+}
+
+function generateRequestsPDF() {
+    const data = getFilteredRequests();
+    const headers = ['Município', 'Data Sol.', 'Status', 'Descrição'];
+    const rows = data.map(function(r) { 
+        return [r.municipality, formatDate(r.date), r.status, r.description]; 
+    });
+    downloadPDF('Relatório Solicitações', headers, rows);
 }
 
 function deleteRequest(id) {
@@ -1161,29 +593,10 @@ function closeRequestModal() {
 }
 
 function clearRequestFilters() {
-    const inputs = ['filter-request-municipality','filter-request-status','filter-request-solicitante','filter-request-user','filter-request-date-start','filter-request-date-end'];
-    inputs.forEach(function(id) {
+    ['filter-request-municipality','filter-request-status','filter-request-solicitante','filter-request-user','filter-request-date-start','filter-request-date-end'].forEach(function(id) {
         if(document.getElementById(id)) document.getElementById(id).value = '';
     });
     renderRequests();
-}
-
-function exportRequestsCSV() {
-    const data = getFilteredRequests();
-    const headers = ['Município', 'Data Sol.', 'Data Real.', 'Solicitante', 'Contato', 'Descrição', 'Status'];
-    const rows = data.map(function(r) { 
-        return [r.municipality, formatDate(r.date), formatDate(r.dateRealization), r.requester, r.contact, r.description, r.status]; 
-    });
-    downloadCSV('solicitacoes.csv', headers, rows);
-}
-
-function generateRequestsPDF() {
-    const data = getFilteredRequests();
-    const headers = ['Município', 'Data', 'Solicitante', 'Status'];
-    const rows = data.map(function(r) { 
-        return [r.municipality, formatDate(r.date), r.requester, r.status]; 
-    });
-    downloadPDF('Relatório Solicitações', headers, rows);
 }
 
 
@@ -1307,6 +720,7 @@ function renderPresentations() {
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Vazio.</div>';
     } else {
+        // Ajuste 4: Descrição curta, Botões lado a lado
         const rows = filtered.map(function(p) {
             const desc = p.description ? (p.description.length > 20 ? p.description.substring(0,20) + '...' : p.description) : '-';
             return '<tr>' +
@@ -1329,6 +743,7 @@ function renderPresentations() {
         c.innerHTML = '<table><thead><th>Município</th><th>Data Sol.</th><th>Solicitante</th><th>Status</th><th>Realização</th><th>Orientadores</th><th>Forma</th><th>Descrição</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
     }
     
+    if(document.getElementById('total-presentations')) document.getElementById('total-presentations').textContent = filtered.length;
     updatePresentationCharts(filtered);
 }
 
@@ -1350,6 +765,30 @@ function updatePresentationCharts(data) {
             }
         });
     }
+    
+    if (document.getElementById('presentationMunicipalityChart') && window.Chart) {
+        if (chartMunPres) chartMunPres.destroy();
+        const mCounts = {}; 
+        data.forEach(function(p) { mCounts[p.municipality] = (mCounts[p.municipality]||0)+1; });
+        chartMunPres = new Chart(document.getElementById('presentationMunicipalityChart'), {
+            type: 'bar',
+            data: { labels: Object.keys(mCounts), datasets: [{ label: 'Qtd', data: Object.values(mCounts), backgroundColor: '#4ECDC4' }] }
+        });
+    }
+}
+
+function exportPresentationsCSV() {
+    const data = getFilteredPresentations();
+    const headers = ['Município', 'Data', 'Status'];
+    const rows = data.map(function(p) { return [p.municipality, formatDate(p.dateSolicitacao), p.status]; });
+    downloadCSV('apresentacoes.csv', headers, rows);
+}
+
+function generatePresentationsPDF() {
+    const data = getFilteredPresentations();
+    const headers = ['Município', 'Data', 'Status'];
+    const rows = data.map(function(p) { return [p.municipality, formatDate(p.dateSolicitacao), p.status]; });
+    downloadPDF('Relatório Apresentações', headers, rows);
 }
 
 function deletePresentation(id) {
@@ -1364,23 +803,11 @@ function clearPresentationFilters() {
     if(document.getElementById('filter-presentation-municipality')) document.getElementById('filter-presentation-municipality').value = ''; 
     renderPresentations(); 
 }
-function exportPresentationsCSV() {
-    const data = getFilteredPresentations();
-    const headers = ['Município', 'Data', 'Status'];
-    const rows = data.map(function(p) { return [p.municipality, formatDate(p.dateSolicitacao), p.status]; });
-    downloadCSV('apresentacoes.csv', headers, rows);
-}
-function generatePresentationsPDF() {
-    const data = getFilteredPresentations();
-    const headers = ['Município', 'Data', 'Status'];
-    const rows = data.map(function(p) { return [p.municipality, formatDate(p.dateSolicitacao), p.status]; });
-    downloadPDF('Relatório Apresentações', headers, rows);
-}
-
 
 // =====================================================
-// 15. DEMANDAS (PDF Item 4)
+// 15. DEMANDAS (Item 5)
 // =====================================================
+
 function handleDemandStatusChange() {
     const status = document.getElementById('demand-status').value;
     const grpReal = document.getElementById('group-demand-date-realization');
@@ -1398,13 +825,15 @@ function showDemandModal(id = null) {
 
     if (id) {
         const d = demands.find(function(x) { return x.id === id; });
-        document.getElementById('demand-date').value = d.date;
-        document.getElementById('demand-description').value = d.description;
-        document.getElementById('demand-priority').value = d.priority;
-        document.getElementById('demand-status').value = d.status;
-        if(document.getElementById('demand-date-realization')) document.getElementById('demand-date-realization').value = d.dateRealization || '';
-        if(document.getElementById('demand-justification')) document.getElementById('demand-justification').value = d.justification || '';
-        handleDemandStatusChange();
+        if (d) {
+            document.getElementById('demand-date').value = d.date;
+            document.getElementById('demand-description').value = d.description;
+            document.getElementById('demand-priority').value = d.priority;
+            document.getElementById('demand-status').value = d.status;
+            if (document.getElementById('demand-date-realization')) document.getElementById('demand-date-realization').value = d.dateRealization || '';
+            if (document.getElementById('demand-justification')) document.getElementById('demand-justification').value = d.justification || '';
+            handleDemandStatusChange();
+        }
     }
     document.getElementById('demand-modal').classList.add('show');
 }
@@ -1441,11 +870,9 @@ function saveDemand(e) {
 
 function getFilteredDemands() {
     const fStatus = document.getElementById('filter-demand-status')?.value;
-    const fPrio = document.getElementById('filter-demand-priority')?.value;
     
     let filtered = demands.filter(function(d) {
         if (fStatus && d.status !== fStatus) return false;
-        if (fPrio && d.priority !== fPrio) return false;
         return true;
     });
 
@@ -1463,6 +890,7 @@ function renderDemands() {
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Vazio.</div>';
     } else {
+        // Ajuste 5: Colunas reordenadas
         const rows = filtered.map(function(d) {
             return '<tr>' +
                 '<td>' + (d.user || '-') + '</td>' +
@@ -1481,7 +909,7 @@ function renderDemands() {
         c.innerHTML = '<table><thead><th>Usuário</th><th>Data Sol.</th><th>Descrição</th><th>Prioridade</th><th>Status</th><th>Justificativa</th><th>Realização</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
     }
     
-    if(document.getElementById('total-demands')) document.getElementById('total-demands').textContent = filtered.length;
+    if (document.getElementById('total-demands')) document.getElementById('total-demands').textContent = filtered.length;
     updateDemandCharts(filtered);
 }
 
@@ -1511,15 +939,14 @@ function clearDemandFilters() { document.getElementById('filter-demand-status').
 function exportDemandsCSV(){const d=getFilteredDemands(); const h=['Data','Prioridade','Status']; const r=d.map(x=>[x.date,x.priority,x.status]); downloadCSV('dem.csv',h,r);}
 function generateDemandsPDF(){const d=getFilteredDemands(); const h=['Data','Prioridade','Status']; const r=d.map(x=>[x.date,x.priority,x.status]); downloadPDF('Dem',h,r);}
 
+// =====================================================
+// 16. VISITAS (Item 6)
+// =====================================================
 
-// =====================================================
-// 16. VISITAS (PDF Item 5)
-// =====================================================
 function handleVisitStatusChange() {
     const status = document.getElementById('visit-status').value;
     const grpReal = document.getElementById('group-visit-date-realization');
     const grpJust = document.getElementById('group-visit-justification');
-    
     if (grpReal) grpReal.style.display = (status === 'Realizada') ? 'block' : 'none';
     if (grpJust) grpJust.style.display = (status === 'Cancelada') ? 'block' : 'none';
 }
@@ -1527,19 +954,22 @@ function handleVisitStatusChange() {
 function showVisitModal(id = null) {
     editingId = id;
     document.getElementById('visit-form').reset();
-    updateGlobalDropdowns();
     const statusSel = document.getElementById('visit-status');
     statusSel.onchange = handleVisitStatusChange;
+    updateGlobalDropdowns();
 
     if (id) {
         const v = visits.find(function(x) { return x.id === id; });
-        document.getElementById('visit-municipality').value = v.municipality;
-        document.getElementById('visit-date').value = v.date;
-        document.getElementById('visit-applicant').value = v.applicant;
-        document.getElementById('visit-status').value = v.status;
-        if(document.getElementById('visit-date-realization')) document.getElementById('visit-date-realization').value = v.dateRealization || '';
-        if(document.getElementById('visit-justification')) document.getElementById('visit-justification').value = v.justification || '';
-        handleVisitStatusChange();
+        if (v) {
+            document.getElementById('visit-municipality').value = v.municipality;
+            document.getElementById('visit-date').value = v.date;
+            document.getElementById('visit-applicant').value = v.applicant;
+            document.getElementById('visit-status').value = v.status;
+            
+            if(document.getElementById('visit-date-realization')) document.getElementById('visit-date-realization').value = v.dateRealization || '';
+            if(document.getElementById('visit-justification')) document.getElementById('visit-justification').value = v.justification || '';
+            handleVisitStatusChange();
+        }
     }
     document.getElementById('visit-modal').classList.add('show');
 }
@@ -1587,15 +1017,17 @@ function getFilteredVisits() {
 function renderVisits() {
     const filtered = getFilteredVisits();
     const c = document.getElementById('visits-table');
-    
+
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Vazio.</div>';
     } else {
+        // Ajuste 6: Ordem e Justificativa
         const rows = filtered.map(function(v) {
             return '<tr>' +
                 '<td>' + v.municipality + '</td>' +
                 '<td>' + formatDate(v.date) + '</td>' +
                 '<td>' + v.applicant + '</td>' +
+                '<td>' + (v.reason || '-') + '</td>' +
                 '<td>' + v.status + '</td>' +
                 '<td>' + formatDate(v.dateRealization) + '</td>' +
                 '<td>' + (v.justification || '-') + '</td>' +
@@ -1605,7 +1037,7 @@ function renderVisits() {
                 '</td>' +
             '</tr>';
         }).join('');
-        c.innerHTML = '<table><thead><th>Município</th><th>Data Sol.</th><th>Solicitante</th><th>Status</th><th>Data Real.</th><th>Justificativa</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
+        c.innerHTML = '<table><thead><th>Município</th><th>Data Sol.</th><th>Solicitante</th><th>Motivo</th><th>Status</th><th>Data Real.</th><th>Justificativa</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
     }
     
     if(document.getElementById('total-visits')) document.getElementById('total-visits').textContent = filtered.length;
@@ -1639,21 +1071,24 @@ function exportVisitsCSV(){const d=getFilteredVisits(); const h=['Município','D
 function generateVisitsPDF(){const d=getFilteredVisits(); const h=['Município','Data','Status']; const r=d.map(v=>[v.municipality,v.date,v.status]); downloadPDF('Visitas',h,r);}
 
 // =====================================================
-// 17. PRODUÇÃO
+// 17. PRODUÇÃO (Item 7)
 // =====================================================
 function showProductionModal(id = null) {
     editingId = id; document.getElementById('production-form').reset(); updateGlobalDropdowns();
     if (id) {
-        const p = productions.find(function(x) { return x.id === id; });
-        document.getElementById('production-municipality').value = p.municipality;
-        document.getElementById('production-contact').value = p.contact;
-        document.getElementById('production-frequency').value = p.frequency;
-        document.getElementById('production-competence').value = p.competence;
-        document.getElementById('production-period').value = p.period;
-        document.getElementById('production-release-date').value = p.releaseDate;
-        document.getElementById('production-send-date').value = p.sendDate;
-        document.getElementById('production-status').value = p.status;
-        document.getElementById('production-observations').value = p.observations;
+        const p = productions.find(x => x.id === id);
+        if (p) {
+            document.getElementById('production-municipality').value = p.municipality;
+            document.getElementById('production-contact').value = p.contact;
+            document.getElementById('production-frequency').value = p.frequency;
+            document.getElementById('production-competence').value = p.competence;
+            document.getElementById('production-period').value = p.period;
+            document.getElementById('production-release-date').value = p.releaseDate;
+            document.getElementById('production-send-date').value = p.sendDate;
+            document.getElementById('production-status').value = p.status;
+            document.getElementById('production-professional').value = p.professional;
+            document.getElementById('production-observations').value = p.observations;
+        }
     }
     document.getElementById('production-modal').classList.add('show');
 }
@@ -1669,19 +1104,12 @@ function saveProduction(e) {
         releaseDate: document.getElementById('production-release-date').value,
         sendDate: document.getElementById('production-send-date').value,
         status: document.getElementById('production-status').value,
+        professional: document.getElementById('production-professional').value,
         observations: document.getElementById('production-observations').value
     };
-
-    if (editingId) {
-        const i = productions.findIndex(function(x) { return x.id === editingId; });
-        productions[i] = { ...productions[i], ...data };
-    } else {
-        productions.push({ id: getNextId('prod'), ...data });
-    }
-    salvarNoArmazenamento('productions', productions);
-    document.getElementById('production-modal').classList.remove('show');
-    renderProductions();
-    showToast('Salvo!');
+    if (editingId) { const i = productions.findIndex(x => x.id === editingId); productions[i] = { ...productions[i], ...data }; } 
+    else { productions.push({ id: getNextId('prod'), ...data }); }
+    salvarNoArmazenamento('productions', productions); document.getElementById('production-modal').classList.remove('show'); renderProductions(); showToast('Salvo!');
 }
 
 function getFilteredProductions() {
@@ -1695,13 +1123,12 @@ function getFilteredProductions() {
 function renderProductions() {
     const filtered = getFilteredProductions();
     const c = document.getElementById('productions-table');
-
-    if (filtered.length === 0) {
-        c.innerHTML = '<div class="empty-state">Vazio.</div>';
-    } else {
+    if (filtered.length === 0) { c.innerHTML = '<div class="empty-state">Vazio.</div>'; } 
+    else {
         const rows = filtered.map(function(p) {
             return '<tr>' +
                 '<td>' + p.municipality + '</td>' +
+                '<td>' + (p.professional || '-') + '</td>' +
                 '<td>' + p.contact + '</td>' +
                 '<td>' + p.frequency + '</td>' +
                 '<td>' + p.competence + '</td>' +
@@ -1716,7 +1143,7 @@ function renderProductions() {
                 '</td>' +
             '</tr>';
         }).join('');
-        c.innerHTML = '<table><thead><th>Município</th><th>Contato</th><th>Frequência</th><th>Competência</th><th>Período</th><th>Liberação</th><th>Status</th><th>Envio</th><th>Obs</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
+        c.innerHTML = '<table><thead><th>Município</th><th>Profissional</th><th>Contato</th><th>Frequência</th><th>Competência</th><th>Período</th><th>Liberação</th><th>Status</th><th>Envio</th><th>Obs</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
     }
     updateProductionCharts(filtered);
 }
@@ -1730,8 +1157,8 @@ function updateProductionCharts(data) {
                 labels: ['Pendente', 'Enviada', 'Cancelada'],
                 datasets: [{
                     data: [
-                        data.filter(function(p){return p.status==='Pendente';}).length,
-                        data.filter(function(p){return p.status==='Enviada';}).length,
+                        data.filter(function(p){return p.status==='Pendente';}).length, 
+                        data.filter(function(p){return p.status==='Enviada';}).length, 
                         data.filter(function(p){return p.status==='Cancelada';}).length
                     ],
                     backgroundColor: ['#FFA07A', '#45B7D1', '#FF6B6B']
@@ -1742,39 +1169,283 @@ function updateProductionCharts(data) {
 }
 
 function deleteProduction(id){ if(confirm('Excluir?')){ productions=productions.filter(x=>x.id!==id); salvarNoArmazenamento('productions',productions); renderProductions(); }}
-function closeProductionModal() { document.getElementById('production-modal').classList.remove('show'); }
-function clearProductionFilters() { document.getElementById('filter-production-municipality').value=''; renderProductions(); }
-function exportProductionsCSV(){const d=getFilteredProductions(); const h=['Município','Status']; const r=d.map(x=>[x.municipality,x.status]); downloadCSV('prod.csv',h,r);}
-function generateProductionsPDF(){const d=getFilteredProductions(); const h=['Município','Status']; const r=d.map(x=>[x.municipality,x.status]); downloadPDF('Prod',h,r);}
+function closeProductionModal(){document.getElementById('production-modal').classList.remove('show');}
+function clearProductionFilters(){document.getElementById('filter-production-municipality').value='';renderProductions();}
+function exportProductionsCSV(){const d=getFilteredProductions(); const h=['Município','Status']; const r=d.map(p=>[p.municipality,p.status]); downloadCSV('prod.csv',h,r);}
+function generateProductionsPDF(){const d=getFilteredProductions(); const h=['Município','Status']; const r=d.map(p=>[p.municipality,p.status]); downloadPDF('Prod',h,r);}
+// FIM PARTE 3
+// =====================================================
+// 18. VERSÕES (HISTÓRICO DO SISTEMA)
+// =====================================================
+
+function showVersionModal(id = null) {
+    editingId = id;
+    document.getElementById('version-form').reset();
+    
+    // Popula Select de Módulos para o Changelog
+    const modSelect = document.getElementById('version-module');
+    if(modSelect) {
+        let html = '<option value="Geral">Geral / Sistema Todo</option>';
+        modulos.forEach(function(m) { 
+            html += '<option value="' + m.name + '">' + m.name + '</option>'; 
+        });
+        modSelect.innerHTML = html;
+    }
+
+    if (id) {
+        const v = systemVersions.find(function(x) { return x.id === id; });
+        document.getElementById('version-date').value = v.date;
+        document.getElementById('version-number').value = v.version;
+        document.getElementById('version-type').value = v.type;
+        document.getElementById('version-module').value = v.module;
+        document.getElementById('version-description').value = v.description;
+    }
+    document.getElementById('version-modal').classList.add('show');
+}
+
+function saveVersion(e) {
+    e.preventDefault();
+    const data = {
+        date: document.getElementById('version-date').value,
+        version: document.getElementById('version-number').value,
+        type: document.getElementById('version-type').value,
+        module: document.getElementById('version-module').value,
+        description: document.getElementById('version-description').value,
+        author: currentUser ? currentUser.name : 'Sistema'
+    };
+
+    if (editingId) {
+        const i = systemVersions.findIndex(function(x) { return x.id === editingId; });
+        systemVersions[i] = { ...systemVersions[i], ...data };
+    } else {
+        systemVersions.push({ id: getNextId('ver'), ...data });
+    }
+    
+    salvarNoArmazenamento('systemVersions', systemVersions);
+    document.getElementById('version-modal').classList.remove('show');
+    renderVersions();
+    showToast('Versão registrada com sucesso!', 'success');
+}
+
+function renderVersions() {
+    const c = document.getElementById('versions-table');
+    if (!c) return;
+    
+    if (systemVersions.length === 0) {
+        c.innerHTML = '<div class="empty-state">Nenhum registro de versão.</div>';
+        return;
+    }
+    
+    // Ordenar por data (mais recente primeiro)
+    const sortedVersions = [...systemVersions].sort(function(a,b) {
+        return new Date(b.date) - new Date(a.date);
+    });
+
+    const rows = sortedVersions.map(function(v) {
+        return '<tr>' +
+            '<td>' + formatDate(v.date) + '</td>' +
+            '<td>' + v.version + '</td>' +
+            '<td>' + v.type + '</td>' +
+            '<td>' + v.module + '</td>' +
+            '<td>' + v.description + '</td>' +
+            '<td>' +
+                '<button class="btn btn--sm" onclick="showVersionModal(' + v.id + ')">✏️</button> ' +
+                '<button class="btn btn--sm" onclick="deleteVersion(' + v.id + ')">🗑️</button>' +
+            '</td>' +
+        '</tr>';
+    }).join('');
+    
+    c.innerHTML = '<table><thead><th>Data</th><th>Versão</th><th>Tipo</th><th>Módulo</th><th>Descrição</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
+}
+
+function deleteVersion(id) {
+    if (confirm('Excluir este registro de versão?')) {
+        systemVersions = systemVersions.filter(function(x) { return x.id !== id; });
+        salvarNoArmazenamento('systemVersions', systemVersions);
+        renderVersions();
+    }
+}
+
+function closeVersionModal() {
+    document.getElementById('version-modal').classList.remove('show');
+}
+
 
 // =====================================================
-// 18. CADASTROS E CONFIGURAÇÕES
+// 19. CADASTROS BÁSICOS E CONFIGURAÇÕES
+// (Usuários, Cargos, Orientadores, Módulos, Lista Mestra, Formas)
 // =====================================================
-// (Funções de usuários, cargos, etc. mantidas, apenas verificando se estão completas)
-function showUserModal(id=null){ const m=document.getElementById('user-modal'); document.getElementById('user-form').reset(); editingId=id; document.getElementById('user-login').disabled=false; if(id){const u=users.find(x=>x.id===id); document.getElementById('user-login').value=u.login; document.getElementById('user-login').disabled=true; document.getElementById('user-name').value=u.name; document.getElementById('user-permission').value=u.permission; document.getElementById('user-status').value=u.status;}else{document.getElementById('user-password').required=true;} m.classList.add('show'); }
-function saveUser(e){ e.preventDefault(); const login=document.getElementById('user-login').value.trim().toUpperCase(); if(!editingId && users.some(u=>u.login===login)){alert('Já existe');return;} const data={login, name:document.getElementById('user-name').value, permission:document.getElementById('user-permission').value, status:document.getElementById('user-status').value}; if(!editingId){data.id=getNextId('user'); data.salt=generateSalt(); data.passwordHash=hashPassword(document.getElementById('user-password').value, data.salt); users.push(data);}else{const i=users.findIndex(u=>u.id===editingId); users[i]={...users[i],...data}; if(document.getElementById('user-password').value){users[i].salt=generateSalt(); users[i].passwordHash=hashPassword(document.getElementById('user-password').value, users[i].salt);}} salvarNoArmazenamento('users',users); document.getElementById('user-modal').classList.remove('show'); renderUsers(); showToast('Salvo!'); }
-function renderUsers(){ const c=document.getElementById('users-table'); const r=users.map(u=>`<tr><td>${u.login}</td><td>${u.name}</td><td>${u.status}</td><td><button class="btn btn--sm" onclick="showUserModal(${u.id})">✏️</button><button class="btn btn--sm" onclick="deleteUser(${u.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Login</th><th>Nome</th><th>Status</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; }
-function deleteUser(id) { const u=users.find(x=>x.id===id); if(u.login==='ADMIN'){alert('Proibido');return;} if(confirm('Excluir?')){users=users.filter(x=>x.id!==id); salvarNoArmazenamento('users',users); renderUsers();}}
-function closeUserModal(){document.getElementById('user-modal').classList.remove('show');}
-function clearUserFilters(){document.getElementById('filter-user-name').value=''; renderUsers();}
+
+// --- USUÁRIOS ---
+function showUserModal(id = null) {
+    const m = document.getElementById('user-modal');
+    document.getElementById('user-form').reset();
+    editingId = id;
+    document.getElementById('user-login').disabled = false;
+    
+    if (id) {
+        const u = users.find(function(x) { return x.id === id; });
+        document.getElementById('user-login').value = u.login;
+        document.getElementById('user-login').disabled = true; // Não permite mudar login
+        document.getElementById('user-name').value = u.name;
+        document.getElementById('user-permission').value = u.permission;
+        document.getElementById('user-status').value = u.status;
+        // Senha não é obrigatória na edição
+        document.getElementById('user-password').required = false;
+    } else {
+        document.getElementById('user-password').required = true;
+    }
+    m.classList.add('show');
+}
+
+function saveUser(e) {
+    e.preventDefault();
+    const login = document.getElementById('user-login').value.trim().toUpperCase();
+    
+    // Verifica duplicidade de login
+    if (!editingId && users.some(function(u) { return u.login === login; })) {
+        alert('Erro: Este login já existe!');
+        return;
+    }
+    
+    const data = {
+        login: login,
+        name: document.getElementById('user-name').value,
+        permission: document.getElementById('user-permission').value,
+        status: document.getElementById('user-status').value
+    };
+    
+    if (!editingId) {
+        data.id = getNextId('user');
+        data.salt = generateSalt();
+        data.passwordHash = hashPassword(document.getElementById('user-password').value, data.salt);
+        data.mustChangePassword = true; // Novo usuário deve trocar senha
+        users.push(data);
+    } else {
+        const i = users.findIndex(function(u) { return u.id === editingId; });
+        users[i] = { ...users[i], ...data };
+        
+        // Se preencheu senha na edição, atualiza
+        const newPass = document.getElementById('user-password').value;
+        if (newPass) {
+            users[i].salt = generateSalt();
+            users[i].passwordHash = hashPassword(newPass, users[i].salt);
+        }
+    }
+    
+    salvarNoArmazenamento('users', users);
+    document.getElementById('user-modal').classList.remove('show');
+    renderUsers();
+    showToast('Usuário salvo com sucesso!');
+}
+
+function renderUsers() {
+    const c = document.getElementById('users-table');
+    const filter = document.getElementById('filter-user-name') ? document.getElementById('filter-user-name').value.toLowerCase() : '';
+    
+    const filtered = users.filter(function(u) {
+        return u.name.toLowerCase().includes(filter) || u.login.toLowerCase().includes(filter);
+    });
+
+    if (filtered.length === 0) {
+        c.innerHTML = '<div class="empty-state">Nenhum usuário encontrado.</div>';
+        return;
+    }
+    
+    const rows = filtered.map(function(u) {
+        return '<tr>' +
+            '<td>' + u.login + '</td>' +
+            '<td>' + u.name + '</td>' +
+            '<td>' + u.permission + '</td>' +
+            '<td>' + u.status + '</td>' +
+            '<td>' +
+                '<button class="btn btn--sm" onclick="showUserModal(' + u.id + ')">✏️</button> ' +
+                '<button class="btn btn--sm" onclick="deleteUser(' + u.id + ')">🗑️</button>' +
+            '</td>' +
+        '</tr>';
+    }).join('');
+    c.innerHTML = '<table><thead><th>Login</th><th>Nome</th><th>Permissão</th><th>Status</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
+    
+    // Atualiza Stats de Usuários
+    if(document.getElementById('total-users')) document.getElementById('total-users').textContent = users.length;
+    if(document.getElementById('active-users')) document.getElementById('active-users').textContent = users.filter(u=>u.status==='Ativo').length;
+    if(document.getElementById('inactive-users')) document.getElementById('inactive-users').textContent = users.filter(u=>u.status!=='Ativo').length;
+}
+
+function deleteUser(id) {
+    const u = users.find(function(x) { return x.id === id; });
+    if (u.login === 'ADMIN') {
+        alert('Erro: Não é permitido excluir o Administrador Principal.');
+        return;
+    }
+    if (confirm('Tem certeza que deseja excluir este usuário?')) {
+        users = users.filter(function(x) { return x.id !== id; });
+        salvarNoArmazenamento('users', users);
+        renderUsers();
+    }
+}
+
+function closeUserModal() { document.getElementById('user-modal').classList.remove('show'); }
+function clearUserFilters() { document.getElementById('filter-user-name').value=''; renderUsers(); }
+
+
+// --- CARGOS ---
+function showCargoModal(id=null){ editingId=id; document.getElementById('cargo-form').reset(); if(id){const c=cargos.find(x=>x.id===id); document.getElementById('cargo-name').value=c.name; if(document.getElementById('cargo-description')) document.getElementById('cargo-description').value=c.description||'';} document.getElementById('cargo-modal').classList.add('show'); }
+function saveCargo(e){ e.preventDefault(); const data={name:document.getElementById('cargo-name').value, description:document.getElementById('cargo-description')?document.getElementById('cargo-description').value:''}; if(editingId){const i=cargos.findIndex(x=>x.id===editingId); cargos[i]={...cargos[i],...data};}else{cargos.push({id:getNextId('cargo'),...data});} salvarNoArmazenamento('cargos',cargos); document.getElementById('cargo-modal').classList.remove('show'); renderCargos(); }
+function renderCargos(){ const c=document.getElementById('cargos-table'); if(cargos.length===0){c.innerHTML='Vazio.';return;} const r=cargos.map(x=>`<tr><td>${x.name}</td><td>${x.description||'-'}</td><td><button class="btn btn--sm" onclick="showCargoModal(${x.id})">✏️</button> <button class="btn btn--sm" onclick="deleteCargo(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Cargo</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; if(document.getElementById('cargos-total')) document.getElementById('cargos-total').textContent = `Total: ${cargos.length}`; }
+function deleteCargo(id){ if(confirm('Excluir?')){ cargos=cargos.filter(x=>x.id!==id); salvarNoArmazenamento('cargos',cargos); renderCargos(); }}
+function closeCargoModal(){document.getElementById('cargo-modal').classList.remove('show');}
+
+// --- ORIENTADORES ---
+function showOrientadorModal(id=null){ editingId=id; document.getElementById('orientador-form').reset(); if(id){const o=orientadores.find(x=>x.id===id); document.getElementById('orientador-name').value=o.name; document.getElementById('orientador-contact').value=o.contact; document.getElementById('orientador-email').value=o.email;} document.getElementById('orientador-modal').classList.add('show'); }
+function saveOrientador(e){ e.preventDefault(); const data={name:document.getElementById('orientador-name').value, contact:document.getElementById('orientador-contact').value, email:document.getElementById('orientador-email').value}; if(editingId){const i=orientadores.findIndex(x=>x.id===editingId); orientadores[i]={...orientadores[i],...data};}else{orientadores.push({id:getNextId('orient'),...data});} salvarNoArmazenamento('orientadores',orientadores); document.getElementById('orientador-modal').classList.remove('show'); renderOrientadores(); }
+function renderOrientadores(){ const c=document.getElementById('orientadores-table'); if(orientadores.length===0){c.innerHTML='Vazio.';return;} const r=orientadores.map(x=>`<tr><td>${x.name}</td><td>${x.contact}</td><td><button class="btn btn--sm" onclick="showOrientadorModal(${x.id})">✏️</button> <button class="btn btn--sm" onclick="deleteOrientador(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Nome</th><th>Contato</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; if(document.getElementById('orientadores-total')) document.getElementById('orientadores-total').textContent = `Total: ${orientadores.length}`; }
+function deleteOrientador(id){ if(confirm('Excluir?')){ orientadores=orientadores.filter(x=>x.id!==id); salvarNoArmazenamento('orientadores',orientadores); renderOrientadores(); }}
+function closeOrientadorModal(){document.getElementById('orientador-modal').classList.remove('show');}
+
+// --- MÓDULOS ---
+function showModuloModal(id=null){ editingId=id; document.getElementById('modulo-form').reset(); const f=document.getElementById('modulo-form'); if(!document.getElementById('modulo-description')){const d=document.createElement('div');d.className='form-group';d.innerHTML=`<label class="form-label">Descrição</label><textarea class="form-control" id="modulo-description"></textarea>`;f.insertBefore(d,f.querySelector('.modal-actions'));} if(id){const m=modulos.find(x=>x.id===id); document.getElementById('modulo-name').value=m.name; document.getElementById('modulo-abbreviation').value=m.abbreviation; document.getElementById('modulo-description').value=m.description||'';} document.getElementById('modulo-modal').classList.add('show'); }
+function saveModulo(e){ e.preventDefault(); const data={name:document.getElementById('modulo-name').value, abbreviation:document.getElementById('modulo-abbreviation').value, description:document.getElementById('modulo-description').value, color: '#005580'}; if(editingId){const i=modulos.findIndex(x=>x.id===editingId); modulos[i]={...modulos[i],...data};}else{modulos.push({id:getNextId('mod'),...data});} salvarNoArmazenamento('modulos',modulos); document.getElementById('modulo-modal').classList.remove('show'); renderModulos(); }
+function renderModulos(){ const c=document.getElementById('modulos-table'); if(modulos.length===0){c.innerHTML='Vazio.';return;} const r=modulos.map(x=>`<tr><td>${x.name}</td><td>${x.abbreviation}</td><td><button class="btn btn--sm" onclick="showModuloModal(${x.id})">✏️</button> <button class="btn btn--sm" onclick="deleteModulo(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Módulo</th><th>Abrev.</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; if(document.getElementById('modulos-total')) document.getElementById('modulos-total').textContent = `Total: ${modulos.length}`; }
+function deleteModulo(id){ if(confirm('Excluir?')){ modulos=modulos.filter(x=>x.id!==id); salvarNoArmazenamento('modulos',modulos); renderModulos(); }}
+function closeModuloModal(){document.getElementById('modulo-modal').classList.remove('show');}
+
+// --- LISTA MESTRA MUNICÍPIOS ---
+function showMunicipalityListModal(id=null){ editingId=id; document.getElementById('municipality-list-form').reset(); if(id){const m=municipalitiesList.find(x=>x.id===id); document.getElementById('municipality-list-name').value=m.name; document.getElementById('municipality-list-uf').value=m.uf;} document.getElementById('municipality-list-modal').classList.add('show'); }
+function saveMunicipalityList(e){ e.preventDefault(); const data={name:document.getElementById('municipality-list-name').value, uf:document.getElementById('municipality-list-uf').value}; if(editingId){const i=municipalitiesList.findIndex(x=>x.id===editingId); municipalitiesList[i]={...municipalitiesList[i],...data};}else{municipalitiesList.push({id:getNextId('munList'),...data});} salvarNoArmazenamento('municipalitiesList',municipalitiesList); document.getElementById('municipality-list-modal').classList.remove('show'); renderMunicipalityList(); updateGlobalDropdowns(); showToast('Salvo!'); }
+function renderMunicipalityList(){ const c=document.getElementById('municipalities-list-table'); if(municipalitiesList.length===0){c.innerHTML='Vazio.';return;} const r=municipalitiesList.sort((a,b)=>a.name.localeCompare(b.name)).map(m=>`<tr><td>${m.name}</td><td>${m.uf}</td><td><button class="btn btn--sm" onclick="showMunicipalityListModal(${m.id})">✏️</button> <button class="btn btn--sm" onclick="deleteMunicipalityList(${m.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Nome</th><th>UF</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; if(document.getElementById('municipalities-list-total')) document.getElementById('municipalities-list-total').textContent = `Total: ${municipalitiesList.length}`; }
+function deleteMunicipalityList(id){ if(confirm('Excluir?')){ municipalitiesList=municipalitiesList.filter(x=>x.id!==id); salvarNoArmazenamento('municipalitiesList',municipalitiesList); renderMunicipalityList(); updateGlobalDropdowns(); }}
+function closeMunicipalityListModal(){document.getElementById('municipality-list-modal').classList.remove('show');}
+
+// --- FORMAS DE APRESENTAÇÃO ---
+function showFormaApresentacaoModal(id=null){ editingId=id; document.getElementById('forma-apresentacao-form').reset(); if(id){const f=formasApresentacao.find(x=>x.id===id); document.getElementById('forma-apresentacao-name').value=f.name;} document.getElementById('forma-apresentacao-modal').classList.add('show'); }
+function saveFormaApresentacao(e){ e.preventDefault(); const data={name:document.getElementById('forma-apresentacao-name').value}; if(editingId){const i=formasApresentacao.findIndex(x=>x.id===editingId); formasApresentacao[i]={...formasApresentacao[i],...data};}else{formasApresentacao.push({id:getNextId('forma'),...data});} salvarNoArmazenamento('formasApresentacao',formasApresentacao); document.getElementById('forma-apresentacao-modal').classList.remove('show'); renderFormas(); }
+function renderFormas(){ const c=document.getElementById('formas-apresentacao-table'); if(formasApresentacao.length===0){c.innerHTML='Vazio.';return;} const r=formasApresentacao.map(x=>`<tr><td>${x.name}</td><td><button class="btn btn--sm" onclick="showFormaApresentacaoModal(${x.id})">✏️</button> <button class="btn btn--sm" onclick="deleteForma(${x.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Forma</th><th>Ações</th></thead><tbody>${r}</tbody></table>`; if(document.getElementById('formas-apresentacao-total')) document.getElementById('formas-apresentacao-total').textContent = `Total: ${formasApresentacao.length}`; }
+function deleteForma(id){ if(confirm('Excluir?')){ formasApresentacao=formasApresentacao.filter(x=>x.id!==id); salvarNoArmazenamento('formasApresentacao',formasApresentacao); renderFormas(); }}
+function closeFormaApresentacaoModal(){document.getElementById('forma-apresentacao-modal').classList.remove('show');}
+
 
 // =====================================================
-// 19. BACKUP E RESTORE (COM PREVIEW COMPLETO - ATUALIZADO)
+// 20. BACKUP E RESTAURAÇÃO (COM PREVIEW COMPLETO)
 // =====================================================
 function updateBackupInfo() {
     if(document.getElementById('backup-info-municipalities')) document.getElementById('backup-info-municipalities').textContent = municipalities.length;
     if(document.getElementById('backup-info-trainings')) document.getElementById('backup-info-trainings').textContent = tasks.length;
     
-    // Adicionar os outros contadores se existirem no HTML novo
+    // Atualiza contadores detalhados se existirem no HTML
     if(document.getElementById('backup-info-cargos')) document.getElementById('backup-info-cargos').textContent = cargos.length;
     if(document.getElementById('backup-info-orientadores')) document.getElementById('backup-info-orientadores').textContent = orientadores.length;
     if(document.getElementById('backup-info-modules')) document.getElementById('backup-info-modules').textContent = modulos.length;
     if(document.getElementById('backup-info-users')) document.getElementById('backup-info-users').textContent = users.length;
+    if(document.getElementById('backup-info-requests')) document.getElementById('backup-info-requests').textContent = requests.length;
+    if(document.getElementById('backup-info-presentations')) document.getElementById('backup-info-presentations').textContent = presentations.length;
+    if(document.getElementById('backup-info-formas')) document.getElementById('backup-info-formas').textContent = formasApresentacao.length;
+    if(document.getElementById('backup-info-demands')) document.getElementById('backup-info-demands').textContent = demands.length;
 }
 
 function createBackup() {
     const backupData = { 
-        version: "v30.0", 
+        version: "v31.0", 
         date: new Date().toISOString(), 
         data: { 
             users: users, 
@@ -1786,6 +1457,7 @@ function createBackup() {
             visits: visits, 
             productions: productions, 
             presentations: presentations, 
+            systemVersions: systemVersions,
             cargos: cargos, 
             orientadores: orientadores, 
             modulos: modulos, 
@@ -1798,19 +1470,31 @@ function createBackup() {
     const dl = document.createElement('a');
     dl.setAttribute("href", dataStr);
     dl.setAttribute("download", "backup_sigp_" + new Date().toISOString().slice(0,10) + ".json");
-    document.body.appendChild(dl); dl.click(); dl.remove();
-    showToast('Backup Baixado!');
+    document.body.appendChild(dl); 
+    dl.click(); 
+    dl.remove();
+    showToast('Backup baixado com sucesso!', 'success');
 }
 
-function triggerRestoreBackup() { document.getElementById('backup-file-input').click(); }
+function triggerRestoreBackup() { 
+    const input = document.getElementById('backup-file-input');
+    if(input) input.click(); 
+}
 
 function handleBackupFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
+    
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
             const backup = JSON.parse(e.target.result);
+            
+            if (!backup.data) {
+                alert('Arquivo inválido ou corrompido.');
+                return;
+            }
+            
             pendingBackupData = backup;
             
             const list = document.getElementById('restore-preview-list');
@@ -1818,29 +1502,34 @@ function handleBackupFileSelect(event) {
                 list.innerHTML = '';
                 const d = backup.data;
                 
-                // Lista COMPLETA
+                // Lista COMPLETA para preview
                 const items = [
-                    {l:'Treinamentos',c:d.tasks?d.tasks.length:(d.trainings?d.trainings.length:0)},
-                    {l:'Municípios Clientes',c:d.municipalities.length},
-                    {l:'Lista Mestra',c:d.municipalitiesList?.length||0},
-                    {l:'Solicitações',c:d.requests?.length||0},
-                    {l:'Apresentações',c:d.presentations?.length||0},
-                    {l:'Demandas',c:d.demands?.length||0},
-                    {l:'Visitas',c:d.visits?.length||0},
-                    {l:'Produção',c:d.productions?.length||0},
-                    {l:'Cargos',c:d.cargos?.length||0},
-                    {l:'Orientadores',c:d.orientadores?.length||0},
-                    {l:'Módulos',c:d.modules?.length||0},
-                    {l:'Formas',c:d.formasApresentacao?.length||0},
-                    {l:'Usuários',c:d.users.length}
+                    {l:'Treinamentos', c: d.tasks ? d.tasks.length : (d.trainings ? d.trainings.length : 0)},
+                    {l:'Municípios Clientes', c: d.municipalities.length},
+                    {l:'Lista Mestra', c: d.municipalitiesList ? d.municipalitiesList.length : 0},
+                    {l:'Solicitações', c: d.requests ? d.requests.length : 0},
+                    {l:'Apresentações', c: d.presentations ? d.presentations.length : 0},
+                    {l:'Demandas', c: d.demands ? d.demands.length : 0},
+                    {l:'Visitas', c: d.visits ? d.visits.length : 0},
+                    {l:'Produção', c: d.productions ? d.productions.length : 0},
+                    {l:'Cargos', c: d.cargos.length},
+                    {l:'Orientadores', c: d.orientadores.length},
+                    {l:'Módulos', c: d.modules.length},
+                    {l:'Formas Apres.', c: d.formasApresentacao ? d.formasApresentacao.length : 0},
+                    {l:'Usuários', c: d.users.length}
                 ];
                 
                 items.forEach(i => {
-                    list.innerHTML += `<li><strong>${i.l}:</strong> ${i.c}</li>`;
+                    list.innerHTML += `<li>${i.l}: <strong>${i.c}</strong></li>`;
                 });
             }
+            
             document.getElementById('restore-confirm-modal').classList.add('show');
-        } catch(e) { alert('Erro ao ler arquivo.'); }
+            
+        } catch (err) { 
+            alert('Erro ao ler arquivo. Verifique se é um JSON válido.'); 
+            console.error(err);
+        }
     };
     reader.readAsText(file);
 }
@@ -1851,6 +1540,7 @@ function confirmRestore() {
     
     localStorage.clear();
     
+    // Restaura item por item com segurança
     localStorage.setItem('users', JSON.stringify(d.users));
     localStorage.setItem('municipalities', JSON.stringify(d.municipalities));
     localStorage.setItem('municipalitiesList', JSON.stringify(d.municipalitiesList));
@@ -1860,24 +1550,34 @@ function confirmRestore() {
     localStorage.setItem('visits', JSON.stringify(d.visits));
     localStorage.setItem('productions', JSON.stringify(d.productions));
     localStorage.setItem('presentations', JSON.stringify(d.presentations));
+    localStorage.setItem('systemVersions', JSON.stringify(d.systemVersions));
     localStorage.setItem('cargos', JSON.stringify(d.cargos));
     localStorage.setItem('orientadores', JSON.stringify(d.orientadores));
     localStorage.setItem('modulos', JSON.stringify(d.modules || d.modulos));
     localStorage.setItem('formasApresentacao', JSON.stringify(d.formasApresentacao));
-    localStorage.setItem('counters', JSON.stringify(d.counters));
     
-    // Logout forçado para limpar memória
+    if (d.counters) {
+        localStorage.setItem('counters', JSON.stringify(d.counters));
+    }
+    
+    // Logout forçado
     deletarDoArmazenamento('currentUser');
     deletarDoArmazenamento('isAuthenticated');
     
-    alert('Restaurado com sucesso! Faça login novamente.');
+    alert('Restauração concluída com sucesso! Por favor, faça login novamente.');
     location.reload();
 }
 
-function closeRestoreConfirmModal() { document.getElementById('restore-confirm-modal').classList.remove('show'); }
+function closeRestoreConfirmModal() { 
+    document.getElementById('restore-confirm-modal').classList.remove('show'); 
+    pendingBackupData = null;
+    // Limpa o input para permitir selecionar o mesmo arquivo novamente se quiser
+    document.getElementById('backup-file-input').value = '';
+}
+
 
 // =====================================================
-// 20. INICIALIZAÇÃO
+// 21. DASHBOARD E INICIALIZAÇÃO
 // =====================================================
 function updateDashboardStats() {
     document.getElementById('dashboard-municipalities-in-use').textContent = municipalities.filter(function(m) { return m.status === 'Em uso'; }).length;
@@ -1889,7 +1589,11 @@ function updateDashboardStats() {
 function initializeDashboardCharts() {
     const ctx = document.getElementById('implantationsYearChart');
     if(!ctx || !window.Chart) return;
-    if(chartDashboard) chartDashboard.destroy();
+    
+    if(chartDashboard) {
+        chartDashboard.destroy();
+    }
+    
     const dataMap = {}; 
     municipalities.forEach(function(m) { 
         if(m.implantationDate) { 
@@ -1897,59 +1601,101 @@ function initializeDashboardCharts() {
             dataMap[y] = (dataMap[y] || 0) + 1; 
         } 
     });
+    
     const years = Object.keys(dataMap).sort();
     const counts = years.map(function(y) { return dataMap[y]; });
-    const bgColors = years.map(function(_, i) { return CHART_COLORS[i % CHART_COLORS.length]; });
+    
+    const bgColors = years.map(function(_, i) { 
+        return CHART_COLORS[i % CHART_COLORS.length]; 
+    });
 
-    chartDashboard = new Chart(ctx, { type: 'bar', data: { labels: years, datasets: [{ label: 'Implantações', data: counts, backgroundColor: bgColors, barPercentage: 0.6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+    chartDashboard = new Chart(ctx, { 
+        type: 'bar', 
+        data: { 
+            labels: years, 
+            datasets: [{ 
+                label: 'Implantações', 
+                data: counts, 
+                backgroundColor: bgColors, 
+                barPercentage: 0.6 
+            }] 
+        }, 
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { display: false } } 
+        } 
+    });
 }
 
 function populateSelect(selectId, data, valKey, textKey) {
     const select = document.getElementById(selectId);
     if(!select) return;
+    
     const current = select.value;
     let html = '<option value="">Selecione...</option>';
-    data.sort(function(a,b){ return a[textKey].localeCompare(b[textKey]); }).forEach(function(i) { html += '<option value="' + i[valKey] + '">' + i[textKey] + '</option>'; });
+    
+    data.sort(function(a,b){ return a[textKey].localeCompare(b[textKey]); }).forEach(function(i) { 
+        html += '<option value="' + i[valKey] + '">' + i[textKey] + '</option>'; 
+    });
+    
     select.innerHTML = html;
     select.value = current;
 }
 
-function updateGlobalDropdowns() {
-    const activeMuns = municipalities.filter(function(m) { return m.status === 'Em uso'; });
-    ['task-municipality','request-municipality','visit-municipality','production-municipality','presentation-municipality'].forEach(function(id) { 
-        populateSelect(id, activeMuns, 'name', 'name'); 
-    });
+function populateFilterSelects() {
+    const muns = municipalities.slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+    const filterIds = ['filter-municipality-name','filter-task-municipality','filter-request-municipality','filter-visit-municipality','filter-production-municipality','filter-presentation-municipality'];
     
-    const muns = municipalities.slice().sort(function(a,b){return a.name.localeCompare(b.name);});
-    ['filter-municipality-name','filter-task-municipality','filter-request-municipality','filter-visit-municipality','filter-production-municipality','filter-presentation-municipality'].forEach(function(id) { 
+    filterIds.forEach(function(id) { 
         const el = document.getElementById(id); 
         if(el) { 
             let html = '<option value="">Todos</option>'; 
-            muns.forEach(function(m) { html += '<option value="' + m.name + '">' + m.name + '</option>'; }); 
+            muns.forEach(function(m) { 
+                html += '<option value="' + m.name + '">' + m.name + '</option>'; 
+            }); 
             el.innerHTML = html; 
         } 
     });
     
     // Orientadores e Cargos
-    const taskPerf = document.getElementById('task-performed-by');
-    if(taskPerf) populateSelect('task-performed-by', orientadores, 'name', 'name');
-    const taskPos = document.getElementById('task-trained-position');
-    if(taskPos) populateSelect('task-trained-position', cargos, 'name', 'name');
+    const oriSelect = document.getElementById('filter-task-performer');
+    if(oriSelect && oriSelect.tagName === 'SELECT') { // Se for select no HTML
+         // Se não, nada a fazer (é input text)
+    }
+    
+    const presOriSelect = document.getElementById('filter-presentation-orientador');
+    if(presOriSelect) {
+        let html = '<option value="">Todos</option>';
+        orientadores.forEach(function(o) { html += '<option value="' + o.name + '">' + o.name + '</option>'; });
+        presOriSelect.innerHTML = html;
+    }
 }
 
-// Helper de Campos Dinâmicos (Caso o HTML não tenha sido atualizado, mas v28 já tem)
-function setupDynamicFormFields() {
-    // Mantido vazio pois v28 HTML já tem os campos
+function updateGlobalDropdowns() {
+    const activeMuns = municipalities.filter(function(m) { return m.status === 'Em uso'; });
+    
+    ['task-municipality','request-municipality','visit-municipality','production-municipality','presentation-municipality'].forEach(function(id) { 
+        populateSelect(id, activeMuns, 'name', 'name'); 
+    });
+    
+    // Atualiza selects de formulários específicos
+    if(document.getElementById('task-performed-by')) populateSelect('task-performed-by', orientadores, 'name', 'name');
+    if(document.getElementById('task-trained-position')) populateSelect('task-trained-position', cargos, 'name', 'name');
+
+    populateFilterSelects();
 }
 
+// Inicialização Principal
 function initializeApp() {
     updateUserInterface();
     initializeTheme();
     initializeTabs();
     applyMasks();
-    
+    setupDynamicFormFields(); // Garante campos extras
     updateGlobalDropdowns();
     
+    // Renderiza todas as tabelas
     renderMunicipalities();
     renderTasks();
     renderRequests();
@@ -1957,8 +1703,9 @@ function initializeApp() {
     renderVisits();
     renderProductions();
     renderPresentations();
+    renderVersions();
     
-    // Configurações
+    // Configs
     renderUsers();
     renderCargos();
     renderOrientadores();
@@ -1969,16 +1716,41 @@ function initializeApp() {
     updateDashboardStats();
     initializeDashboardCharts();
     
-    // Menu Mobile
+    // Listener global para fechar menu mobile
     const overlay = document.querySelector('.sidebar-overlay');
-    if (overlay) overlay.onclick = toggleMobileMenu;
+    if (overlay) {
+        overlay.onclick = toggleMobileMenu;
+    }
     
-    if(!document.querySelector('.sidebar-btn.active')) navigateToHome();
+    // Se nenhuma aba ativa, vai para home
+    if(!document.querySelector('.sidebar-btn.active')) {
+        navigateToHome();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     checkAuthentication();
-    window.onclick = function(e) { if(e.target.classList.contains('modal')) e.target.classList.remove('show'); };
-    document.querySelectorAll('.close-btn').forEach(function(b) { b.onclick = function(){ this.closest('.modal').classList.remove('show'); }; });
-    document.querySelectorAll('.btn--secondary').forEach(function(b) { if(b.textContent.includes('Cancelar')) b.onclick = function(){ this.closest('.modal').classList.remove('show'); }; });
+    
+    // Fechar modais ao clicar fora
+    window.onclick = function(e) { 
+        if (e.target.classList.contains('modal')) {
+            e.target.classList.remove('show');
+        }
+    };
+    
+    // Botoes fechar modal
+    document.querySelectorAll('.close-btn').forEach(function(b) { 
+        b.onclick = function(){ 
+            this.closest('.modal').classList.remove('show'); 
+        }; 
+    });
+    
+    // Botoes cancelar modal
+    document.querySelectorAll('.btn--secondary').forEach(function(b) { 
+        if (b.textContent.includes('Cancelar')) {
+            b.onclick = function(){ 
+                this.closest('.modal').classList.remove('show'); 
+            }; 
+        }
+    });
 });
