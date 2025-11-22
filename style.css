@@ -3431,3 +3431,22 @@ table th {
     text-align: center;
     font-size: 12px;
 }
+/* ==========================================================================
+   CORREÇÃO ALINHAMENTO TABELA MUNICÍPIOS
+   Adicione no FINAL do style.css
+   ========================================================================== */
+
+/* Força o cabeçalho das colunas de data a ficarem centralizados */
+#municipalities-table th:nth-child(5),  /* Data Implantação */
+#municipalities-table th:nth-child(6),  /* Última Visita */
+#municipalities-table th:nth-child(10)  /* Data Bloqueio */ {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+/* Garante que o conteúdo dessas colunas também esteja centralizado */
+#municipalities-table td:nth-child(5),
+#municipalities-table td:nth-child(6),
+#municipalities-table td:nth-child(10) {
+    text-align: center !important;
+}
