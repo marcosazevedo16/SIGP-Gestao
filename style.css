@@ -2473,20 +2473,17 @@ tbody tr:hover {
 
 ```css
 /* ==========================================================================
-   📱 ESTILO MOBILE V12 - CORREÇÃO DEFINITIVA (PC vs CELULAR)
-   Apague todo o CSS Mobile anterior e cole este.
+   📱 ESTILO MOBILE V13 - MENU INVISÍVEL NO PC / VISÍVEL NO CELULAR
+   Cole isso no FINAL do arquivo style.css (substituindo o anterior)
    ========================================================================== */
 
-/* ----------------------------------------------------------
-   1. REGRA GERAL (PC/DESKTOP)
-   Isso garante que o botão NUNCA apareça em telas grandes.
-   ---------------------------------------------------------- */
+/* 1. REGRA GLOBAL: Oculta o botão em TODAS as telas por padrão (PC) */
 button.mobile-menu-toggle,
 .mobile-menu-toggle {
-    display: none !important; /* some daqui! */
+    display: none !important; 
 }
 
-/* Overlay do menu (sempre oculto por padrão) */
+/* Oculta o overlay também */
 .sidebar-overlay {
     display: none;
     position: fixed;
@@ -2496,16 +2493,13 @@ button.mobile-menu-toggle,
     backdrop-filter: blur(3px);
 }
 
-/* ----------------------------------------------------------
-   2. REGRA ESPECÍFICA PARA CELULAR/TABLET (Max 900px)
-   Tudo aqui dentro só acontece quando a tela é pequena.
-   ---------------------------------------------------------- */
+/* 2. APENAS NO CELULAR (Telas até 900px) - Aqui nós "ligamos" o botão */
 @media (max-width: 900px) {
     
-    /* === FORÇA O BOTÃO A APARECER SOMENTE AQUI === */
+    /* === FORÇA O BOTÃO A APARECER === */
     html body .app-header .mobile-menu-toggle,
     button.mobile-menu-toggle {
-        display: inline-flex !important; /* Aparece! */
+        display: inline-flex !important; /* Ressuscita o botão no celular */
         align-items: center;
         justify-content: center;
         font-size: 0.95rem;
@@ -2516,7 +2510,7 @@ button.mobile-menu-toggle,
         cursor: pointer;
         z-index: 1100;
         
-        /* CORES: Texto Branco e Borda Branca (Independente do Tema) */
+        /* CORES BRANCAS FIXAS (Independente do tema) */
         color: #ffffff !important; 
         border: 1px solid rgba(255, 255, 255, 0.6) !important;
         background-color: rgba(0, 0, 0, 0.25) !important;
@@ -2529,13 +2523,13 @@ button.mobile-menu-toggle,
         color: #ffffff !important;
     }
 
-    /* Layout em Coluna */
+    /* Layout Coluna */
     .app-layout {
         flex-direction: column;
         margin-top: 0;
     }
 
-    /* Cabeçalho Azul */
+    /* Cabeçalho Sempre Azul */
     .app-header {
         padding: 12px 15px;
         position: sticky;
@@ -2559,6 +2553,7 @@ button.mobile-menu-toggle,
         justify-content: flex-start;
     }
     
+    /* Esconde "Bem vindo" no celular */
     .header-user-info {
         display: none !important;
     }
@@ -2572,7 +2567,7 @@ button.mobile-menu-toggle,
         height: 100vh;
         background-color: #003d5c;
         transition: left 0.3s ease;
-        z-index: 9999;
+        z-index: 9999; /* Acima do cabeçalho */
         box-shadow: 4px 0 15px rgba(0,0,0,0.6);
         padding-top: 10px;
         overflow-y: auto;
@@ -2662,7 +2657,7 @@ button.mobile-menu-toggle,
         border: 1px solid rgba(255,255,255,0.3) !important;
     }
 
-    /* Tabelas */
+    /* Tabelas com rolagem */
     .tasks-table, .municipalities-table {
         display: block;
         width: 100%;
