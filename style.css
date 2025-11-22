@@ -2473,28 +2473,35 @@ tbody tr:hover {
 
 ```css
 /* ==========================================================================
-   📱 ESTILO MOBILE V5 - BOTÃO VISÍVEL E MENU AJUSTADO
-   Substitua o bloco @media (max-width: 900px) antigo por este.
+   📱 ESTILO MOBILE V6 - BOTÃO MENU FIXED (SEMPRE BRANCO)
+   Substitua todo o bloco @media anterior por este.
    ========================================================================== */
 
-/* Botão do Menu - Forçado para ser BRANCO em qualquer tema */
-.mobile-menu-toggle {
+/* Botão do Menu - VISIBILIDADE FORÇADA */
+/* Usamos "button.mobile-menu-toggle" para ter mais peso que ".btn" */
+button.mobile-menu-toggle {
     display: none; /* Escondido no PC */
     font-size: 1rem;
     padding: 6px 12px;
     margin-right: 10px;
-    border: 1px solid rgba(255,255,255,0.6) !important; 
-    background-color: rgba(0,0,0,0.2) !important; 
-    color: #ffffff !important; /* ISSO CORRIGE O BOTÃO NO TEMA CLARO */
-    z-index: 200;
+    
+    /* Força borda e fundo */
+    border: 1px solid rgba(255, 255, 255, 0.5) !important; 
+    background-color: rgba(0, 0, 0, 0.2) !important; 
+    
+    /* Força texto BRANCO ignorando o tema */
+    color: #ffffff !important; 
+    
+    z-index: 1100; /* Acima de tudo */
     cursor: pointer;
     border-radius: 4px;
     height: 38px;
     align-items: center;
+    justify-content: center;
 }
 
-/* Ícone dentro do botão */
-.mobile-menu-toggle span {
+/* Garante que o ícone dentro do botão também seja branco */
+button.mobile-menu-toggle span {
     color: #ffffff !important;
 }
 
@@ -2504,15 +2511,15 @@ tbody tr:hover {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.7);
-    z-index: 1000;
+    z-index: 1900; /* Logo abaixo do menu */
     backdrop-filter: blur(3px);
 }
 
 /* Ajustes para Celular */
 @media (max-width: 900px) {
     
-    /* 1. Mostra o botão de menu */
-    .mobile-menu-toggle {
+    /* 1. Mostra o botão de menu (Flex para alinhar ícone e texto) */
+    button.mobile-menu-toggle {
         display: inline-flex;
     }
 
@@ -2522,14 +2529,20 @@ tbody tr:hover {
         margin-top: 0;
     }
 
-    /* 3. Cabeçalho */
+    /* 3. Cabeçalho sempre AZUL */
     .app-header {
         padding: 10px 15px;
         position: sticky;
         top: 0;
-        z-index: 100; /* Z-index menor que o menu */
+        z-index: 100;
         height: auto;
-        /* Mantém sua cor azul original */
+        background-color: #003d5c !important; /* Fundo Azul Obrigatório */
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    /* Força textos do header a serem brancos */
+    .app-header h1, .subtitle {
+        color: #ffffff !important;
     }
     
     .header-content {
@@ -2539,73 +2552,71 @@ tbody tr:hover {
         justify-content: space-between;
     }
 
-    /* 4. MENU LATERAL (GAVETA) CORRIGIDO */
+    /* 4. MENU LATERAL (GAVETA) */
     .sidebar {
         position: fixed;
         top: 0;
-        left: -270px; /* Esconde totalmente (Largura + sombra) */
-        width: 250px; /* LARGURA REDUZIDA (era 300px) */
+        left: -270px; /* Escondido */
+        width: 250px;
         height: 100vh;
-        background-color: #003d5c; /* Fundo Azul */
-        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 2000; /* BEM ALTO para ficar na frente do cabeçalho */
+        background-color: #003d5c;
+        transition: left 0.3s ease;
+        z-index: 2000; /* Acima do header */
         box-shadow: 4px 0 15px rgba(0,0,0,0.6);
-        padding-top: 20px; /* Espaço no topo */
+        padding-top: 20px;
         overflow-y: auto;
-        display: block !important; /* Garante que não suma */
+        display: block !important;
+        border-right: 1px solid rgba(255,255,255,0.1);
     }
 
-    /* Abre o menu */
     .sidebar.mobile-open {
         left: 0;
     }
 
-    /* 5. Itens do Menu (Vertical) */
+    /* 5. Itens do Menu */
     .sidebar-nav {
         display: flex;
         flex-direction: column !important;
         width: 100%;
         padding: 0;
-        margin-top: 0;
     }
 
-    /* Estilo dos botões do menu */
     .sidebar-btn {
         display: flex;
         align-items: center;
         justify-content: flex-start;
         width: 100%;
-        padding: 14px 15px;
-        font-size: 13px; /* Fonte ajustada para caber */
+        padding: 14px 20px;
+        font-size: 14px;
         border-bottom: 1px solid rgba(255,255,255,0.05);
         border-left: 4px solid transparent;
         color: rgba(255,255,255,0.9) !important; /* Texto sempre claro */
         background: transparent;
         height: auto;
-        white-space: normal !important; /* Permite quebra de linha */
-        line-height: 1.3;
+        white-space: normal !important;
     }
 
     .sidebar-btn.active {
         background-color: rgba(255,255,255,0.15);
         border-left-color: #40A9FF;
-        color: white !important;
+        color: #ffffff !important;
         font-weight: 700;
     }
 
     .sidebar-icon {
         font-size: 18px;
-        margin-right: 10px;
+        margin-right: 12px;
         min-width: 24px;
         text-align: center;
+        color: #ffffff !important;
     }
     
-    /* Esconde o texto do botão se for muito longo apenas no ícone */
+    /* Garante que o texto do botão apareça */
     .sidebar-btn span:last-child {
         display: block;
     }
 
-    /* 6. Conteúdo Principal */
+    /* 6. Conteúdo */
     .main-content {
         margin-left: 0;
         width: 100%;
@@ -2613,24 +2624,29 @@ tbody tr:hover {
         padding-top: 20px;
     }
 
-    /* 7. Botões do Topo (Ajuste fino) */
+    /* 7. Botões do Topo */
     .header-actions {
         width: 100%;
         justify-content: space-between;
         margin-top: 10px;
-        gap: 5px;
+        gap: 8px;
     }
     
     .header-actions .btn {
         font-size: 11px;
-        padding: 8px 4px;
+        padding: 8px 6px;
         flex: 1;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
+    }
+    
+    /* Correção para botões secundários no fundo azul */
+    .header-actions .btn--outline,
+    .header-actions .btn--secondary {
+        background-color: rgba(255,255,255,0.1) !important;
+        color: white !important;
+        border-color: rgba(255,255,255,0.3) !important;
     }
 
-    /* Tabelas responsivas */
+    /* Tabelas */
     .tasks-table, .municipalities-table {
         display: block;
         width: 100%;
@@ -2638,7 +2654,6 @@ tbody tr:hover {
         -webkit-overflow-scrolling: touch;
     }
 
-    /* Overlay */
     .sidebar-overlay.active {
         display: block;
     }
