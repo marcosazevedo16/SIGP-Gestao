@@ -2473,17 +2473,11 @@ tbody tr:hover {
 
 ```css
 /* ==========================================================================
-   📱 ESTILO MOBILE V13 - MENU INVISÍVEL NO PC / VISÍVEL NO CELULAR
-   Cole isso no FINAL do arquivo style.css (substituindo o anterior)
+   📱 ESTILO V14 - CORREÇÃO DEFINITIVA PC VS CELULAR
+   Substitua todo o final do arquivo style.css por este bloco.
    ========================================================================== */
 
-/* 1. REGRA GLOBAL: Oculta o botão em TODAS as telas por padrão (PC) */
-button.mobile-menu-toggle,
-.mobile-menu-toggle {
-    display: none !important; 
-}
-
-/* Oculta o overlay também */
+/* Overlay do menu (sempre oculto por padrão) */
 .sidebar-overlay {
     display: none;
     position: fixed;
@@ -2493,28 +2487,57 @@ button.mobile-menu-toggle,
     backdrop-filter: blur(3px);
 }
 
-/* 2. APENAS NO CELULAR (Telas até 900px) - Aqui nós "ligamos" o botão */
+/* ==========================================================================
+   🖥️ REGRAS APENAS PARA COMPUTADOR (Telas maiores que 900px)
+   Aqui nós garantimos que o botão suma e o layout fique alinhado.
+   ========================================================================== */
+@media (min-width: 901px) {
+    /* ESCONDER O BOTÃO NA FORÇA BRUTA */
+    button.mobile-menu-toggle,
+    .mobile-menu-toggle,
+    .app-header .mobile-menu-toggle {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+    }
+    
+    /* Garante o alinhamento do título no PC */
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+
+/* ==========================================================================
+   📱 REGRAS APENAS PARA CELULAR (Telas até 900px)
+   Aqui nós montamos o layout mobile e mostramos o botão.
+   ========================================================================== */
 @media (max-width: 900px) {
     
-    /* === FORÇA O BOTÃO A APARECER === */
+    /* 1. BOTÃO MENU: Visível e Branco */
     html body .app-header .mobile-menu-toggle,
     button.mobile-menu-toggle {
-        display: inline-flex !important; /* Ressuscita o botão no celular */
+        display: inline-flex !important;
         align-items: center;
         justify-content: center;
         font-size: 0.95rem;
-        padding: 0 12px;
-        margin-right: 10px;
-        height: 36px;
+        padding: 0 12px !important;
+        margin-right: 10px !important;
+        height: 36px !important;
+        width: auto !important;
         border-radius: 4px;
         cursor: pointer;
         z-index: 1100;
+        visibility: visible !important;
         
-        /* CORES BRANCAS FIXAS (Independente do tema) */
+        /* Cores Brancas Fixas */
         color: #ffffff !important; 
         border: 1px solid rgba(255, 255, 255, 0.6) !important;
         background-color: rgba(0, 0, 0, 0.25) !important;
-        box-shadow: none !important;
         text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
 
@@ -2523,13 +2546,13 @@ button.mobile-menu-toggle,
         color: #ffffff !important;
     }
 
-    /* Layout Coluna */
+    /* 2. Layout Principal */
     .app-layout {
         flex-direction: column;
         margin-top: 0;
     }
 
-    /* Cabeçalho Sempre Azul */
+    /* 3. Cabeçalho Azul */
     .app-header {
         padding: 12px 15px;
         position: sticky;
@@ -2553,12 +2576,11 @@ button.mobile-menu-toggle,
         justify-content: flex-start;
     }
     
-    /* Esconde "Bem vindo" no celular */
     .header-user-info {
         display: none !important;
     }
 
-    /* Menu Lateral (Gaveta) */
+    /* 4. Menu Lateral (Gaveta) */
     .sidebar {
         position: fixed;
         top: 0;
@@ -2567,7 +2589,7 @@ button.mobile-menu-toggle,
         height: 100vh;
         background-color: #003d5c;
         transition: left 0.3s ease;
-        z-index: 9999; /* Acima do cabeçalho */
+        z-index: 9999;
         box-shadow: 4px 0 15px rgba(0,0,0,0.6);
         padding-top: 10px;
         overflow-y: auto;
@@ -2621,7 +2643,7 @@ button.mobile-menu-toggle,
         display: block;
     }
 
-    /* Conteúdo */
+    /* 5. Conteúdo */
     .main-content {
         margin-left: 0;
         width: 100%;
@@ -2629,7 +2651,7 @@ button.mobile-menu-toggle,
         padding-top: 15px;
     }
 
-    /* Botões do Topo (Alinhados) */
+    /* 6. Botões do Topo (Alinhados) */
     .header-actions {
         width: 100%;
         display: flex;
@@ -2657,7 +2679,7 @@ button.mobile-menu-toggle,
         border: 1px solid rgba(255,255,255,0.3) !important;
     }
 
-    /* Tabelas com rolagem */
+    /* Tabelas */
     .tasks-table, .municipalities-table {
         display: block;
         width: 100%;
