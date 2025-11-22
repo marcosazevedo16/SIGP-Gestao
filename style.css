@@ -3230,3 +3230,30 @@ table td .module-tags {
         text-align: center;
     }
 }
+
+/* ==========================================================================
+   CORREÇÃO DE HEADER (PC MEIA TELA)
+   Adicione isso no FINAL do arquivo style.css
+   ========================================================================== */
+
+/* 1. Permite que o conteúdo do cabeçalho "quebre" para a linha de baixo se faltar espaço */
+.header-content {
+    flex-wrap: wrap !important;
+    row-gap: 10px; /* Espacinho entre o título e os botões quando quebrar linha */
+}
+
+/* 2. Ajustes Específicos para PC (> 901px) */
+@media (min-width: 901px) {
+    
+    /* Empurra o conteúdo do header para a direita para fugir da Sidebar Fixa */
+    .app-header {
+        padding-left: 90px !important; /* 70px da sidebar + 20px de respiro */
+    }
+
+    /* Ajuste dos botões para se alinharem melhor quando caírem de linha */
+    .header-actions {
+        justify-content: flex-end; /* Tenta manter na direita */
+        margin-left: auto; /* Empurra para o canto */
+        padding-top: 4px;
+    }
+}
