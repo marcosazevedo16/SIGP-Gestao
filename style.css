@@ -2749,3 +2749,185 @@ tbody tr:hover {
     .login-left { display: none; }
     .login-right { padding: 20px; }
 }
+
+/* ==========================================================================
+   CORREÇÕES FINAIS (MENU MOBILE + BADGES)
+   Cole este bloco no FINAL do seu arquivo style.css original.
+   ========================================================================== */
+
+/* 1. ESTILOS PARA OS BADGES (Módulos Coloridos e Status) */
+.module-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    align-items: center;
+    max-width: 200px;
+}
+
+.module-tag {
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+    border-radius: 4px;
+    font-weight: bold;
+    display: inline-block;
+    color: white;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+    margin-bottom: 2px;
+}
+
+.status-badge {
+    white-space: nowrap;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    font-weight: 600;
+}
+
+/* 2. CORREÇÃO DE LARGURA DE TABELAS */
+/* Garante que as colunas não fiquem espremidas */
+table th, table td {
+    white-space: nowrap; /* Impede quebra de linha em nomes/datas */
+    vertical-align: middle;
+}
+
+/* Quebra de linha permitida apenas na coluna de módulos se for muito grande */
+table td .module-tags {
+    white-space: normal; 
+}
+
+/* ==========================================================================
+   3. MENU MOBILE (CORREÇÃO DEFINITIVA PC x CELULAR)
+   ========================================================================== */
+
+/* Oculta botão e overlay no PC (Telas Grandes) */
+button.mobile-menu-toggle,
+.mobile-menu-toggle,
+.sidebar-overlay {
+    display: none !important;
+}
+
+/* REGRAS APENAS PARA CELULAR (Até 900px) */
+@media (max-width: 900px) {
+    
+    /* Mostra Botão Menu (Branco) */
+    html body .app-header .mobile-menu-toggle,
+    button.mobile-menu-toggle {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        padding: 0 12px !important;
+        margin-right: 10px !important;
+        height: 36px !important;
+        width: auto !important;
+        border-radius: 4px;
+        cursor: pointer;
+        z-index: 1100;
+        visibility: visible !important;
+        
+        color: #ffffff !important; 
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        background-color: rgba(0, 0, 0, 0.25) !important;
+    }
+
+    button.mobile-menu-toggle * {
+        color: #ffffff !important;
+    }
+
+    /* Cabeçalho Azul Fixo */
+    .app-header {
+        padding: 10px 15px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background-color: #003d5c !important;
+        color: white !important;
+        height: auto;
+    }
+    
+    .app-header h1, .subtitle {
+        color: #ffffff !important;
+    }
+
+    .header-user-info {
+        display: none !important;
+    }
+
+    .app-layout {
+        flex-direction: column;
+        margin-top: 0;
+    }
+
+    /* Menu Lateral (Gaveta) */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px; 
+        width: 250px;
+        height: 100vh;
+        background-color: #003d5c;
+        z-index: 9999;
+        transition: left 0.3s ease;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.6);
+        display: block !important;
+        padding-top: 10px;
+        overflow-y: auto;
+    }
+
+    .sidebar.mobile-open {
+        left: 0;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        padding: 0;
+    }
+
+    .sidebar-btn {
+        width: 100%;
+        padding: 14px 15px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        color: rgba(255,255,255,0.9) !important;
+        text-align: left;
+        white-space: normal !important; /* Permite nome grande quebrar linha */
+    }
+
+    /* Botões do Topo Centralizados */
+    .header-actions {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-top: 10px;
+        gap: 8px;
+        flex-wrap: nowrap;
+    }
+
+    .header-actions .btn {
+        font-size: 11px;
+        padding: 8px 0;
+        flex: 1;
+        text-align: center;
+        min-width: 0;
+        justify-content: center;
+    }
+
+    /* Conteúdo Principal */
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 10px;
+        padding-top: 15px;
+    }
+
+    /* Overlay Ativo */
+    .sidebar-overlay.active {
+        display: block;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 9998;
+    }
+}
