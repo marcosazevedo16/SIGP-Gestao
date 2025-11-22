@@ -2473,35 +2473,13 @@ tbody tr:hover {
 
 ```css
 /* ==========================================================================
-   📱 ESTILO MOBILE FINAL V7 - CORREÇÃO DE COR "NUCLEAR"
+   📱 ESTILO MOBILE V8 - CORREÇÃO FINAL DE TEMA E MENU
    Substitua o bloco @media anterior por este.
    ========================================================================== */
 
-/* BOTÃO MENU: Força bruta para ser BRANCO em cima do azul */
-button.mobile-menu-toggle,
-.app-header .mobile-menu-toggle {
-    display: none; /* Escondido no PC */
-    font-size: 0.95rem;
-    padding: 0 12px; /* Padding lateral */
-    margin-right: 10px;
-    height: 36px;
-    border-radius: 4px;
-    cursor: pointer;
-    z-index: 1100;
-    
-    /* --- REGRAS DE COR INDESTRUTÍVEIS --- */
-    /* O !important aqui garante que o Tema Claro não mude isso */
-    color: #ffffff !important; 
-    border: 1px solid rgba(255, 255, 255, 0.5) !important;
-    background-color: rgba(0, 0, 0, 0.25) !important;
-    box-shadow: none !important;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3); /* Sombra no texto para leitura */
-}
-
-/* Garante que o texto/ícone dentro do botão também fique branco */
-button.mobile-menu-toggle *,
-.app-header .mobile-menu-toggle * {
-    color: #ffffff !important;
+/* Força o botão a aparecer sempre */
+.mobile-menu-toggle {
+    display: none;
 }
 
 /* Overlay Escuro */
@@ -2510,18 +2488,32 @@ button.mobile-menu-toggle *,
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.7);
-    z-index: 1900; /* Logo abaixo do menu */
+    z-index: 9998; /* Logo abaixo do menu */
     backdrop-filter: blur(3px);
 }
 
-/* Ajustes para Celular (max-width 900px) */
 @media (max-width: 900px) {
     
-    /* 1. Mostra o botão de menu (Flex para alinhar) */
-    button.mobile-menu-toggle {
-        display: inline-flex;
+    /* 1. BOTÃO DO MENU (Correção do Tema Claro) */
+    /* Usamos seletores bem específicos para vencer o tema claro */
+    html body .app-header .mobile-menu-toggle,
+    html[data-theme="light"] body .app-header .mobile-menu-toggle {
+        display: inline-flex !important;
         align-items: center;
         justify-content: center;
+        font-size: 1rem;
+        padding: 0 12px;
+        margin-right: 10px;
+        height: 36px;
+        border-radius: 4px;
+        cursor: pointer;
+        z-index: 101; /* Acima do header base */
+        
+        /* AS REGRAS DE COR QUE VENCEM TUDO */
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        background-color: rgba(0, 0, 0, 0.25) !important;
+        box-shadow: none !important;
     }
 
     /* 2. Layout Principal */
@@ -2530,20 +2522,16 @@ button.mobile-menu-toggle *,
         margin-top: 0;
     }
 
-    /* 3. Cabeçalho sempre AZUL e Compacto */
+    /* 3. Cabeçalho sempre AZUL */
     .app-header {
-        padding: 8px 12px;
+        padding: 10px 15px;
         position: sticky;
         top: 0;
         z-index: 100;
         height: auto;
-        background-color: #003d5c !important; /* Fundo Azul Obrigatório */
+        background-color: #003d5c !important; /* Força Azul */
         border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    /* Força textos do header a serem brancos */
-    .app-header h1, .subtitle {
-        color: #ffffff !important;
+        color: white !important;
     }
     
     .header-content {
@@ -2553,23 +2541,26 @@ button.mobile-menu-toggle *,
         justify-content: space-between;
     }
     
-    /* Esconde o "Bem vindo" no celular para ganhar espaço */
+    /* Esconde nome do usuário no celular para dar espaço */
     .header-user-info {
-        display: none !important; 
+        display: none !important;
     }
 
-    /* 4. MENU LATERAL (GAVETA) - Largura e Z-Index Corrigidos */
+    /* 4. MENU LATERAL (GAVETA) */
     .sidebar {
         position: fixed;
         top: 0;
-        left: -260px; /* Escondido */
-        width: 250px; /* Largura ideal */
+        /* Esconde totalmente (Largura + sombra extra) */
+        left: -280px; 
+        /* Largura reduzida conforme solicitado (era 300, depois 250, agora 240) */
+        width: 240px; 
         height: 100vh;
-        background-color: #003d5c;
+        background-color: #003d5c; /* Azul do menu */
         transition: left 0.3s ease;
-        z-index: 3000; /* BEM ACIMA do header (2000 não foi suficiente) */
+        /* Z-Index altíssimo para cobrir o cabeçalho e mostrar Dashboard */
+        z-index: 9999; 
         box-shadow: 4px 0 15px rgba(0,0,0,0.6);
-        padding-top: 10px;
+        padding-top: 10px; /* Pouco padding para Dashboard aparecer logo */
         overflow-y: auto;
         display: block !important;
         border-right: 1px solid rgba(255,255,255,0.1);
@@ -2585,7 +2576,7 @@ button.mobile-menu-toggle *,
         flex-direction: column !important;
         width: 100%;
         padding: 0;
-        margin-top: 0;
+        margin: 0;
     }
 
     .sidebar-btn {
@@ -2594,13 +2585,14 @@ button.mobile-menu-toggle *,
         justify-content: flex-start;
         width: 100%;
         padding: 14px 15px;
-        font-size: 14px;
+        font-size: 13px;
         border-bottom: 1px solid rgba(255,255,255,0.05);
         border-left: 4px solid transparent;
-        color: rgba(255,255,255,0.9) !important; /* Texto sempre claro */
+        color: rgba(255,255,255,0.9) !important;
         background: transparent;
         height: auto;
-        white-space: normal !important;
+        white-space: normal !important; /* Quebra linha se nome for grande */
+        text-align: left;
     }
 
     .sidebar-btn.active {
@@ -2612,7 +2604,7 @@ button.mobile-menu-toggle *,
 
     .sidebar-icon {
         font-size: 18px;
-        margin-right: 12px;
+        margin-right: 10px;
         min-width: 24px;
         text-align: center;
         color: #ffffff !important;
@@ -2627,30 +2619,28 @@ button.mobile-menu-toggle *,
         margin-left: 0;
         width: 100%;
         padding: 10px;
-        padding-top: 20px;
+        padding-top: 15px;
     }
 
-    /* 7. Botões do Topo (Tema, Config, Sair) */
+    /* 7. Botões do Topo (Ajustados) */
     .header-actions {
         width: 100%;
-        justify-content: space-between;
-        margin-top: 5px;
+        justify-content: flex-end; /* Alinha à direita */
+        margin-top: 0; /* Remove margem para ficar na linha do menu */
         gap: 5px;
-        flex-wrap: nowrap; /* Força ficar na mesma linha */
+        flex-wrap: nowrap;
     }
     
     .header-actions .btn {
-        font-size: 11px;
-        padding: 8px 2px;
-        flex: 1;
-        text-align: center;
-        white-space: nowrap;
+        font-size: 10px;
+        padding: 6px 8px;
+        flex: 0 1 auto; /* Não estica */
     }
     
-    /* Botões secundários visíveis no azul */
+    /* Garante visibilidade dos botões secundários no fundo azul */
     .header-actions .btn--outline,
     .header-actions .btn--secondary {
-        background-color: rgba(255,255,255,0.15) !important;
+        background-color: rgba(255,255,255,0.1) !important;
         color: white !important;
         border: 1px solid rgba(255,255,255,0.4) !important;
     }
@@ -2667,7 +2657,6 @@ button.mobile-menu-toggle *,
         display: block;
     }
     
-    /* Login */
     .login-wrapper { margin: 0; border-radius: 0; min-height: 100vh; }
     .login-left { display: none; }
     .login-right { padding: 20px; }
