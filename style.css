@@ -3257,33 +3257,3 @@ table td .module-tags {
         padding-top: 4px;
     }
 }
-
-/* ==========================================================================
-   CORREÇÃO DE SOBREPOSIÇÃO E ESPAÇAMENTO (PC MEIA TELA)
-   Adicione no FINAL do style.css
-   ========================================================================== */
-
-/* 1. Hierarquia: O Cabeçalho deve mandar em tudo (ficar por cima) */
-.app-header {
-    z-index: 2001 !important; /* Maior que a sidebar (que é 1000) */
-}
-
-/* 2. Ajustes de posicionamento apenas para PC */
-@media (min-width: 901px) {
-    
-    /* Sidebar: Começa do topo 0, mas fica atrás do header. 
-       Adicionamos padding-top para os ícones não ficarem escondidos atrás do header */
-    .sidebar {
-        top: 0 !important;
-        z-index: 2000 !important; /* Fica logo abaixo do header */
-        padding-top: 140px; /* Empurra os ícones para baixo */
-    }
-
-    /* Conteúdo Principal: Aumentamos a margem do topo.
-       Como o header agora pode ter 2 linhas de botões, precisamos de mais espaço 
-       para o título "Controle de Municípios" não ser cortado. */
-    .main-content {
-        margin-top: 160px !important; /* Aumentado de 110px para 160px */
-        padding-top: 20px !important;
-    }
-}
