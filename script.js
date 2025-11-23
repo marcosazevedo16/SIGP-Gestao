@@ -3253,67 +3253,103 @@ function handleBackupFileSelect(event) {
 function confirmRestore() {
     if (!pendingBackupData) return;
     
-    // Proteção: Tenta pegar .data, se não existir, tenta usar o próprio objeto (para backups antigos)
-    const backup = pendingBackupData.data || pendingBackupData; 
+    // Tenta pegar .data ou usa o próprio objeto
+    const backupRaw = pendingBackupData.data || pendingBackupData;
     
-    // 1. Preservar Sessão (Para não deslogar)
+    // 1. Preservar Sessão
     const sessionUser = localStorage.getItem('currentUser');
     const sessionAuth = localStorage.getItem('isAuthenticated');
     const sessionTheme = localStorage.getItem('theme') || 'light';
 
-    // 2. Limpar tudo antes de restaurar
+    // 2. Limpar tudo
     localStorage.clear();
 
-    // 3. Função de Salvamento Seguro (A Mágica)
-    // Se o dado for inválido, salva o 'fallback' (valor padrão)
+    // 3. Função Auxiliar de Segurança
     const saveSafe = (key, data, fallback) => {
-        if (data && (Array.isArray(data) || typeof data === 'object')) {
+        if (data && Array.isArray(data)) {
             localStorage.setItem(key, JSON.stringify(data));
         } else {
             localStorage.setItem(key, JSON.stringify(fallback));
         }
     };
 
-    // Definição de Contadores Padrão (caso não existam no backup)
-    const defaultCounters = { 
-        mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1 
-    };
-
-    // Definição de Usuário Padrão (caso users esteja vazio)
-    const defaultUsers = [{ 
-        id: 1, login: 'ADMIN', name: 'Administrador', 
-        permission: 'Administrador', status: 'Ativo', 
-        salt: 'default', passwordHash: 'default' // Será resetado se necessário
-    }];
-
-    // 4. Restaurar Listas com Segurança
-    saveSafe('users', backup.users, defaultUsers);
-    saveSafe('municipalities', backup.municipalities, []);
-    saveSafe('municipalitiesList', backup.municipalitiesList, []);
-    saveSafe('tasks', backup.tasks || backup.trainings, []); // Suporte legado
-    saveSafe('requests', backup.requests, []);
-    saveSafe('demands', backup.demands, []);
-    saveSafe('visits', backup.visits, []);
-    saveSafe('productions', backup.productions, []);
-    saveSafe('presentations', backup.presentations, []);
-    saveSafe('systemVersions', backup.systemVersions, []);
-    saveSafe('cargos', backup.cargos, []);
-    saveSafe('orientadores', backup.orientadores, []);
-    saveSafe('modulos', backup.modulos || backup.modules, []); // Suporte legado
-    saveSafe('formasApresentacao', backup.formasApresentacao, []);
+    // --- MIGRAÇÃO DE DADOS (Híbrido: Funciona para Antigos e Novos) ---
     
-    saveSafe('counters', backup.counters, defaultCounters);
+    // Migrar Demandas
+    let newDemands = backupRaw.demands || [];
+    newDemands = newDemands.map(d => ({
+        ...d,
+        // Se tiver dateRealization (novo), usa. Se não, tenta realizationDate (antigo).
+        dateRealization: d.dateRealization || d.realizationDate || '', 
+        justification: d.justification || ''
+    }));
 
-    // 5. Restaurar Sessão
+    // Migrar Visitas
+    let newVisits = backupRaw.visits || [];
+    newVisits = newVisits.map(v => ({
+        ...v,
+        dateRealization: v.dateRealization || v.visitDate || '',
+        justification: v.justification || v.cancelJustification || ''
+    }));
+
+    // Restaurar Listas
+    saveSafe('users', backupRaw.users, []);
+    saveSafe('municipalities', backupRaw.municipalities, []);
+    saveSafe('municipalitiesList', backupRaw.municipalitiesList, []);
+    saveSafe('tasks', backupRaw.tasks || backupRaw.trainings, []); 
+    saveSafe('requests', backupRaw.requests, []);
+    
+    // Salva as listas tratadas/migradas
+    localStorage.setItem('demands', JSON.stringify(newDemands));
+    localStorage.setItem('visits', JSON.stringify(newVisits));
+    
+    saveSafe('productions', backupRaw.productions, []);
+    saveSafe('presentations', backupRaw.presentations, []);
+    saveSafe('systemVersions', backupRaw.systemVersions, []); 
+    saveSafe('cargos', backupRaw.cargos, []);
+    saveSafe('orientadores', backupRaw.orientadores, []);
+    saveSafe('modulos', backupRaw.modulos || backupRaw.modules, []);
+    saveSafe('formasApresentacao', backupRaw.formasApresentacao, []);
+    
+    // --- CONTADORES DE ID (Lógica Inteligente) ---
+    let finalCounters;
+
+    if (backupRaw.counters) {
+        // CASO 1: Backup Novo (Já tem contadores, usa eles para manter integridade)
+        finalCounters = backupRaw.counters;
+    } else {
+        // CASO 2: Backup Antigo (Não tem contadores, recalcula baseado no maior ID)
+        const getMaxId = (list) => list.reduce((max, item) => (item.id > max ? item.id : max), 0) + 1;
+        
+        finalCounters = {
+            mun: getMaxId(backupRaw.municipalities || []),
+            munList: getMaxId(backupRaw.municipalitiesList || []),
+            task: getMaxId(backupRaw.tasks || backupRaw.trainings || []),
+            req: getMaxId(backupRaw.requests || []),
+            dem: getMaxId(newDemands),
+            visit: getMaxId(newVisits),
+            prod: getMaxId(backupRaw.productions || []),
+            pres: getMaxId(backupRaw.presentations || []),
+            ver: getMaxId(backupRaw.systemVersions || []),
+            user: getMaxId(backupRaw.users || []),
+            cargo: getMaxId(backupRaw.cargos || []),
+            orient: getMaxId(backupRaw.orientadores || []),
+            mod: getMaxId(backupRaw.modulos || backupRaw.modules || []),
+            forma: getMaxId(backupRaw.formasApresentacao || [])
+        };
+    }
+    
+    localStorage.setItem('counters', JSON.stringify(finalCounters));
+
+    // 4. Restaurar Sessão
     if (sessionUser) localStorage.setItem('currentUser', sessionUser);
     if (sessionAuth) localStorage.setItem('isAuthenticated', sessionAuth);
     localStorage.setItem('theme', sessionTheme);
 
-    // 6. Recarregar
-    alert('Sistema restaurado com sucesso! A página será recarregada.');
+    // 5. Recarregar
+    alert('Sistema restaurado com sucesso!');
     location.reload();
 }
-
 // ----------------------------------------------------------------------------
 // 20. DASHBOARD E INICIALIZAÇÃO
 // ----------------------------------------------------------------------------
