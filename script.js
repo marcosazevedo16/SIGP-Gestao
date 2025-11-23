@@ -3099,3 +3099,74 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// --- BLOCO DE CORREÇÃO AUTOMÁTICA DE IDs (Pode manter no arquivo) ---
+(function autoFixPresentationIds() {
+    // Verifica se existem apresentações
+    if (typeof presentations !== 'undefined' && presentations.length > 0) {
+        // Reinumera todas as apresentações sequencialmente (1, 2, 3...)
+        presentations.forEach((p, index) => {
+            p.id = index + 1;
+        });
+        
+        // Atualiza o contador geral para o próximo número disponível
+        if (typeof counters !== 'undefined') {
+            counters.pres = presentations.length + 1;
+            salvarNoArmazenamento('counters', counters);
+        }
+        
+        // Salva a lista corrigida
+        salvarNoArmazenamento('presentations', presentations);
+        console.log("IDs de apresentações corrigidos e reordenados com sucesso.");
+    }
+})();
+
+// --- FUNÇÕES DE IMPORTAÇÃO DE APRESENTAÇÕES (Adicionar no final) ---
+
+function triggerPresentationCSVImport() {
+    document.getElementById('presentation-csv-import-input').click();
+}
+
+function handlePresentationCSVImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        let count = 0;
+
+        // Pula o cabeçalho (linha 0) e começa da linha 1
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line) {
+                // Formato esperado no CSV: Município;DataSol;Solicitante;Status;Descricao
+                const cols = line.split(';');
+                
+                if (cols.length >= 1) { 
+                    const novaApresentacao = {
+                        id: getNextId('pres'), // GERA ID ÚNICO (Essencial para evitar o erro)
+                        municipality: cols[0] ? cols[0].trim() : '',
+                        dateSolicitacao: cols[1] ? cols[1].trim() : '',
+                        requester: cols[2] ? cols[2].trim() : '',
+                        status: cols[3] ? cols[3].trim() : 'Pendente',
+                        description: cols[4] ? cols[4].trim() : '',
+                        // Campos extras iniciam vazios na importação simples
+                        dateRealizacao: '',
+                        orientadores: [],
+                        forms: []
+                    };
+                    presentations.push(novaApresentacao);
+                    count++;
+                }
+            }
+        }
+        
+        salvarNoArmazenamento('presentations', presentations);
+        renderPresentations();
+        alert(`${count} apresentações importadas com sucesso!`);
+        event.target.value = ''; // Limpa o input
+    };
+    reader.readAsText(file);
+}
