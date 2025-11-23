@@ -3254,47 +3254,55 @@ function confirmRestore() {
     if (!pendingBackupData) return;
     const data = pendingBackupData.data;
     
-    // 1. SALVA A SESSÃO ATUAL NA MEMÓRIA TEMPORÁRIA
-    // Isso impede que o usuário seja deslogado ao limpar o banco
-    const currentSession = localStorage.getItem('currentUser');
-    const currentAuth = localStorage.getItem('isAuthenticated');
-    const currentTheme = localStorage.getItem('theme'); // Mantém o tema (claro/escuro) também
+    // 1. GUARDA A SESSÃO ATUAL (Para não deslogar)
+    const sessionUser = localStorage.getItem('currentUser');
+    const sessionAuth = localStorage.getItem('isAuthenticated');
+    const sessionTheme = localStorage.getItem('theme');
 
-    // 2. Limpa o armazenamento (apaga dados antigos e sessão do disco)
+    // 2. LIMPA TUDO (Zera o banco)
     localStorage.clear();
     
-    // Função auxiliar de segurança
-    const safeSave = (key, value, defaultVal = []) => {
-        localStorage.setItem(key, JSON.stringify(value || defaultVal));
+    // 3. RESTAURAÇÃO BLINDADA (Evita erros de "null" ou "undefined")
+    // Se o dado não existir no backup, salva um array vazio []
+    const restoreList = (key, value) => {
+        if (Array.isArray(value)) {
+            localStorage.setItem(key, JSON.stringify(value));
+        } else {
+            localStorage.setItem(key, JSON.stringify([])); // Salva vazio se der erro
+        }
     };
+
+    // Restaura Listas Principais
+    restoreList('users', data.users);
+    restoreList('municipalities', data.municipalities);
+    restoreList('municipalitiesList', data.municipalitiesList);
     
-    // 3. Restaura os Dados do Arquivo
-    safeSave('users', data.users);
-    safeSave('municipalities', data.municipalities);
-    safeSave('municipalitiesList', data.municipalitiesList);
-    safeSave('tasks', data.tasks || data.trainings);
-    safeSave('requests', data.requests);
-    safeSave('demands', data.demands);
-    safeSave('visits', data.visits);
-    safeSave('productions', data.productions);
-    safeSave('presentations', data.presentations);
-    safeSave('systemVersions', data.systemVersions);
-    safeSave('cargos', data.cargos);
-    safeSave('orientadores', data.orientadores);
-    safeSave('modulos', data.modules || data.modulos);
-    safeSave('formasApresentacao', data.formasApresentacao);
+    // Suporte para backups antigos que usavam nomes diferentes (trainings/modules)
+    restoreList('tasks', data.tasks || data.trainings);
+    restoreList('modulos', data.modulos || data.modules);
     
-    safeSave('counters', data.counters, {
-        mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1
-    });
+    restoreList('requests', data.requests);
+    restoreList('demands', data.demands);
+    restoreList('visits', data.visits);
+    restoreList('productions', data.productions);
+    restoreList('presentations', data.presentations);
+    restoreList('systemVersions', data.systemVersions);
+    restoreList('cargos', data.cargos);
+    restoreList('orientadores', data.orientadores);
+    restoreList('formasApresentacao', data.formasApresentacao);
     
-    // 4. RESTAURA A SESSÃO (Recoloca o usuário logado)
-    if (currentSession) localStorage.setItem('currentUser', currentSession);
-    if (currentAuth) localStorage.setItem('isAuthenticated', currentAuth);
-    if (currentTheme) localStorage.setItem('theme', currentTheme);
+    // Restaura Contadores (Objeto, não lista)
+    const defaultCounters = { mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1 };
+    const countersToSave = data.counters || defaultCounters;
+    localStorage.setItem('counters', JSON.stringify(countersToSave));
     
-    // 5. Recarrega a página para aplicar os dados
-    alert('Backup restaurado com sucesso! Os dados foram atualizados.');
+    // 4. DEVOLVE A SESSÃO (Re-loga o usuário)
+    if (sessionUser) localStorage.setItem('currentUser', sessionUser);
+    if (sessionAuth) localStorage.setItem('isAuthenticated', sessionAuth);
+    if (sessionTheme) localStorage.setItem('theme', sessionTheme);
+    
+    // 5. RECARREGA A PÁGINA
+    alert('Dados restaurados com sucesso!');
     location.reload();
 }
 // ----------------------------------------------------------------------------
