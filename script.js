@@ -3157,52 +3157,46 @@ function populateSelect(select, data, valKey, textKey) {
 }
 
 function populateFilterSelects() {
-    // 1. Filtro Principal da Aba Municípios (Baseado nos clientes cadastrados na carteira)
-    const munSelect = document.getElementById('filter-municipality-name');
-    if (munSelect) {
-        const current = munSelect.value;
-        const sorted = municipalities.slice().sort((a, b) => a.name.localeCompare(b.name));
-        munSelect.innerHTML = '<option value="">Todos</option>' + sorted.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-        if(current) munSelect.value = current;
-    }
-
-    // 2. Filtros de Município (APENAS ATIVOS/EM USO)
-    // Usado para Tarefas, Solicitações e Produção
-    const activeMuns = municipalities.filter(m => m.status === 'Em uso').sort((a,b) => a.name.localeCompare(b.name));
-    const standardFilters = [
-        'filter-task-municipality', 
-        'filter-request-municipality', 
-        'filter-production-municipality'
-    ];
-    standardFilters.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            const cur = el.value;
-            el.innerHTML = '<option value="">Todos</option>' + activeMuns.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-            if(cur) el.value = cur;
-        }
-    });
-
-    // 3. Filtros que buscam da LISTA MESTRA (Todos cadastrados em Configurações)
-    // Agora inclui VISITAS e APRESENTAÇÕES
-    const masterFilters = ['filter-presentation-municipality', 'filter-visit-municipality'];
+    // ------------------------------------------------------------------------
+    // 1. REGRA GERAL: MUNICÍPIOS (Todas as Abas)
+    // Fonte: 'municipalitiesList' (Cadastro de Município em Configurações)
+    // ------------------------------------------------------------------------
     
+    const allMunFilters = [
+        'filter-municipality-name',         // Aba Municípios Clientes
+        'filter-task-municipality',         // Aba Treinamentos
+        'filter-request-municipality',      // Aba Solicitações
+        'filter-presentation-municipality', // Aba Apresentações
+        'filter-visit-municipality',        // Aba Visitas
+        'filter-production-municipality'    // Aba Produção
+    ];
+
+    // Verifica se a lista mestra existe
     if (typeof municipalitiesList !== 'undefined') {
-        const sortedMaster = municipalitiesList.slice().sort((a,b) => a.name.localeCompare(b.name));
-        
-        masterFilters.forEach(id => {
+        // Ordena alfabeticamente
+        const sortedMaster = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
+
+        allMunFilters.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
-                const cur = el.value;
-                el.innerHTML = '<option value="">Todos</option>' + sortedMaster.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-                if(cur) el.value = cur;
+                const currentVal = el.value; // Guarda o valor atual para não perder seleção ao atualizar
+                
+                // Gera o HTML com TODAS as opções da Lista Mestra
+                el.innerHTML = '<option value="">Todos</option>' + 
+                               sortedMaster.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+                
+                // Restaura seleção
+                if(currentVal) el.value = currentVal;
             }
         });
     }
 
-    // 4. Filtros de Orientador
+    // ------------------------------------------------------------------------
+    // 2. FILTROS DE ORIENTADOR
+    // ------------------------------------------------------------------------
     const orientadorFilters = ['filter-task-performer', 'filter-presentation-orientador'];
     const sortedOrientadores = orientadores.slice().sort((a,b) => a.name.localeCompare(b.name));
+    
     orientadorFilters.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -3212,17 +3206,23 @@ function populateFilterSelects() {
         }
     });
 
-    // 5. Filtro de Cargo
+    // ------------------------------------------------------------------------
+    // 3. FILTRO DE CARGO
+    // ------------------------------------------------------------------------
     const cargoEl = document.getElementById('filter-task-position');
     if (cargoEl) {
         const cur = cargoEl.value;
-        cargoEl.innerHTML = '<option value="">Todos</option>' + cargos.slice().sort((a,b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        const sortedCargos = cargos.slice().sort((a,b) => a.name.localeCompare(b.name));
+        cargoEl.innerHTML = '<option value="">Todos</option>' + sortedCargos.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         if(cur) cargoEl.value = cur;
     }
 
-    // 6. Filtros de Usuário
+    // ------------------------------------------------------------------------
+    // 4. FILTRO DE USUÁRIO (Solicitações e Demandas)
+    // ------------------------------------------------------------------------
     const userFilters = ['filter-request-user', 'filter-demand-user'];
     const sortedUsers = users.slice().sort((a,b) => a.name.localeCompare(b.name));
+    
     userFilters.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
