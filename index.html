@@ -795,58 +795,16 @@
                <div class="filters-grid">
     <div class="form-group">
         <label class="form-label">Município</label>
-        <select class="form-control" id="filter-task-municipality">
-            <option value="">Todos</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label class="form-label">Orientador</label>
-        <select class="form-control" id="filter-task-performer">
-            <option value="">Todos</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label class="form-label">Cargo/Função</label>
-        <select class="form-control" id="filter-task-position">
+        <select class="form-control" id="filter-production-municipality">
             <option value="">Todos</option>
         </select>
     </div>
     <div class="form-group">
         <label class="form-label">Status</label>
-        <select class="form-control" id="filter-task-status">
-            <option value="">Todos</option>
-            <option value="Concluído">Concluídos</option>
-            <option value="Pendente">Pendentes</option>
-            <option value="Cancelado">Cancelados</option>
-        </select>
+        <select class="form-control" id="filter-production-status">
+            </select>
     </div>
-    <div class="form-group">
-        <label class="form-label">Solicitante</label>
-        <input type="text" class="form-control" id="filter-task-requester" placeholder="Buscar solicitante">
     </div>
-
-    <div class="form-group">
-        <label class="form-label">Solicitação (Início)</label>
-        <input type="date" class="form-control" id="filter-task-req-start" onchange="validateDateRange('req')">
-    </div>
-    <div class="form-group">
-        <label class="form-label">Solicitação (Fim)</label>
-        <input type="date" class="form-control" id="filter-task-req-end" onchange="validateDateRange('req')">
-    </div>
-    <div class="form-group">
-        <label class="form-label">Realização (Início)</label>
-        <input type="date" class="form-control" id="filter-task-perf-start" onchange="validateDateRange('perf')">
-    </div>
-    <div class="form-group">
-        <label class="form-label">Realização (Fim)</label>
-        <input type="date" class="form-control" id="filter-task-perf-end" onchange="validateDateRange('perf')">
-    </div>
-
-    <div class="form-group" style="display: flex; align-items: flex-end;">
-        <button class="btn btn--primary btn--full-width" onclick="clearTaskFilters()">Limpar Filtros</button>
-    </div>
-</div>
-
                     <div class="form-group">
 
                         <label class="form-label">Status</label>
@@ -1807,19 +1765,58 @@
 
             <div class="filters-section">
 
-                <div class="filters-grid">
+                <div class="form-group">
+        <label class="form-label">Município</label>
+        <select class="form-control" id="filter-task-municipality">
+            <option value="">Todos</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Orientador</label>
+        <select class="form-control" id="filter-task-performer">
+            <option value="">Todos</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Cargo/Função</label>
+        <select class="form-control" id="filter-task-position">
+            <option value="">Todos</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-control" id="filter-task-status">
+            <option value="">Todos</option>
+            <option value="Concluído">Concluídos</option>
+            <option value="Pendente">Pendentes</option>
+            <option value="Cancelado">Cancelados</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Solicitante</label>
+        <input type="text" class="form-control" id="filter-task-requester" placeholder="Buscar solicitante">
+    </div>
 
-                    <div class="form-group">
+    <div class="form-group">
+        <label class="form-label">Solicitação (Início)</label>
+        <input type="date" class="form-control" id="filter-task-req-start" onchange="validateDateRange('req')">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Solicitação (Fim)</label>
+        <input type="date" class="form-control" id="filter-task-req-end" onchange="validateDateRange('req')">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Realização (Início)</label>
+        <input type="date" class="form-control" id="filter-task-perf-start" onchange="validateDateRange('perf')">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Realização (Fim)</label>
+        <input type="date" class="form-control" id="filter-task-perf-end" onchange="validateDateRange('perf')">
+    </div>
 
-                        <label class="form-label">Município</label>
-
-                        <select class="form-control" id="filter-task-municipality">
-
-                            <option value="">Todos</option>
-
-                        </select>
-
-                    </div>
+    <div class="form-group" style="display: flex; align-items: flex-end;">
+        <button class="btn btn--primary btn--full-width" onclick="clearTaskFilters()">Limpar Filtros</button>
+    </div>
 
                     <div class="form-group">
 
