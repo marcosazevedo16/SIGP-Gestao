@@ -1492,72 +1492,115 @@ function saveRequest(e) {
 }
 
 function getFilteredRequests() {
-    const fMun = document.getElementById('filter-request-municipality') ? document.getElementById('filter-request-municipality').value : '';
-    const fStatus = document.getElementById('filter-request-status') ? document.getElementById('filter-request-status').value : '';
-    const fSol = document.getElementById('filter-request-solicitante') ? document.getElementById('filter-request-solicitante').value.toLowerCase() : '';
-    const fUser = document.getElementById('filter-request-user') ? document.getElementById('filter-request-user').value.toLowerCase() : '';
-    const fDateStart = document.getElementById('filter-request-date-start') ? document.getElementById('filter-request-date-start').value : '';
-    const fDateEnd = document.getElementById('filter-request-date-end') ? document.getElementById('filter-request-date-end').value : '';
+    const fMun = document.getElementById('filter-request-municipality')?.value;
+    const fStatus = document.getElementById('filter-request-status')?.value;
+    const fSol = document.getElementById('filter-request-solicitante')?.value.toLowerCase();
+    const fUser = document.getElementById('filter-request-user')?.value; // Agora é Select (nome exato)
+    
+    // Datas Solicitação
+    const fSolStart = document.getElementById('filter-request-sol-start')?.value;
+    const fSolEnd = document.getElementById('filter-request-sol-end')?.value;
+    
+    // Datas Realização
+    const fRealStart = document.getElementById('filter-request-real-start')?.value;
+    const fRealEnd = document.getElementById('filter-request-real-end')?.value;
 
     let filtered = requests.filter(function(r) {
         if (fMun && r.municipality !== fMun) return false;
         if (fStatus && r.status !== fStatus) return false;
         if (fSol && !r.requester.toLowerCase().includes(fSol)) return false;
-        if (fUser && (!r.user || !r.user.toLowerCase().includes(fUser))) return false;
-        if (fDateStart && r.date < fDateStart) return false;
-        if (fDateEnd && r.date > fDateEnd) return false;
+        
+        // Filtro de Usuário (Select: busca exata)
+        if (fUser && r.user !== fUser) return false;
+
+        // Filtro Data Solicitação
+        if (fSolStart && r.date < fSolStart) return false;
+        if (fSolEnd && r.date > fSolEnd) return false;
+
+        // Filtro Data Realização
+        if (fRealStart && (!r.dateRealization || r.dateRealization < fRealStart)) return false;
+        if (fRealEnd && (!r.dateRealization || r.dateRealization > fRealEnd)) return false;
+        
         return true;
     });
 
-    // Ordenação Item 17
-    return filtered.sort(function(a, b) {
-        if (a.status === 'Pendente' && b.status !== 'Pendente') return -1;
-        if (a.status !== 'Pendente' && b.status === 'Pendente') return 1;
-        return new Date(a.date) - new Date(b.date);
-    });
+    // Ordenação por Data Solicitação
+    return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
 function renderRequests() {
     const filtered = getFilteredRequests();
     const c = document.getElementById('requests-table');
     
-    const counter = document.getElementById('requests-results-count');
-    if (counter) {
-        counter.innerHTML = '<strong>' + filtered.length + '</strong> solicitações';
-        counter.style.display = 'block';
-    }
-
-    if (filtered.length === 0) {
-        c.innerHTML = '<div class="empty-state">Vazio.</div>';
-    } else {
-        // AJUSTE 3: Municipio em primeiro, Data Solicitacao, Data Realizacao, Descricao curta
-        const rows = filtered.map(function(x) {
-            const desc = x.description.length > 30 ? x.description.substring(0,30)+'...' : x.description;
-            return '<tr>' +
-                '<td><strong>' + x.municipality + '</strong></td>' +
-                '<td>' + formatDate(x.date) + '</td>' +
-                '<td>' + formatDate(x.dateRealization) + '</td>' +
-                '<td>' + x.requester + '</td>' +
-                '<td>' + x.contact + '</td>' +
-                '<td title="' + x.description + '">' + desc + '</td>' +
-                '<td>' + (x.user || '-') + '</td>' +
-                '<td>' + x.status + '</td>' +
-                '<td>' +
-                    '<button class="btn btn--sm" onclick="showRequestModal(' + x.id + ')">✏️</button> ' +
-                    '<button class="btn btn--sm" onclick="deleteRequest(' + x.id + ')">🗑️</button>' +
-                '</td>' +
-            '</tr>';
-        }).join('');
-        c.innerHTML = '<table><thead><th>Município</th><th>Data Sol.</th><th>Data Real.</th><th>Solicitante</th><th>Contato</th><th>Descrição</th><th>Usuário</th><th>Status</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
+    // Atualiza contadores (Stats)
+    if(document.getElementById('requests-results-count')) {
+        document.getElementById('requests-results-count').innerHTML = '<strong>' + filtered.length + '</strong> solicitações encontradas';
+        document.getElementById('requests-results-count').style.display = 'block';
     }
     
-    if(document.getElementById('total-requests')) document.getElementById('total-requests').textContent = filtered.length;
-    if(document.getElementById('pending-requests')) document.getElementById('pending-requests').textContent = filtered.filter(function(r) { return r.status==='Pendente'; }).length;
+    // Correção dos Cards de Estatística (IDs corretos)
+    if(document.getElementById('total-requests')) document.getElementById('total-requests').textContent = requests.length;
+    if(document.getElementById('pending-requests')) document.getElementById('pending-requests').textContent = filtered.filter(r => r.status === 'Pendente').length;
+    if(document.getElementById('completed-requests')) document.getElementById('completed-requests').textContent = filtered.filter(r => r.status === 'Realizado').length;
+    if(document.getElementById('unfeasible-requests')) document.getElementById('unfeasible-requests').textContent = filtered.filter(r => r.status === 'Inviável').length;
+
+    if (filtered.length === 0) {
+        c.innerHTML = '<div class="empty-state">Nenhuma solicitação encontrada.</div>';
+    } else {
+        const rows = filtered.map(function(x) {
+            const desc = x.description.length > 40 ? `<span title="${x.description}">${x.description.substring(0,40)}...</span>` : x.description;
+            const just = x.justification ? (x.justification.length > 30 ? `<span title="${x.justification}">${x.justification.substring(0,30)}...</span>` : x.justification) : '-';
+            
+            // Definição de Cores de Status
+            let statusBadge = '';
+            if (x.status === 'Realizado') {
+                statusBadge = '<span style="background:#005580; color:white; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Realizado</span>'; // Azul
+            } else if (x.status === 'Inviável') {
+                statusBadge = '<span style="background:#C85250; color:white; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Inviável</span>'; // Vermelho
+            } else {
+                statusBadge = '<span style="background:#E68161; color:white; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Pendente</span>'; // Laranja
+            }
+
+            return `<tr>
+                <td style="font-weight:600; color:#003d5c;">${x.municipality}</td>
+                <td style="text-align:center;">${formatDate(x.date)}</td>
+                <td style="text-align:center;">${formatDate(x.dateRealization)}</td>
+                <td>${x.requester}</td>
+                <td>${x.contact}</td>
+                <td style="font-size:12px;">${desc}</td>
+                <td>${x.user || '-'}</td>
+                <td>${statusBadge}</td>
+                <td style="font-size:12px; color:#555;">${just}</td>
+                <td>
+                    <button class="btn btn--sm" onclick="showRequestModal(${x.id})" title="Editar">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteRequest(${x.id})" title="Excluir">🗑️</button>
+                </td>
+            </tr>`;
+        }).join('');
+        
+        c.innerHTML = `
+        <table class="compact-table">
+            <thead>
+                <th>Município</th>
+                <th style="text-align:center;">Data<br>Solicitação</th>
+                <th style="text-align:center;">Data<br>Realização</th>
+                <th>Solicitante</th>
+                <th>Contato</th>
+                <th>Descrição da<br>Solicitação</th>
+                <th>Usuário</th>
+                <th>Status</th>
+                <th>Justificativa</th>
+                <th>Ações</th>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>`;
+    }
     
     updateRequestCharts(filtered);
 }
 
 function updateRequestCharts(data) {
+    // 1. Gráfico de Status (Pizza)
     if (document.getElementById('requestStatusChart') && window.Chart) {
         if (chartStatusReq) chartStatusReq.destroy();
         chartStatusReq = new Chart(document.getElementById('requestStatusChart'), {
@@ -1566,32 +1609,55 @@ function updateRequestCharts(data) {
                 labels: ['Pendente', 'Realizado', 'Inviável'], 
                 datasets: [{ 
                     data: [
-                        data.filter(function(x) { return x.status==='Pendente'; }).length, 
-                        data.filter(function(x) { return x.status==='Realizado'; }).length, 
-                        data.filter(function(x) { return x.status==='Inviável'; }).length
+                        data.filter(x => x.status==='Pendente').length, 
+                        data.filter(x => x.status==='Realizado').length, 
+                        data.filter(x => x.status==='Inviável').length
                     ], 
-                    backgroundColor: ['#FFA07A', '#45B7D1', '#FF6B6B'] 
+                    backgroundColor: ['#E68161', '#005580', '#C85250'] // Laranja, Azul, Vermelho
                 }] 
             }
         });
     }
+
+    // 2. Gráfico de Municípios (Barra Colorida)
     if (document.getElementById('requestMunicipalityChart') && window.Chart) {
         if (chartMunReq) chartMunReq.destroy();
+        
         const mCounts = {}; 
-        data.forEach(function(r) { mCounts[r.municipality] = (mCounts[r.municipality]||0)+1; });
+        data.forEach(r => { mCounts[r.municipality] = (mCounts[r.municipality]||0)+1; });
+        
+        const labels = Object.keys(mCounts);
+        const values = Object.values(mCounts);
+        
+        // Gera cores diferentes para cada barra
+        const bgColors = labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+
         chartMunReq = new Chart(document.getElementById('requestMunicipalityChart'), {
             type: 'bar', 
-            data: { labels: Object.keys(mCounts), datasets: [{ label: 'Qtd', data: Object.values(mCounts), backgroundColor: '#4ECDC4' }] }
+            data: { 
+                labels: labels, 
+                datasets: [{ 
+                    label: 'Qtd Solicitações', 
+                    data: values, 
+                    backgroundColor: bgColors 
+                }] 
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        ticks: { display: false } // Oculta nomes no eixo X (mostra só no mouse)
+                    }
+                }
+            }
         });
     }
-    if (document.getElementById('requestRequesterChart') && window.Chart) {
-        if (chartSolReq) chartSolReq.destroy();
-        const sCounts = {}; 
-        data.forEach(function(r) { sCounts[r.requester] = (sCounts[r.requester]||0)+1; });
-        chartSolReq = new Chart(document.getElementById('requestRequesterChart'), {
-            type: 'bar', 
-            data: { labels: Object.keys(sCounts), datasets: [{ label: 'Qtd', data: Object.values(sCounts), backgroundColor: '#FF6B6B' }] }
-        });
+    
+    // Removemos a lógica do gráfico de Solicitante que foi excluído
+    if (chartSolReq) {
+        chartSolReq.destroy();
+        chartSolReq = null;
     }
 }
 
@@ -1626,7 +1692,13 @@ function closeRequestModal() {
 }
 
 function clearRequestFilters() {
-    ['filter-request-municipality','filter-request-status','filter-request-solicitante','filter-request-user','filter-request-date-start','filter-request-date-end'].forEach(function(id) {
+    const ids = [
+        'filter-request-municipality', 'filter-request-status', 'filter-request-user', 
+        'filter-request-solicitante', 
+        'filter-request-sol-start', 'filter-request-sol-end',
+        'filter-request-real-start', 'filter-request-real-end'
+    ];
+    ids.forEach(id => {
         if(document.getElementById(id)) document.getElementById(id).value = '';
     });
     renderRequests();
@@ -2710,73 +2782,55 @@ function populateFilterSelects() {
     const munSelect = document.getElementById('filter-municipality-name');
     if (munSelect) {
         const current = munSelect.value;
-        const sorted = municipalities.slice().sort(function(a, b) {
-            return a.name.localeCompare(b.name);
-        });
-        
-        let html = '<option value="">Todos</option>';
-        sorted.forEach(function(m) {
-            html += '<option value="' + m.name + '">' + m.name + '</option>';
-        });
-        munSelect.innerHTML = html;
-        
+        const sorted = municipalities.slice().sort((a, b) => a.name.localeCompare(b.name));
+        munSelect.innerHTML = '<option value="">Todos</option>' + sorted.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
         if(current) munSelect.value = current;
     }
 
-    // 2. Filtros de Município nas outras abas (Apenas ativos)
-    const activeMuns = municipalities.filter(function(m) { return m.status === 'Em uso'; }).sort(function(a,b){return a.name.localeCompare(b.name)});
-    
+    // 2. Filtros de Município nas outras abas
+    const activeMuns = municipalities.filter(m => m.status === 'Em uso').sort((a,b) => a.name.localeCompare(b.name));
     const munFilters = [
-        'filter-task-municipality', 
-        'filter-request-municipality', 
-        'filter-visit-municipality', 
-        'filter-production-municipality', 
+        'filter-task-municipality', 'filter-request-municipality', 
+        'filter-visit-municipality', 'filter-production-municipality', 
         'filter-presentation-municipality'
     ];
-    
-    munFilters.forEach(function(id) {
+    munFilters.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             const cur = el.value;
-            let html = '<option value="">Todos</option>';
-            activeMuns.forEach(function(m) {
-                html += '<option value="' + m.name + '">' + m.name + '</option>';
-            });
-            el.innerHTML = html;
+            el.innerHTML = '<option value="">Todos</option>' + activeMuns.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
             if(cur) el.value = cur;
         }
     });
 
-    // 3. NOVO: Filtros de Orientador (Puxa do cadastro de Orientadores)
+    // 3. Filtros de Orientador
     const orientadorFilters = ['filter-task-performer', 'filter-presentation-orientador'];
-    const sortedOrientadores = orientadores.slice().sort(function(a,b) { return a.name.localeCompare(b.name); });
-    
-    orientadorFilters.forEach(function(id) {
+    const sortedOrientadores = orientadores.slice().sort((a,b) => a.name.localeCompare(b.name));
+    orientadorFilters.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             const cur = el.value;
-            let html = '<option value="">Todos</option>';
-            sortedOrientadores.forEach(function(o) {
-                html += '<option value="' + o.name + '">' + o.name + '</option>';
-            });
-            el.innerHTML = html;
+            el.innerHTML = '<option value="">Todos</option>' + sortedOrientadores.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
             if(cur) el.value = cur;
         }
     });
 
-    // 4. NOVO: Filtro de Cargo (Puxa do cadastro de Cargos)
+    // 4. Filtro de Cargo
     const cargoEl = document.getElementById('filter-task-position');
     if (cargoEl) {
         const cur = cargoEl.value;
-        const sortedCargos = cargos.slice().sort(function(a,b) { return a.name.localeCompare(b.name); });
-        
-        let html = '<option value="">Todos</option>';
-        sortedCargos.forEach(function(c) {
-            html += '<option value="' + c.name + '">' + c.name + '</option>';
-        });
-        cargoEl.innerHTML = html;
-        
+        const sortedCargos = cargos.slice().sort((a,b) => a.name.localeCompare(b.name));
+        cargoEl.innerHTML = '<option value="">Todos</option>' + sortedCargos.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         if(cur) cargoEl.value = cur;
+    }
+
+    // 5. NOVO: Filtro de Usuário (Aba Solicitações) - Pega ativos e inativos
+    const userEl = document.getElementById('filter-request-user');
+    if (userEl) {
+        const cur = userEl.value;
+        const sortedUsers = users.slice().sort((a,b) => a.name.localeCompare(b.name));
+        userEl.innerHTML = '<option value="">Todos</option>' + sortedUsers.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
+        if(cur) userEl.value = cur;
     }
 }
 
