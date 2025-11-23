@@ -2957,20 +2957,42 @@ function clearProductionFilters() {
     });
     renderProductions();
 }
-// Função Visual: Controla campo de Período no formulário de Produção
+// Função Visual: Controla campos e obrigatoriedade na Produção
 function handleProductionFrequencyChange() {
     const freq = document.getElementById('production-frequency').value;
     const grpPeriod = document.getElementById('production-period-group');
     const inputPeriod = document.getElementById('production-period');
 
+    // Garante que o grupo do Período esteja SEMPRE visível
+    if (grpPeriod) grpPeriod.style.display = 'block';
+
+    // Lista de campos que variam a obrigatoriedade
+    const fieldsToCheck = [
+        'production-competence',
+        'production-release-date',
+        'production-status',
+        'production-contact'
+    ];
+
     if (freq === 'Diário') {
-        grpPeriod.style.display = 'none';
-        inputPeriod.required = false;
-        inputPeriod.value = ''; // Limpa se ocultar
+        // 1. Regra do Período: Visível, mas OPCIONAL
+        if (inputPeriod) inputPeriod.required = false;
+
+        // 2. Regra dos Outros Campos: Remove obrigatoriedade (ficam opcionais)
+        fieldsToCheck.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.required = false;
+        });
+
     } else {
-        grpPeriod.style.display = 'block';
-        // Se quiser obrigatório nos outros casos, descomente a linha abaixo:
-        // inputPeriod.required = true; 
+        // 1. Regra do Período: Visível e OBRIGATÓRIO
+        if (inputPeriod) inputPeriod.required = true;
+
+        // 2. Regra dos Outros Campos: Tornam-se Obrigatórios novamente
+        fieldsToCheck.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.required = true;
+        });
     }
 }
 
