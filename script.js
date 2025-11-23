@@ -3252,59 +3252,68 @@ function handleBackupFileSelect(event) {
 
 function confirmRestore() {
     if (!pendingBackupData) return;
-    const data = pendingBackupData.data;
     
-    // 1. GUARDA A SESSÃO ATUAL (Para não deslogar)
+    // Proteção: Tenta pegar .data, se não existir, tenta usar o próprio objeto (para backups antigos)
+    const backup = pendingBackupData.data || pendingBackupData; 
+    
+    // 1. Preservar Sessão (Para não deslogar)
     const sessionUser = localStorage.getItem('currentUser');
     const sessionAuth = localStorage.getItem('isAuthenticated');
-    const sessionTheme = localStorage.getItem('theme');
+    const sessionTheme = localStorage.getItem('theme') || 'light';
 
-    // 2. LIMPA TUDO (Zera o banco)
+    // 2. Limpar tudo antes de restaurar
     localStorage.clear();
-    
-    // 3. RESTAURAÇÃO BLINDADA (Evita erros de "null" ou "undefined")
-    // Se o dado não existir no backup, salva um array vazio []
-    const restoreList = (key, value) => {
-        if (Array.isArray(value)) {
-            localStorage.setItem(key, JSON.stringify(value));
+
+    // 3. Função de Salvamento Seguro (A Mágica)
+    // Se o dado for inválido, salva o 'fallback' (valor padrão)
+    const saveSafe = (key, data, fallback) => {
+        if (data && (Array.isArray(data) || typeof data === 'object')) {
+            localStorage.setItem(key, JSON.stringify(data));
         } else {
-            localStorage.setItem(key, JSON.stringify([])); // Salva vazio se der erro
+            localStorage.setItem(key, JSON.stringify(fallback));
         }
     };
 
-    // Restaura Listas Principais
-    restoreList('users', data.users);
-    restoreList('municipalities', data.municipalities);
-    restoreList('municipalitiesList', data.municipalitiesList);
+    // Definição de Contadores Padrão (caso não existam no backup)
+    const defaultCounters = { 
+        mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1 
+    };
+
+    // Definição de Usuário Padrão (caso users esteja vazio)
+    const defaultUsers = [{ 
+        id: 1, login: 'ADMIN', name: 'Administrador', 
+        permission: 'Administrador', status: 'Ativo', 
+        salt: 'default', passwordHash: 'default' // Será resetado se necessário
+    }];
+
+    // 4. Restaurar Listas com Segurança
+    saveSafe('users', backup.users, defaultUsers);
+    saveSafe('municipalities', backup.municipalities, []);
+    saveSafe('municipalitiesList', backup.municipalitiesList, []);
+    saveSafe('tasks', backup.tasks || backup.trainings, []); // Suporte legado
+    saveSafe('requests', backup.requests, []);
+    saveSafe('demands', backup.demands, []);
+    saveSafe('visits', backup.visits, []);
+    saveSafe('productions', backup.productions, []);
+    saveSafe('presentations', backup.presentations, []);
+    saveSafe('systemVersions', backup.systemVersions, []);
+    saveSafe('cargos', backup.cargos, []);
+    saveSafe('orientadores', backup.orientadores, []);
+    saveSafe('modulos', backup.modulos || backup.modules, []); // Suporte legado
+    saveSafe('formasApresentacao', backup.formasApresentacao, []);
     
-    // Suporte para backups antigos que usavam nomes diferentes (trainings/modules)
-    restoreList('tasks', data.tasks || data.trainings);
-    restoreList('modulos', data.modulos || data.modules);
-    
-    restoreList('requests', data.requests);
-    restoreList('demands', data.demands);
-    restoreList('visits', data.visits);
-    restoreList('productions', data.productions);
-    restoreList('presentations', data.presentations);
-    restoreList('systemVersions', data.systemVersions);
-    restoreList('cargos', data.cargos);
-    restoreList('orientadores', data.orientadores);
-    restoreList('formasApresentacao', data.formasApresentacao);
-    
-    // Restaura Contadores (Objeto, não lista)
-    const defaultCounters = { mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1 };
-    const countersToSave = data.counters || defaultCounters;
-    localStorage.setItem('counters', JSON.stringify(countersToSave));
-    
-    // 4. DEVOLVE A SESSÃO (Re-loga o usuário)
+    saveSafe('counters', backup.counters, defaultCounters);
+
+    // 5. Restaurar Sessão
     if (sessionUser) localStorage.setItem('currentUser', sessionUser);
     if (sessionAuth) localStorage.setItem('isAuthenticated', sessionAuth);
-    if (sessionTheme) localStorage.setItem('theme', sessionTheme);
-    
-    // 5. RECARREGA A PÁGINA
-    alert('Dados restaurados com sucesso!');
+    localStorage.setItem('theme', sessionTheme);
+
+    // 6. Recarregar
+    alert('Sistema restaurado com sucesso! A página será recarregada.');
     location.reload();
 }
+
 // ----------------------------------------------------------------------------
 // 20. DASHBOARD E INICIALIZAÇÃO
 // ----------------------------------------------------------------------------
