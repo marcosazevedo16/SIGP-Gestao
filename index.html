@@ -390,199 +390,113 @@
 
         <!-- Aba Demandas do Suporte -->
 
-        <section id="demandas-section" class="tab-content">
-
+       <section id="demandas-section" class="tab-content">
             <div class="section-header">
-
                 <h2>Demandas do Suporte</h2>
-
                 <button class="btn btn--primary" onclick="showDemandModal()">+ Nova Demanda</button>
-
             </div>
-
-
 
             <h3 class="section-subtitle">Filtros</h3>
-
             <div class="filters-section">
-
                 <div class="filters-grid">
-
                     <div class="form-group">
-
                         <label class="form-label">Status</label>
-
                         <select class="form-control" id="filter-demand-status">
-
                             <option value="">Todos</option>
-
                             <option value="Pendente">Pendente</option>
-
                             <option value="Realizada">Realizada</option>
-
                             <option value="Inviável">Inviável</option>
-
                         </select>
-
                     </div>
-
                     <div class="form-group">
-
                         <label class="form-label">Prioridade</label>
-
                         <select class="form-control" id="filter-demand-priority">
-
                             <option value="">Todas</option>
-
                             <option value="Alta">Alta</option>
-
                             <option value="Média">Média</option>
-
                             <option value="Baixa">Baixa</option>
-
                         </select>
-
                     </div>
-
                     <div class="form-group">
-
-                        <label class="form-label">Usuário</label>
-
-                        <input type="text" class="form-control" id="filter-demand-user" placeholder="Buscar por usuário">
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label class="form-label">Filtrar por:</label>
-
-                        <select class="form-control" id="filter-demand-date-type">
-
-                            <option value="solicitacao">Data Solicitação</option>
-
-                            <option value="realizacao">Data Realização</option>
-
+                        <label class="form-label">Usuário da Demanda</label>
+                        <select class="form-control" id="filter-demand-user">
+                            <option value="">Todos</option>
                         </select>
-
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Solicitação (Início)</label>
+                        <input type="date" class="form-control" id="filter-demand-sol-start" onchange="validateDateRange('dem-sol')">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Solicitação (Fim)</label>
+                        <input type="date" class="form-control" id="filter-demand-sol-end" onchange="validateDateRange('dem-sol')">
                     </div>
 
                     <div class="form-group">
-
-                        <label class="form-label">Data Inicial</label>
-
-                        <input type="date" class="form-control" id="filter-demand-date-start">
-
+                        <label class="form-label">Realização (Início)</label>
+                        <input type="date" class="form-control" id="filter-demand-real-start" onchange="validateDateRange('dem-real')">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Realização (Fim)</label>
+                        <input type="date" class="form-control" id="filter-demand-real-end" onchange="validateDateRange('dem-real')">
                     </div>
 
-                    <div class="form-group">
-
-                        <label class="form-label">Data Final</label>
-
-                        <input type="date" class="form-control" id="filter-demand-date-end">
-
-                    </div>
-
-                    <div class="form-group">
-
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
                         <button class="btn btn--primary btn--full-width" onclick="clearDemandFilters()">Limpar Filtros</button>
-
                     </div>
-
                 </div>
-
             </div>
-
-
 
             <div id="demands-results-count" class="results-count" style="display: none;"></div>
 
-
-
             <div class="tasks-table" id="demands-table"></div>
 
-
+            <div class="actions-bar">
+                <button class="btn btn--outline btn--sm" onclick="exportDemandsCSV()">📥 Exportar CSV</button>
+                <button class="btn btn--primary btn--sm" onclick="generateDemandsPDF()">📄 Gerar PDF</button>
+            </div>
 
             <div class="section-divider"></div>
 
-
-
             <h3 class="section-subtitle">Gráficos e Estatísticas</h3>
-
             <div class="stats-cards">
-
                 <div class="stat-card">
-
                     <h3 id="total-demands">0</h3>
-
                     <p>Total de Demandas</p>
-
                 </div>
-
                 <div class="stat-card">
-
                     <h3 id="pending-demands">0</h3>
-
                     <p>Pendentes</p>
-
                 </div>
-
                 <div class="stat-card">
-
                     <h3 id="completed-demands">0</h3>
-
                     <p>Realizadas</p>
-
                 </div>
-
                 <div class="stat-card">
-
                     <h3 id="unfeasible-demands">0</h3>
-
                     <p>Inviáveis</p>
-
                 </div>
-
             </div>
-
-
 
             <div class="charts-section">
-
                 <h4>Dashboard e Gráficos</h4>
-
                 <div class="charts-grid">
-
                     <div class="chart-card">
-
                         <h4>Distribuição por Status</h4>
-
                         <canvas id="demandStatusChart"></canvas>
-
                     </div>
-
                     <div class="chart-card">
-
                         <h4>Demandas por Prioridade</h4>
-
                         <canvas id="demandPriorityChart"></canvas>
-
                     </div>
-
                     <div class="chart-card">
-
                         <h4>Demandas por Usuário</h4>
-
                         <canvas id="demandUserChart"></canvas>
-
                     </div>
-
                 </div>
-
             </div>
-
         </section>
-
-
 
         <!-- Aba Solicitações de Visitas Presenciais -->
 
@@ -2651,102 +2565,56 @@
     <!-- Modal para Demandas do Suporte -->
 
     <div id="demand-modal" class="modal">
-
         <div class="modal-content">
-
             <div class="modal-header">
-
                 <h3 id="demand-modal-title">Nova Demanda</h3>
-
                 <button class="close-btn" onclick="closeDemandModal()">&times;</button>
-
             </div>
-
             <form id="demand-form" onsubmit="saveDemand(event)">
-
                 <div class="form-group">
-
                     <label class="form-label">Data da Solicitação*</label>
-
                     <input type="date" class="form-control" id="demand-date" required>
-
                 </div>
-
                 <div class="form-group">
-
-                    <label class="form-label">Descrição da Solicitação* (máx. 250 caracteres)</label>
-
+                    <label class="form-label">Descrição da Demanda* (máx. 250)</label>
                     <textarea class="form-control" id="demand-description" rows="4" required maxlength="250"></textarea>
-
                     <div class="char-counter" id="demand-char-counter">0 / 250</div>
-
                 </div>
-
                 <div class="form-group">
-
                     <label class="form-label">Prioridade da Demanda*</label>
-
                     <select class="form-control" id="demand-priority" required>
-
                         <option value="">Selecione</option>
-
                         <option value="Alta">Alta</option>
-
                         <option value="Média">Média</option>
-
                         <option value="Baixa">Baixa</option>
-
                     </select>
-
                 </div>
-
                 <div class="form-group">
-
                     <label class="form-label">Status*</label>
-
                     <select class="form-control" id="demand-status" required onchange="handleDemandStatusChange()">
-
                         <option value="Pendente">Pendente</option>
-
                         <option value="Realizada">Realizada</option>
-
                         <option value="Inviável">Inviável</option>
-
                     </select>
-
                 </div>
-
+                
                 <div class="form-group" id="demand-realization-date-group" style="display: none;">
-
-                    <label class="form-label">Data de Realização*</label>
-
+                    <label class="form-label" id="demand-realization-label">Data de Realização</label>
                     <input type="date" class="form-control" id="demand-realization-date">
-
                 </div>
-
+                
                 <div class="form-group" id="demand-justification-group" style="display: none;">
-
-                    <label class="form-label">Justificativa</label>
-
+                    <label class="form-label" id="demand-justification-label">Justificativa Inviabilidade</label>
                     <textarea class="form-control" id="demand-justification" rows="3" maxlength="250"></textarea>
-
                 </div>
 
                 <div class="modal-actions">
-
                     <button type="button" class="btn btn--secondary" onclick="closeDemandModal()">Cancelar</button>
-
                     <button type="submit" class="btn btn--primary">Salvar</button>
-
                 </div>
-
             </form>
-
         </div>
-
     </div>
-
-
 
     <!-- Modal para Visitas Presenciais -->
 
