@@ -1267,8 +1267,8 @@ function getFilteredTasks() {
     const fMun = document.getElementById('filter-task-municipality')?.value;
     const fStatus = document.getElementById('filter-task-status')?.value;
     const fReq = document.getElementById('filter-task-requester')?.value.toLowerCase();
-    const fPerf = document.getElementById('filter-task-performer')?.value; // Agora é Select
-    const fCargo = document.getElementById('filter-task-position')?.value; // Agora é Select
+    const fPerf = document.getElementById('filter-task-performer')?.value; 
+    const fCargo = document.getElementById('filter-task-position')?.value; 
     
     // Datas Solicitação
     const fReqStart = document.getElementById('filter-task-req-start')?.value;
@@ -1297,14 +1297,6 @@ function getFilteredTasks() {
     });
 
     // Ordenação Padrão
-    return filtered.sort(function(a, b) {
-        if (a.status === 'Pendente' && b.status !== 'Pendente') return -1;
-        if (a.status !== 'Pendente' && b.status === 'Pendente') return 1;
-        return new Date(a.dateRequested) - new Date(b.dateRequested);
-    });
-}
-
-    // Ordenação Item 16
     return filtered.sort(function(a, b) {
         if (a.status === 'Pendente' && b.status !== 'Pendente') return -1;
         if (a.status !== 'Pendente' && b.status === 'Pendente') return 1;
