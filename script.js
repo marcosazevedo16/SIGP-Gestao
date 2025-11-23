@@ -1723,6 +1723,7 @@ function clearRequestFilters() {
 // ----------------------------------------------------------------------------
 // Função Visual: Controla asteriscos e visibilidade conforme o Status
 
+// Função Visual: Controla asteriscos e visibilidade conforme o Status
 function handlePresentationStatusChange() {
     const status = document.getElementById('presentation-status').value;
     const grpDate = document.getElementById('presentation-date-realizacao-group');
@@ -1733,28 +1734,28 @@ function handlePresentationStatusChange() {
     const lblForms = document.getElementById('presentation-forms-label');
     const lblDesc = document.getElementById('presentation-description-label');
 
-    // 1. Reseta todos os labels (remove asteriscos anteriores para não acumular)
+    // 1. Reseta todos os labels (remove asteriscos anteriores)
     if(lblDate) lblDate.textContent = 'Data de Realização';
     if(lblOrient) lblOrient.textContent = 'Orientador(es)';
     if(lblForms) lblForms.textContent = 'Formas de Apresentação';
     if(lblDesc) lblDesc.textContent = 'Descrição/Detalhes';
 
-    // 2. Aplica regras baseadas no status selecionado
+    // 2. AJUSTE: Campo de Data fica SEMPRE visível (agora é opcional nos outros status)
+    if(grpDate) grpDate.style.display = 'block';
+
+    // 3. Aplica regras de OBRIGATORIEDADE (*) baseadas no status
     if (status === 'Realizada') {
-        // Regra: Data, Orientador e Formas obrigatórios
-        if(grpDate) grpDate.style.display = 'block'; // Mostra data
+        // Regra: Data, Orientador e Formas OBRIGATÓRIOS
         if(lblDate) lblDate.textContent += '*';
         if(lblOrient) lblOrient.textContent += '*';
         if(lblForms) lblForms.textContent += '*';
     
     } else if (status === 'Pendente') {
-        // Regra: Só Orientador obrigatório. Data some.
-        if(grpDate) grpDate.style.display = 'none'; // Esconde data
+        // Regra: Só Orientador OBRIGATÓRIO.
         if(lblOrient) lblOrient.textContent += '*';
     
     } else if (status === 'Cancelada') {
-        // Regra: Só Descrição obrigatória. Data some.
-        if(grpDate) grpDate.style.display = 'none'; // Esconde data
+        // Regra: Só Descrição OBRIGATÓRIA.
         if(lblDesc) lblDesc.textContent += '*';
     }
 }
