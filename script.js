@@ -3213,38 +3213,46 @@ function handleBackupFileSelect(event) {
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
-            const backup = JSON.parse(e.target.result);
-            if (!backup.data) { alert('Inválido.'); return; }
-            pendingBackupData = backup;
+            const json = JSON.parse(e.target.result);
+            // Suporte para estrutura nova (.data) ou antiga (raiz)
+            const d = json.data || json; 
+            
+            if (!d) { alert('Arquivo de backup inválido.'); return; }
+            
+            pendingBackupData = json; // Guarda o arquivo na memória para o confirmRestore usar
             
             const list = document.getElementById('restore-preview-list');
             if(list) {
                 list.innerHTML = '';
-                const d = backup.data;
-                // LISTAGEM COMPLETA DE TODOS OS DADOS
-                const items = [
-                    {l:'Treinamentos',c:d.tasks ? d.tasks.length : (d.trainings ? d.trainings.length : 0)},
-                    {l:'Municípios Clientes',c:d.municipalities.length},
-                    {l:'Lista Mestra',c:d.municipalitiesList?.length||0},
-                    {l:'Solicitações',c:d.requests?.length||0},
-                    {l:'Apresentações',c:d.presentations?.length||0},
-                    {l:'Demandas',c:d.demands?.length||0},
-                    {l:'Visitas',c:d.visits?.length||0},
-                    {l:'Produção',c:d.productions?.length||0},
-                    {l:'Cargos',c:d.cargos?.length||0},
-                    {l:'Orientadores',c:d.orientadores?.length||0},
-                    {l:'Módulos',c:d.modules?.length||0},
-                    {l:'Formas',c:d.formasApresentacao?.length||0},
-                    {l:'Usuários',c:d.users.length},
-                    {l:'Versões',c:d.systemVersions?.length||0}
-                ];
-                items.forEach(i => {
-                    list.innerHTML += `<li><strong>${i.l}:</strong> ${i.c}</li>`;
-                });
+                
+                // Contagem Inteligente (Nomes novos ou antigos)
+                const counts = {
+                    'Treinamentos': (d.tasks || d.trainings || []).length,
+                    'Municípios Clientes': (d.municipalities || []).length,
+                    'Lista Mestra': (d.municipalitiesList || []).length,
+                    'Solicitações': (d.requests || []).length,
+                    'Apresentações': (d.presentations || []).length,
+                    'Demandas': (d.demands || []).length,
+                    'Visitas': (d.visits || []).length,
+                    'Produção': (d.productions || []).length,
+                    'Usuários': (d.users || []).length
+                };
+
+                // Gera a lista visual (Só mostra o que tem valor > 0 ou itens principais)
+                for (const [label, count] of Object.entries(counts)) {
+                    list.innerHTML += `<li><strong>${label}:</strong> ${count}</li>`;
+                }
+                
+                // Verifica Versões separadamente (Se for 0, não mostra)
+                const verCount = (d.systemVersions || []).length;
+                if (verCount > 0) {
+                    list.innerHTML += `<li><strong>Versões:</strong> ${verCount}</li>`;
+                }
             }
             document.getElementById('restore-confirm-modal').classList.add('show');
         } catch (err) { 
-            alert('Erro ao ler arquivo.'); 
+            console.error(err);
+            alert('Erro ao ler arquivo de backup. Verifique o formato.'); 
         }
     };
     reader.readAsText(file);
@@ -3253,119 +3261,120 @@ function handleBackupFileSelect(event) {
 function confirmRestore() {
     if (!pendingBackupData) return;
 
-    // Tenta pegar os dados principais
-    const backup = pendingBackupData.data || pendingBackupData;
+    try {
+        // 1. Prepara os dados (Lê do backup)
+        const backup = pendingBackupData.data || pendingBackupData;
+        
+        // Dados de Sessão (Para manter logado)
+        const sessionUser = localStorage.getItem('currentUser');
+        const sessionAuth = localStorage.getItem('isAuthenticated');
+        const sessionTheme = localStorage.getItem('theme') || 'light';
 
-    // 1. Preservar Sessão (Para não deslogar)
-    const sessionUser = localStorage.getItem('currentUser');
-    const sessionAuth = localStorage.getItem('isAuthenticated');
-    const sessionTheme = localStorage.getItem('theme') || 'light';
+        // --- PREPARAÇÃO E MIGRAÇÃO (Na memória antes de gravar) ---
+        
+        // Usuários
+        const newUsers = (backup.users || []).map(u => ({
+            ...u, status: u.status || 'Ativo', permission: u.permission || 'Usuário Normal'
+        }));
+        // Garante Admin de emergência
+        if (newUsers.length === 0) {
+            newUsers.push({id:1, login:'ADMIN', name:'Administrador', password:'saude2025', salt: 'migrated', passwordHash: 'migrated', permission:'Administrador', status:'Ativo'});
+        }
 
-    // 2. Limpar banco atual
-    localStorage.clear();
+        // Municípios
+        const newMuns = (backup.municipalities || []).map(m => ({
+            ...m,
+            manager: m.manager || '',
+            contact: m.contact || '',
+            // Migra stoppageDate se existir, senão usa dateBlocked/Stopped
+            dateBlocked: (m.status === 'Bloqueado' ? (m.dateBlocked || m.stoppageDate || '') : ''),
+            dateStopped: (m.status === 'Parou de usar' ? (m.dateStopped || m.stoppageDate || '') : '')
+        }));
 
-    // --- MIGRAÇÃO E CORREÇÃO DE DADOS ---
+        // Treinamentos (Converte trainings -> tasks)
+        const rawTasks = backup.tasks || backup.trainings || [];
+        const newTasks = rawTasks.map(t => ({
+            ...t,
+            status: t.status || 'Pendente'
+        }));
 
-    // 1. Usuários (Garante admin se vazio)
-    const safeUsers = (backup.users || []).map(u => ({
-        ...u,
-        status: u.status || 'Ativo',
-        permission: u.permission || 'Usuário Normal'
-    }));
-    if (safeUsers.length === 0) {
-        // Cria usuário de emergência se não houver usuários
-        safeUsers.push({id:1, login:'ADMIN', name:'Administrador', passwordHash: hashPassword('saude2025', generateSalt()), salt: generateSalt(), permission:'Administrador', status:'Ativo'});
+        // Demandas (Converte realizationDate -> dateRealization)
+        const newDemands = (backup.demands || []).map(d => ({
+            ...d,
+            dateRealization: d.dateRealization || d.realizationDate || '',
+            justification: d.justification || ''
+        }));
+
+        // Visitas (Converte visitDate -> dateRealization)
+        const newVisits = (backup.visits || []).map(v => ({
+            ...v,
+            dateRealization: v.dateRealization || v.visitDate || '',
+            justification: v.justification || v.cancelJustification || ''
+        }));
+
+        // Outras listas (Garante array vazio se não existir)
+        const newListMestra = backup.municipalitiesList || [];
+        const newRequests = backup.requests || [];
+        const newProds = backup.productions || [];
+        const newPres = backup.presentations || [];
+        const newVers = backup.systemVersions || [];
+        const newCargos = backup.cargos || [];
+        const newOrient = backup.orientadores || [];
+        const newMods = backup.modulos || backup.modules || [];
+        const newFormas = backup.formasApresentacao || [];
+
+        // Contadores (Recalcula baseado no maior ID encontrado para evitar conflito)
+        const getMax = (list) => list.reduce((acc, i) => Math.max(acc, i.id || 0), 0) + 1;
+        const newCounters = {
+            mun: getMax(newMuns),
+            munList: getMax(newListMestra),
+            task: getMax(newTasks),
+            req: getMax(newRequests),
+            dem: getMax(newDemands),
+            visit: getMax(newVisits),
+            prod: getMax(newProds),
+            pres: getMax(newPres),
+            ver: getMax(newVers),
+            user: getMax(newUsers),
+            cargo: getMax(newCargos),
+            orient: getMax(newOrient),
+            mod: getMax(newMods),
+            forma: getMax(newFormas)
+        };
+
+        // --- GRAVAÇÃO (Agora é seguro limpar) ---
+        localStorage.clear();
+
+        localStorage.setItem('users', JSON.stringify(newUsers));
+        localStorage.setItem('municipalities', JSON.stringify(newMuns));
+        localStorage.setItem('municipalitiesList', JSON.stringify(newListMestra));
+        localStorage.setItem('tasks', JSON.stringify(newTasks));
+        localStorage.setItem('requests', JSON.stringify(newRequests));
+        localStorage.setItem('demands', JSON.stringify(newDemands));
+        localStorage.setItem('visits', JSON.stringify(newVisits));
+        localStorage.setItem('productions', JSON.stringify(newProds));
+        localStorage.setItem('presentations', JSON.stringify(newPres));
+        localStorage.setItem('systemVersions', JSON.stringify(newVers));
+        localStorage.setItem('cargos', JSON.stringify(newCargos));
+        localStorage.setItem('orientadores', JSON.stringify(newOrient));
+        localStorage.setItem('modulos', JSON.stringify(newMods));
+        localStorage.setItem('formasApresentacao', JSON.stringify(newFormas));
+        localStorage.setItem('counters', JSON.stringify(newCounters));
+
+        // Restaura Sessão
+        if (sessionUser) localStorage.setItem('currentUser', sessionUser);
+        if (sessionAuth) localStorage.setItem('isAuthenticated', sessionAuth);
+        localStorage.setItem('theme', sessionTheme);
+
+        // Sucesso
+        alert('Restauração concluída com sucesso! A página será recarregada.');
+        location.reload();
+
+    } catch (error) {
+        console.error("Erro crítico na restauração:", error);
+        alert('Ocorreu um erro ao processar os dados do backup. Verifique o console (F12) para mais detalhes.');
+        // Não recarrega a página se der erro, para você poder ver o console
     }
-    localStorage.setItem('users', JSON.stringify(safeUsers));
-
-    // 2. Municípios (Converte stoppageDate -> dateBlocked/dateStopped)
-    const safeMuns = (backup.municipalities || []).map(m => ({
-        id: m.id,
-        name: m.name,
-        status: m.status,
-        manager: m.manager || '',
-        contact: m.contact || '',
-        implantationDate: m.implantationDate || '',
-        lastVisit: m.lastVisit || '',
-        modules: m.modules || [],
-        // Lógica de Migração:
-        dateBlocked: (m.status === 'Bloqueado' ? (m.dateBlocked || m.stoppageDate || '') : ''),
-        dateStopped: (m.status === 'Parou de usar' ? (m.dateStopped || m.stoppageDate || '') : '')
-    }));
-    localStorage.setItem('municipalities', JSON.stringify(safeMuns));
-
-    // 3. Treinamentos (Converte 'trainings' antigo para 'tasks')
-    const rawTasks = backup.tasks || backup.trainings || [];
-    const safeTasks = rawTasks.map(t => ({
-        id: t.id,
-        municipality: t.municipality,
-        dateRequested: t.dateRequested,
-        datePerformed: t.datePerformed || '',
-        requestedBy: t.requestedBy || '',
-        performedBy: t.performedBy || '',
-        trainedName: t.trainedName || '',
-        trainedPosition: t.trainedPosition || '',
-        contact: t.contact || '',
-        status: t.status || 'Pendente',
-        observations: t.observations || ''
-    }));
-    localStorage.setItem('tasks', JSON.stringify(safeTasks));
-
-    // 4. Demandas (Converte realizationDate -> dateRealization)
-    const safeDemands = (backup.demands || []).map(d => ({
-        ...d,
-        dateRealization: d.dateRealization || d.realizationDate || '',
-        justification: d.justification || ''
-    }));
-    localStorage.setItem('demands', JSON.stringify(safeDemands));
-
-    // 5. Visitas (Converte visitDate -> dateRealization)
-    const safeVisits = (backup.visits || []).map(v => ({
-        ...v,
-        dateRealization: v.dateRealization || v.visitDate || '',
-        justification: v.justification || v.cancelJustification || ''
-    }));
-    localStorage.setItem('visits', JSON.stringify(safeVisits));
-
-    // 6. Outras Listas (Salva vazio [] se não existir para não travar)
-    localStorage.setItem('municipalitiesList', JSON.stringify(backup.municipalitiesList || []));
-    localStorage.setItem('requests', JSON.stringify(backup.requests || []));
-    localStorage.setItem('productions', JSON.stringify(backup.productions || []));
-    localStorage.setItem('presentations', JSON.stringify(backup.presentations || []));
-    localStorage.setItem('systemVersions', JSON.stringify(backup.systemVersions || []));
-    localStorage.setItem('cargos', JSON.stringify(backup.cargos || []));
-    localStorage.setItem('orientadores', JSON.stringify(backup.orientadores || []));
-    localStorage.setItem('modulos', JSON.stringify(backup.modulos || backup.modules || []));
-    localStorage.setItem('formasApresentacao', JSON.stringify(backup.formasApresentacao || []));
-
-    // 7. Recriar Contadores (Evita conflito de ID futuro)
-    const getMax = (list) => list.reduce((acc, item) => Math.max(acc, item.id || 0), 0) + 1;
-    
-    const counters = {
-        mun: getMax(safeMuns),
-        munList: getMax(backup.municipalitiesList || []),
-        task: getMax(safeTasks),
-        req: getMax(backup.requests || []),
-        dem: getMax(safeDemands),
-        visit: getMax(safeVisits),
-        prod: getMax(backup.productions || []),
-        pres: getMax(backup.presentations || []),
-        ver: getMax(backup.systemVersions || []),
-        user: getMax(safeUsers),
-        cargo: getMax(backup.cargos || []),
-        orient: getMax(backup.orientadores || []),
-        mod: getMax(backup.modulos || []),
-        forma: getMax(backup.formasApresentacao || [])
-    };
-    localStorage.setItem('counters', JSON.stringify(counters));
-
-    // 8. Restaurar Sessão
-    if (sessionUser) localStorage.setItem('currentUser', sessionUser);
-    if (sessionAuth) localStorage.setItem('isAuthenticated', sessionAuth);
-    localStorage.setItem('theme', sessionTheme);
-
-    alert('Backup restaurado e convertido com sucesso!');
-    location.reload();
 }
 
 // ----------------------------------------------------------------------------
