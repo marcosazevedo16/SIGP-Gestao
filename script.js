@@ -3271,22 +3271,21 @@ function confirmRestore() {
         // Pega os dados (suporta formato novo .data ou antigo raiz)
         const backup = pendingBackupData.data || pendingBackupData;
         
-        // 1. Guarda apenas o LOGIN do usuário atual (não o objeto todo)
-        const currentSessionStr = localStorage.getItem('currentUser');
+        // 1. Tenta salvar o LOGIN atual (apenas a string, para buscar depois)
         let currentLogin = null;
-        if (currentSessionStr) {
-            try {
-                const u = JSON.parse(currentSessionStr);
-                currentLogin = u.login;
-            } catch (e) { /* erro silencioso */ }
-        }
+        try {
+            const sessionJson = localStorage.getItem('currentUser');
+            if (sessionJson) {
+                currentLogin = JSON.parse(sessionJson).login;
+            }
+        } catch (e) { console.log("Sessão inválida ou inexistente"); }
         
         const sessionTheme = localStorage.getItem('theme') || 'light';
 
-        // 2. Limpa o banco
+        // 2. Limpa o banco completamente
         localStorage.clear();
 
-        // --- MIGRAÇÃO DE DADOS (Tratamento para seu arquivo específico) ---
+        // --- MIGRAÇÃO E HIGIENIZAÇÃO DE DADOS (Tratamento de Choque) ---
 
         // Usuários
         const safeUsers = (backup.users || []).map(u => ({
@@ -3294,18 +3293,19 @@ function confirmRestore() {
             status: u.status || 'Ativo', 
             permission: u.permission || 'Usuário Normal'
         }));
-        // Garante Admin se lista vazia
+        // Se não tiver usuários, cria o ADMIN padrão
         if (safeUsers.length === 0) {
             safeUsers.push({id:1, login:'ADMIN', name:'Administrador', passwordHash: hashPassword('saude2025', generateSalt()), salt: generateSalt(), permission:'Administrador', status:'Ativo'});
         }
 
-        // Municípios
+        // Municípios (O PONTO CRÍTICO: modules não pode ser null)
         const safeMuns = (backup.municipalities || []).map(m => ({
             ...m,
             manager: m.manager || '',
             contact: m.contact || '',
-            modules: Array.isArray(m.modules) ? m.modules : [],
-            // Converte stoppageDate antigo
+            // Garante que modules seja array, senão o renderMunicipalities trava
+            modules: Array.isArray(m.modules) ? m.modules : [], 
+            // Migração de datas antigas
             dateBlocked: (m.status === 'Bloqueado' ? (m.dateBlocked || m.stoppageDate || '') : ''),
             dateStopped: (m.status === 'Parou de usar' ? (m.dateStopped || m.stoppageDate || '') : '')
         }));
@@ -3326,23 +3326,23 @@ function confirmRestore() {
             observations: t.observations || ''
         }));
 
-        // Demandas
+        // Demandas (Converte realizationDate -> dateRealization)
         const safeDemands = (backup.demands || []).map(d => ({
             ...d,
-            description: d.description || '',
+            description: d.description || '', // Garante string
             dateRealization: d.dateRealization || d.realizationDate || '',
             justification: d.justification || ''
         }));
 
-        // Visitas
+        // Visitas (Converte visitDate -> dateRealization)
         const safeVisits = (backup.visits || []).map(v => ({
             ...v,
-            reason: v.reason || '',
+            reason: v.reason || '', // Garante string
             dateRealization: v.dateRealization || v.visitDate || '',
             justification: v.justification || v.cancelJustification || ''
         }));
 
-        // Listas Simples (Garante arrays)
+        // Listas Auxiliares (Garante arrays vazios se não existirem)
         const safeProds = backup.productions || [];
         const safePres = backup.presentations || [];
         const safeRequests = backup.requests || [];
@@ -3353,7 +3353,7 @@ function confirmRestore() {
         const safeMods = backup.modulos || backup.modules || [];
         const safeFormas = backup.formasApresentacao || [];
 
-        // Contadores (Recalcula)
+        // Recálculo de Contadores (Evita ID duplicado no futuro)
         const getMax = (list) => list.reduce((acc, i) => Math.max(acc, i.id || 0), 0) + 1;
         const safeCounters = {
             mun: getMax(safeMuns),
@@ -3372,7 +3372,7 @@ function confirmRestore() {
             forma: getMax(safeFormas)
         };
 
-        // --- GRAVAÇÃO ---
+        // --- GRAVAÇÃO NO LOCALSTORAGE ---
         localStorage.setItem('users', JSON.stringify(safeUsers));
         localStorage.setItem('municipalities', JSON.stringify(safeMuns));
         localStorage.setItem('municipalitiesList', JSON.stringify(safeListMestra));
@@ -3389,31 +3389,36 @@ function confirmRestore() {
         localStorage.setItem('formasApresentacao', JSON.stringify(safeFormas));
         localStorage.setItem('counters', JSON.stringify(safeCounters));
 
-        // 3. TENTATIVA DE MANTER O LOGIN (Sincronizado)
+        // 3. RECUPERAÇÃO DA SESSÃO (Mantém o login se o usuário existir no backup)
+        let userRestored = false;
         if (currentLogin) {
-            // Busca o usuário no banco NOVO que acabamos de salvar
-            const userInNewDb = safeUsers.find(u => u.login === currentLogin);
-            
-            if (userInNewDb) {
-                // Se achou, atualiza a sessão com os dados frescos
-                localStorage.setItem('currentUser', JSON.stringify(userInNewDb));
+            // Procura o usuário no banco NOVO (restaurado)
+            const foundUser = safeUsers.find(u => u.login === currentLogin);
+            if (foundUser) {
+                localStorage.setItem('currentUser', JSON.stringify(foundUser));
                 localStorage.setItem('isAuthenticated', 'true');
-            } else {
-                // Se o usuário não existe no backup, infelizmente tem que deslogar
-                alert('Aviso: Seu usuário atual não existe no backup restaurado. Você será deslogado.');
-                // Não seta nada, vai para login
+                userRestored = true;
             }
         }
         
         localStorage.setItem('theme', sessionTheme);
 
-        alert('Backup restaurado com sucesso!');
-        location.reload();
+        // Feedback final
+        if (userRestored) {
+            alert('Backup restaurado com sucesso! Mantendo seu login.');
+            location.reload();
+        } else {
+            alert('Backup restaurado! Como seu usuário mudou ou não existe no backup, faça login novamente.');
+            // Força logout limpo
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('isAuthenticated');
+            location.reload();
+        }
 
     } catch (error) {
-        console.error(error);
-        alert('Erro fatal ao restaurar. O sistema será reiniciado.');
-        localStorage.clear(); // Limpa para destravamento de emergência
+        console.error("Erro crítico na restauração:", error);
+        alert('Erro fatal ao processar dados. O sistema será reiniciado.');
+        localStorage.clear();
         location.reload();
     }
 }
