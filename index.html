@@ -1740,238 +1740,106 @@
         <!-- Aba de Tarefas -->
 
         <section id="tarefas-section" class="tab-content">
-
             <div class="section-header">
-
                 <h2>Gerenciamento de Treinamentos</h2>
-
                 <div style="display: flex; gap: var(--space-8);">
-
                     <button class="btn btn--primary" onclick="showTaskModal()">+ Novo Treinamento</button>
-
                     <button class="btn btn--primary" onclick="triggerTrainingCSVImport()">📥 Importar CSV</button>
-
                     <input type="file" id="training-csv-import-input" accept=".csv" style="display: none;" onchange="handleTrainingCSVImport(event)">
-
                 </div>
-
             </div>
-
-
 
             <h3 class="section-subtitle">Filtros</h3>
 
-
-
             <div class="filters-section">
-
-                <div class="form-group">
-        <label class="form-label">Município</label>
-        <select class="form-control" id="filter-task-municipality">
-            <option value="">Todos</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label class="form-label">Orientador</label>
-        <select class="form-control" id="filter-task-performer">
-            <option value="">Todos</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label class="form-label">Cargo/Função</label>
-        <select class="form-control" id="filter-task-position">
-            <option value="">Todos</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label class="form-label">Status</label>
-        <select class="form-control" id="filter-task-status">
-            <option value="">Todos</option>
-            <option value="Concluído">Concluídos</option>
-            <option value="Pendente">Pendentes</option>
-            <option value="Cancelado">Cancelados</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label class="form-label">Solicitante</label>
-        <input type="text" class="form-control" id="filter-task-requester" placeholder="Buscar solicitante">
-    </div>
-
-    <div class="form-group">
-        <label class="form-label">Solicitação (Início)</label>
-        <input type="date" class="form-control" id="filter-task-req-start" onchange="validateDateRange('req')">
-    </div>
-    <div class="form-group">
-        <label class="form-label">Solicitação (Fim)</label>
-        <input type="date" class="form-control" id="filter-task-req-end" onchange="validateDateRange('req')">
-    </div>
-    <div class="form-group">
-        <label class="form-label">Realização (Início)</label>
-        <input type="date" class="form-control" id="filter-task-perf-start" onchange="validateDateRange('perf')">
-    </div>
-    <div class="form-group">
-        <label class="form-label">Realização (Fim)</label>
-        <input type="date" class="form-control" id="filter-task-perf-end" onchange="validateDateRange('perf')">
-    </div>
-
-    <div class="form-group" style="display: flex; align-items: flex-end;">
-        <button class="btn btn--primary btn--full-width" onclick="clearTaskFilters()">Limpar Filtros</button>
-    </div>
-
+                <div class="filters-grid">
                     <div class="form-group">
-
-                        <label class="form-label">Status</label>
-
-                        <select class="form-control" id="filter-task-status">
-
+                        <label class="form-label">Município</label>
+                        <select class="form-control" id="filter-task-municipality">
                             <option value="">Todos</option>
-
-                            <option value="Concluído">Concluídas</option>
-
-                            <option value="Pendente">Pendentes</option>
-
-                            <option value="Cancelado">Canceladas</option>
-
                         </select>
-
                     </div>
-
                     <div class="form-group">
-
-                        <label class="form-label">Solicitante</label>
-
-                        <input type="text" class="form-control" id="filter-task-requester" placeholder="Buscar por solicitante">
-
-                    </div>
-
-                    <div class="form-group">
-
                         <label class="form-label">Orientador</label>
-
-                        <input type="text" class="form-control" id="filter-task-performer" placeholder="Buscar por orientador">
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label class="form-label">Cargo/Função</label>
-
-                        <select class="form-control" id="filter-task-position">
-
+                        <select class="form-control" id="filter-task-performer">
                             <option value="">Todos</option>
-
                         </select>
-
                     </div>
-
                     <div class="form-group">
-
-                        <label class="form-label">Filtrar por:</label>
-
-                        <select class="form-control" id="filter-date-type">
-
-                            <option value="requested">Data de Solicitação</option>
-
-                            <option value="performed">Data de Realização</option>
-
+                        <label class="form-label">Cargo/Função</label>
+                        <select class="form-control" id="filter-task-position">
+                            <option value="">Todos</option>
                         </select>
-
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-control" id="filter-task-status">
+                            <option value="">Todos</option>
+                            <option value="Concluído">Concluídos</option>
+                            <option value="Pendente">Pendentes</option>
+                            <option value="Cancelado">Cancelados</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Solicitante</label>
+                        <input type="text" class="form-control" id="filter-task-requester" placeholder="Buscar solicitante">
                     </div>
 
                     <div class="form-group">
-
-                        <label class="form-label">Data Inicial</label>
-
-                        <input type="date" class="form-control" id="filter-task-date-start">
-
+                        <label class="form-label">Solicitação (Início)</label>
+                        <input type="date" class="form-control" id="filter-task-req-start" onchange="validateDateRange('req')">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Solicitação (Fim)</label>
+                        <input type="date" class="form-control" id="filter-task-req-end" onchange="validateDateRange('req')">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Realização (Início)</label>
+                        <input type="date" class="form-control" id="filter-task-perf-start" onchange="validateDateRange('perf')">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Realização (Fim)</label>
+                        <input type="date" class="form-control" id="filter-task-perf-end" onchange="validateDateRange('perf')">
                     </div>
 
-                    <div class="form-group">
-
-                        <label class="form-label">Data Final</label>
-
-                        <input type="date" class="form-control" id="filter-task-date-end">
-
-                    </div>
-
-                    <div class="form-group">
-
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
                         <button class="btn btn--primary btn--full-width" onclick="clearTaskFilters()">Limpar Filtros</button>
-
                     </div>
-
                 </div>
-
             </div>
-
-
 
             <div id="tasks-results-count" class="results-count" style="display: none;"></div>
 
-
-
             <div class="tasks-table" id="tasks-table">
-
-                <!-- Tabela de treinamentos será inserida aqui -->
-
-            </div>
-
-
+                </div>
 
             <div class="section-divider"></div>
 
-
-
             <h3 class="section-subtitle">Relatórios e Estatísticas</h3>
 
-
-
             <div class="stats-cards">
-
                 <div class="stat-card">
-
                     <h3 id="total-tasks">0</h3>
-
                     <p>Total de Treinamentos</p>
-
                 </div>
-
                 <div class="stat-card">
-
                     <h3 id="completed-tasks">0</h3>
-
                     <p>Treinamentos Concluídos</p>
-
                 </div>
-
                 <div class="stat-card">
-
                     <h3 id="pending-tasks">0</h3>
-
                     <p>Treinamentos Pendentes</p>
-
                 </div>
-
                 <div class="stat-card">
-
                     <h3 id="cancelled-tasks">0</h3>
-
                     <p>Treinamentos Cancelados</p>
-
                 </div>
-
             </div>
-
-
 
             <div class="actions-bar">
-
                 <button class="btn btn--outline btn--sm" onclick="exportTasksCSV()">📥 Exportar CSV</button>
-
                 <button class="btn btn--primary btn--sm" onclick="generateTasksPDF()">📄 Gerar PDF</button>
-
             </div>
-
         </section>
 
 
