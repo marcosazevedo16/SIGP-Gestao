@@ -777,205 +777,105 @@
         <!-- Aba Controle de Envio de Produção -->
 
         <section id="producao-section" class="tab-content">
-
             <div class="section-header">
-
                 <h2>Controle de Envio de Produção</h2>
-
                 <button class="btn btn--primary" onclick="showProductionModal()">+ Novo Envio</button>
-
             </div>
-
-
 
             <h3 class="section-subtitle">Filtros</h3>
-
             <div class="filters-section">
-
-               <div class="filters-grid">
-    <div class="form-group">
-        <label class="form-label">Município</label>
-        <select class="form-control" id="filter-production-municipality">
-            <option value="">Todos</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label class="form-label">Status</label>
-        <select class="form-control" id="filter-production-status">
-            </select>
-    </div>
-    </div>
+                <div class="filters-grid">
                     <div class="form-group">
-
-                        <label class="form-label">Status</label>
-
-                        <select class="form-control" id="filter-production-status">
-
+                        <label class="form-label">Município</label>
+                        <select class="form-control" id="filter-production-municipality">
                             <option value="">Todos</option>
-
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-control" id="filter-production-status">
+                            <option value="">Todos</option>
                             <option value="Enviada">Enviada</option>
-
                             <option value="Pendente">Pendente</option>
-
                             <option value="Cancelada">Cancelada</option>
-
                         </select>
-
                     </div>
-
                     <div class="form-group">
-
                         <label class="form-label">Profissional</label>
-
                         <input type="text" class="form-control" id="filter-production-professional" placeholder="Buscar por profissional">
-
                     </div>
-
                     <div class="form-group">
-
                         <label class="form-label">Frequência</label>
-
                         <select class="form-control" id="filter-production-frequency">
-
                             <option value="">Todas</option>
-
                             <option value="Diário">Diário</option>
-
                             <option value="Semanal">Semanal</option>
-
                             <option value="Quinzenal">Quinzenal</option>
-
                             <option value="Mensal">Mensal</option>
-
                         </select>
-
                     </div>
-
                     <div class="form-group">
-
                         <label class="form-label">Data Liberação Inicial</label>
-
                         <input type="date" class="form-control" id="filter-production-release-start">
-
                     </div>
-
                     <div class="form-group">
-
                         <label class="form-label">Data Liberação Final</label>
-
                         <input type="date" class="form-control" id="filter-production-release-end">
-
                     </div>
-
                     <div class="form-group">
-
                         <label class="form-label">Data Envio Inicial</label>
-
                         <input type="date" class="form-control" id="filter-production-send-start">
-
                     </div>
-
                     <div class="form-group">
-
                         <label class="form-label">Data Envio Final</label>
-
                         <input type="date" class="form-control" id="filter-production-send-end">
-
                     </div>
-
-                    <div class="form-group">
-
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
                         <button class="btn btn--primary btn--full-width" onclick="clearProductionFilters()">Limpar Filtros</button>
-
                     </div>
-
                 </div>
-
             </div>
-
-
 
             <div id="productions-results-count" class="results-count" style="display: none;"></div>
 
-
-
             <div class="tasks-table" id="productions-table"></div>
-
-
 
             <div class="section-divider"></div>
 
-
-
             <h3 class="section-subtitle">Gráficos e Estatísticas</h3>
-
             <div class="stats-cards">
-
                 <div class="stat-card">
-
                     <h3 id="total-productions">0</h3>
-
                     <p>Total de Envios</p>
-
                 </div>
-
                 <div class="stat-card">
-
                     <h3 id="sent-productions">0</h3>
-
                     <p>Enviadas</p>
-
                 </div>
-
                 <div class="stat-card">
-
                     <h3 id="pending-productions">0</h3>
-
                     <p>Pendentes</p>
-
                 </div>
-
                 <div class="stat-card">
-
                     <h3 id="cancelled-productions">0</h3>
-
                     <p>Canceladas</p>
-
                 </div>
-
             </div>
-
-
 
             <div class="charts-section">
-
                 <h4>Dashboard e Gráficos</h4>
-
                 <div class="charts-grid">
-
                     <div class="chart-card">
-
                         <h4>Distribuição por Status</h4>
-
                         <canvas id="productionStatusChart"></canvas>
-
                     </div>
-
                     <div class="chart-card">
-
                         <h4>Envios por Frequência</h4>
-
                         <canvas id="productionFrequencyChart"></canvas>
-
                     </div>
-
                 </div>
-
             </div>
-
         </section>
-
-
 
         <!-- Aba Relatórios de Gestão -->
 
