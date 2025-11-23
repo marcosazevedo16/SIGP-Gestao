@@ -1013,10 +1013,13 @@ function renderMunicipalities() {
                 corDataFim = '#E68161';
             }
 
+            // --- AJUSTE: Módulos mais compactos (Fonte 9px, Padding menor) ---
             const modulesBadges = m.modules.map(function(modName) {
                 const modConfig = modulos.find(function(x) { return x.name === modName; });
                 const abbrev = modConfig ? modConfig.abbreviation : modName.substring(0,3).toUpperCase();
-                return `<span style="background:rgba(0, 85, 128, 0.05); color:#005580; border:1px solid rgba(0, 85, 128, 0.3); padding:2px 6px; border-radius:4px; font-size:10px; margin-right:3px; display:inline-block; margin-bottom:3px; font-weight:700;" title="${modName}">${abbrev}</span>`;
+                
+                // Mudanças: padding:0px 4px; font-size:9px;
+                return `<span style="background:rgba(0, 85, 128, 0.05); color:#005580; border:1px solid rgba(0, 85, 128, 0.3); padding:0px 4px; border-radius:3px; font-size:9px; margin-right:2px; display:inline-block; margin-bottom:2px; font-weight:700; line-height:1.4;" title="${modName}">${abbrev}</span>`;
             }).join('');
             
             let statusClass = 'task-status';
@@ -1030,7 +1033,8 @@ function renderMunicipalities() {
             }
 
             return `<tr>
-                <td style="font-weight:bold; color:#000000;">${m.name}</td> <td style="max-width: 140px; white-space: normal; line-height:1.4;">${modulesBadges}</td>
+                <td style="font-weight:bold; color:#000000;">${m.name}</td>
+                <td style="max-width: 140px; white-space: normal; line-height:1.1;">${modulesBadges}</td>
                 <td style="font-size:12px;">${m.manager}</td>
                 <td>${m.contact}</td>
                 <td>${formatDate(m.implantationDate)}</td>
@@ -1066,6 +1070,7 @@ function renderMunicipalities() {
     }
     updateMunicipalityCharts(filtered);
 }
+
 function updateMunicipalityCharts(data) {
     const ctxStatus = document.getElementById('statusChart');
     if (ctxStatus && window.Chart) {
