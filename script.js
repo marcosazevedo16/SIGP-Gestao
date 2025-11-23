@@ -1724,50 +1724,67 @@ function clearRequestFilters() {
 
 function showPresentationModal(id = null) {
     editingId = id;
-    document.getElementById('presentation-form').reset();
+    const form = document.getElementById('presentation-form');
+    if(form) form.reset();
     
-    // 1. Popula dropdown com Lista Mestra
+    // 1. Popula dropdown com Lista Mestra (Verificação de segurança)
     const munSelect = document.getElementById('presentation-municipality');
-    populateSelect(munSelect, municipalitiesList, 'name', 'name');
+    if (munSelect) {
+        // Garante que municipalitiesList existe, senão usa array vazio
+        const listaMestra = (typeof municipalitiesList !== 'undefined') ? municipalitiesList : [];
+        populateSelect(munSelect, listaMestra, 'name', 'name');
+    }
     
-    // 2. Checkboxes dinâmicos
+    // 2. Checkboxes dinâmicos (Orientadores)
     const divO = document.getElementById('presentation-orientador-checkboxes');
     if (divO) {
-        divO.innerHTML = orientadores.map(o => `<label><input type="checkbox" value="${o.name}" class="orientador-check"> ${o.name}</label>`).join('');
+        const listaOrient = (typeof orientadores !== 'undefined') ? orientadores : [];
+        if(listaOrient.length > 0) {
+            divO.innerHTML = listaOrient.map(o => `<label><input type="checkbox" value="${o.name}" class="orientador-check"> ${o.name}</label>`).join('');
+        } else {
+            divO.innerHTML = '<span style="font-size:11px; color:red;">Nenhum orientador cadastrado em configurações.</span>';
+        }
     }
+
+    // 3. Checkboxes dinâmicos (Formas)
     const divF = document.getElementById('presentation-forms-checkboxes');
     if (divF) {
-        divF.innerHTML = formasApresentacao.map(f => `<label><input type="checkbox" value="${f.name}" class="forma-check"> ${f.name}</label>`).join('');
+        const listaFormas = (typeof formasApresentacao !== 'undefined') ? formasApresentacao : [];
+        if(listaFormas.length > 0) {
+            divF.innerHTML = listaFormas.map(f => `<label><input type="checkbox" value="${f.name}" class="forma-check"> ${f.name}</label>`).join('');
+        } else {
+            divF.innerHTML = '<span style="font-size:11px; color:red;">Nenhuma forma cadastrada em configurações.</span>';
+        }
     }
 
     if (id) {
         const p = presentations.find(x => x.id === id);
         if(p) {
-            // --- Correção: Garante que o município exista no select ---
-            let exists = false;
-            for (let i = 0; i < munSelect.options.length; i++) {
-                if (munSelect.options[i].value === p.municipality) {
-                    exists = true;
-                    break;
+            // Cria a opção no select se ela não existir (para edições antigas)
+            if(munSelect) {
+                let exists = false;
+                for (let i = 0; i < munSelect.options.length; i++) {
+                    if (munSelect.options[i].value === p.municipality) {
+                        exists = true;
+                        break;
+                    }
                 }
+                if (!exists) {
+                    const opt = document.createElement('option');
+                    opt.value = p.municipality;
+                    opt.textContent = p.municipality;
+                    munSelect.appendChild(opt);
+                }
+                munSelect.value = p.municipality;
             }
-            if (!exists) {
-                const opt = document.createElement('option');
-                opt.value = p.municipality;
-                opt.textContent = p.municipality;
-                munSelect.appendChild(opt);
-            }
-            munSelect.value = p.municipality;
-            // ---------------------------------------------------------
 
-            document.getElementById('presentation-date-solicitacao').value = p.dateSolicitacao;
-            document.getElementById('presentation-requester').value = p.requester;
-            document.getElementById('presentation-status').value = p.status;
-            document.getElementById('presentation-description').value = p.description;
+            if(document.getElementById('presentation-date-solicitacao')) document.getElementById('presentation-date-solicitacao').value = p.dateSolicitacao;
+            if(document.getElementById('presentation-requester')) document.getElementById('presentation-requester').value = p.requester;
+            if(document.getElementById('presentation-status')) document.getElementById('presentation-status').value = p.status;
+            if(document.getElementById('presentation-description')) document.getElementById('presentation-description').value = p.description;
+            if(document.getElementById('presentation-date-realizacao')) document.getElementById('presentation-date-realizacao').value = p.dateRealizacao || '';
             
-            if (document.getElementById('presentation-date-realizacao')) {
-                document.getElementById('presentation-date-realizacao').value = p.dateRealizacao || '';
-            }
+            // Marca os checkboxes
             if (p.orientadores) {
                 document.querySelectorAll('.orientador-check').forEach(cb => {
                     cb.checked = p.orientadores.includes(cb.value);
@@ -1778,11 +1795,13 @@ function showPresentationModal(id = null) {
                     cb.checked = p.forms.includes(cb.value);
                 });
             }
-            handlePresentationStatusChange();
+            
+            if(typeof handlePresentationStatusChange === 'function') handlePresentationStatusChange();
         }
     } else {
-        handlePresentationStatusChange();
+        if(typeof handlePresentationStatusChange === 'function') handlePresentationStatusChange();
     }
+    
     document.getElementById('presentation-modal').classList.add('show');
 }
 
@@ -1856,10 +1875,20 @@ function renderPresentations() {
     const filtered = getFilteredPresentations();
     const c = document.getElementById('presentations-table');
     
-    if (document.getElementById('presentations-results-count')) {
+    // --- CORREÇÃO DAS ESTATÍSTICAS (CARDS) ---
+    // Atualiza os números nos quadradinhos brancos
+    if(document.getElementById('presentations-results-count')) {
         document.getElementById('presentations-results-count').innerHTML = '<strong>' + filtered.length + '</strong> apresentações encontradas';
         document.getElementById('presentations-results-count').style.display = 'block';
     }
+
+    // Contagem baseada nos dados filtrados (ou totais, se preferir)
+    // Nota: Aqui estamos contando o que está na tela (filtrado). Se quiser o total geral do banco, troque 'filtered' por 'presentations'.
+    if(document.getElementById('total-presentations')) document.getElementById('total-presentations').textContent = presentations.length; // Total do banco
+    if(document.getElementById('pending-presentations')) document.getElementById('pending-presentations').textContent = filtered.filter(p => p.status === 'Pendente').length;
+    if(document.getElementById('completed-presentations')) document.getElementById('completed-presentations').textContent = filtered.filter(p => p.status === 'Realizada').length;
+    if(document.getElementById('cancelled-presentations')) document.getElementById('cancelled-presentations').textContent = filtered.filter(p => p.status === 'Cancelada').length;
+    // -------------------------------------------
 
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhuma apresentação encontrada.</div>';
@@ -1874,12 +1903,16 @@ function renderPresentations() {
 
             const statusBadge = `<span style="background:${badgeColor}; color:white; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">${p.status}</span>`;
 
+            // Formatação de Arrays (Orientadores/Formas)
+            const orientadoresStr = (Array.isArray(p.orientadores) && p.orientadores.length > 0) ? p.orientadores.join(', ') : '-';
+            const formasStr = (Array.isArray(p.forms) && p.forms.length > 0) ? p.forms.join(', ') : '-';
+
             return `<tr>
                 <td style="font-weight:600; color:#003d5c;">${p.municipality}</td>
                 <td style="text-align:center;">${formatDate(p.dateSolicitacao)}</td>
                 <td>${p.requester}</td>
-                <td>${p.orientadores ? p.orientadores.join(', ') : '-'}</td>
-                <td>${p.forms ? p.forms.join(', ') : '-'}</td>
+                <td>${orientadoresStr}</td>
+                <td>${formasStr}</td>
                 <td style="font-size:12px; color:#555;">${desc}</td>
                 <td style="text-align:center;">${formatDate(p.dateRealizacao)}</td>
                 <td style="text-align:center;">${statusBadge}</td>
@@ -1907,7 +1940,6 @@ function renderPresentations() {
         </table>`;
     }
     
-    if(document.getElementById('total-presentations')) document.getElementById('total-presentations').textContent = presentations.length;
     updatePresentationCharts(filtered);
 }
 
