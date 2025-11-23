@@ -1261,7 +1261,10 @@ function validateDateRange(type) {
         startId = `filter-presentation-${type.split('-')[1]}-start`; endId = `filter-presentation-${type.split('-')[1]}-end`;
     } else if (type.includes('dem')) {
         startId = `filter-demand-${type.split('-')[1]}-start`; endId = `filter-demand-${type.split('-')[1]}-end`;
-    } else if (type.includes('visit')) { // NOVO BLOCO VISITAS
+    } else if (type.includes('visit')) {
+        startId = `filter-${type}-start`; endId = `filter-${type}-end`;
+    } else if (type.includes('production')) { // NOVO: PRODUÇÃO
+        // production-release ou production-send
         startId = `filter-${type}-start`; 
         endId = `filter-${type}-end`;
     }
@@ -1277,7 +1280,8 @@ function validateDateRange(type) {
     if (end.value && start.value && end.value < start.value) end.value = start.value;
 
     // Refresh
-    if (type.includes('dem')) renderDemands();
+    if (type.includes('production')) renderProductions();
+    else if (type.includes('dem')) renderDemands();
     else if (type.includes('request')) renderRequests();
     else if (type.includes('pres')) renderPresentations();
     else if (type.includes('visit')) renderVisits();
@@ -2692,32 +2696,63 @@ function clearVisitFilters() {
 function showProductionModal(id = null) {
     editingId = id;
     document.getElementById('production-form').reset();
-    updateGlobalDropdowns();
     
+    // 1. Popula dropdown com Lista Mestra
+    const munSelect = document.getElementById('production-municipality');
+    populateSelect(munSelect, municipalitiesList, 'name', 'name');
+    
+    // Garante estado inicial do campo Período
+    handleProductionFrequencyChange();
+
     if (id) {
-        const p = productions.find(function(x) { return x.id === id; });
-        document.getElementById('production-municipality').value = p.municipality;
-        document.getElementById('production-contact').value = p.contact;
-        document.getElementById('production-frequency').value = p.frequency;
-        document.getElementById('production-competence').value = p.competence;
-        document.getElementById('production-period').value = p.period;
-        document.getElementById('production-release-date').value = p.releaseDate;
-        document.getElementById('production-send-date').value = p.sendDate;
-        document.getElementById('production-status').value = p.status;
-        document.getElementById('production-professional').value = p.professional;
-        document.getElementById('production-observations').value = p.observations;
+        const p = productions.find(x => x.id === id);
+        if(p) {
+            // Cria opção se não existir
+            let exists = false;
+            for (let i = 0; i < munSelect.options.length; i++) {
+                if (munSelect.options[i].value === p.municipality) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                const opt = document.createElement('option');
+                opt.value = p.municipality;
+                opt.textContent = p.municipality;
+                munSelect.appendChild(opt);
+            }
+            munSelect.value = p.municipality;
+
+            document.getElementById('production-frequency').value = p.frequency;
+            document.getElementById('production-competence').value = p.competence;
+            document.getElementById('production-period').value = p.period;
+            document.getElementById('production-release-date').value = p.releaseDate;
+            document.getElementById('production-status').value = p.status;
+            document.getElementById('production-professional').value = p.professional || '';
+            document.getElementById('production-contact').value = p.contact || '';
+            document.getElementById('production-observations').value = p.observations || '';
+            
+            if(document.getElementById('production-send-date')) document.getElementById('production-send-date').value = p.sendDate || '';
+            
+            handleProductionFrequencyChange(); // Atualiza visibilidade
+        }
     }
     document.getElementById('production-modal').classList.add('show');
 }
 
 function saveProduction(e) {
     e.preventDefault();
+    const freq = document.getElementById('production-frequency').value;
+    
+    // Se diário, período é vazio. Senão, pega o valor.
+    const period = (freq === 'Diário') ? '' : document.getElementById('production-period').value;
+
     const data = {
         municipality: document.getElementById('production-municipality').value,
         contact: document.getElementById('production-contact').value,
-        frequency: document.getElementById('production-frequency').value,
+        frequency: freq,
         competence: document.getElementById('production-competence').value,
-        period: document.getElementById('production-period').value,
+        period: period,
         releaseDate: document.getElementById('production-release-date').value,
         sendDate: document.getElementById('production-send-date').value,
         status: document.getElementById('production-status').value,
@@ -2727,14 +2762,14 @@ function saveProduction(e) {
 
     if (editingId) {
         const i = productions.findIndex(function(x) { return x.id === editingId; });
-        productions[i] = { ...productions[i], ...data };
+        if (i !== -1) productions[i] = { ...productions[i], ...data };
     } else {
         productions.push({ id: getNextId('prod'), ...data });
     }
     salvarNoArmazenamento('productions', productions);
     document.getElementById('production-modal').classList.remove('show');
-    renderProductions();
-    showToast('Salvo!');
+    clearProductionFilters();
+    showToast('Envio salvo com sucesso!', 'success');
 }
 
 function getFilteredProductions() {
@@ -2743,83 +2778,147 @@ function getFilteredProductions() {
     const fProf = document.getElementById('filter-production-professional')?.value.toLowerCase();
     const fFreq = document.getElementById('filter-production-frequency')?.value;
     
+    // Datas Liberação
+    const fRelStart = document.getElementById('filter-production-release-start')?.value;
+    const fRelEnd = document.getElementById('filter-production-release-end')?.value;
+    // Datas Envio
+    const fSendStart = document.getElementById('filter-production-send-start')?.value;
+    const fSendEnd = document.getElementById('filter-production-send-end')?.value;
+    
     let filtered = productions.filter(function(p) {
         if (fMun && p.municipality !== fMun) return false;
         if (fStatus && p.status !== fStatus) return false;
         if (fProf && p.professional && !p.professional.toLowerCase().includes(fProf)) return false;
         if (fFreq && p.frequency !== fFreq) return false;
+
+        // Liberação
+        if (fRelStart && p.releaseDate < fRelStart) return false;
+        if (fRelEnd && p.releaseDate > fRelEnd) return false;
+
+        // Envio
+        if (fSendStart && (!p.sendDate || p.sendDate < fSendStart)) return false;
+        if (fSendEnd && (!p.sendDate || p.sendDate > fSendEnd)) return false;
+
         return true;
     });
 
-    const statusOrder = { 'Pendente': 1, 'Enviada': 2, 'Cancelada': 3 };
-    return filtered.sort(function(a,b) {
-        return (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
-    });
+    // Ordenar por Data Liberação
+    return filtered.sort((a,b) => new Date(a.releaseDate) - new Date(b.releaseDate));
 }
 
 function renderProductions() {
     const filtered = getFilteredProductions();
     const c = document.getElementById('productions-table');
-    document.getElementById('productions-results-count').innerHTML = '<strong>' + filtered.length + '</strong> envios';
+    
+    // Stats (Contadores)
+    if(document.getElementById('productions-results-count')) {
+        document.getElementById('productions-results-count').innerHTML = '<strong>' + filtered.length + '</strong> envios encontrados';
+        document.getElementById('productions-results-count').style.display = 'block';
+    }
+    // Correção dos Cards
+    if(document.getElementById('total-productions')) document.getElementById('total-productions').textContent = productions.length;
+    if(document.getElementById('sent-productions')) document.getElementById('sent-productions').textContent = filtered.filter(p => p.status === 'Enviada').length;
+    if(document.getElementById('pending-productions')) document.getElementById('pending-productions').textContent = filtered.filter(p => p.status === 'Pendente').length;
+    if(document.getElementById('cancelled-productions')) document.getElementById('cancelled-productions').textContent = filtered.filter(p => p.status === 'Cancelada').length;
 
     if (filtered.length === 0) {
-        c.innerHTML = '<div class="empty-state">Vazio.</div>';
+        c.innerHTML = '<div class="empty-state">Nenhum envio encontrado.</div>';
     } else {
-        // AJUSTE 7: Ordem colunas e Obs
         const rows = filtered.map(function(p) {
-            return '<tr>' +
-                '<td>' + p.municipality + '</td>' +
-                '<td>' + (p.professional || '-') + '</td>' +
-                '<td>' + p.contact + '</td>' +
-                '<td>' + p.frequency + '</td>' +
-                '<td>' + p.competence + '</td>' +
-                '<td>' + p.period + '</td>' +
-                '<td>' + formatDate(p.releaseDate) + '</td>' +
-                '<td>' + p.status + '</td>' +
-                '<td>' + formatDate(p.sendDate) + '</td>' +
-                '<td>' + (p.observations || '-') + '</td>' +
-                '<td>' +
-                    '<button class="btn btn--sm" onclick="showProductionModal(' + p.id + ')">✏️</button> ' +
-                    '<button class="btn btn--sm" onclick="deleteProduction(' + p.id + ')">🗑️</button>' +
-                '</td>' +
-            '</tr>';
+            // Cor do Status
+            let statusClass = 'task-status';
+            if (p.status === 'Enviada') statusClass += ' completed'; // Azul
+            else if (p.status === 'Cancelada') statusClass += ' cancelled'; // Vermelho
+            else statusClass += ' pending'; // Laranja
+            const statusBadge = `<span class="${statusClass}">${p.status}</span>`;
+
+            // Cor da Frequência
+            let freqColor = '#003d5c'; // Padrão
+            if (p.frequency === 'Diário') freqColor = '#C85250'; // Vermelho
+            else if (p.frequency === 'Semanal') freqColor = '#E68161'; // Laranja
+            else if (p.frequency === 'Quinzenal') freqColor = '#79C2A9'; // Verde
+            else if (p.frequency === 'Mensal') freqColor = '#005580'; // Azul
+            
+            const freqBadge = `<span style="color:${freqColor}; font-weight:bold;">${p.frequency}</span>`;
+
+            return `<tr>
+                <td style="font-weight:800; color:#003d5c;">${p.municipality}</td>
+                <td>${p.professional || '-'}</td>
+                <td>${freqBadge}</td>
+                <td>${p.competence}</td>
+                <td>${p.frequency === 'Diário' ? '-' : (p.period || '-')}</td>
+                <td style="text-align:center;">${formatDate(p.releaseDate)}</td>
+                <td style="text-align:center;">${statusBadge}</td>
+                <td style="text-align:center;">${formatDate(p.sendDate)}</td>
+                <td style="font-size:12px; color:#555;">${p.observations || '-'}</td>
+                <td style="text-align:center;">
+                    <button class="btn btn--sm" onclick="showProductionModal(${p.id})" title="Editar">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteProduction(${p.id})" title="Excluir">🗑️</button>
+                </td>
+            </tr>`;
         }).join('');
-        c.innerHTML = '<table><thead><th>Município</th><th>Profissional</th><th>Contato</th><th>Frequência</th><th>Competência</th><th>Período</th><th>Liberação</th><th>Status</th><th>Envio</th><th>Obs</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
+        
+        c.innerHTML = `
+        <table class="compact-table">
+            <thead>
+                <th>Município</th>
+                <th>Profissional<br>Informado</th>
+                <th>Frequência<br>de Envio</th>
+                <th>Competência<br>de Envio</th>
+                <th>Período<br>do Envio</th>
+                <th style="text-align:center;">Data<br>Liberação</th>
+                <th style="text-align:center;">Status<br>de Envio</th>
+                <th style="text-align:center;">Data<br>de Envio</th>
+                <th>Observações</th>
+                <th style="text-align:center;">Ações</th>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>`;
     }
     updateProductionCharts(filtered);
 }
 
 function updateProductionCharts(data) {
+    // 1. Status (Cores: Azul, Laranja, Vermelho)
     if (document.getElementById('productionStatusChart') && window.Chart) {
         if (chartStatusProd) chartStatusProd.destroy();
         chartStatusProd = new Chart(document.getElementById('productionStatusChart'), {
             type: 'pie',
             data: {
-                labels: ['Pendente', 'Enviada', 'Cancelada'],
+                labels: ['Enviada', 'Pendente', 'Cancelada'],
                 datasets: [{
                     data: [
-                        data.filter(function(p){return p.status==='Pendente';}).length, 
-                        data.filter(function(p){return p.status==='Enviada';}).length, 
-                        data.filter(function(p){return p.status==='Cancelada';}).length
+                        data.filter(p => p.status==='Enviada').length, 
+                        data.filter(p => p.status==='Pendente').length, 
+                        data.filter(p => p.status==='Cancelada').length
                     ],
-                    backgroundColor: ['#FFA07A', '#45B7D1', '#FF6B6B']
+                    backgroundColor: ['#005580', '#E68161', '#C85250'] // Azul, Laranja, Vermelho
                 }]
             }
         });
     }
 
+    // 2. Frequência (Cores: Vermelho, Laranja, Verde, Azul)
     if (document.getElementById('productionFrequencyChart') && window.Chart) {
         if (chartFreqProd) chartFreqProd.destroy();
-        const fCounts = {}; 
-        data.forEach(function(p) { fCounts[p.frequency] = (fCounts[p.frequency]||0)+1; });
+        
+        // Ordem fixa para manter as cores alinhadas
+        const freqs = ['Diário', 'Semanal', 'Quinzenal', 'Mensal'];
+        const counts = freqs.map(f => data.filter(p => p.frequency === f).length);
         
         chartFreqProd = new Chart(document.getElementById('productionFrequencyChart'), {
             type: 'bar',
-            data: { labels: Object.keys(fCounts), datasets: [{ label: 'Envios', data: Object.values(fCounts), backgroundColor: '#1FB8CD' }] }
+            data: { 
+                labels: freqs, 
+                datasets: [{ 
+                    label: 'Qtd Envios', 
+                    data: counts, 
+                    backgroundColor: ['#C85250', '#E68161', '#79C2A9', '#005580'] 
+                }] 
+            }
         });
     }
 }
-
 function exportProductionsCSV() {
     const data = getFilteredProductions();
     const headers = ['Município', 'Competência', 'Período', 'Status'];
@@ -2847,10 +2946,32 @@ function closeProductionModal() {
 }
 
 function clearProductionFilters() {
-    ['filter-production-municipality','filter-production-status','filter-production-professional'].forEach(function(id) {
+    const ids = [
+        'filter-production-municipality', 'filter-production-status', 
+        'filter-production-professional', 'filter-production-frequency',
+        'filter-production-release-start', 'filter-production-release-end',
+        'filter-production-send-start', 'filter-production-send-end'
+    ];
+    ids.forEach(id => {
         if(document.getElementById(id)) document.getElementById(id).value = '';
     });
     renderProductions();
+}
+// Função Visual: Controla campo de Período no formulário de Produção
+function handleProductionFrequencyChange() {
+    const freq = document.getElementById('production-frequency').value;
+    const grpPeriod = document.getElementById('production-period-group');
+    const inputPeriod = document.getElementById('production-period');
+
+    if (freq === 'Diário') {
+        grpPeriod.style.display = 'none';
+        inputPeriod.required = false;
+        inputPeriod.value = ''; // Limpa se ocultar
+    } else {
+        grpPeriod.style.display = 'block';
+        // Se quiser obrigatório nos outros casos, descomente a linha abaixo:
+        // inputPeriod.required = true; 
+    }
 }
 
 // ----------------------------------------------------------------------------
