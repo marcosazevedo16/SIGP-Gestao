@@ -1231,27 +1231,52 @@ function saveTask(e) {
 
     if (editingId) {
         const i = tasks.findIndex(function(x) { return x.id === editingId; });
-        if (i !== -1) {
-            tasks[i] = { ...tasks[i], ...data };
-        }
+        if (i !== -1) tasks[i] = { ...tasks[i], ...data };
     } else {
         tasks.push({ id: getNextId('task'), ...data });
     }
+    
     salvarNoArmazenamento('tasks', tasks);
     document.getElementById('task-modal').classList.remove('show');
-    renderTasks();
+    
+    // CORREÇÃO: Limpa os filtros para garantir que o novo item apareça na lista
+    // Se preferir manter os filtros, remova a linha abaixo, mas o item pode ficar oculto se não bater com o filtro
+    clearTaskFilters(); 
+    
     showToast('Treinamento salvo com sucesso!', 'success');
 }
 
+// Função Auxiliar para validar datas (Adicione antes de getFilteredTasks)
+function validateDateRange(type) {
+    const start = document.getElementById(`filter-task-${type}-start`);
+    const end = document.getElementById(`filter-task-${type}-end`);
+    
+    if (start.value) {
+        // Data final não pode ser menor que a inicial
+        end.min = start.value;
+    }
+    if (end.value && start.value && end.value < start.value) {
+        // Se o usuário forçar, limpa ou ajusta
+        end.value = start.value;
+    }
+    // Atualiza a tabela automaticamente
+    renderTasks();
+}
+
 function getFilteredTasks() {
-    const fMun = document.getElementById('filter-task-municipality') ? document.getElementById('filter-task-municipality').value : '';
-    const fStatus = document.getElementById('filter-task-status') ? document.getElementById('filter-task-status').value : '';
-    const fReq = document.getElementById('filter-task-requester') ? document.getElementById('filter-task-requester').value.toLowerCase() : '';
-    const fPerf = document.getElementById('filter-task-performer') ? document.getElementById('filter-task-performer').value : '';
-    const fCargo = document.getElementById('filter-task-position') ? document.getElementById('filter-task-position').value : '';
-    const fDateType = document.getElementById('filter-task-date-type') ? document.getElementById('filter-task-date-type').value : 'Data de Solicitação';
-    const fDateStart = document.getElementById('filter-task-date-start') ? document.getElementById('filter-task-date-start').value : '';
-    const fDateEnd = document.getElementById('filter-task-date-end') ? document.getElementById('filter-task-date-end').value : '';
+    const fMun = document.getElementById('filter-task-municipality')?.value;
+    const fStatus = document.getElementById('filter-task-status')?.value;
+    const fReq = document.getElementById('filter-task-requester')?.value.toLowerCase();
+    const fPerf = document.getElementById('filter-task-performer')?.value; // Agora é Select
+    const fCargo = document.getElementById('filter-task-position')?.value; // Agora é Select
+    
+    // Datas Solicitação
+    const fReqStart = document.getElementById('filter-task-req-start')?.value;
+    const fReqEnd = document.getElementById('filter-task-req-end')?.value;
+    
+    // Datas Realização
+    const fPerfStart = document.getElementById('filter-task-perf-start')?.value;
+    const fPerfEnd = document.getElementById('filter-task-perf-end')?.value;
 
     let filtered = tasks.filter(function(t) {
         if (fMun && t.municipality !== fMun) return false;
@@ -1260,12 +1285,24 @@ function getFilteredTasks() {
         if (fPerf && t.performedBy !== fPerf) return false;
         if (fCargo && t.trainedPosition !== fCargo) return false;
 
-        const dateToCheck = (fDateType === 'Data de Realização') ? t.datePerformed : t.dateRequested;
-        if (fDateStart && dateToCheck < fDateStart) return false;
-        if (fDateEnd && dateToCheck > fDateEnd) return false;
+        // Filtro Data Solicitação (Intervalo)
+        if (fReqStart && t.dateRequested < fReqStart) return false;
+        if (fReqEnd && t.dateRequested > fReqEnd) return false;
+
+        // Filtro Data Realização (Intervalo)
+        if (fPerfStart && (!t.datePerformed || t.datePerformed < fPerfStart)) return false;
+        if (fPerfEnd && (!t.datePerformed || t.datePerformed > fPerfEnd)) return false;
         
         return true;
     });
+
+    // Ordenação Padrão
+    return filtered.sort(function(a, b) {
+        if (a.status === 'Pendente' && b.status !== 'Pendente') return -1;
+        if (a.status !== 'Pendente' && b.status === 'Pendente') return 1;
+        return new Date(a.dateRequested) - new Date(b.dateRequested);
+    });
+}
 
     // Ordenação Item 16
     return filtered.sort(function(a, b) {
@@ -1279,39 +1316,59 @@ function renderTasks() {
     const filtered = getFilteredTasks();
     const c = document.getElementById('tasks-table');
     
-    const counter = document.getElementById('tasks-results-count');
-    if (counter) {
-        counter.style.display = 'block';
-        counter.innerHTML = '<strong>' + filtered.length + '</strong> treinamentos';
+    // Atualiza contadores
+    if(document.getElementById('tasks-results-count')) {
+        document.getElementById('tasks-results-count').style.display = 'block';
+        document.getElementById('tasks-results-count').innerHTML = '<strong>' + filtered.length + '</strong> treinamentos encontrados';
     }
+    if(document.getElementById('total-tasks')) document.getElementById('total-tasks').textContent = tasks.length; // Total geral
+    if(document.getElementById('completed-tasks')) document.getElementById('completed-tasks').textContent = filtered.filter(t => t.status==='Concluído').length;
+    if(document.getElementById('pending-tasks')) document.getElementById('pending-tasks').textContent = filtered.filter(t => t.status==='Pendente').length;
 
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhum treinamento encontrado.</div>';
     } else {
         const rows = filtered.map(function(t) {
-            return '<tr>' +
-                '<td><strong>' + t.municipality + '</strong></td>' +
-                '<td>' + formatDate(t.dateRequested) + '</td>' +
-                '<td>' + formatDate(t.datePerformed) + '</td>' +
-                '<td>' + t.requestedBy + '</td>' +
-                '<td>' + t.performedBy + '</td>' +
-                '<td>' + t.trainedName + '</td>' +
-                '<td>' + t.trainedPosition + '</td>' +
-                '<td>' + t.contact + '</td>' +
-                '<td><span class="task-status ' + (t.status === 'Concluído' ? 'completed' : 'pending') + '">' + t.status + '</span></td>' +
-                '<td>' +
-                    '<button class="btn btn--sm" onclick="showTaskModal(' + t.id + ')">✏️</button> ' +
-                    '<button class="btn btn--sm" onclick="deleteTask(' + t.id + ')">🗑️</button>' +
-                '</td>' +
-            '</tr>';
+            // Trata observação longa
+            let obs = t.observations || '-';
+            if (obs.length > 30) obs = `<span title="${t.observations}">${t.observations.substring(0, 30)}...</span>`;
+
+            return `<tr>
+                <td style="font-weight:600; color:#003d5c;">${t.municipality}</td>
+                <td style="text-align:center;">${formatDate(t.dateRequested)}</td>
+                <td style="text-align:center;">${formatDate(t.datePerformed)}</td>
+                <td>${t.requestedBy}</td>
+                <td>${t.performedBy}</td>
+                <td>${t.trainedName || '-'}</td>
+                <td>${t.trainedPosition || '-'}</td>
+                <td>${t.contact || '-'}</td>
+                <td style="font-size:12px; color:#555;">${obs}</td>
+                <td><span class="task-status ${t.status === 'Concluído' ? 'completed' : (t.status === 'Cancelado' ? 'cancelled' : 'pending')}">${t.status}</span></td>
+                <td>
+                    <button class="btn btn--sm" onclick="showTaskModal(${t.id})" title="Editar">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteTask(${t.id})" title="Excluir">🗑️</button>
+                </td>
+            </tr>`;
         }).join('');
-        c.innerHTML = '<table><thead><th>Município</th><th>Data Sol.</th><th>Data Real.</th><th>Solicitante</th><th>Orientador</th><th>Profissional</th><th>Cargo</th><th>Contato</th><th>Status</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
+        
+        c.innerHTML = `
+        <table class="compact-table">
+            <thead>
+                <th>Município</th>
+                <th style="text-align:center;">Data<br>Solicitação</th>
+                <th style="text-align:center;">Data<br>Realização</th>
+                <th>Solicitante</th>
+                <th>Orientador</th>
+                <th>Profissional<br>à Treinar</th>
+                <th>Cargo/Função</th>
+                <th>Contato</th>
+                <th>Observações</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>`;
     }
-    
-    if(document.getElementById('total-tasks')) document.getElementById('total-tasks').textContent = filtered.length;
-    if(document.getElementById('completed-tasks')) document.getElementById('completed-tasks').textContent = filtered.filter(function(t) { return t.status==='Concluído'; }).length;
-    if(document.getElementById('pending-tasks')) document.getElementById('pending-tasks').textContent = filtered.filter(function(t) { return t.status==='Pendente'; }).length;
-    if(document.getElementById('cancelled-tasks')) document.getElementById('cancelled-tasks').textContent = filtered.filter(function(t) { return t.status==='Cancelado'; }).length;
 }
 
 function exportTasksCSV() {
@@ -1345,7 +1402,13 @@ function closeTaskModal() {
 }
 
 function clearTaskFilters() {
-    ['filter-task-municipality', 'filter-task-status', 'filter-task-requester', 'filter-task-performer', 'filter-task-position', 'filter-task-date-start', 'filter-task-date-end'].forEach(function(id) {
+    const ids = [
+        'filter-task-municipality', 'filter-task-performer', 'filter-task-position', 
+        'filter-task-status', 'filter-task-requester', 
+        'filter-task-req-start', 'filter-task-req-end', 
+        'filter-task-perf-start', 'filter-task-perf-end'
+    ];
+    ids.forEach(id => {
         if(document.getElementById(id)) document.getElementById(id).value = '';
     });
     renderTasks();
