@@ -988,8 +988,8 @@ function renderMunicipalities() {
     const filtered = getFilteredMunicipalities();
     const c = document.getElementById('municipalities-table');
     
-    // Garante que o filtro de dropdown esteja preenchido corretamente ao abrir
-    if(document.getElementById('filter-municipality-name').options.length <= 1) {
+    // Garante que o filtro de dropdown esteja preenchido
+    if(document.getElementById('filter-municipality-name') && document.getElementById('filter-municipality-name').options.length <= 1) {
         populateFilterSelects();
     }
 
@@ -1003,16 +1003,15 @@ function renderMunicipalities() {
         c.innerHTML = '<div class="empty-state">Nenhum município encontrado com os filtros selecionados.</div>';
     } else {
         const rows = filtered.map(function(m) {
-            // Lógica para Data de Bloqueio/Parada
             let dataFim = '-';
             let corDataFim = 'inherit';
             
             if (m.status === 'Bloqueado' && m.dateBlocked) {
                 dataFim = formatDate(m.dateBlocked);
-                corDataFim = '#C85250'; // Vermelho
+                corDataFim = '#C85250';
             } else if (m.status === 'Parou de usar' && m.dateStopped) {
                 dataFim = formatDate(m.dateStopped);
-                corDataFim = '#E68161'; // Laranja
+                corDataFim = '#E68161';
             }
 
             // Badges de Módulos
@@ -1022,11 +1021,17 @@ function renderMunicipalities() {
                 return `<span style="background:#005580;color:white;padding:1px 4px;border-radius:3px;font-size:9px;margin-right:2px;display:inline-block;margin-bottom:2px;" title="${modName}">${abbrev}</span>`;
             }).join('');
             
-            // Cores de Status
-            let statusColor = '#005580'; 
-            if (m.status === 'Bloqueado') statusColor = '#C85250';
-            if (m.status === 'Parou de usar') statusColor = '#E68161';
-            if (m.status === 'Não Implantado') statusColor = '#79C2A9';
+            // --- AJUSTE DE CORES LEVES (IGUAL TREINAMENTOS) ---
+            let statusClass = 'task-status';
+            let customStyle = '';
+
+            if (m.status === 'Em uso') statusClass += ' completed'; // Azul
+            else if (m.status === 'Bloqueado') statusClass += ' cancelled'; // Vermelho
+            else if (m.status === 'Parou de usar') statusClass += ' pending'; // Laranja
+            else {
+                // Não Implantado (Cinza)
+                customStyle = 'background:rgba(150,150,150,0.15); color:#666; border:1px solid rgba(150,150,150,0.25);';
+            }
 
             return `<tr>
                 <td style="font-weight:600; color:#003d5c;">${m.name}</td>
@@ -1037,7 +1042,7 @@ function renderMunicipalities() {
                 <td>${formatDate(m.lastVisit)}</td>
                 <td style="font-size:11px;">${calculateTimeInUse(m.implantationDate)}</td>
                 <td style="font-size:11px;">${calculateDaysSince(m.lastVisit)}</td>
-                <td><span style="background:${statusColor};color:white;padding:3px 8px;border-radius:10px;font-size:10px;white-space:nowrap;">${m.status}</span></td>
+                <td><span class="${statusClass}" style="${customStyle}">${m.status}</span></td>
                 <td style="color:${corDataFim}; font-weight:500; font-size:11px;">${dataFim}</td>
                 <td>
                     <button class="btn btn--sm" onclick="showMunicipalityModal(${m.id})" title="Editar">✏️</button>
@@ -1046,7 +1051,6 @@ function renderMunicipalities() {
             </tr>`;
         }).join('');
         
-        // Cabeçalho da Tabela Atualizado
         c.innerHTML = `
         <table class="compact-table">
             <thead>
@@ -1065,7 +1069,6 @@ function renderMunicipalities() {
             <tbody>${rows}</tbody>
         </table>`;
     }
-    
     updateMunicipalityCharts(filtered);
 }
 
@@ -1546,13 +1549,11 @@ function renderRequests() {
     const filtered = getFilteredRequests();
     const c = document.getElementById('requests-table');
     
-    // Atualiza contadores (Stats)
     if(document.getElementById('requests-results-count')) {
         document.getElementById('requests-results-count').innerHTML = '<strong>' + filtered.length + '</strong> solicitações encontradas';
         document.getElementById('requests-results-count').style.display = 'block';
     }
     
-    // Correção dos Cards de Estatística (IDs corretos)
     if(document.getElementById('total-requests')) document.getElementById('total-requests').textContent = requests.length;
     if(document.getElementById('pending-requests')) document.getElementById('pending-requests').textContent = filtered.filter(r => r.status === 'Pendente').length;
     if(document.getElementById('completed-requests')) document.getElementById('completed-requests').textContent = filtered.filter(r => r.status === 'Realizado').length;
@@ -1565,15 +1566,13 @@ function renderRequests() {
             const desc = x.description.length > 40 ? `<span title="${x.description}">${x.description.substring(0,40)}...</span>` : x.description;
             const just = x.justification ? (x.justification.length > 30 ? `<span title="${x.justification}">${x.justification.substring(0,30)}...</span>` : x.justification) : '-';
             
-            // Definição de Cores de Status
-            let statusBadge = '';
-            if (x.status === 'Realizado') {
-                statusBadge = '<span style="background:#005580; color:white; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Realizado</span>'; // Azul
-            } else if (x.status === 'Inviável') {
-                statusBadge = '<span style="background:#C85250; color:white; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Inviável</span>'; // Vermelho
-            } else {
-                statusBadge = '<span style="background:#E68161; color:white; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Pendente</span>'; // Laranja
-            }
+            // --- AJUSTE DE CORES LEVES ---
+            let statusClass = 'task-status';
+            if (x.status === 'Realizado') statusClass += ' completed'; // Azul
+            else if (x.status === 'Inviável') statusClass += ' cancelled'; // Vermelho
+            else statusClass += ' pending'; // Laranja
+
+            const statusBadge = `<span class="${statusClass}">${x.status}</span>`;
 
             return `<tr>
                 <td style="font-weight:600; color:#003d5c;">${x.municipality}</td>
@@ -1609,7 +1608,6 @@ function renderRequests() {
             <tbody>${rows}</tbody>
         </table>`;
     }
-    
     updateRequestCharts(filtered);
 }
 
@@ -1946,20 +1944,15 @@ function renderPresentations() {
     const filtered = getFilteredPresentations();
     const c = document.getElementById('presentations-table');
     
-    // --- CORREÇÃO DAS ESTATÍSTICAS (CARDS) ---
-    // Atualiza os números nos quadradinhos brancos
     if(document.getElementById('presentations-results-count')) {
         document.getElementById('presentations-results-count').innerHTML = '<strong>' + filtered.length + '</strong> apresentações encontradas';
         document.getElementById('presentations-results-count').style.display = 'block';
     }
 
-    // Contagem baseada nos dados filtrados (ou totais, se preferir)
-    // Nota: Aqui estamos contando o que está na tela (filtrado). Se quiser o total geral do banco, troque 'filtered' por 'presentations'.
-    if(document.getElementById('total-presentations')) document.getElementById('total-presentations').textContent = presentations.length; // Total do banco
+    if(document.getElementById('total-presentations')) document.getElementById('total-presentations').textContent = presentations.length;
     if(document.getElementById('pending-presentations')) document.getElementById('pending-presentations').textContent = filtered.filter(p => p.status === 'Pendente').length;
     if(document.getElementById('completed-presentations')) document.getElementById('completed-presentations').textContent = filtered.filter(p => p.status === 'Realizada').length;
     if(document.getElementById('cancelled-presentations')) document.getElementById('cancelled-presentations').textContent = filtered.filter(p => p.status === 'Cancelada').length;
-    // -------------------------------------------
 
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhuma apresentação encontrada.</div>';
@@ -1967,14 +1960,14 @@ function renderPresentations() {
         const rows = filtered.map(function(p) {
             const desc = p.description ? (p.description.length > 30 ? `<span title="${p.description}">${p.description.substring(0,30)}...</span>` : p.description) : '-';
             
-            // Cores de Status (Azul, Laranja, Vermelho)
-            let badgeColor = '#E68161'; // Pendente (Laranja)
-            if (p.status === 'Realizada') badgeColor = '#005580'; // Azul
-            if (p.status === 'Cancelada') badgeColor = '#C85250'; // Vermelho
+            // --- AJUSTE DE CORES LEVES ---
+            let statusClass = 'task-status';
+            if (p.status === 'Realizada') statusClass += ' completed'; // Azul
+            else if (p.status === 'Cancelada') statusClass += ' cancelled'; // Vermelho
+            else statusClass += ' pending'; // Laranja
 
-            const statusBadge = `<span style="background:${badgeColor}; color:white; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">${p.status}</span>`;
+            const statusBadge = `<span class="${statusClass}">${p.status}</span>`;
 
-            // Formatação de Arrays (Orientadores/Formas)
             const orientadoresStr = (Array.isArray(p.orientadores) && p.orientadores.length > 0) ? p.orientadores.join(', ') : '-';
             const formasStr = (Array.isArray(p.forms) && p.forms.length > 0) ? p.forms.join(', ') : '-';
 
@@ -2010,7 +2003,6 @@ function renderPresentations() {
             <tbody>${rows}</tbody>
         </table>`;
     }
-    
     updatePresentationCharts(filtered);
 }
 
@@ -2247,7 +2239,6 @@ function renderDemands() {
     const filtered = getFilteredDemands();
     const c = document.getElementById('demands-table');
     
-    // Atualiza Stats (Contadores)
     if(document.getElementById('demands-results-count')) {
         document.getElementById('demands-results-count').innerHTML = '<strong>' + filtered.length + '</strong> demandas encontradas';
         document.getElementById('demands-results-count').style.display = 'block';
@@ -2261,17 +2252,18 @@ function renderDemands() {
         c.innerHTML = '<div class="empty-state">Nenhuma demanda encontrada.</div>';
     } else {
         const rows = filtered.map(function(d) {
-            // Cores de Status
-            let statusBadge = '';
-            if (d.status === 'Realizada') statusBadge = '<span style="background:#005580; color:white; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Realizada</span>';
-            else if (d.status === 'Inviável') statusBadge = '<span style="background:#C85250; color:white; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Inviável</span>';
-            else statusBadge = '<span style="background:#E68161; color:white; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Pendente</span>';
+            // --- AJUSTE DE CORES LEVES ---
+            let statusClass = 'task-status';
+            if (d.status === 'Realizada') statusClass += ' completed';
+            else if (d.status === 'Inviável') statusClass += ' cancelled';
+            else statusClass += ' pending';
 
-            // Cores de Prioridade (Texto)
+            const statusBadge = `<span class="${statusClass}">${d.status}</span>`;
+
             let prioColor = 'inherit';
-            if (d.priority === 'Alta') prioColor = '#C85250'; // Vermelho
-            if (d.priority === 'Média') prioColor = '#E68161'; // Laranja
-            if (d.priority === 'Baixa') prioColor = '#79C2A9'; // Verde
+            if (d.priority === 'Alta') prioColor = '#C85250';
+            if (d.priority === 'Média') prioColor = '#E68161';
+            if (d.priority === 'Baixa') prioColor = '#79C2A9';
 
             return `<tr>
                 <td>${d.user || '-'}</td>
