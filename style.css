@@ -3450,3 +3450,20 @@ table th {
 #municipalities-table td:nth-child(10) {
     text-align: center !important;
 }
+
+/* ==========================================================================
+   AJUSTE FINO: STATUS MAIS COMPACTOS (V20)
+   Adicione no final do style.css
+   ========================================================================== */
+
+.task-status {
+    padding: 2px 8px !important;  /* Reduzido o espaço interno (antes era 4px 10px) */
+    font-size: 10px !important;   /* Letra um pouco menor (antes era 11px) */
+    line-height: 1.2 !important;  /* Altura de linha mais justa */
+    min-height: auto !important;  /* Remove altura mínima forçada */
+    height: auto !important;
+    font-weight: 700 !important;  /* Negrito para manter legibilidade */
+    border-width: 1px !important; /* Borda fina */
+    white-space: nowrap;          /* Garante que não quebra linha */
+    display: inline-block;        /* Comportamento compacto */
+}
