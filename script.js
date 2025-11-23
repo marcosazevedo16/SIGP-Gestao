@@ -1246,21 +1246,44 @@ function saveTask(e) {
     showToast('Treinamento salvo com sucesso!', 'success');
 }
 
-// Função Auxiliar para validar datas (Adicione antes de getFilteredTasks)
+// Função Auxiliar para validar datas (Tarefas e Solicitações)
 function validateDateRange(type) {
-    const start = document.getElementById(`filter-task-${type}-start`);
-    const end = document.getElementById(`filter-task-${type}-end`);
-    
-    if (start.value) {
-        // Data final não pode ser menor que a inicial
-        end.min = start.value;
+    let startId, endId;
+
+    // Identifica se é filtro de Tarefa ou Solicitação
+    if (type === 'req' || type === 'perf') {
+        // Padrão da aba Tarefas (ex: filter-task-req-start)
+        startId = `filter-task-${type}-start`;
+        endId = `filter-task-${type}-end`;
+    } else {
+        // Padrão da aba Solicitações (ex: filter-request-sol-start)
+        startId = `filter-${type}-start`;
+        endId = `filter-${type}-end`;
     }
+
+    const start = document.getElementById(startId);
+    const end = document.getElementById(endId);
+    
+    if (!start || !end) return;
+
+    // 1. Regra do Bloqueio: O campo "Fim" não aceita data menor que "Início"
+    if (start.value) {
+        end.min = start.value;
+    } else {
+        end.removeAttribute('min');
+    }
+    
+    // 2. Correção Automática: Se já tiver uma data inválida, corrige
     if (end.value && start.value && end.value < start.value) {
-        // Se o usuário forçar, limpa ou ajusta
         end.value = start.value;
     }
-    // Atualiza a tabela automaticamente
-    renderTasks();
+
+    // 3. Atualiza a tabela correspondente
+    if (type.includes('request')) {
+        renderRequests(); // Aba Solicitações
+    } else {
+        renderTasks();    // Aba Tarefas
+    }
 }
 
 function getFilteredTasks() {
