@@ -3252,104 +3252,122 @@ function handleBackupFileSelect(event) {
 
 function confirmRestore() {
     if (!pendingBackupData) return;
-    
-    // Tenta pegar .data ou usa o próprio objeto
-    const backupRaw = pendingBackupData.data || pendingBackupData;
-    
-    // 1. Preservar Sessão
+
+    // Tenta pegar os dados principais
+    const backup = pendingBackupData.data || pendingBackupData;
+
+    // 1. Preservar Sessão (Para não deslogar)
     const sessionUser = localStorage.getItem('currentUser');
     const sessionAuth = localStorage.getItem('isAuthenticated');
     const sessionTheme = localStorage.getItem('theme') || 'light';
 
-    // 2. Limpar tudo
+    // 2. Limpar banco atual
     localStorage.clear();
 
-    // 3. Função Auxiliar de Segurança
-    const saveSafe = (key, data, fallback) => {
-        if (data && Array.isArray(data)) {
-            localStorage.setItem(key, JSON.stringify(data));
-        } else {
-            localStorage.setItem(key, JSON.stringify(fallback));
-        }
-    };
+    // --- MIGRAÇÃO E CORREÇÃO DE DADOS ---
 
-    // --- MIGRAÇÃO DE DADOS (Híbrido: Funciona para Antigos e Novos) ---
-    
-    // Migrar Demandas
-    let newDemands = backupRaw.demands || [];
-    newDemands = newDemands.map(d => ({
+    // 1. Usuários (Garante admin se vazio)
+    const safeUsers = (backup.users || []).map(u => ({
+        ...u,
+        status: u.status || 'Ativo',
+        permission: u.permission || 'Usuário Normal'
+    }));
+    if (safeUsers.length === 0) {
+        // Cria usuário de emergência se não houver usuários
+        safeUsers.push({id:1, login:'ADMIN', name:'Administrador', passwordHash: hashPassword('saude2025', generateSalt()), salt: generateSalt(), permission:'Administrador', status:'Ativo'});
+    }
+    localStorage.setItem('users', JSON.stringify(safeUsers));
+
+    // 2. Municípios (Converte stoppageDate -> dateBlocked/dateStopped)
+    const safeMuns = (backup.municipalities || []).map(m => ({
+        id: m.id,
+        name: m.name,
+        status: m.status,
+        manager: m.manager || '',
+        contact: m.contact || '',
+        implantationDate: m.implantationDate || '',
+        lastVisit: m.lastVisit || '',
+        modules: m.modules || [],
+        // Lógica de Migração:
+        dateBlocked: (m.status === 'Bloqueado' ? (m.dateBlocked || m.stoppageDate || '') : ''),
+        dateStopped: (m.status === 'Parou de usar' ? (m.dateStopped || m.stoppageDate || '') : '')
+    }));
+    localStorage.setItem('municipalities', JSON.stringify(safeMuns));
+
+    // 3. Treinamentos (Converte 'trainings' antigo para 'tasks')
+    const rawTasks = backup.tasks || backup.trainings || [];
+    const safeTasks = rawTasks.map(t => ({
+        id: t.id,
+        municipality: t.municipality,
+        dateRequested: t.dateRequested,
+        datePerformed: t.datePerformed || '',
+        requestedBy: t.requestedBy || '',
+        performedBy: t.performedBy || '',
+        trainedName: t.trainedName || '',
+        trainedPosition: t.trainedPosition || '',
+        contact: t.contact || '',
+        status: t.status || 'Pendente',
+        observations: t.observations || ''
+    }));
+    localStorage.setItem('tasks', JSON.stringify(safeTasks));
+
+    // 4. Demandas (Converte realizationDate -> dateRealization)
+    const safeDemands = (backup.demands || []).map(d => ({
         ...d,
-        // Se tiver dateRealization (novo), usa. Se não, tenta realizationDate (antigo).
-        dateRealization: d.dateRealization || d.realizationDate || '', 
+        dateRealization: d.dateRealization || d.realizationDate || '',
         justification: d.justification || ''
     }));
+    localStorage.setItem('demands', JSON.stringify(safeDemands));
 
-    // Migrar Visitas
-    let newVisits = backupRaw.visits || [];
-    newVisits = newVisits.map(v => ({
+    // 5. Visitas (Converte visitDate -> dateRealization)
+    const safeVisits = (backup.visits || []).map(v => ({
         ...v,
         dateRealization: v.dateRealization || v.visitDate || '',
         justification: v.justification || v.cancelJustification || ''
     }));
+    localStorage.setItem('visits', JSON.stringify(safeVisits));
 
-    // Restaurar Listas
-    saveSafe('users', backupRaw.users, []);
-    saveSafe('municipalities', backupRaw.municipalities, []);
-    saveSafe('municipalitiesList', backupRaw.municipalitiesList, []);
-    saveSafe('tasks', backupRaw.tasks || backupRaw.trainings, []); 
-    saveSafe('requests', backupRaw.requests, []);
-    
-    // Salva as listas tratadas/migradas
-    localStorage.setItem('demands', JSON.stringify(newDemands));
-    localStorage.setItem('visits', JSON.stringify(newVisits));
-    
-    saveSafe('productions', backupRaw.productions, []);
-    saveSafe('presentations', backupRaw.presentations, []);
-    saveSafe('systemVersions', backupRaw.systemVersions, []); 
-    saveSafe('cargos', backupRaw.cargos, []);
-    saveSafe('orientadores', backupRaw.orientadores, []);
-    saveSafe('modulos', backupRaw.modulos || backupRaw.modules, []);
-    saveSafe('formasApresentacao', backupRaw.formasApresentacao, []);
-    
-    // --- CONTADORES DE ID (Lógica Inteligente) ---
-    let finalCounters;
+    // 6. Outras Listas (Salva vazio [] se não existir para não travar)
+    localStorage.setItem('municipalitiesList', JSON.stringify(backup.municipalitiesList || []));
+    localStorage.setItem('requests', JSON.stringify(backup.requests || []));
+    localStorage.setItem('productions', JSON.stringify(backup.productions || []));
+    localStorage.setItem('presentations', JSON.stringify(backup.presentations || []));
+    localStorage.setItem('systemVersions', JSON.stringify(backup.systemVersions || []));
+    localStorage.setItem('cargos', JSON.stringify(backup.cargos || []));
+    localStorage.setItem('orientadores', JSON.stringify(backup.orientadores || []));
+    localStorage.setItem('modulos', JSON.stringify(backup.modulos || backup.modules || []));
+    localStorage.setItem('formasApresentacao', JSON.stringify(backup.formasApresentacao || []));
 
-    if (backupRaw.counters) {
-        // CASO 1: Backup Novo (Já tem contadores, usa eles para manter integridade)
-        finalCounters = backupRaw.counters;
-    } else {
-        // CASO 2: Backup Antigo (Não tem contadores, recalcula baseado no maior ID)
-        const getMaxId = (list) => list.reduce((max, item) => (item.id > max ? item.id : max), 0) + 1;
-        
-        finalCounters = {
-            mun: getMaxId(backupRaw.municipalities || []),
-            munList: getMaxId(backupRaw.municipalitiesList || []),
-            task: getMaxId(backupRaw.tasks || backupRaw.trainings || []),
-            req: getMaxId(backupRaw.requests || []),
-            dem: getMaxId(newDemands),
-            visit: getMaxId(newVisits),
-            prod: getMaxId(backupRaw.productions || []),
-            pres: getMaxId(backupRaw.presentations || []),
-            ver: getMaxId(backupRaw.systemVersions || []),
-            user: getMaxId(backupRaw.users || []),
-            cargo: getMaxId(backupRaw.cargos || []),
-            orient: getMaxId(backupRaw.orientadores || []),
-            mod: getMaxId(backupRaw.modulos || backupRaw.modules || []),
-            forma: getMaxId(backupRaw.formasApresentacao || [])
-        };
-    }
+    // 7. Recriar Contadores (Evita conflito de ID futuro)
+    const getMax = (list) => list.reduce((acc, item) => Math.max(acc, item.id || 0), 0) + 1;
     
-    localStorage.setItem('counters', JSON.stringify(finalCounters));
+    const counters = {
+        mun: getMax(safeMuns),
+        munList: getMax(backup.municipalitiesList || []),
+        task: getMax(safeTasks),
+        req: getMax(backup.requests || []),
+        dem: getMax(safeDemands),
+        visit: getMax(safeVisits),
+        prod: getMax(backup.productions || []),
+        pres: getMax(backup.presentations || []),
+        ver: getMax(backup.systemVersions || []),
+        user: getMax(safeUsers),
+        cargo: getMax(backup.cargos || []),
+        orient: getMax(backup.orientadores || []),
+        mod: getMax(backup.modulos || []),
+        forma: getMax(backup.formasApresentacao || [])
+    };
+    localStorage.setItem('counters', JSON.stringify(counters));
 
-    // 4. Restaurar Sessão
+    // 8. Restaurar Sessão
     if (sessionUser) localStorage.setItem('currentUser', sessionUser);
     if (sessionAuth) localStorage.setItem('isAuthenticated', sessionAuth);
     localStorage.setItem('theme', sessionTheme);
 
-    // 5. Recarregar
-    alert('Sistema restaurado com sucesso!');
+    alert('Backup restaurado e convertido com sucesso!');
     location.reload();
 }
+
 // ----------------------------------------------------------------------------
 // 20. DASHBOARD E INICIALIZAÇÃO
 // ----------------------------------------------------------------------------
