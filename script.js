@@ -1259,9 +1259,11 @@ function validateDateRange(type) {
         startId = `filter-${type}-start`; endId = `filter-${type}-end`;
     } else if (type.includes('pres')) {
         startId = `filter-presentation-${type.split('-')[1]}-start`; endId = `filter-presentation-${type.split('-')[1]}-end`;
-    } else if (type.includes('dem')) { // NOVO BLOCO PARA DEMANDAS
-        startId = `filter-demand-${type.split('-')[1]}-start`; 
-        endId = `filter-demand-${type.split('-')[1]}-end`;
+    } else if (type.includes('dem')) {
+        startId = `filter-demand-${type.split('-')[1]}-start`; endId = `filter-demand-${type.split('-')[1]}-end`;
+    } else if (type.includes('visit')) { // NOVO BLOCO VISITAS
+        startId = `filter-${type}-start`; 
+        endId = `filter-${type}-end`;
     }
 
     const start = document.getElementById(startId);
@@ -1274,9 +1276,11 @@ function validateDateRange(type) {
     
     if (end.value && start.value && end.value < start.value) end.value = start.value;
 
+    // Refresh
     if (type.includes('dem')) renderDemands();
     else if (type.includes('request')) renderRequests();
     else if (type.includes('pres')) renderPresentations();
+    else if (type.includes('visit')) renderVisits();
     else renderTasks();
 }
 
@@ -2417,20 +2421,48 @@ function showVisitModal(id = null) {
     editingId = id;
     document.getElementById('visit-form').reset();
     
-    const statusSel = document.getElementById('visit-status');
-    statusSel.onchange = handleVisitStatusChange;
-    updateGlobalDropdowns();
+    // Popula dropdown
+    const munSelect = document.getElementById('visit-municipality');
+    populateSelect(munSelect, municipalitiesList, 'name', 'name');
+
+    // Ativa os listeners de status
+    if(typeof handleVisitStatusChange === 'function') {
+        const statusSel = document.getElementById('visit-status');
+        statusSel.onchange = handleVisitStatusChange;
+    }
 
     if (id) {
-        const v = visits.find(function(x) { return x.id === id; });
-        document.getElementById('visit-municipality').value = v.municipality;
-        document.getElementById('visit-date').value = v.date;
-        document.getElementById('visit-applicant').value = v.applicant;
-        document.getElementById('visit-status').value = v.status;
-        
-        if(document.getElementById('visit-date-realization')) document.getElementById('visit-date-realization').value = v.dateRealization || '';
-        if(document.getElementById('visit-justification')) document.getElementById('visit-justification').value = v.justification || '';
-        handleVisitStatusChange();
+        const v = visits.find(x => x.id === id);
+        if(v) {
+            // --- CORREÇÃO: Cria opção se não existir ---
+            let exists = false;
+            for (let i = 0; i < munSelect.options.length; i++) {
+                if (munSelect.options[i].value === v.municipality) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                const opt = document.createElement('option');
+                opt.value = v.municipality;
+                opt.textContent = v.municipality;
+                munSelect.appendChild(opt);
+            }
+            munSelect.value = v.municipality;
+            // -------------------------------------------
+
+            document.getElementById('visit-date').value = v.date;
+            document.getElementById('visit-applicant').value = v.applicant;
+            document.getElementById('visit-status').value = v.status;
+            
+            if(document.getElementById('visit-reason')) document.getElementById('visit-reason').value = v.reason || '';
+            if(document.getElementById('visit-visit-date')) document.getElementById('visit-visit-date').value = v.dateRealization || '';
+            if(document.getElementById('visit-cancel-justification')) document.getElementById('visit-cancel-justification').value = v.justification || '';
+            
+            if(typeof handleVisitStatusChange === 'function') handleVisitStatusChange();
+        }
+    } else {
+        if(typeof handleVisitStatusChange === 'function') handleVisitStatusChange();
     }
     document.getElementById('visit-modal').classList.add('show');
 }
@@ -2471,55 +2503,97 @@ function getFilteredVisits() {
     const fMun = document.getElementById('filter-visit-municipality')?.value;
     const fStatus = document.getElementById('filter-visit-status')?.value;
     const fApp = document.getElementById('filter-visit-applicant')?.value.toLowerCase();
-    const fDateStart = document.getElementById('filter-visit-date-start')?.value;
-    const fDateEnd = document.getElementById('filter-visit-date-end')?.value;
+    
+    // Datas Separadas
+    const fSolStart = document.getElementById('filter-visit-sol-start')?.value;
+    const fSolEnd = document.getElementById('filter-visit-sol-end')?.value;
+    const fRealStart = document.getElementById('filter-visit-real-start')?.value;
+    const fRealEnd = document.getElementById('filter-visit-real-end')?.value;
 
     let filtered = visits.filter(function(v) {
         if (fMun && v.municipality !== fMun) return false;
         if (fStatus && v.status !== fStatus) return false;
         if (fApp && !v.applicant.toLowerCase().includes(fApp)) return false;
-        if (fDateStart && v.date < fDateStart) return false;
-        if (fDateEnd && v.date > fDateEnd) return false;
+        
+        // Data Solicitação
+        if (fSolStart && v.date < fSolStart) return false;
+        if (fSolEnd && v.date > fSolEnd) return false;
+
+        // Data Realização (Visita)
+        if (fRealStart && (!v.dateRealization || v.dateRealization < fRealStart)) return false;
+        if (fRealEnd && (!v.dateRealization || v.dateRealization > fRealEnd)) return false;
+
         return true;
     });
 
-    return filtered.sort(function(a, b) {
-        return new Date(a.date) - new Date(b.date);
-    });
+    return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
 function renderVisits() {
     const filtered = getFilteredVisits();
     const c = document.getElementById('visits-table');
-    document.getElementById('visits-results-count').innerHTML = '<strong>' + filtered.length + '</strong> visitas';
+    
+    // 1. Contador Acima da Tabela
+    if(document.getElementById('visits-results-count')) {
+        document.getElementById('visits-results-count').innerHTML = '<strong>' + filtered.length + '</strong> visitas encontradas';
+        document.getElementById('visits-results-count').style.display = 'block';
+    }
+
+    // 2. Correção dos Cards de Estatística
+    if(document.getElementById('total-visits')) document.getElementById('total-visits').textContent = visits.length;
+    if(document.getElementById('pending-visits')) document.getElementById('pending-visits').textContent = filtered.filter(v => v.status === 'Pendente').length;
+    if(document.getElementById('completed-visits')) document.getElementById('completed-visits').textContent = filtered.filter(v => v.status === 'Realizada').length;
+    if(document.getElementById('cancelled-visits')) document.getElementById('cancelled-visits').textContent = filtered.filter(v => v.status === 'Cancelada').length;
 
     if (filtered.length === 0) {
-        c.innerHTML = '<div class="empty-state">Vazio.</div>';
+        c.innerHTML = '<div class="empty-state">Nenhuma visita encontrada.</div>';
     } else {
-        // AJUSTE 6: Ordem colunas e Justificativa
         const rows = filtered.map(function(v) {
-            return '<tr>' +
-                '<td>' + v.municipality + '</td>' +
-                '<td>' + formatDate(v.date) + '</td>' +
-                '<td>' + v.applicant + '</td>' +
-                '<td>' + (v.reason || '-') + '</td>' +
-                '<td>' + v.status + '</td>' +
-                '<td>' + formatDate(v.dateRealization) + '</td>' +
-                '<td>' + (v.justification || '-') + '</td>' +
-                '<td>' +
-                    '<button class="btn btn--sm" onclick="showVisitModal(' + v.id + ')">✏️</button> ' +
-                    '<button class="btn btn--sm" onclick="deleteVisit(' + v.id + ')">🗑️</button>' +
-                '</td>' +
-            '</tr>';
+            // Cores de Status (Padronizadas)
+            let statusClass = 'task-status';
+            if (v.status === 'Realizada') statusClass += ' completed'; // Azul
+            else if (v.status === 'Cancelada') statusClass += ' cancelled'; // Vermelho
+            else statusClass += ' pending'; // Laranja
+
+            const statusBadge = `<span class="${statusClass}">${v.status}</span>`;
+            const motivo = v.reason ? (v.reason.length > 40 ? `<span title="${v.reason}">${v.reason.substring(0,40)}...</span>` : v.reason) : '-';
+            const justif = v.justification ? (v.justification.length > 30 ? `<span title="${v.justification}">${v.justification.substring(0,30)}...</span>` : v.justification) : '-';
+
+            return `<tr>
+                <td style="font-weight:600; color:#003d5c;">${v.municipality}</td>
+                <td style="text-align:center;">${formatDate(v.date)}</td>
+                <td>${v.applicant}</td>
+                <td style="font-size:12px;">${motivo}</td>
+                <td style="text-align:center;">${statusBadge}</td>
+                <td style="text-align:center;">${formatDate(v.dateRealization)}</td>
+                <td style="font-size:12px; color:#555;">${justif}</td>
+                <td style="text-align:center;">
+                    <button class="btn btn--sm" onclick="showVisitModal(${v.id})" title="Editar">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteVisit(${v.id})" title="Excluir">🗑️</button>
+                </td>
+            </tr>`;
         }).join('');
-        c.innerHTML = '<table><thead><th>Município</th><th>Data Sol.</th><th>Solicitante</th><th>Motivo</th><th>Status</th><th>Realização</th><th>Justificativa</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
+        
+        c.innerHTML = `
+        <table class="compact-table">
+            <thead>
+                <th>Município</th>
+                <th style="text-align:center;">Data<br>Solicitação</th>
+                <th>Solicitante da Visita</th>
+                <th>Motivo da Visita</th>
+                <th style="text-align:center;">Status</th>
+                <th style="text-align:center;">Data<br>Realização</th>
+                <th>Justificativa de<br>Cancelamento</th>
+                <th style="text-align:center; width:90px;">Ações</th>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>`;
     }
-    
-    if(document.getElementById('total-visits')) document.getElementById('total-visits').textContent = filtered.length;
     updateVisitCharts(filtered);
 }
 
 function updateVisitCharts(data) {
+    // 1. Status (Cores Corretas)
     if (document.getElementById('visitStatusChart') && window.Chart) {
         if (chartStatusVis) chartStatusVis.destroy();
         chartStatusVis = new Chart(document.getElementById('visitStatusChart'), {
@@ -2528,34 +2602,49 @@ function updateVisitCharts(data) {
                 labels: ['Pendente', 'Realizada', 'Cancelada'], 
                 datasets: [{ 
                     data: [
-                        data.filter(function(v){return v.status==='Pendente';}).length, 
-                        data.filter(function(v){return v.status==='Realizada';}).length, 
-                        data.filter(function(v){return v.status==='Cancelada';}).length
+                        data.filter(v => v.status==='Pendente').length, 
+                        data.filter(v => v.status==='Realizada').length, 
+                        data.filter(v => v.status==='Cancelada').length
                     ], 
-                    backgroundColor: ['#FFA07A', '#45B7D1', '#FF6B6B'] 
+                    backgroundColor: ['#E68161', '#005580', '#C85250'] // Laranja, Azul, Vermelho
                 }] 
             }
         });
     }
 
+    // 2. Municípios (Expandido e Colorido)
     if (document.getElementById('visitMunicipalityChart') && window.Chart) {
         if (chartMunVis) chartMunVis.destroy();
         const mCounts = {};
-        data.forEach(function(v) { mCounts[v.municipality] = (mCounts[v.municipality]||0)+1; });
+        data.forEach(v => { mCounts[v.municipality] = (mCounts[v.municipality]||0)+1; });
+        
+        const labels = Object.keys(mCounts);
+        const colors = labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+
         chartMunVis = new Chart(document.getElementById('visitMunicipalityChart'), {
             type: 'bar',
-            data: { labels: Object.keys(mCounts), datasets: [{ label: 'Qtd', data: Object.values(mCounts), backgroundColor: '#4ECDC4' }] }
+            data: { 
+                labels: labels, 
+                datasets: [{ 
+                    label: 'Qtd Visitas', 
+                    data: Object.values(mCounts), 
+                    backgroundColor: colors 
+                }] 
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { display: false } } // Oculta labels no eixo X para limpeza
+                }
+            }
         });
     }
 
-    if (document.getElementById('visitApplicantChart') && window.Chart) {
-        if (chartSolVis) chartSolVis.destroy();
-        const aCounts = {};
-        data.forEach(function(v) { aCounts[v.applicant] = (aCounts[v.applicant]||0)+1; });
-        chartSolVis = new Chart(document.getElementById('visitApplicantChart'), {
-            type: 'bar',
-            data: { labels: Object.keys(aCounts), datasets: [{ label: 'Qtd', data: Object.values(aCounts), backgroundColor: '#FF6B6B' }] }
-        });
+    // 3. Gráfico de Solicitante REMOVIDO (Limpeza)
+    if (chartSolVis) {
+        chartSolVis.destroy();
+        chartSolVis = null;
     }
 }
 
@@ -2586,7 +2675,12 @@ function closeVisitModal() {
 }
 
 function clearVisitFilters() {
-    ['filter-visit-municipality','filter-visit-status','filter-visit-applicant','filter-visit-date-start','filter-visit-date-end'].forEach(function(id) {
+    const ids = [
+        'filter-visit-municipality', 'filter-visit-status', 'filter-visit-applicant',
+        'filter-visit-sol-start', 'filter-visit-sol-end',
+        'filter-visit-real-start', 'filter-visit-real-end'
+    ];
+    ids.forEach(id => {
         if(document.getElementById(id)) document.getElementById(id).value = '';
     });
     renderVisits();
@@ -3063,7 +3157,7 @@ function populateSelect(select, data, valKey, textKey) {
 }
 
 function populateFilterSelects() {
-    // 1. Filtro Principal da Aba Municípios (Baseado nos clientes cadastrados)
+    // 1. Filtro Aba Municípios
     const munSelect = document.getElementById('filter-municipality-name');
     if (munSelect) {
         const current = munSelect.value;
@@ -3072,9 +3166,7 @@ function populateFilterSelects() {
         if(current) munSelect.value = current;
     }
 
-    // 2. Filtros de Município (Clientes Ativos) para as outras abas
-    // Nota: Adicionei 'filter-demand-municipality' na lista abaixo se você tiver criado, 
-    // mas pela sua lista anterior não tinha filtro de município nessa aba, então mantive o padrão.
+    // 2. Filtros de Município Ativos (Geral)
     const activeMuns = municipalities.filter(m => m.status === 'Em uso').sort((a,b) => a.name.localeCompare(b.name));
     const standardFilters = [
         'filter-task-municipality', 'filter-request-municipality', 
@@ -3090,7 +3182,7 @@ function populateFilterSelects() {
         }
     });
 
-    // 3. Filtros de Orientador
+    // 3. Orientadores
     const orientadorFilters = ['filter-task-performer', 'filter-presentation-orientador'];
     const sortedOrientadores = orientadores.slice().sort((a,b) => a.name.localeCompare(b.name));
     orientadorFilters.forEach(id => {
@@ -3102,20 +3194,17 @@ function populateFilterSelects() {
         }
     });
 
-    // 4. Filtro de Cargo
+    // 4. Cargos
     const cargoEl = document.getElementById('filter-task-position');
     if (cargoEl) {
         const cur = cargoEl.value;
-        const sortedCargos = cargos.slice().sort((a,b) => a.name.localeCompare(b.name));
-        cargoEl.innerHTML = '<option value="">Todos</option>' + sortedCargos.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        cargoEl.innerHTML = '<option value="">Todos</option>' + cargos.slice().sort((a,b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         if(cur) cargoEl.value = cur;
     }
 
-    // 5. NOVO: Filtro de Usuário (Aba Solicitações e Aba Demandas)
-    // Aqui incluímos o ID 'filter-demand-user' que criamos no HTML novo
+    // 5. Usuários
     const userFilters = ['filter-request-user', 'filter-demand-user'];
     const sortedUsers = users.slice().sort((a,b) => a.name.localeCompare(b.name));
-    
     userFilters.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
