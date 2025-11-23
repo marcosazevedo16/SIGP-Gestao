@@ -2589,118 +2589,64 @@
     <!-- Modal para Apresentações -->
 
     <div id="presentation-modal" class="modal">
-
         <div class="modal-content">
-
             <div class="modal-header">
-
                 <h3 id="presentation-modal-title">Nova Apresentação</h3>
-
                 <button class="close-btn" onclick="closePresentationModal()">&times;</button>
-
             </div>
-
             <form id="presentation-form" onsubmit="savePresentation(event)">
-
                 <div class="form-group">
-
                     <label class="form-label">Município*</label>
-
                     <select class="form-control" id="presentation-municipality" required>
-
                         <option value="">Selecione o município</option>
-
                     </select>
-
                 </div>
-
                 <div class="form-group">
-
                     <label class="form-label">Data de Solicitação</label>
-
                     <input type="date" class="form-control" id="presentation-date-solicitacao">
-
                 </div>
-
                 <div class="form-group">
-
-                    <label class="form-label">Solicitante da Apresentação</label>
-
+                    <label class="form-label">Solicitante(s) da Apresentação</label>
                     <input type="text" class="form-control" id="presentation-requester">
-
                 </div>
-
                 <div class="form-group">
-
                     <label class="form-label">Status*</label>
-
                     <select class="form-control" id="presentation-status" required onchange="handlePresentationStatusChange()">
-
                         <option value="Pendente">Pendente</option>
-
                         <option value="Cancelada">Cancelada</option>
-
                         <option value="Realizada">Realizada</option>
-
                     </select>
-
                 </div>
-
+                
                 <div class="form-group" id="presentation-date-realizacao-group">
-
                     <label class="form-label" id="presentation-date-realizacao-label">Data de Realização</label>
-
                     <input type="date" class="form-control" id="presentation-date-realizacao">
-
                 </div>
 
                 <div class="form-group" id="presentation-orientador-group">
-
-                    <label class="form-label" id="presentation-orientador-label">Orientador(es)*</label>
-
+                    <label class="form-label" id="presentation-orientador-label">Orientador(es)</label>
                     <div class="checkbox-grid" id="presentation-orientador-checkboxes">
-
-                        <!-- CORREÇÃO 3: Checkboxes will be dynamically populated from orientadores list -->
-
-                    </div>
-
+                        </div>
                 </div>
 
                 <div class="form-group">
-
-                    <label class="form-label">Formas de Apresentação</label>
-
+                    <label class="form-label" id="presentation-forms-label">Formas de Apresentação</label>
                     <div class="checkbox-grid" id="presentation-forms-checkboxes">
-
-                        <!-- Checkboxes will be dynamically populated -->
-
-                    </div>
-
+                        </div>
                 </div>
 
                 <div class="form-group">
-
-                    <label class="form-label">Descrição/Detalhes</label>
-
+                    <label class="form-label" id="presentation-description-label">Descrição/Detalhes</label>
                     <textarea class="form-control" id="presentation-description" rows="4"></textarea>
-
                 </div>
 
                 <div class="modal-actions">
-
                     <button type="button" class="btn btn--secondary" onclick="closePresentationModal()">Cancelar</button>
-
                     <button type="submit" class="btn btn--primary">Salvar</button>
-
                 </div>
-
             </form>
-
         </div>
-
     </div>
-
-
 
     <!-- Modal para Demandas do Suporte -->
 
