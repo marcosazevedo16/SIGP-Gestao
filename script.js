@@ -1014,28 +1014,28 @@ function renderMunicipalities() {
                 corDataFim = '#E68161';
             }
 
-            // Badges de Módulos
+            // --- AJUSTE VISUAL DOS MÓDULOS (Cores Invertidas) ---
             const modulesBadges = m.modules.map(function(modName) {
                 const modConfig = modulos.find(function(x) { return x.name === modName; });
                 const abbrev = modConfig ? modConfig.abbreviation : modName.substring(0,3).toUpperCase();
-                return `<span style="background:#005580;color:white;padding:1px 4px;border-radius:3px;font-size:9px;margin-right:2px;display:inline-block;margin-bottom:2px;" title="${modName}">${abbrev}</span>`;
+                
+                // Estilo: Fundo bem clarinho, Borda Azul Clara, Letra Azul Escura
+                return `<span style="background:rgba(0, 85, 128, 0.05); color:#005580; border:1px solid rgba(0, 85, 128, 0.3); padding:2px 6px; border-radius:4px; font-size:10px; margin-right:3px; display:inline-block; margin-bottom:3px; font-weight:700;" title="${modName}">${abbrev}</span>`;
             }).join('');
             
-            // --- AJUSTE DE CORES LEVES (IGUAL TREINAMENTOS) ---
             let statusClass = 'task-status';
             let customStyle = '';
 
-            if (m.status === 'Em uso') statusClass += ' completed'; // Azul
-            else if (m.status === 'Bloqueado') statusClass += ' cancelled'; // Vermelho
-            else if (m.status === 'Parou de usar') statusClass += ' pending'; // Laranja
+            if (m.status === 'Em uso') statusClass += ' completed'; 
+            else if (m.status === 'Bloqueado') statusClass += ' cancelled'; 
+            else if (m.status === 'Parou de usar') statusClass += ' pending'; 
             else {
-                // Não Implantado (Cinza)
                 customStyle = 'background:rgba(150,150,150,0.15); color:#666; border:1px solid rgba(150,150,150,0.25);';
             }
 
             return `<tr>
                 <td style="font-weight:600; color:#003d5c;">${m.name}</td>
-                <td style="max-width: 120px; white-space: normal;">${modulesBadges}</td>
+                <td style="max-width: 140px; white-space: normal; line-height:1.4;">${modulesBadges}</td>
                 <td style="font-size:12px;">${m.manager}</td>
                 <td>${m.contact}</td>
                 <td>${formatDate(m.implantationDate)}</td>
@@ -1071,7 +1071,6 @@ function renderMunicipalities() {
     }
     updateMunicipalityCharts(filtered);
 }
-
 function updateMunicipalityCharts(data) {
     const ctxStatus = document.getElementById('statusChart');
     if (ctxStatus && window.Chart) {
