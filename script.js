@@ -3268,118 +3268,146 @@ function confirmRestore() {
     if (!pendingBackupData) return;
 
     try {
-        // 1. Prepara os dados (Lê do backup)
         const backup = pendingBackupData.data || pendingBackupData;
         
-        // Dados de Sessão (Para manter logado)
+        // 1. Preservar Sessão
         const sessionUser = localStorage.getItem('currentUser');
         const sessionAuth = localStorage.getItem('isAuthenticated');
         const sessionTheme = localStorage.getItem('theme') || 'light';
 
-        // --- PREPARAÇÃO E MIGRAÇÃO (Na memória antes de gravar) ---
-        
+        // 2. Limpar tudo
+        localStorage.clear();
+
+        // --- TRATAMENTO E HIGIENIZAÇÃO DOS DADOS (Evita erros de "undefined") ---
+
         // Usuários
-        const newUsers = (backup.users || []).map(u => ({
-            ...u, status: u.status || 'Ativo', permission: u.permission || 'Usuário Normal'
+        const safeUsers = (backup.users || []).map(u => ({
+            ...u, 
+            status: u.status || 'Ativo', 
+            permission: u.permission || 'Usuário Normal'
         }));
-        // Garante Admin de emergência
-        if (newUsers.length === 0) {
-            newUsers.push({id:1, login:'ADMIN', name:'Administrador', password:'saude2025', salt: 'migrated', passwordHash: 'migrated', permission:'Administrador', status:'Ativo'});
+        if (safeUsers.length === 0) {
+            safeUsers.push({id:1, login:'ADMIN', name:'Administrador', passwordHash: hashPassword('saude2025', generateSalt()), salt: generateSalt(), permission:'Administrador', status:'Ativo'});
         }
 
-        // Municípios
-        const newMuns = (backup.municipalities || []).map(m => ({
+        // Municípios (Garante que modules seja array)
+        const safeMuns = (backup.municipalities || []).map(m => ({
             ...m,
             manager: m.manager || '',
             contact: m.contact || '',
-            // Migra stoppageDate se existir, senão usa dateBlocked/Stopped
+            modules: Array.isArray(m.modules) ? m.modules : [], // CRÍTICO: Evita travar renderMunicipalities
             dateBlocked: (m.status === 'Bloqueado' ? (m.dateBlocked || m.stoppageDate || '') : ''),
             dateStopped: (m.status === 'Parou de usar' ? (m.dateStopped || m.stoppageDate || '') : '')
         }));
 
-        // Treinamentos (Converte trainings -> tasks)
+        // Treinamentos (Converte e garante strings)
         const rawTasks = backup.tasks || backup.trainings || [];
-        const newTasks = rawTasks.map(t => ({
-            ...t,
-            status: t.status || 'Pendente'
+        const safeTasks = rawTasks.map(t => ({
+            id: t.id,
+            municipality: t.municipality || '',
+            dateRequested: t.dateRequested || '',
+            datePerformed: t.datePerformed || '',
+            requestedBy: t.requestedBy || '',
+            performedBy: t.performedBy || '',
+            trainedName: t.trainedName || '',
+            trainedPosition: t.trainedPosition || '',
+            contact: t.contact || '',
+            status: t.status || 'Pendente',
+            observations: t.observations || '' // CRÍTICO: Evita erro de .length
         }));
 
-        // Demandas (Converte realizationDate -> dateRealization)
-        const newDemands = (backup.demands || []).map(d => ({
+        // Demandas (Converte e garante description)
+        const safeDemands = (backup.demands || []).map(d => ({
             ...d,
+            description: d.description || '', // CRÍTICO
             dateRealization: d.dateRealization || d.realizationDate || '',
             justification: d.justification || ''
         }));
 
-        // Visitas (Converte visitDate -> dateRealization)
-        const newVisits = (backup.visits || []).map(v => ({
+        // Visitas (Converte e garante reason)
+        const safeVisits = (backup.visits || []).map(v => ({
             ...v,
+            reason: v.reason || '', // CRÍTICO
             dateRealization: v.dateRealization || v.visitDate || '',
             justification: v.justification || v.cancelJustification || ''
         }));
 
-        // Outras listas (Garante array vazio se não existir)
-        const newListMestra = backup.municipalitiesList || [];
-        const newRequests = backup.requests || [];
-        const newProds = backup.productions || [];
-        const newPres = backup.presentations || [];
-        const newVers = backup.systemVersions || [];
-        const newCargos = backup.cargos || [];
-        const newOrient = backup.orientadores || [];
-        const newMods = backup.modulos || backup.modules || [];
-        const newFormas = backup.formasApresentacao || [];
+        // Apresentações (Garante arrays de orientadores/formas)
+        const safePres = (backup.presentations || []).map(p => ({
+            ...p,
+            description: p.description || '',
+            orientadores: Array.isArray(p.orientadores) ? p.orientadores : [], // CRÍTICO: Evita travar .join()
+            forms: Array.isArray(p.forms) ? p.forms : [] // CRÍTICO: Evita travar .join()
+        }));
 
-        // Contadores (Recalcula baseado no maior ID encontrado para evitar conflito)
+        // Produção (Garante strings)
+        const safeProds = (backup.productions || []).map(p => ({
+            ...p,
+            observations: p.observations || ''
+        }));
+
+        // Solicitações (Garante description)
+        const safeRequests = (backup.requests || []).map(r => ({
+            ...r,
+            description: r.description || '', // CRÍTICO
+            justification: r.justification || ''
+        }));
+
+        // Outras listas simples (Garante array vazio se não existir)
+        const safeListMestra = backup.municipalitiesList || [];
+        const safeVers = backup.systemVersions || [];
+        const safeCargos = backup.cargos || [];
+        const safeOrient = backup.orientadores || [];
+        const safeMods = backup.modulos || backup.modules || [];
+        const safeFormas = backup.formasApresentacao || [];
+
+        // Recriar Contadores
         const getMax = (list) => list.reduce((acc, i) => Math.max(acc, i.id || 0), 0) + 1;
-        const newCounters = {
-            mun: getMax(newMuns),
-            munList: getMax(newListMestra),
-            task: getMax(newTasks),
-            req: getMax(newRequests),
-            dem: getMax(newDemands),
-            visit: getMax(newVisits),
-            prod: getMax(newProds),
-            pres: getMax(newPres),
-            ver: getMax(newVers),
-            user: getMax(newUsers),
-            cargo: getMax(newCargos),
-            orient: getMax(newOrient),
-            mod: getMax(newMods),
-            forma: getMax(newFormas)
+        const safeCounters = {
+            mun: getMax(safeMuns),
+            munList: getMax(safeListMestra),
+            task: getMax(safeTasks),
+            req: getMax(safeRequests),
+            dem: getMax(safeDemands),
+            visit: getMax(safeVisits),
+            prod: getMax(safeProds),
+            pres: getMax(safePres),
+            ver: getMax(safeVers),
+            user: getMax(safeUsers),
+            cargo: getMax(safeCargos),
+            orient: getMax(safeOrient),
+            mod: getMax(safeMods),
+            forma: getMax(safeFormas)
         };
 
-        // --- GRAVAÇÃO (Agora é seguro limpar) ---
-        localStorage.clear();
-
-        localStorage.setItem('users', JSON.stringify(newUsers));
-        localStorage.setItem('municipalities', JSON.stringify(newMuns));
-        localStorage.setItem('municipalitiesList', JSON.stringify(newListMestra));
-        localStorage.setItem('tasks', JSON.stringify(newTasks));
-        localStorage.setItem('requests', JSON.stringify(newRequests));
-        localStorage.setItem('demands', JSON.stringify(newDemands));
-        localStorage.setItem('visits', JSON.stringify(newVisits));
-        localStorage.setItem('productions', JSON.stringify(newProds));
-        localStorage.setItem('presentations', JSON.stringify(newPres));
-        localStorage.setItem('systemVersions', JSON.stringify(newVers));
-        localStorage.setItem('cargos', JSON.stringify(newCargos));
-        localStorage.setItem('orientadores', JSON.stringify(newOrient));
-        localStorage.setItem('modulos', JSON.stringify(newMods));
-        localStorage.setItem('formasApresentacao', JSON.stringify(newFormas));
-        localStorage.setItem('counters', JSON.stringify(newCounters));
+        // --- GRAVAÇÃO NO DISCO ---
+        localStorage.setItem('users', JSON.stringify(safeUsers));
+        localStorage.setItem('municipalities', JSON.stringify(safeMuns));
+        localStorage.setItem('municipalitiesList', JSON.stringify(safeListMestra));
+        localStorage.setItem('tasks', JSON.stringify(safeTasks));
+        localStorage.setItem('requests', JSON.stringify(safeRequests));
+        localStorage.setItem('demands', JSON.stringify(safeDemands));
+        localStorage.setItem('visits', JSON.stringify(safeVisits));
+        localStorage.setItem('productions', JSON.stringify(safeProds));
+        localStorage.setItem('presentations', JSON.stringify(safePres));
+        localStorage.setItem('systemVersions', JSON.stringify(safeVers));
+        localStorage.setItem('cargos', JSON.stringify(safeCargos));
+        localStorage.setItem('orientadores', JSON.stringify(safeOrient));
+        localStorage.setItem('modulos', JSON.stringify(safeMods));
+        localStorage.setItem('formasApresentacao', JSON.stringify(safeFormas));
+        localStorage.setItem('counters', JSON.stringify(safeCounters));
 
         // Restaura Sessão
         if (sessionUser) localStorage.setItem('currentUser', sessionUser);
         if (sessionAuth) localStorage.setItem('isAuthenticated', sessionAuth);
         localStorage.setItem('theme', sessionTheme);
 
-        // Sucesso
-        alert('Restauração concluída com sucesso! A página será recarregada.');
+        alert('Dados restaurados e higienizados com sucesso!');
         location.reload();
 
     } catch (error) {
         console.error("Erro crítico na restauração:", error);
-        alert('Ocorreu um erro ao processar os dados do backup. Verifique o console (F12) para mais detalhes.');
-        // Não recarrega a página se der erro, para você poder ver o console
+        alert('Ocorreu um erro ao processar o backup. Verifique o console (F12).');
     }
 }
 
