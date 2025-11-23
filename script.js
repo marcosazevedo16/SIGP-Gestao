@@ -125,7 +125,13 @@ function recuperarDoArmazenamento(chave, valorPadrao = null) {
     try {
         const dados = localStorage.getItem(chave);
         if (dados) {
-            return JSON.parse(dados);
+            try {
+                // Tenta ler como JSON (para listas e objetos)
+                return JSON.parse(dados);
+            } catch (e) {
+                // Se der erro (ex: é apenas texto "light"), retorna o texto puro
+                return dados;
+            }
         } else {
             return valorPadrao;
         }
