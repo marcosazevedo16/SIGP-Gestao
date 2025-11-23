@@ -125,20 +125,20 @@ function recuperarDoArmazenamento(chave, valorPadrao = null) {
     try {
         const dados = localStorage.getItem(chave);
         
-        // Se não existir ou for a string "undefined"/"null", retorna o padrão
-        if (dados === null || dados === "undefined" || dados === "null") {
+        // Se não existir, ou for string "undefined"/"null", retorna padrão
+        if (!dados || dados === "undefined" || dados === "null") {
             return valorPadrao;
         }
 
         try {
-            // Tenta converter de JSON
+            // Tenta converter JSON
             return JSON.parse(dados);
         } catch (e) {
-            // Se falhar (ex: é a string "light" do tema), retorna o texto puro
+            // Se falhar (ex: é apenas texto como "dark"), retorna o texto
             return dados;
         }
     } catch (erro) {
-        console.error('Erro no storage:', erro);
+        console.error(`Erro ao ler '${chave}':`, erro);
         return valorPadrao;
     }
 }
@@ -578,6 +578,48 @@ if (currentUser && typeof currentUser !== 'object') {
 let counters = recuperarDoArmazenamento('counters', {
     mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1
 });
+
+// --- BLOCO DE SEGURANÇA E REPARO AUTOMÁTICO ---
+// Esse bloco roda assim que o script carrega para corrigir dados quebrados na memória
+
+(function sanitizeData() {
+    // 1. Garante que listas sejam Arrays
+    const arrays = [
+        { key: 'municipalities', val: municipalities, set: v => municipalities = v },
+        { key: 'tasks', val: tasks, set: v => tasks = v },
+        { key: 'requests', val: requests, set: v => requests = v },
+        { key: 'demands', val: demands, set: v => demands = v },
+        { key: 'visits', val: visits, set: v => visits = v },
+        { key: 'productions', val: productions, set: v => productions = v },
+        { key: 'presentations', val: presentations, set: v => presentations = v },
+        { key: 'users', val: users, set: v => users = v },
+        { key: 'cargos', val: cargos, set: v => cargos = v },
+        { key: 'orientadores', val: orientadores, set: v => orientadores = v },
+        { key: 'modulos', val: modulos, set: v => modulos = v },
+        { key: 'formasApresentacao', val: formasApresentacao, set: v => formasApresentacao = v },
+        { key: 'municipalitiesList', val: municipalitiesList, set: v => municipalitiesList = v }
+    ];
+
+    arrays.forEach(item => {
+        if (!Array.isArray(item.val)) {
+            console.warn(`Corrigindo lista corrompida: ${item.key}`);
+            item.set([]); // Reseta para lista vazia se estiver quebrado
+            salvarNoArmazenamento(item.key, []);
+        }
+    });
+
+    // 2. Garante Usuários
+    if (users.length === 0) {
+        users.push(DADOS_PADRAO.users[0]);
+        salvarNoArmazenamento('users', users);
+    }
+
+    // 3. Garante Contadores
+    if (!counters || typeof counters !== 'object') {
+        counters = { mun:1, munList:1, task:1, req:1, dem:1, visit:1, prod:1, pres:1, ver:1, user:2, cargo:1, orient:1, mod:1, forma:1 };
+        salvarNoArmazenamento('counters', counters);
+    }
+})();
 
 function getNextId(key) {
     const id = counters[key]++;
@@ -3586,58 +3628,75 @@ function updateGlobalDropdowns() {
 }
 
 function initializeApp() {
+    console.log("Iniciando sistema...");
+    
+    // 1. Interface e Tema
     updateUserInterface();
     initializeTheme();
+    
+    // 2. Ativa Navegação (CRÍTICO)
     initializeTabs();
+    
+    // 3. Máscaras e Campos
     applyMasks();
     setupDynamicFormFields();
+    
+    // 4. Carrega Dropdowns Globais
     updateGlobalDropdowns();
     
-    renderMunicipalities();
-    renderTasks();
-    renderRequests();
-    renderDemands();
-    renderVisits();
-    renderProductions();
-    renderPresentations();
-    renderVersions();
+    // 5. Renderiza TODAS as tabelas (para garantir que dados apareçam)
+    try {
+        renderMunicipalities();
+        renderTasks();
+        renderRequests();
+        renderDemands();
+        renderVisits();
+        renderProductions();
+        renderPresentations();
+        renderVersions();
+    } catch (e) {
+        console.error("Erro ao renderizar tabelas:", e);
+    }
     
+    // 6. Dashboard
     updateDashboardStats();
     initializeDashboardCharts();
     
-    // Listener do Menu Mobile
+    // 7. Menu Mobile
     const overlay = document.querySelector('.sidebar-overlay');
-    if (overlay) {
-        overlay.onclick = toggleMobileMenu;
-    }
+    if (overlay) overlay.onclick = toggleMobileMenu;
     
+    // 8. Força a aba inicial (Dashboard) se nenhuma estiver ativa
     if(!document.querySelector('.sidebar-btn.active')) {
         navigateToHome();
     }
 }
 
+// --- INICIALIZAÇÃO SEGURA ---
 document.addEventListener('DOMContentLoaded', function() {
+    // Verifica autenticação ao carregar a página
     checkAuthentication();
     
+    // Listeners de Modais (Fechar ao clicar fora)
     window.onclick = function(e) { 
         if (e.target.classList.contains('modal')) {
             e.target.classList.remove('show');
         }
     };
     
-    document.querySelectorAll('.close-btn').forEach(function(b) { 
-        b.onclick = function(){ 
-            this.closest('.modal').classList.remove('show'); 
-        }; 
+    // Listeners de Botões Fechar
+    document.querySelectorAll('.close-btn').forEach(b => { 
+        b.onclick = function(){ this.closest('.modal').classList.remove('show'); }; 
     });
     
-    document.querySelectorAll('.btn--secondary').forEach(function(b) { 
+    // Listeners de Botões Cancelar
+    document.querySelectorAll('.btn--secondary').forEach(b => { 
         if (b.textContent.includes('Cancelar')) {
-            b.onclick = function(){ 
-                this.closest('.modal').classList.remove('show'); 
-            }; 
+            b.onclick = function(){ this.closest('.modal').classList.remove('show'); }; 
         }
     });
+    
+    console.log("Sistema carregado.");
 });
 
 // --- BLOCO DE CORREÇÃO AUTOMÁTICA DE IDs (Pode manter no arquivo) ---
