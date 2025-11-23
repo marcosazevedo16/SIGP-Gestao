@@ -124,19 +124,21 @@ function salvarNoArmazenamento(chave, dados) {
 function recuperarDoArmazenamento(chave, valorPadrao = null) {
     try {
         const dados = localStorage.getItem(chave);
-        if (dados) {
-            try {
-                // Tenta ler como JSON (para listas e objetos)
-                return JSON.parse(dados);
-            } catch (e) {
-                // Se der erro (ex: é apenas texto "light"), retorna o texto puro
-                return dados;
-            }
-        } else {
+        
+        // Se não existir ou for a string "undefined"/"null", retorna o padrão
+        if (dados === null || dados === "undefined" || dados === "null") {
             return valorPadrao;
         }
+
+        try {
+            // Tenta converter de JSON
+            return JSON.parse(dados);
+        } catch (e) {
+            // Se falhar (ex: é a string "light" do tema), retorna o texto puro
+            return dados;
+        }
     } catch (erro) {
-        console.error('Erro ao recuperar do localStorage:', erro);
+        console.error('Erro no storage:', erro);
         return valorPadrao;
     }
 }
@@ -547,6 +549,30 @@ let cargos = recuperarDoArmazenamento('cargos', []);
 let orientadores = recuperarDoArmazenamento('orientadores', []);
 let modulos = recuperarDoArmazenamento('modulos', DADOS_PADRAO.modulos);
 let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', []);
+
+// --- BLOCO DE SEGURANÇA (SANITIZAÇÃO) ---
+// Garante que as variáveis sejam do tipo correto para não travar a tela
+if (!Array.isArray(users)) users = DADOS_PADRAO.users;
+if (!Array.isArray(municipalities)) municipalities = [];
+if (!Array.isArray(municipalitiesList)) municipalitiesList = [];
+if (!Array.isArray(tasks)) tasks = [];
+if (!Array.isArray(requests)) requests = [];
+if (!Array.isArray(demands)) demands = [];
+if (!Array.isArray(visits)) visits = [];
+if (!Array.isArray(productions)) productions = [];
+if (!Array.isArray(presentations)) presentations = [];
+if (!Array.isArray(systemVersions)) systemVersions = [];
+if (!Array.isArray(cargos)) cargos = [];
+if (!Array.isArray(orientadores)) orientadores = [];
+if (!Array.isArray(modulos)) modulos = [];
+if (!Array.isArray(formasApresentacao)) formasApresentacao = [];
+
+// Garante que currentUser seja um objeto válido
+if (currentUser && typeof currentUser !== 'object') {
+    currentUser = null; // Força logout se a sessão estiver corrompida
+    isAuthenticated = false;
+}
+// -----------------------------------------
 
 // Contadores de ID (Persistidos)
 let counters = recuperarDoArmazenamento('counters', {
