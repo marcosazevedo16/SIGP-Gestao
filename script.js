@@ -2957,42 +2957,61 @@ function clearProductionFilters() {
     });
     renderProductions();
 }
-// Função Visual: Controla campos e obrigatoriedade na Produção
+// Função Visual: Controla campos, obrigatoriedade e ASTERISCOS (*)
 function handleProductionFrequencyChange() {
     const freq = document.getElementById('production-frequency').value;
     const grpPeriod = document.getElementById('production-period-group');
-    const inputPeriod = document.getElementById('production-period');
+    
+    // Inputs
+    const inPeriod = document.getElementById('production-period');
+    const inComp = document.getElementById('production-competence');
+    const inRel = document.getElementById('production-release-date');
+    const inStat = document.getElementById('production-status');
+    const inCont = document.getElementById('production-contact');
 
-    // Garante que o grupo do Período esteja SEMPRE visível
+    // Labels (Rótulos de Texto)
+    const lblPeriod = document.getElementById('lbl-prod-period');
+    const lblComp = document.getElementById('lbl-prod-competence');
+    const lblRel = document.getElementById('lbl-prod-release');
+    const lblStat = document.getElementById('lbl-prod-status');
+    const lblCont = document.getElementById('lbl-prod-contact');
+
+    // Garante que o grupo do Período esteja sempre visível
     if (grpPeriod) grpPeriod.style.display = 'block';
 
-    // Lista de campos que variam a obrigatoriedade
-    const fieldsToCheck = [
-        'production-competence',
-        'production-release-date',
-        'production-status',
-        'production-contact'
-    ];
-
     if (freq === 'Diário') {
-        // 1. Regra do Período: Visível, mas OPCIONAL
-        if (inputPeriod) inputPeriod.required = false;
+        // --- MODO DIÁRIO: Remove obrigatoriedade e asteriscos ---
+        
+        // Remove required
+        if(inPeriod) inPeriod.required = false;
+        if(inComp) inComp.required = false;
+        if(inRel) inRel.required = false;
+        if(inStat) inStat.required = false;
+        if(inCont) inCont.required = false;
 
-        // 2. Regra dos Outros Campos: Remove obrigatoriedade (ficam opcionais)
-        fieldsToCheck.forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.required = false;
-        });
+        // Remove asterisco visual (*)
+        if(lblPeriod) lblPeriod.textContent = 'Período (Data Inicial à Data Final)';
+        if(lblComp) lblComp.textContent = 'Competência (mês/ano)';
+        if(lblRel) lblRel.textContent = 'Data de Liberação';
+        if(lblStat) lblStat.textContent = 'Status de Envio';
+        if(lblCont) lblCont.textContent = 'Contato';
 
     } else {
-        // 1. Regra do Período: Visível e OBRIGATÓRIO
-        if (inputPeriod) inputPeriod.required = true;
+        // --- OUTROS MODOS: Adiciona obrigatoriedade e asteriscos ---
 
-        // 2. Regra dos Outros Campos: Tornam-se Obrigatórios novamente
-        fieldsToCheck.forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.required = true;
-        });
+        // Adiciona required
+        if(inPeriod) inPeriod.required = true;
+        if(inComp) inComp.required = true;
+        if(inRel) inRel.required = true;
+        if(inStat) inStat.required = true;
+        if(inCont) inCont.required = true;
+
+        // Adiciona asterisco visual (*) se não tiver
+        if(lblPeriod) lblPeriod.textContent = 'Período (Data Inicial à Data Final)*';
+        if(lblComp) lblComp.textContent = 'Competência (mês/ano)*';
+        if(lblRel) lblRel.textContent = 'Data de Liberação*';
+        if(lblStat) lblStat.textContent = 'Status de Envio*';
+        if(lblCont) lblCont.textContent = 'Contato*';
     }
 }
 
@@ -3512,3 +3531,23 @@ function handlePresentationCSVImport(event) {
     };
     reader.readAsText(file);
 }
+// --- BLOCO DE CORREÇÃO AUTOMÁTICA DE IDs DE PRODUÇÃO ---
+(function autoFixProductionIds() {
+    // Verifica se existem envios de produção
+    if (typeof productions !== 'undefined' && productions.length > 0) {
+        // Reinumera todos sequencialmente
+        productions.forEach((p, index) => {
+            p.id = index + 1;
+        });
+        
+        // Atualiza o contador geral para não gerar duplicados no futuro
+        if (typeof counters !== 'undefined') {
+            counters.prod = productions.length + 1;
+            salvarNoArmazenamento('counters', counters);
+        }
+        
+        // Salva a lista corrigida
+        salvarNoArmazenamento('productions', productions);
+        console.log("IDs de produção corrigidos e reordenados com sucesso.");
+    }
+})();
