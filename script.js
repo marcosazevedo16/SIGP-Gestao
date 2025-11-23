@@ -3214,39 +3214,45 @@ function handleBackupFileSelect(event) {
     reader.onload = function(e) {
         try {
             const json = JSON.parse(e.target.result);
-            // Suporte para estrutura nova (.data) ou antiga (raiz)
             const d = json.data || json; 
             
             if (!d) { alert('Arquivo de backup inválido.'); return; }
             
-            pendingBackupData = json; // Guarda o arquivo na memória para o confirmRestore usar
+            pendingBackupData = json; 
             
             const list = document.getElementById('restore-preview-list');
             if(list) {
                 list.innerHTML = '';
                 
-                // Contagem Inteligente (Nomes novos ou antigos)
+                // Lista com Descrições Melhoradas (Na ordem solicitada)
                 const counts = {
                     'Treinamentos': (d.tasks || d.trainings || []).length,
                     'Municípios Clientes': (d.municipalities || []).length,
-                    'Lista Mestra': (d.municipalitiesList || []).length,
-                    'Solicitações': (d.requests || []).length,
-                    'Apresentações': (d.presentations || []).length,
-                    'Demandas': (d.demands || []).length,
-                    'Visitas': (d.visits || []).length,
-                    'Produção': (d.productions || []).length,
+                    'Lista Mestra de Municípios': (d.municipalitiesList || []).length,
+                    'Solicitações/Sugestões': (d.requests || []).length,
+                    'Apresentações do Software': (d.presentations || []).length,
+                    'Cargos/Funções': (d.cargos || []).length,
+                    'Orientadores': (d.orientadores || []).length,
+                    'Módulos': (d.modulos || d.modules || []).length,
+                    'Formas de Apresentação': (d.formasApresentacao || []).length,
+                    'Demandas do Suporte': (d.demands || []).length,
+                    'Visitas Presenciais': (d.visits || []).length,
+                    'Envios de Produção': (d.productions || []).length,
                     'Usuários': (d.users || []).length
                 };
 
-                // Gera a lista visual (Só mostra o que tem valor > 0 ou itens principais)
+                // Gera a lista visual
                 for (const [label, count] of Object.entries(counts)) {
-                    list.innerHTML += `<li><strong>${label}:</strong> ${count}</li>`;
+                    // Mostra se tiver dados OU se for um item importante
+                    if (count > 0) {
+                        list.innerHTML += `<li><strong>${label}:</strong> ${count} registro(s)</li>`;
+                    }
                 }
                 
-                // Verifica Versões separadamente (Se for 0, não mostra)
+                // Versões (Extra)
                 const verCount = (d.systemVersions || []).length;
                 if (verCount > 0) {
-                    list.innerHTML += `<li><strong>Versões:</strong> ${verCount}</li>`;
+                    list.innerHTML += `<li><strong>Versões do Sistema:</strong> ${verCount} registro(s)</li>`;
                 }
             }
             document.getElementById('restore-confirm-modal').classList.add('show');
