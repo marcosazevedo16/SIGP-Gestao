@@ -2627,138 +2627,73 @@
     <!-- Modal para Produção -->
 
     <div id="production-modal" class="modal">
-
         <div class="modal-content">
-
             <div class="modal-header">
-
                 <h3 id="production-modal-title">Novo Envio de Produção</h3>
-
                 <button class="close-btn" onclick="closeProductionModal()">&times;</button>
-
             </div>
-
             <form id="production-form" onsubmit="saveProduction(event)">
-
                 <div class="form-group">
-
                     <label class="form-label">Município*</label>
-
                     <select class="form-control" id="production-municipality" required>
-
                         <option value="">Selecione o município</option>
-
                     </select>
-
                 </div>
-
                 <div class="form-group">
-
-                    <label class="form-label">Profissional à ser informado</label>
-
-                    <input type="text" class="form-control" id="production-professional">
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="form-label">Contato*</label>
-
-                    <input type="tel" class="form-control" id="production-contact" placeholder="(XX) 9XXXX-XXXX" maxlength="15" required>
-
-                </div>
-
-                <div class="form-group">
-
                     <label class="form-label">Frequência de Envio do Município*</label>
-
-                    <select class="form-control" id="production-frequency" required>
-
+                    <select class="form-control" id="production-frequency" required onchange="handleProductionFrequencyChange()">
                         <option value="">Selecione</option>
-
                         <option value="Diário">Diário</option>
-
                         <option value="Semanal">Semanal</option>
-
                         <option value="Quinzenal">Quinzenal</option>
-
                         <option value="Mensal">Mensal</option>
-
                     </select>
-
                 </div>
-
                 <div class="form-group">
-
                     <label class="form-label">Competência (mês/ano)*</label>
-
                     <input type="text" class="form-control" id="production-competence" placeholder="novembro/2025" required>
-
                 </div>
-
-                <div class="form-group">
-
+                
+                <div class="form-group" id="production-period-group">
                     <label class="form-label">Período (Data Inicial à Data Final)*</label>
-
-                    <input type="text" class="form-control" id="production-period" placeholder="01/10 à 31/10" required>
-
+                    <input type="text" class="form-control" id="production-period" placeholder="01/10 à 31/10">
                 </div>
 
                 <div class="form-group">
-
                     <label class="form-label">Data de Liberação*</label>
-
                     <input type="date" class="form-control" id="production-release-date" required>
-
                 </div>
-
                 <div class="form-group">
-
-                    <label class="form-label">Data de Envio</label>
-
-                    <input type="date" class="form-control" id="production-send-date">
-
-                </div>
-
-                <div class="form-group">
-
                     <label class="form-label">Status de Envio*</label>
-
                     <select class="form-control" id="production-status" required>
-
                         <option value="Enviada">Enviada</option>
-
                         <option value="Pendente">Pendente</option>
-
                         <option value="Cancelada">Cancelada</option>
-
                     </select>
-
                 </div>
-
                 <div class="form-group">
-
-                    <label class="form-label">Observações (máx. 150 caracteres)</label>
-
+                    <label class="form-label">Data de Envio</label>
+                    <input type="date" class="form-control" id="production-send-date">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Profissional Informado</label>
+                    <input type="text" class="form-control" id="production-professional">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Contato*</label>
+                    <input type="tel" class="form-control" id="production-contact" placeholder="(XX) 9XXXX-XXXX" maxlength="15" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Observações (máx. 150)</label>
                     <textarea class="form-control" id="production-observations" rows="3" maxlength="150"></textarea>
-
                 </div>
-
                 <div class="modal-actions">
-
                     <button type="button" class="btn btn--secondary" onclick="closeProductionModal()">Cancelar</button>
-
                     <button type="submit" class="btn btn--primary">Salvar</button>
-
                 </div>
-
             </form>
-
         </div>
-
     </div>
-
-
 
     <!-- Modal para Forma de Apresentação -->
 
