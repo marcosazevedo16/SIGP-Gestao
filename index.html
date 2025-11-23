@@ -501,192 +501,100 @@
         <!-- Aba Solicitações de Visitas Presenciais -->
 
         <section id="visitas-section" class="tab-content">
-
             <div class="section-header">
-
                 <h2>Solicitações de Visitas Presenciais</h2>
-
                 <button class="btn btn--primary" onclick="showVisitModal()">+ Nova Solicitação de Visita</button>
-
             </div>
-
-
 
             <h3 class="section-subtitle">Filtros</h3>
-
             <div class="filters-section">
-
                 <div class="filters-grid">
-
                     <div class="form-group">
-
                         <label class="form-label">Município</label>
-
                         <select class="form-control" id="filter-visit-municipality">
-
                             <option value="">Todos</option>
-
                         </select>
-
                     </div>
-
                     <div class="form-group">
-
                         <label class="form-label">Status</label>
-
                         <select class="form-control" id="filter-visit-status">
-
                             <option value="">Todos</option>
-
                             <option value="Pendente">Pendente</option>
-
                             <option value="Realizada">Realizada</option>
-
                             <option value="Cancelada">Cancelada</option>
-
                         </select>
-
                     </div>
-
                     <div class="form-group">
-
                         <label class="form-label">Solicitante</label>
+                        <input type="text" class="form-control" id="filter-visit-applicant" placeholder="Buscar solicitante">
+                    </div>
+                    
+                    <div class="form-group"></div> 
 
-                        <input type="text" class="form-control" id="filter-visit-applicant" placeholder="Buscar por solicitante">
-
+                    <div class="form-group">
+                        <label class="form-label">Solicitação (Início)</label>
+                        <input type="date" class="form-control" id="filter-visit-sol-start" onchange="validateDateRange('visit-sol')">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Solicitação (Fim)</label>
+                        <input type="date" class="form-control" id="filter-visit-sol-end" onchange="validateDateRange('visit-sol')">
                     </div>
 
                     <div class="form-group">
-
-                        <label class="form-label">Filtrar por:</label>
-
-                        <select class="form-control" id="filter-visit-date-type">
-
-                            <option value="solicitacao">Data Solicitação</option>
-
-                            <option value="realizacao">Data da Visita</option>
-
-                        </select>
-
+                        <label class="form-label">Data Visita (Início)</label>
+                        <input type="date" class="form-control" id="filter-visit-real-start" onchange="validateDateRange('visit-real')">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Data Visita (Fim)</label>
+                        <input type="date" class="form-control" id="filter-visit-real-end" onchange="validateDateRange('visit-real')">
                     </div>
 
-                    <div class="form-group">
-
-                        <label class="form-label">Data Inicial</label>
-
-                        <input type="date" class="form-control" id="filter-visit-date-start">
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label class="form-label">Data Final</label>
-
-                        <input type="date" class="form-control" id="filter-visit-date-end">
-
-                    </div>
-
-                    <div class="form-group">
-
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
                         <button class="btn btn--primary btn--full-width" onclick="clearVisitFilters()">Limpar Filtros</button>
-
                     </div>
-
                 </div>
-
             </div>
-
-
 
             <div id="visits-results-count" class="results-count" style="display: none;"></div>
 
-
-
             <div class="tasks-table" id="visits-table"></div>
-
-
 
             <div class="section-divider"></div>
 
-
-
             <h3 class="section-subtitle">Gráficos e Estatísticas</h3>
-
             <div class="stats-cards">
-
                 <div class="stat-card">
-
                     <h3 id="total-visits">0</h3>
-
                     <p>Total de Visitas</p>
-
                 </div>
-
                 <div class="stat-card">
-
                     <h3 id="pending-visits">0</h3>
-
                     <p>Pendentes</p>
-
                 </div>
-
                 <div class="stat-card">
-
                     <h3 id="completed-visits">0</h3>
-
                     <p>Realizadas</p>
-
                 </div>
-
                 <div class="stat-card">
-
                     <h3 id="cancelled-visits">0</h3>
-
                     <p>Canceladas</p>
-
                 </div>
-
             </div>
-
-
 
             <div class="charts-section">
-
                 <h4>Dashboard e Gráficos</h4>
-
                 <div class="charts-grid">
-
                     <div class="chart-card">
-
                         <h4>Distribuição por Status</h4>
-
                         <canvas id="visitStatusChart"></canvas>
-
                     </div>
-
-                    <div class="chart-card">
-
+                    <div class="chart-card chart-card--wide">
                         <h4>Visitas por Município</h4>
-
                         <canvas id="visitMunicipalityChart"></canvas>
-
                     </div>
-
-                    <div class="chart-card">
-
-                        <h4>Visitas por Solicitante</h4>
-
-                        <canvas id="visitApplicantChart"></canvas>
-
-                    </div>
-
                 </div>
-
             </div>
-
         </section>
-
-
 
         <!-- Aba Controle de Envio de Produção -->
 
