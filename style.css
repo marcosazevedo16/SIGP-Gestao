@@ -3467,3 +3467,13 @@ table th {
     white-space: nowrap;          /* Garante que não quebra linha */
     display: inline-block;        /* Comportamento compacto */
 }
+
+/* ==========================================================================
+   AJUSTE DE GRÁFICOS (OCUPAR 2 COLUNAS)
+   Adicione no final do style.css
+   ========================================================================== */
+@media (min-width: 1100px) {
+    .chart-card--span-2 {
+        grid-column: span 2;
+    }
+}
