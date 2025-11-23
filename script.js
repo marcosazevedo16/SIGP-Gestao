@@ -2714,51 +2714,78 @@ function populateSelect(select, data, valKey, textKey) {
 }
 
 function populateFilterSelects() {
-    // Filtro de Municípios (Aba Municípios)
+    // 1. Filtro Principal da Aba Municípios
     const munSelect = document.getElementById('filter-municipality-name');
     if (munSelect) {
-        // Salva o valor que já estava selecionado para não perder filtro ao atualizar
-        const currentValue = munSelect.value;
-        
-        // Ordena alfabeticamente
-        const sortedMuns = municipalities.slice().sort(function(a, b) {
+        const current = munSelect.value;
+        const sorted = municipalities.slice().sort(function(a, b) {
             return a.name.localeCompare(b.name);
         });
-
+        
         let html = '<option value="">Todos</option>';
-        sortedMuns.forEach(function(m) {
+        sorted.forEach(function(m) {
             html += '<option value="' + m.name + '">' + m.name + '</option>';
         });
-        
         munSelect.innerHTML = html;
         
-        // Restaura o valor se ainda existir
-        if (currentValue) munSelect.value = currentValue;
+        if(current) munSelect.value = current;
     }
 
-    // Filtros das outras abas (Puxam apenas municípios ativos)
+    // 2. Filtros de Município nas outras abas (Apenas ativos)
     const activeMuns = municipalities.filter(function(m) { return m.status === 'Em uso'; }).sort(function(a,b){return a.name.localeCompare(b.name)});
     
-    const otherFilters = [
-        'filter-task-municipality',
-        'filter-request-municipality',
-        'filter-visit-municipality',
-        'filter-production-municipality',
+    const munFilters = [
+        'filter-task-municipality', 
+        'filter-request-municipality', 
+        'filter-visit-municipality', 
+        'filter-production-municipality', 
         'filter-presentation-municipality'
     ];
     
-    otherFilters.forEach(function(id) {
+    munFilters.forEach(function(id) {
         const el = document.getElementById(id);
         if (el) {
-            const currentVal = el.value;
+            const cur = el.value;
             let html = '<option value="">Todos</option>';
             activeMuns.forEach(function(m) {
                 html += '<option value="' + m.name + '">' + m.name + '</option>';
             });
             el.innerHTML = html;
-            if(currentVal) el.value = currentVal;
+            if(cur) el.value = cur;
         }
     });
+
+    // 3. NOVO: Filtros de Orientador (Puxa do cadastro de Orientadores)
+    const orientadorFilters = ['filter-task-performer', 'filter-presentation-orientador'];
+    const sortedOrientadores = orientadores.slice().sort(function(a,b) { return a.name.localeCompare(b.name); });
+    
+    orientadorFilters.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            const cur = el.value;
+            let html = '<option value="">Todos</option>';
+            sortedOrientadores.forEach(function(o) {
+                html += '<option value="' + o.name + '">' + o.name + '</option>';
+            });
+            el.innerHTML = html;
+            if(cur) el.value = cur;
+        }
+    });
+
+    // 4. NOVO: Filtro de Cargo (Puxa do cadastro de Cargos)
+    const cargoEl = document.getElementById('filter-task-position');
+    if (cargoEl) {
+        const cur = cargoEl.value;
+        const sortedCargos = cargos.slice().sort(function(a,b) { return a.name.localeCompare(b.name); });
+        
+        let html = '<option value="">Todos</option>';
+        sortedCargos.forEach(function(c) {
+            html += '<option value="' + c.name + '">' + c.name + '</option>';
+        });
+        cargoEl.innerHTML = html;
+        
+        if(cur) cargoEl.value = cur;
+    }
 }
 
 function updateGlobalDropdowns() {
