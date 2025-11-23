@@ -3342,10 +3342,9 @@ function confirmRestore() {
     if (!pendingBackupData) return;
 
     try {
-        // Pega os dados
         const backup = pendingBackupData.data || pendingBackupData;
         
-        // 1. Tenta pegar o LOGIN atual (apenas a string)
+        // 1. Tenta pegar o LOGIN atual
         let currentLogin = null;
         try {
             const sessionData = localStorage.getItem('currentUser');
@@ -3354,109 +3353,122 @@ function confirmRestore() {
         
         const sessionTheme = localStorage.getItem('theme') || 'light';
 
-        // 2. Limpa o banco
-        localStorage.clear();
-
-        // --- HIGIENIZAÇÃO DE DADOS ---
-
-        // Função helper para garantir arrays
-        const saveArr = (key, arr) => {
-            const cleanArr = (Array.isArray(arr)) ? arr : [];
-            localStorage.setItem(key, JSON.stringify(cleanArr));
-            return cleanArr; // Retorna para uso interno
-        };
+        // --- HIGIENIZAÇÃO E MIGRAÇÃO DOS DADOS ---
 
         // Usuários
         let safeUsers = (backup.users || []).map(u => ({
             ...u, 
             status: u.status || 'Ativo', 
             permission: u.permission || 'Usuário Normal',
-            // Se não tiver hash, gera agora
             passwordHash: u.passwordHash || hashPassword('saude2025', generateSalt()),
             salt: u.salt || generateSalt(),
-            password: null // Remove senha texto plano
+            password: null 
         }));
         
+        // Garante Admin
         if (safeUsers.length === 0) {
             const s = generateSalt();
             safeUsers.push({id:1, login:'ADMIN', name:'Administrador', salt:s, passwordHash:hashPassword('saude2025', s), permission:'Administrador', status:'Ativo'});
         }
-        localStorage.setItem('users', JSON.stringify(safeUsers));
 
-        // Listas Principais (Com tratamento específico)
+        // Municípios
         const safeMuns = (backup.municipalities || []).map(m => ({
             ...m,
+            manager: m.manager || '',
+            contact: m.contact || '',
             modules: Array.isArray(m.modules) ? m.modules : [],
             dateBlocked: (m.status === 'Bloqueado' ? (m.dateBlocked || m.stoppageDate || '') : ''),
             dateStopped: (m.status === 'Parou de usar' ? (m.dateStopped || m.stoppageDate || '') : '')
         }));
-        localStorage.setItem('municipalities', JSON.stringify(safeMuns));
 
+        // Tarefas
         const safeTasks = (backup.tasks || backup.trainings || []).map(t => ({
             ...t,
-            municipality: t.municipality || '', // Garante string
+            municipality: t.municipality || '',
             status: t.status || 'Pendente',
             observations: t.observations || ''
         }));
-        localStorage.setItem('tasks', JSON.stringify(safeTasks));
 
-        // Demais Listas (Genéricas)
-        saveArr('municipalitiesList', backup.municipalitiesList);
-        saveArr('requests', backup.requests);
-        saveArr('demands', backup.demands);
-        saveArr('visits', backup.visits);
-        saveArr('productions', backup.productions);
-        saveArr('presentations', backup.presentations);
-        saveArr('systemVersions', backup.systemVersions);
-        saveArr('cargos', backup.cargos);
-        saveArr('orientadores', backup.orientadores);
-        saveArr('modulos', backup.modulos || backup.modules);
-        saveArr('formasApresentacao', backup.formasApresentacao);
+        // Demandas
+        const safeDemands = (backup.demands || []).map(d => ({
+            ...d,
+            description: d.description || '',
+            dateRealization: d.dateRealization || d.realizationDate || ''
+        }));
+
+        // Visitas
+        const safeVisits = (backup.visits || []).map(v => ({
+            ...v,
+            reason: v.reason || '',
+            dateRealization: v.dateRealization || v.visitDate || ''
+        }));
+
+        // Outras listas
+        const safePres = (backup.presentations || []).map(p => ({
+            ...p,
+            orientadores: Array.isArray(p.orientadores) ? p.orientadores : [],
+            forms: Array.isArray(p.forms) ? p.forms : []
+        }));
+
+        // --- GRAVAÇÃO DIRETA (Sobrescreve sem limpar antes) ---
+        
+        const saveData = (key, data) => {
+            localStorage.setItem(key, JSON.stringify(data));
+        };
+
+        saveData('users', safeUsers);
+        saveData('municipalities', safeMuns);
+        saveData('tasks', safeTasks);
+        saveData('demands', safeDemands);
+        saveData('visits', safeVisits);
+        saveData('presentations', safePres);
+        
+        // Listas Simples
+        saveData('municipalitiesList', backup.municipalitiesList || []);
+        saveData('requests', backup.requests || []);
+        saveData('productions', backup.productions || []);
+        saveData('systemVersions', backup.systemVersions || []);
+        saveData('cargos', backup.cargos || []);
+        saveData('orientadores', backup.orientadores || []);
+        saveData('modulos', backup.modulos || backup.modules || []);
+        saveData('formasApresentacao', backup.formasApresentacao || []);
 
         // Contadores
-        const counters = backup.counters || { mun:1, munList:1, task:1, req:1, dem:1, visit:1, prod:1, pres:1, ver:1, user:2, cargo:1, orient:1, mod:1, forma:1 };
-        localStorage.setItem('counters', JSON.stringify(counters));
+        const defaultCounters = { mun:1, munList:1, task:1, req:1, dem:1, visit:1, prod:1, pres:1, ver:1, user:2, cargo:1, orient:1, mod:1, forma:1 };
+        saveData('counters', backup.counters || defaultCounters);
 
-        // --- RESTAURAÇÃO DA SESSÃO (O Pulo do Gato) ---
+        // --- SESSÃO FORÇADA (Atualiza o usuário na memória) ---
         let restored = false;
         
         if (currentLogin) {
-            // Procura o usuário no banco NOVO
+            // Encontra o usuário correspondente no banco novo
             const userFound = safeUsers.find(u => u.login === currentLogin);
             
             if (userFound) {
-                // Sobrescreve a sessão com o objeto NOVO (Sincronizado)
+                // Força a gravação da sessão
                 localStorage.setItem('currentUser', JSON.stringify(userFound));
-                localStorage.setItem('isAuthenticated', 'true');
+                localStorage.setItem('isAuthenticated', 'true'); // String explícita
                 restored = true;
             }
         }
         
         localStorage.setItem('theme', sessionTheme);
 
-        // Feedback e Recarregamento com DELAY
-        const msg = document.getElementById('restore-message');
-        if(msg) {
-            msg.textContent = restored ? "Restaurado! Recarregando..." : "Restaurado! Faça login novamente.";
-            msg.style.display = 'block';
-            msg.className = 'backup-message success show';
+        // --- RECARREGAMENTO ---
+        if (restored) {
+            alert('Dados restaurados! Atualizando sistema...');
+            // Pequeno delay apenas para garantir a gravação no disco
+            setTimeout(() => window.location.reload(), 200);
+        } else {
+            alert('Restauração concluída. Por favor, faça login novamente.');
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('isAuthenticated');
+            window.location.reload();
         }
 
-        // Pequeno delay para o navegador processar o localStorage antes do refresh
-        setTimeout(() => {
-            if (!restored) {
-                // Se não achou o usuário, limpa a sessão para evitar travamento
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('isAuthenticated');
-            }
-            window.location.reload();
-        }, 500); // 500ms de espera
-
     } catch (error) {
-        console.error("Erro Fatal:", error);
-        alert('Erro crítico. O sistema será reiniciado.');
-        localStorage.clear();
-        window.location.reload();
+        console.error("Erro Fatal na Restauração:", error);
+        alert('Erro crítico ao processar dados. O console contém detalhes.');
     }
 }
 
