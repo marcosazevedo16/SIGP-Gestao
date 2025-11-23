@@ -1721,6 +1721,43 @@ function clearRequestFilters() {
 // ----------------------------------------------------------------------------
 // 14. APRESENTAÇÕES (PDF Item 3, 4)
 // ----------------------------------------------------------------------------
+// Função Visual: Controla asteriscos e visibilidade conforme o Status
+
+function handlePresentationStatusChange() {
+    const status = document.getElementById('presentation-status').value;
+    const grpDate = document.getElementById('presentation-date-realizacao-group');
+    
+    // Labels para adicionar o * visualmente
+    const lblDate = document.getElementById('presentation-date-realizacao-label');
+    const lblOrient = document.getElementById('presentation-orientador-label');
+    const lblForms = document.getElementById('presentation-forms-label');
+    const lblDesc = document.getElementById('presentation-description-label');
+
+    // 1. Reseta todos os labels (remove asteriscos anteriores para não acumular)
+    if(lblDate) lblDate.textContent = 'Data de Realização';
+    if(lblOrient) lblOrient.textContent = 'Orientador(es)';
+    if(lblForms) lblForms.textContent = 'Formas de Apresentação';
+    if(lblDesc) lblDesc.textContent = 'Descrição/Detalhes';
+
+    // 2. Aplica regras baseadas no status selecionado
+    if (status === 'Realizada') {
+        // Regra: Data, Orientador e Formas obrigatórios
+        if(grpDate) grpDate.style.display = 'block'; // Mostra data
+        if(lblDate) lblDate.textContent += '*';
+        if(lblOrient) lblOrient.textContent += '*';
+        if(lblForms) lblForms.textContent += '*';
+    
+    } else if (status === 'Pendente') {
+        // Regra: Só Orientador obrigatório. Data some.
+        if(grpDate) grpDate.style.display = 'none'; // Esconde data
+        if(lblOrient) lblOrient.textContent += '*';
+    
+    } else if (status === 'Cancelada') {
+        // Regra: Só Descrição obrigatória. Data some.
+        if(grpDate) grpDate.style.display = 'none'; // Esconde data
+        if(lblDesc) lblDesc.textContent += '*';
+    }
+}
 
 function showPresentationModal(id = null) {
     editingId = id;
@@ -1805,24 +1842,54 @@ function showPresentationModal(id = null) {
     document.getElementById('presentation-modal').classList.add('show');
 }
 
+// Função Salvar: Validação Rigorosa
 function savePresentation(e) {
     e.preventDefault();
     const status = document.getElementById('presentation-status').value;
-    const orientadoresSel = Array.from(document.querySelectorAll('.orientador-check:checked')).map(function(c) { return c.value; });
-    const formasSel = Array.from(document.querySelectorAll('.forma-check:checked')).map(function(c) { return c.value; });
+    
+    // Captura os valores para validar
+    const orientadoresSel = Array.from(document.querySelectorAll('.orientador-check:checked')).map(c => c.value);
+    const formasSel = Array.from(document.querySelectorAll('.forma-check:checked')).map(c => c.value);
+    const dateReal = document.getElementById('presentation-date-realizacao').value;
+    const desc = document.getElementById('presentation-description').value.trim();
+
+    // --- REGRAS DE VALIDAÇÃO ---
     
     if (status === 'Realizada') {
-        if (formasSel.length === 0) { alert('Selecione pelo menos uma Forma de Apresentação.'); return; }
-        if (!document.getElementById('presentation-date-realizacao').value) { alert('Informe Data Realização.'); return; }
+        if (!dateReal) {
+            alert('Para status "Realizada", a Data de Realização é obrigatória.');
+            return;
+        }
+        if (orientadoresSel.length === 0) {
+            alert('Para status "Realizada", selecione ao menos um Orientador.');
+            return;
+        }
+        if (formasSel.length === 0) {
+            alert('Para status "Realizada", selecione ao menos uma Forma de Apresentação.');
+            return;
+        }
+    } 
+    else if (status === 'Pendente') {
+        if (orientadoresSel.length === 0) {
+            alert('Para status "Pendente", selecione ao menos um Orientador.');
+            return;
+        }
+    } 
+    else if (status === 'Cancelada') {
+        if (desc === '') {
+            alert('Para status "Cancelada", a Descrição/Justificativa é obrigatória.');
+            return;
+        }
     }
 
+    // Se passou nas validações, monta o objeto
     const data = {
         municipality: document.getElementById('presentation-municipality').value,
         dateSolicitacao: document.getElementById('presentation-date-solicitacao').value,
         requester: document.getElementById('presentation-requester').value,
         status: status,
-        description: document.getElementById('presentation-description').value,
-        dateRealizacao: document.getElementById('presentation-date-realizacao').value,
+        description: desc,
+        dateRealizacao: dateReal,
         orientadores: orientadoresSel,
         forms: formasSel
     };
@@ -1833,12 +1900,15 @@ function savePresentation(e) {
     } else {
         presentations.push({ id: getNextId('pres'), ...data });
     }
+    
     salvarNoArmazenamento('presentations', presentations);
     document.getElementById('presentation-modal').classList.remove('show');
-    renderPresentations();
-    showToast('Salvo!');
+    
+    // Limpa filtros para garantir que o novo item apareça se for compatível, ou renderiza direto
+    clearPresentationFilters(); 
+    
+    showToast('Apresentação salva com sucesso!', 'success');
 }
-
 function getFilteredPresentations() {
     const fMun = document.getElementById('filter-presentation-municipality')?.value;
     const fStatus = document.getElementById('filter-presentation-status')?.value;
