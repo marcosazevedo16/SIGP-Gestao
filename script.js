@@ -988,7 +988,6 @@ function renderMunicipalities() {
     const filtered = getFilteredMunicipalities();
     const c = document.getElementById('municipalities-table');
     
-    // Garante que o filtro de dropdown esteja preenchido
     if(document.getElementById('filter-municipality-name') && document.getElementById('filter-municipality-name').options.length <= 1) {
         populateFilterSelects();
     }
@@ -1014,12 +1013,9 @@ function renderMunicipalities() {
                 corDataFim = '#E68161';
             }
 
-            // --- AJUSTE VISUAL DOS MÓDULOS (Cores Invertidas) ---
             const modulesBadges = m.modules.map(function(modName) {
                 const modConfig = modulos.find(function(x) { return x.name === modName; });
                 const abbrev = modConfig ? modConfig.abbreviation : modName.substring(0,3).toUpperCase();
-                
-                // Estilo: Fundo bem clarinho, Borda Azul Clara, Letra Azul Escura
                 return `<span style="background:rgba(0, 85, 128, 0.05); color:#005580; border:1px solid rgba(0, 85, 128, 0.3); padding:2px 6px; border-radius:4px; font-size:10px; margin-right:3px; display:inline-block; margin-bottom:3px; font-weight:700;" title="${modName}">${abbrev}</span>`;
             }).join('');
             
@@ -1034,8 +1030,7 @@ function renderMunicipalities() {
             }
 
             return `<tr>
-                <td style="font-weight:600; color:#003d5c;">${m.name}</td>
-                <td style="max-width: 140px; white-space: normal; line-height:1.4;">${modulesBadges}</td>
+                <td style="font-weight:bold; color:#000000;">${m.name}</td> <td style="max-width: 140px; white-space: normal; line-height:1.4;">${modulesBadges}</td>
                 <td style="font-size:12px;">${m.manager}</td>
                 <td>${m.contact}</td>
                 <td>${formatDate(m.implantationDate)}</td>
@@ -1332,12 +1327,11 @@ function renderTasks() {
     const filtered = getFilteredTasks();
     const c = document.getElementById('tasks-table');
     
-    // Atualiza contadores
     if(document.getElementById('tasks-results-count')) {
         document.getElementById('tasks-results-count').style.display = 'block';
         document.getElementById('tasks-results-count').innerHTML = '<strong>' + filtered.length + '</strong> treinamentos encontrados';
     }
-    if(document.getElementById('total-tasks')) document.getElementById('total-tasks').textContent = tasks.length; // Total geral
+    if(document.getElementById('total-tasks')) document.getElementById('total-tasks').textContent = tasks.length;
     if(document.getElementById('completed-tasks')) document.getElementById('completed-tasks').textContent = filtered.filter(t => t.status==='Concluído').length;
     if(document.getElementById('pending-tasks')) document.getElementById('pending-tasks').textContent = filtered.filter(t => t.status==='Pendente').length;
 
@@ -1345,13 +1339,11 @@ function renderTasks() {
         c.innerHTML = '<div class="empty-state">Nenhum treinamento encontrado.</div>';
     } else {
         const rows = filtered.map(function(t) {
-            // Trata observação longa
             let obs = t.observations || '-';
             if (obs.length > 30) obs = `<span title="${t.observations}">${t.observations.substring(0, 30)}...</span>`;
 
             return `<tr>
-                <td style="font-weight:600; color:#003d5c;">${t.municipality}</td>
-                <td style="text-align:center;">${formatDate(t.dateRequested)}</td>
+                <td style="font-weight:bold; color:#000000;">${t.municipality}</td> <td style="text-align:center;">${formatDate(t.dateRequested)}</td>
                 <td style="text-align:center;">${formatDate(t.datePerformed)}</td>
                 <td>${t.requestedBy}</td>
                 <td>${t.performedBy}</td>
@@ -1573,17 +1565,15 @@ function renderRequests() {
             const desc = x.description.length > 40 ? `<span title="${x.description}">${x.description.substring(0,40)}...</span>` : x.description;
             const just = x.justification ? (x.justification.length > 30 ? `<span title="${x.justification}">${x.justification.substring(0,30)}...</span>` : x.justification) : '-';
             
-            // --- AJUSTE DE CORES LEVES ---
             let statusClass = 'task-status';
-            if (x.status === 'Realizado') statusClass += ' completed'; // Azul
-            else if (x.status === 'Inviável') statusClass += ' cancelled'; // Vermelho
-            else statusClass += ' pending'; // Laranja
+            if (x.status === 'Realizado') statusClass += ' completed';
+            else if (x.status === 'Inviável') statusClass += ' cancelled';
+            else statusClass += ' pending';
 
             const statusBadge = `<span class="${statusClass}">${x.status}</span>`;
 
             return `<tr>
-                <td style="font-weight:600; color:#003d5c;">${x.municipality}</td>
-                <td style="text-align:center;">${formatDate(x.date)}</td>
+                <td style="font-weight:bold; color:#000000;">${x.municipality}</td> <td style="text-align:center;">${formatDate(x.date)}</td>
                 <td style="text-align:center;">${formatDate(x.dateRealization)}</td>
                 <td>${x.requester}</td>
                 <td>${x.contact}</td>
@@ -1615,6 +1605,7 @@ function renderRequests() {
             <tbody>${rows}</tbody>
         </table>`;
     }
+    
     updateRequestCharts(filtered);
 }
 
@@ -1967,20 +1958,17 @@ function renderPresentations() {
         const rows = filtered.map(function(p) {
             const desc = p.description ? (p.description.length > 30 ? `<span title="${p.description}">${p.description.substring(0,30)}...</span>` : p.description) : '-';
             
-            // --- AJUSTE DE CORES LEVES ---
             let statusClass = 'task-status';
-            if (p.status === 'Realizada') statusClass += ' completed'; // Azul
-            else if (p.status === 'Cancelada') statusClass += ' cancelled'; // Vermelho
-            else statusClass += ' pending'; // Laranja
+            if (p.status === 'Realizada') statusClass += ' completed';
+            else if (p.status === 'Cancelada') statusClass += ' cancelled';
+            else statusClass += ' pending';
 
             const statusBadge = `<span class="${statusClass}">${p.status}</span>`;
-
             const orientadoresStr = (Array.isArray(p.orientadores) && p.orientadores.length > 0) ? p.orientadores.join(', ') : '-';
             const formasStr = (Array.isArray(p.forms) && p.forms.length > 0) ? p.forms.join(', ') : '-';
 
             return `<tr>
-                <td style="font-weight:600; color:#003d5c;">${p.municipality}</td>
-                <td style="text-align:center;">${formatDate(p.dateSolicitacao)}</td>
+                <td style="font-weight:bold; color:#000000;">${p.municipality}</td> <td style="text-align:center;">${formatDate(p.dateSolicitacao)}</td>
                 <td>${p.requester}</td>
                 <td>${orientadoresStr}</td>
                 <td>${formasStr}</td>
@@ -2259,7 +2247,6 @@ function renderDemands() {
         c.innerHTML = '<div class="empty-state">Nenhuma demanda encontrada.</div>';
     } else {
         const rows = filtered.map(function(d) {
-            // --- AJUSTE DE CORES LEVES ---
             let statusClass = 'task-status';
             if (d.status === 'Realizada') statusClass += ' completed';
             else if (d.status === 'Inviável') statusClass += ' cancelled';
@@ -2273,8 +2260,7 @@ function renderDemands() {
             if (d.priority === 'Baixa') prioColor = '#79C2A9';
 
             return `<tr>
-                <td>${d.user || '-'}</td>
-                <td style="text-align:center;">${formatDate(d.date)}</td>
+                <td style="font-weight:bold; color:#000000;">${d.user || '-'}</td> <td style="text-align:center;">${formatDate(d.date)}</td>
                 <td>${d.description}</td>
                 <td style="color:${prioColor}; font-weight:bold;">${d.priority}</td>
                 <td style="text-align:center;">${statusBadge}</td>
@@ -2536,13 +2522,11 @@ function renderVisits() {
     const filtered = getFilteredVisits();
     const c = document.getElementById('visits-table');
     
-    // 1. Contador Acima da Tabela
     if(document.getElementById('visits-results-count')) {
         document.getElementById('visits-results-count').innerHTML = '<strong>' + filtered.length + '</strong> visitas encontradas';
         document.getElementById('visits-results-count').style.display = 'block';
     }
 
-    // 2. Correção dos Cards de Estatística
     if(document.getElementById('total-visits')) document.getElementById('total-visits').textContent = visits.length;
     if(document.getElementById('pending-visits')) document.getElementById('pending-visits').textContent = filtered.filter(v => v.status === 'Pendente').length;
     if(document.getElementById('completed-visits')) document.getElementById('completed-visits').textContent = filtered.filter(v => v.status === 'Realizada').length;
@@ -2552,19 +2536,17 @@ function renderVisits() {
         c.innerHTML = '<div class="empty-state">Nenhuma visita encontrada.</div>';
     } else {
         const rows = filtered.map(function(v) {
-            // Cores de Status (Padronizadas)
             let statusClass = 'task-status';
-            if (v.status === 'Realizada') statusClass += ' completed'; // Azul
-            else if (v.status === 'Cancelada') statusClass += ' cancelled'; // Vermelho
-            else statusClass += ' pending'; // Laranja
+            if (v.status === 'Realizada') statusClass += ' completed';
+            else if (v.status === 'Cancelada') statusClass += ' cancelled';
+            else statusClass += ' pending';
 
             const statusBadge = `<span class="${statusClass}">${v.status}</span>`;
             const motivo = v.reason ? (v.reason.length > 40 ? `<span title="${v.reason}">${v.reason.substring(0,40)}...</span>` : v.reason) : '-';
             const justif = v.justification ? (v.justification.length > 30 ? `<span title="${v.justification}">${v.justification.substring(0,30)}...</span>` : v.justification) : '-';
 
             return `<tr>
-                <td style="font-weight:600; color:#003d5c;">${v.municipality}</td>
-                <td style="text-align:center;">${formatDate(v.date)}</td>
+                <td style="font-weight:bold; color:#000000;">${v.municipality}</td> <td style="text-align:center;">${formatDate(v.date)}</td>
                 <td>${v.applicant}</td>
                 <td style="font-size:12px;">${motivo}</td>
                 <td style="text-align:center;">${statusBadge}</td>
@@ -2809,12 +2791,10 @@ function renderProductions() {
     const filtered = getFilteredProductions();
     const c = document.getElementById('productions-table');
     
-    // Stats (Contadores)
     if(document.getElementById('productions-results-count')) {
         document.getElementById('productions-results-count').innerHTML = '<strong>' + filtered.length + '</strong> envios encontrados';
         document.getElementById('productions-results-count').style.display = 'block';
     }
-    // Correção dos Cards
     if(document.getElementById('total-productions')) document.getElementById('total-productions').textContent = productions.length;
     if(document.getElementById('sent-productions')) document.getElementById('sent-productions').textContent = filtered.filter(p => p.status === 'Enviada').length;
     if(document.getElementById('pending-productions')) document.getElementById('pending-productions').textContent = filtered.filter(p => p.status === 'Pendente').length;
@@ -2824,25 +2804,22 @@ function renderProductions() {
         c.innerHTML = '<div class="empty-state">Nenhum envio encontrado.</div>';
     } else {
         const rows = filtered.map(function(p) {
-            // Cor do Status
             let statusClass = 'task-status';
-            if (p.status === 'Enviada') statusClass += ' completed'; // Azul
-            else if (p.status === 'Cancelada') statusClass += ' cancelled'; // Vermelho
-            else statusClass += ' pending'; // Laranja
+            if (p.status === 'Enviada') statusClass += ' completed';
+            else if (p.status === 'Cancelada') statusClass += ' cancelled';
+            else statusClass += ' pending';
             const statusBadge = `<span class="${statusClass}">${p.status}</span>`;
 
-            // Cor da Frequência
-            let freqColor = '#003d5c'; // Padrão
-            if (p.frequency === 'Diário') freqColor = '#C85250'; // Vermelho
-            else if (p.frequency === 'Semanal') freqColor = '#E68161'; // Laranja
-            else if (p.frequency === 'Quinzenal') freqColor = '#79C2A9'; // Verde
-            else if (p.frequency === 'Mensal') freqColor = '#005580'; // Azul
+            let freqColor = '#003d5c';
+            if (p.frequency === 'Diário') freqColor = '#C85250';
+            else if (p.frequency === 'Semanal') freqColor = '#E68161';
+            else if (p.frequency === 'Quinzenal') freqColor = '#79C2A9';
+            else if (p.frequency === 'Mensal') freqColor = '#005580';
             
             const freqBadge = `<span style="color:${freqColor}; font-weight:bold;">${p.frequency}</span>`;
 
             return `<tr>
-                <td style="font-weight:800; color:#003d5c;">${p.municipality}</td>
-                <td>${p.professional || '-'}</td>
+                <td style="font-weight:bold; color:#000000;">${p.municipality}</td> <td>${p.professional || '-'}</td>
                 <td>${freqBadge}</td>
                 <td>${p.competence}</td>
                 <td>${p.frequency === 'Diário' ? '-' : (p.period || '-')}</td>
