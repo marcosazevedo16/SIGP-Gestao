@@ -3157,7 +3157,7 @@ function populateSelect(select, data, valKey, textKey) {
 }
 
 function populateFilterSelects() {
-    // 1. Filtro Aba Municípios
+    // 1. Filtro Principal da Aba Municípios (Baseado nos clientes cadastrados na carteira)
     const munSelect = document.getElementById('filter-municipality-name');
     if (munSelect) {
         const current = munSelect.value;
@@ -3166,12 +3166,13 @@ function populateFilterSelects() {
         if(current) munSelect.value = current;
     }
 
-    // 2. Filtros de Município Ativos (Geral)
+    // 2. Filtros de Município (APENAS ATIVOS/EM USO)
+    // Usado para Tarefas, Solicitações e Produção
     const activeMuns = municipalities.filter(m => m.status === 'Em uso').sort((a,b) => a.name.localeCompare(b.name));
     const standardFilters = [
-        'filter-task-municipality', 'filter-request-municipality', 
-        'filter-visit-municipality', 'filter-production-municipality',
-        'filter-presentation-municipality'
+        'filter-task-municipality', 
+        'filter-request-municipality', 
+        'filter-production-municipality'
     ];
     standardFilters.forEach(id => {
         const el = document.getElementById(id);
@@ -3182,7 +3183,24 @@ function populateFilterSelects() {
         }
     });
 
-    // 3. Orientadores
+    // 3. Filtros que buscam da LISTA MESTRA (Todos cadastrados em Configurações)
+    // Agora inclui VISITAS e APRESENTAÇÕES
+    const masterFilters = ['filter-presentation-municipality', 'filter-visit-municipality'];
+    
+    if (typeof municipalitiesList !== 'undefined') {
+        const sortedMaster = municipalitiesList.slice().sort((a,b) => a.name.localeCompare(b.name));
+        
+        masterFilters.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                const cur = el.value;
+                el.innerHTML = '<option value="">Todos</option>' + sortedMaster.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+                if(cur) el.value = cur;
+            }
+        });
+    }
+
+    // 4. Filtros de Orientador
     const orientadorFilters = ['filter-task-performer', 'filter-presentation-orientador'];
     const sortedOrientadores = orientadores.slice().sort((a,b) => a.name.localeCompare(b.name));
     orientadorFilters.forEach(id => {
@@ -3194,7 +3212,7 @@ function populateFilterSelects() {
         }
     });
 
-    // 4. Cargos
+    // 5. Filtro de Cargo
     const cargoEl = document.getElementById('filter-task-position');
     if (cargoEl) {
         const cur = cargoEl.value;
@@ -3202,7 +3220,7 @@ function populateFilterSelects() {
         if(cur) cargoEl.value = cur;
     }
 
-    // 5. Usuários
+    // 6. Filtros de Usuário
     const userFilters = ['filter-request-user', 'filter-demand-user'];
     const sortedUsers = users.slice().sort((a,b) => a.name.localeCompare(b.name));
     userFilters.forEach(id => {
