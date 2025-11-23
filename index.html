@@ -1339,87 +1339,55 @@
 
             <div class="filters-section">
 
-                <div class="filters-grid">
+<div class="filters-grid">
+    <div class="form-group">
+        <label class="form-label">Município</label>
+        <select class="form-control" id="filter-presentation-municipality">
+            <option value="">Todos</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-control" id="filter-presentation-status">
+            <option value="">Todos</option>
+            <option value="Pendente">Pendente</option>
+            <option value="Realizada">Realizada</option>
+            <option value="Cancelada">Cancelada</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Solicitante</label>
+        <input type="text" class="form-control" id="filter-presentation-requester" placeholder="Buscar solicitante">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Orientador</label>
+        <select class="form-control" id="filter-presentation-orientador">
+            <option value="">Todos</option>
+        </select>
+    </div>
 
-                    <div class="form-group">
+    <div class="form-group">
+        <label class="form-label">Solicitação (Início)</label>
+        <input type="date" class="form-control" id="filter-presentation-sol-start" onchange="validateDateRange('pres-sol')">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Solicitação (Fim)</label>
+        <input type="date" class="form-control" id="filter-presentation-sol-end" onchange="validateDateRange('pres-sol')">
+    </div>
 
-                        <label class="form-label">Município</label>
+    <div class="form-group">
+        <label class="form-label">Realização (Início)</label>
+        <input type="date" class="form-control" id="filter-presentation-real-start" onchange="validateDateRange('pres-real')">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Realização (Fim)</label>
+        <input type="date" class="form-control" id="filter-presentation-real-end" onchange="validateDateRange('pres-real')">
+    </div>
 
-                        <select class="form-control" id="filter-presentation-municipality">
-
-                            <option value="">Todos</option>
-
-                        </select>
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label class="form-label">Status</label>
-
-                        <select class="form-control" id="filter-presentation-status">
-
-                            <option value="">Todos</option>
-
-                            <option value="Pendente">Pendente</option>
-
-                            <option value="Cancelada">Cancelada</option>
-
-                            <option value="Realizada">Realizada</option>
-
-                        </select>
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label class="form-label">Solicitante</label>
-
-                        <input type="text" class="form-control" id="filter-presentation-requester" placeholder="Buscar por solicitante">
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label class="form-label">Orientador</label>
-
-                        <select class="form-control" id="filter-presentation-orientador">
-
-                            <option value="">Todos</option>
-
-                        </select>
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label class="form-label">Filtrar por:</label>
-
-                        <select class="form-control" id="filter-presentation-date-type">
-
-                            <option value="solicitacao">Data Solicitação</option>
-
-                            <option value="realizacao">Data Realização</option>
-
-                        </select>
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label class="form-label">Data Inicial</label>
-
-                        <input type="date" class="form-control" id="filter-presentation-date-start">
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label class="form-label">Data Final</label>
-
-                        <input type="date" class="form-control" id="filter-presentation-date-end">
-
-                    </div>
+    <div class="form-group" style="display: flex; align-items: flex-end;">
+        <button class="btn btn--primary btn--full-width" onclick="clearPresentationFilters()">Limpar Filtros</button>
+    </div>
+</div>
 
                     <div class="form-group">
 
