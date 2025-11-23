@@ -1090,13 +1090,13 @@ function updateMunicipalityCharts(data) {
                         data.filter(m => m.status === 'Parou de usar').length,
                         data.filter(m => m.status === 'Não Implantado').length
                     ], 
-                    backgroundColor: ['#005580', '#C85250', '#E68161', '#79C2A9'] // Azul, Vermelho, Laranja, Verde
+                    backgroundColor: ['#005580', '#C85250', '#E68161', '#79C2A9'] 
                 }] 
             }
         });
     }
     
-    // 2. Gráfico de Módulos (Barra) - Mantido
+    // 2. Gráfico de Módulos (Barra Colorida) - ATUALIZADO
     const ctxModules = document.getElementById('modulesChart');
     if (ctxModules && window.Chart) {
         if (chartModulesMun) {
@@ -1110,53 +1110,57 @@ function updateMunicipalityCharts(data) {
             });
         });
         
+        const labels = Object.keys(modCounts);
+        const values = Object.values(modCounts);
+        
+        // Gera cores diferentes para cada barra (módulo)
+        const bgColors = labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+        
         chartModulesMun = new Chart(document.getElementById('modulesChart'), {
             type: 'bar',
             data: { 
-                labels: Object.keys(modCounts), 
+                labels: labels, 
                 datasets: [{ 
                     label: 'Qtd Municípios', 
-                    data: Object.values(modCounts), 
-                    backgroundColor: '#005580' // Azul padrão
+                    data: values, 
+                    backgroundColor: bgColors // Agora colorido
                 }] 
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                // Opcional: Esconder labels do eixo X se tiver muitos módulos
+                // scales: { x: { ticks: { display: false } } } 
             }
         });
     }
 
-    // 3. Gráfico de Evolução/Crescimento (Linha Acumulada) - CORRIGIDO
+    // 3. Gráfico de Evolução (Linha Acumulada) - Mantido
     const ctxTimeline = document.getElementById('timelineChart');
     if (ctxTimeline && window.Chart) {
         if (chartTimelineMun) {
             chartTimelineMun.destroy();
         }
         
-        // Passo A: Extrair e ordenar todas as datas de implantação (Mês/Ano)
-        // Formato esperado no gráfico: MM/YYYY
         const implantations = data
-            .filter(m => m.implantationDate) // Pega só quem tem data
-            .map(m => m.implantationDate.substring(0, 7)) // Pega "YYYY-MM"
-            .sort(); // Ordena cronologicamente
+            .filter(m => m.implantationDate) 
+            .map(m => m.implantationDate.substring(0, 7)) 
+            .sort(); 
 
-        // Passo B: Agrupar e Calcular Acumulado
         const timeData = {};
         let totalAcumulado = 0;
         
-        // Cria um mapa de frequências
         implantations.forEach(date => {
             timeData[date] = (timeData[date] || 0) + 1;
         });
 
-        // Gera os dados finais acumulados
         const labels = [];
         const values = [];
         
-        // Ordena as chaves (datas) e faz a soma acumulativa
         Object.keys(timeData).sort().forEach(dateKey => {
             const [ano, mes] = dateKey.split('-');
-            const labelBr = `${mes}/${ano}`; // Formata para 01/2020
-            
-            totalAcumulado += timeData[dateKey]; // Soma com o anterior
-            
+            const labelBr = `${mes}/${ano}`; 
+            totalAcumulado += timeData[dateKey]; 
             labels.push(labelBr);
             values.push(totalAcumulado);
         });
@@ -1164,14 +1168,14 @@ function updateMunicipalityCharts(data) {
         chartTimelineMun = new Chart(document.getElementById('timelineChart'), {
             type: 'line',
             data: { 
-                labels: labels, // Eixo X: Mes/Ano
+                labels: labels, 
                 datasets: [{ 
                     label: 'Total de Clientes (Acumulado)', 
-                    data: values, // Eixo Y: Total Acumulado
-                    borderColor: '#005580', // Azul
-                    backgroundColor: 'rgba(0, 85, 128, 0.1)', // Fundo azulado transparente
-                    fill: true, // Preenche embaixo da linha
-                    tension: 0.4, // Curva suave
+                    data: values, 
+                    borderColor: '#005580', 
+                    backgroundColor: 'rgba(0, 85, 128, 0.1)', 
+                    fill: true, 
+                    tension: 0.4,
                     pointRadius: 4,
                     pointHoverRadius: 6
                 }] 
@@ -1189,20 +1193,17 @@ function updateMunicipalityCharts(data) {
                     }
                 },
                 scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+                    y: { beginAtZero: true }
                 }
             }
         });
     }
 
-    // Atualiza contadores simples
+    // Contadores
     if(document.getElementById('total-municipalities')) document.getElementById('total-municipalities').textContent = data.length;
     if(document.getElementById('active-municipalities')) document.getElementById('active-municipalities').textContent = data.filter(m => m.status === 'Em uso').length;
     if(document.getElementById('inactive-municipalities')) document.getElementById('inactive-municipalities').textContent = data.filter(m => m.status !== 'Em uso').length;
     
-    // Cálculo de média de dias
     const daysList = data.filter(m => m.lastVisit).map(m => {
         const last = new Date(m.lastVisit);
         const now = new Date();
