@@ -3169,6 +3169,7 @@ function createBackup() {
         version: "v25.0", 
         date: new Date().toISOString(), 
         data: { 
+            // Listas Principais
             users: users, 
             municipalities: municipalities, 
             municipalitiesList: municipalitiesList, 
@@ -3178,11 +3179,15 @@ function createBackup() {
             visits: visits, 
             productions: productions, 
             presentations: presentations, 
+            
+            // Configurações Auxiliares
             systemVersions: systemVersions, 
             cargos: cargos, 
             orientadores: orientadores, 
             modulos: modulos, 
             formasApresentacao: formasApresentacao, 
+            
+            // Contadores de ID
             counters: counters 
         } 
     };
@@ -3190,11 +3195,11 @@ function createBackup() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
     const dl = document.createElement('a');
     dl.setAttribute("href", dataStr);
-    dl.setAttribute("download", "backup_sigp_" + new Date().toISOString().slice(0,10) + ".json");
+    dl.setAttribute("download", "SIGP_Backup_" + new Date().toISOString().slice(0,10) + ".json");
     document.body.appendChild(dl); 
     dl.click(); 
     dl.remove();
-    showToast('Backup Baixado!');
+    showToast('Backup baixado com sucesso!', 'success');
 }
 
 function triggerRestoreBackup() { 
@@ -3249,19 +3254,25 @@ function confirmRestore() {
     if (!pendingBackupData) return;
     const data = pendingBackupData.data;
     
+    // 1. SALVA A SESSÃO ATUAL NA MEMÓRIA TEMPORÁRIA
+    // Isso impede que o usuário seja deslogado ao limpar o banco
+    const currentSession = localStorage.getItem('currentUser');
+    const currentAuth = localStorage.getItem('isAuthenticated');
+    const currentTheme = localStorage.getItem('theme'); // Mantém o tema (claro/escuro) também
+
+    // 2. Limpa o armazenamento (apaga dados antigos e sessão do disco)
     localStorage.clear();
     
-    // Função auxiliar para evitar salvar "undefined" no localStorage
-    // Se o valor não existir, salva o valor padrão (geralmente lista vazia [])
+    // Função auxiliar de segurança
     const safeSave = (key, value, defaultVal = []) => {
         localStorage.setItem(key, JSON.stringify(value || defaultVal));
     };
     
-    // Restaura tudo explicitamente com proteção contra falhas
+    // 3. Restaura os Dados do Arquivo
     safeSave('users', data.users);
     safeSave('municipalities', data.municipalities);
     safeSave('municipalitiesList', data.municipalitiesList);
-    safeSave('tasks', data.tasks || data.trainings); // Suporte a legado (trainings)
+    safeSave('tasks', data.tasks || data.trainings);
     safeSave('requests', data.requests);
     safeSave('demands', data.demands);
     safeSave('visits', data.visits);
@@ -3270,19 +3281,20 @@ function confirmRestore() {
     safeSave('systemVersions', data.systemVersions);
     safeSave('cargos', data.cargos);
     safeSave('orientadores', data.orientadores);
-    safeSave('modulos', data.modules || data.modulos); // Suporte a legado (modules)
+    safeSave('modulos', data.modules || data.modulos);
     safeSave('formasApresentacao', data.formasApresentacao);
     
-    // Counters é um objeto, então o padrão deve ser objeto, não array
     safeSave('counters', data.counters, {
         mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1
     });
     
-    // Logout forçado para garantir integridade
-    deletarDoArmazenamento('currentUser');
-    deletarDoArmazenamento('isAuthenticated');
+    // 4. RESTAURA A SESSÃO (Recoloca o usuário logado)
+    if (currentSession) localStorage.setItem('currentUser', currentSession);
+    if (currentAuth) localStorage.setItem('isAuthenticated', currentAuth);
+    if (currentTheme) localStorage.setItem('theme', currentTheme);
     
-    alert('Restauração com sucesso! Faça login novamente.');
+    // 5. Recarrega a página para aplicar os dados
+    alert('Backup restaurado com sucesso! Os dados foram atualizados.');
     location.reload();
 }
 // ----------------------------------------------------------------------------
