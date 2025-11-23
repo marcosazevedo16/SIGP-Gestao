@@ -1250,15 +1250,15 @@ function saveTask(e) {
 function validateDateRange(type) {
     let startId, endId;
 
-    // Identifica se é filtro de Tarefa ou Solicitação
     if (type === 'req' || type === 'perf') {
-        // Padrão da aba Tarefas (ex: filter-task-req-start)
         startId = `filter-task-${type}-start`;
         endId = `filter-task-${type}-end`;
-    } else {
-        // Padrão da aba Solicitações (ex: filter-request-sol-start)
+    } else if (type.includes('request')) { // request-sol, request-real
         startId = `filter-${type}-start`;
         endId = `filter-${type}-end`;
+    } else if (type.includes('pres')) { // pres-sol, pres-real
+        startId = `filter-presentation-${type.split('-')[1]}-start`; // sol ou real
+        endId = `filter-presentation-${type.split('-')[1]}-end`;
     }
 
     const start = document.getElementById(startId);
@@ -1266,24 +1266,15 @@ function validateDateRange(type) {
     
     if (!start || !end) return;
 
-    // 1. Regra do Bloqueio: O campo "Fim" não aceita data menor que "Início"
-    if (start.value) {
-        end.min = start.value;
-    } else {
-        end.removeAttribute('min');
-    }
+    if (start.value) end.min = start.value;
+    else end.removeAttribute('min');
     
-    // 2. Correção Automática: Se já tiver uma data inválida, corrige
-    if (end.value && start.value && end.value < start.value) {
-        end.value = start.value;
-    }
+    if (end.value && start.value && end.value < start.value) end.value = start.value;
 
-    // 3. Atualiza a tabela correspondente
-    if (type.includes('request')) {
-        renderRequests(); // Aba Solicitações
-    } else {
-        renderTasks();    // Aba Tarefas
-    }
+    // Refresh na tabela correta
+    if (type.includes('request')) renderRequests();
+    else if (type.includes('pres')) renderPresentations();
+    else renderTasks();
 }
 
 function getFilteredTasks() {
@@ -1734,42 +1725,63 @@ function clearRequestFilters() {
 function showPresentationModal(id = null) {
     editingId = id;
     document.getElementById('presentation-form').reset();
-    updateGlobalDropdowns();
     
+    // 1. Popula dropdown com Lista Mestra
+    const munSelect = document.getElementById('presentation-municipality');
+    populateSelect(munSelect, municipalitiesList, 'name', 'name');
+    
+    // 2. Checkboxes dinâmicos
     const divO = document.getElementById('presentation-orientador-checkboxes');
     if (divO) {
-        divO.innerHTML = orientadores.map(function(o) {
-            return '<label><input type="checkbox" value="' + o.name + '" class="orientador-check"> ' + o.name + '</label>';
-        }).join('');
+        divO.innerHTML = orientadores.map(o => `<label><input type="checkbox" value="${o.name}" class="orientador-check"> ${o.name}</label>`).join('');
     }
     const divF = document.getElementById('presentation-forms-checkboxes');
     if (divF) {
-        divF.innerHTML = formasApresentacao.map(function(f) {
-            return '<label><input type="checkbox" value="' + f.name + '" class="forma-check"> ' + f.name + '</label>';
-        }).join('');
+        divF.innerHTML = formasApresentacao.map(f => `<label><input type="checkbox" value="${f.name}" class="forma-check"> ${f.name}</label>`).join('');
     }
 
     if (id) {
-        const p = presentations.find(function(x) { return x.id === id; });
-        document.getElementById('presentation-municipality').value = p.municipality;
-        document.getElementById('presentation-date-solicitacao').value = p.dateSolicitacao;
-        document.getElementById('presentation-requester').value = p.requester;
-        document.getElementById('presentation-status').value = p.status;
-        document.getElementById('presentation-description').value = p.description;
-        
-        if (document.getElementById('presentation-date-realizacao')) {
-            document.getElementById('presentation-date-realizacao').value = p.dateRealizacao || '';
+        const p = presentations.find(x => x.id === id);
+        if(p) {
+            // --- Correção: Garante que o município exista no select ---
+            let exists = false;
+            for (let i = 0; i < munSelect.options.length; i++) {
+                if (munSelect.options[i].value === p.municipality) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                const opt = document.createElement('option');
+                opt.value = p.municipality;
+                opt.textContent = p.municipality;
+                munSelect.appendChild(opt);
+            }
+            munSelect.value = p.municipality;
+            // ---------------------------------------------------------
+
+            document.getElementById('presentation-date-solicitacao').value = p.dateSolicitacao;
+            document.getElementById('presentation-requester').value = p.requester;
+            document.getElementById('presentation-status').value = p.status;
+            document.getElementById('presentation-description').value = p.description;
+            
+            if (document.getElementById('presentation-date-realizacao')) {
+                document.getElementById('presentation-date-realizacao').value = p.dateRealizacao || '';
+            }
+            if (p.orientadores) {
+                document.querySelectorAll('.orientador-check').forEach(cb => {
+                    cb.checked = p.orientadores.includes(cb.value);
+                });
+            }
+            if (p.forms) {
+                document.querySelectorAll('.forma-check').forEach(cb => {
+                    cb.checked = p.forms.includes(cb.value);
+                });
+            }
+            handlePresentationStatusChange();
         }
-        if (p.orientadores) {
-            document.querySelectorAll('.orientador-check').forEach(function(cb) {
-                cb.checked = p.orientadores.includes(cb.value);
-            });
-        }
-        if (p.forms) {
-            document.querySelectorAll('.forma-check').forEach(function(cb) {
-                cb.checked = p.forms.includes(cb.value);
-            });
-        }
+    } else {
+        handlePresentationStatusChange();
     }
     document.getElementById('presentation-modal').classList.add('show');
 }
@@ -1809,69 +1821,98 @@ function savePresentation(e) {
 }
 
 function getFilteredPresentations() {
-    const fMun = document.getElementById('filter-presentation-municipality') ? document.getElementById('filter-presentation-municipality').value : '';
-    const fStatus = document.getElementById('filter-presentation-status') ? document.getElementById('filter-presentation-status').value : '';
-    const fReq = document.getElementById('filter-presentation-requester') ? document.getElementById('filter-presentation-requester').value.toLowerCase() : '';
-    const fOrient = document.getElementById('filter-presentation-orientador') ? document.getElementById('filter-presentation-orientador').value : '';
-    const fDateStart = document.getElementById('filter-presentation-date-start') ? document.getElementById('filter-presentation-date-start').value : '';
-    const fDateEnd = document.getElementById('filter-presentation-date-end') ? document.getElementById('filter-presentation-date-end').value : '';
+    const fMun = document.getElementById('filter-presentation-municipality')?.value;
+    const fStatus = document.getElementById('filter-presentation-status')?.value;
+    const fReq = document.getElementById('filter-presentation-requester')?.value.toLowerCase();
+    const fOrient = document.getElementById('filter-presentation-orientador')?.value;
+    
+    // Datas
+    const fSolStart = document.getElementById('filter-presentation-sol-start')?.value;
+    const fSolEnd = document.getElementById('filter-presentation-sol-end')?.value;
+    const fRealStart = document.getElementById('filter-presentation-real-start')?.value;
+    const fRealEnd = document.getElementById('filter-presentation-real-end')?.value;
 
     let filtered = presentations.filter(function(p) {
         if (fMun && p.municipality !== fMun) return false;
         if (fStatus && p.status !== fStatus) return false;
         if (fReq && !p.requester.toLowerCase().includes(fReq)) return false;
         if (fOrient && (!p.orientadores || !p.orientadores.includes(fOrient))) return false;
-        if (fDateStart && p.dateSolicitacao < fDateStart) return false;
-        if (fDateEnd && p.dateSolicitacao > fDateEnd) return false;
+        
+        // Data Solicitação
+        if (fSolStart && p.dateSolicitacao < fSolStart) return false;
+        if (fSolEnd && p.dateSolicitacao > fSolEnd) return false;
+
+        // Data Realização
+        if (fRealStart && (!p.dateRealizacao || p.dateRealizacao < fRealStart)) return false;
+        if (fRealEnd && (!p.dateRealizacao || p.dateRealizacao > fRealEnd)) return false;
+
         return true;
     });
 
-    return filtered.sort(function(a,b) {
-        if (a.status === 'Pendente' && b.status !== 'Pendente') return -1;
-        if (a.status !== 'Pendente' && b.status === 'Pendente') return 1;
-        return new Date(a.dateSolicitacao) - new Date(b.dateSolicitacao);
-    });
+    return filtered.sort((a,b) => new Date(a.dateSolicitacao) - new Date(b.dateSolicitacao));
 }
 
 function renderPresentations() {
     const filtered = getFilteredPresentations();
     const c = document.getElementById('presentations-table');
-    const countDiv = document.getElementById('presentations-results-count');
-    if (countDiv) {
-        countDiv.innerHTML = '<strong>' + filtered.length + '</strong> apresentações';
-        countDiv.style.display = 'block';
+    
+    if (document.getElementById('presentations-results-count')) {
+        document.getElementById('presentations-results-count').innerHTML = '<strong>' + filtered.length + '</strong> apresentações encontradas';
+        document.getElementById('presentations-results-count').style.display = 'block';
     }
 
     if (filtered.length === 0) {
-        c.innerHTML = '<div class="empty-state">Vazio.</div>';
+        c.innerHTML = '<div class="empty-state">Nenhuma apresentação encontrada.</div>';
     } else {
         const rows = filtered.map(function(p) {
-            const desc = p.description ? (p.description.length > 20 ? p.description.substring(0,20) + '...' : p.description) : '-';
-            return '<tr>' +
-                '<td>' + p.municipality + '</td>' +
-                '<td>' + formatDate(p.dateSolicitacao) + '</td>' +
-                '<td>' + p.requester + '</td>' +
-                '<td>' + p.status + '</td>' +
-                '<td>' + formatDate(p.dateRealizacao) + '</td>' +
-                '<td>' + (p.orientadores ? p.orientadores.join(', ') : '-') + '</td>' +
-                '<td>' + (p.forms ? p.forms.join(', ') : '-') + '</td>' +
-                '<td title="' + (p.description || '') + '">' + desc + '</td>' +
-                '<td>' +
-                    '<div style="display:flex;gap:5px;">' +
-                    '<button class="btn btn--sm" onclick="showPresentationModal(' + p.id + ')">✏️</button> ' +
-                    '<button class="btn btn--sm" onclick="deletePresentation(' + p.id + ')">🗑️</button>' +
-                    '</div>' +
-                '</td>' +
-            '</tr>';
+            const desc = p.description ? (p.description.length > 30 ? `<span title="${p.description}">${p.description.substring(0,30)}...</span>` : p.description) : '-';
+            
+            // Cores de Status (Azul, Laranja, Vermelho)
+            let badgeColor = '#E68161'; // Pendente (Laranja)
+            if (p.status === 'Realizada') badgeColor = '#005580'; // Azul
+            if (p.status === 'Cancelada') badgeColor = '#C85250'; // Vermelho
+
+            const statusBadge = `<span style="background:${badgeColor}; color:white; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">${p.status}</span>`;
+
+            return `<tr>
+                <td style="font-weight:600; color:#003d5c;">${p.municipality}</td>
+                <td style="text-align:center;">${formatDate(p.dateSolicitacao)}</td>
+                <td>${p.requester}</td>
+                <td>${p.orientadores ? p.orientadores.join(', ') : '-'}</td>
+                <td>${p.forms ? p.forms.join(', ') : '-'}</td>
+                <td style="font-size:12px; color:#555;">${desc}</td>
+                <td style="text-align:center;">${formatDate(p.dateRealizacao)}</td>
+                <td style="text-align:center;">${statusBadge}</td>
+                <td>
+                    <button class="btn btn--sm" onclick="showPresentationModal(${p.id})" title="Editar">✏️</button>
+                    <button class="btn btn--sm" onclick="deletePresentation(${p.id})" title="Excluir">🗑️</button>
+                </td>
+            </tr>`;
         }).join('');
-        c.innerHTML = '<table><thead><th>Município</th><th>Data Sol.</th><th>Solicitante</th><th>Status</th><th>Realização</th><th>Orientadores</th><th>Forma</th><th>Descrição</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
+        
+        c.innerHTML = `
+        <table class="compact-table">
+            <thead>
+                <th>Município</th>
+                <th style="text-align:center;">Data<br>Solicitação</th>
+                <th>Solicitante(s) da<br>Apresentação</th>
+                <th>Orientador(es)</th>
+                <th>Forma(s) de<br>Apresentação</th>
+                <th>Descrição/<br>Detalhes</th>
+                <th style="text-align:center;">Data<br>Realização</th>
+                <th style="text-align:center;">Status</th>
+                <th>Ações</th>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>`;
     }
     
-    if(document.getElementById('total-presentations')) document.getElementById('total-presentations').textContent = filtered.length;
+    if(document.getElementById('total-presentations')) document.getElementById('total-presentations').textContent = presentations.length;
     updatePresentationCharts(filtered);
 }
 
 function updatePresentationCharts(data) {
+    // 1. Status
     if (document.getElementById('presentationStatusChart') && window.Chart) {
         if (chartStatusPres) chartStatusPres.destroy();
         chartStatusPres = new Chart(document.getElementById('presentationStatusChart'), {
@@ -1880,37 +1921,59 @@ function updatePresentationCharts(data) {
                 labels: ['Pendente', 'Realizada', 'Cancelada'],
                 datasets: [{
                     data: [
-                        data.filter(function(p) { return p.status==='Pendente'; }).length,
-                        data.filter(function(p) { return p.status==='Realizada'; }).length,
-                        data.filter(function(p) { return p.status==='Cancelada'; }).length
+                        data.filter(p => p.status==='Pendente').length,
+                        data.filter(p => p.status==='Realizada').length,
+                        data.filter(p => p.status==='Cancelada').length
                     ],
-                    backgroundColor: ['#FFA07A', '#45B7D1', '#FF6B6B']
+                    backgroundColor: ['#E68161', '#005580', '#C85250']
                 }]
             }
         });
     }
 
+    // 2. Municípios (Colorido)
     if (document.getElementById('presentationMunicipalityChart') && window.Chart) {
         if (chartMunPres) chartMunPres.destroy();
         const mC = {}; 
-        data.forEach(function(p) { mC[p.municipality] = (mC[p.municipality]||0)+1; });
+        data.forEach(p => { mC[p.municipality] = (mC[p.municipality]||0)+1; });
+        const labels = Object.keys(mC);
+        const colors = labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+
         chartMunPres = new Chart(document.getElementById('presentationMunicipalityChart'), {
             type: 'bar',
-            data: { labels: Object.keys(mC), datasets: [{ label: 'Qtd', data: Object.values(mC), backgroundColor: '#4ECDC4' }] }
+            data: { 
+                labels: labels, 
+                datasets: [{ 
+                    label: 'Qtd', 
+                    data: Object.values(mC), 
+                    backgroundColor: colors 
+                }] 
+            }
         });
     }
 
+    // 3. Orientadores (Colorido)
     if (document.getElementById('presentationOrientadorChart') && window.Chart) {
         if (chartOrientPres) chartOrientPres.destroy();
         const oC = {}; 
-        data.forEach(function(p) { 
+        data.forEach(p => { 
             if(p.orientadores) {
-                p.orientadores.forEach(function(o) { oC[o] = (oC[o]||0)+1; });
+                p.orientadores.forEach(o => { oC[o] = (oC[o]||0)+1; });
             }
         });
+        const oLabels = Object.keys(oC);
+        const oColors = oLabels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+
         chartOrientPres = new Chart(document.getElementById('presentationOrientadorChart'), {
             type: 'bar',
-            data: { labels: Object.keys(oC), datasets: [{ label: 'Qtd', data: Object.values(oC), backgroundColor: '#FF6B6B' }] }
+            data: { 
+                labels: oLabels, 
+                datasets: [{ 
+                    label: 'Qtd', 
+                    data: Object.values(oC), 
+                    backgroundColor: oColors 
+                }] 
+            }
         });
     }
 }
@@ -1942,7 +2005,13 @@ function closePresentationModal() {
 }
 
 function clearPresentationFilters() {
-    ['filter-presentation-municipality','filter-presentation-status','filter-presentation-requester','filter-presentation-orientador','filter-presentation-date-start','filter-presentation-date-end'].forEach(function(id) {
+    const ids = [
+        'filter-presentation-municipality', 'filter-presentation-status', 
+        'filter-presentation-requester', 'filter-presentation-orientador',
+        'filter-presentation-sol-start', 'filter-presentation-sol-end',
+        'filter-presentation-real-start', 'filter-presentation-real-end'
+    ];
+    ids.forEach(id => {
         if(document.getElementById(id)) document.getElementById(id).value = '';
     });
     renderPresentations();
@@ -2801,7 +2870,7 @@ function populateSelect(select, data, valKey, textKey) {
 }
 
 function populateFilterSelects() {
-    // 1. Filtro Principal da Aba Municípios
+    // 1. Filtro Principal da Aba Municípios (Baseado nos clientes cadastrados)
     const munSelect = document.getElementById('filter-municipality-name');
     if (munSelect) {
         const current = munSelect.value;
@@ -2810,14 +2879,13 @@ function populateFilterSelects() {
         if(current) munSelect.value = current;
     }
 
-    // 2. Filtros de Município nas outras abas
+    // 2. Filtros de Município (Clientes Ativos) para a maioria das abas
     const activeMuns = municipalities.filter(m => m.status === 'Em uso').sort((a,b) => a.name.localeCompare(b.name));
-    const munFilters = [
+    const standardFilters = [
         'filter-task-municipality', 'filter-request-municipality', 
-        'filter-visit-municipality', 'filter-production-municipality', 
-        'filter-presentation-municipality'
+        'filter-visit-municipality', 'filter-production-municipality'
     ];
-    munFilters.forEach(id => {
+    standardFilters.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             const cur = el.value;
@@ -2826,7 +2894,17 @@ function populateFilterSelects() {
         }
     });
 
-    // 3. Filtros de Orientador
+    // 3. CORREÇÃO: Filtro de Apresentação busca da LISTA MESTRA (Todos os cadastrados em Configurações)
+    const presSelect = document.getElementById('filter-presentation-municipality');
+    if(presSelect) {
+        const cur = presSelect.value;
+        // Usa municipalitiesList em vez de municipalities
+        const sortedMaster = municipalitiesList.slice().sort((a,b) => a.name.localeCompare(b.name));
+        presSelect.innerHTML = '<option value="">Todos</option>' + sortedMaster.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+        if(cur) presSelect.value = cur;
+    }
+
+    // 4. Filtros de Orientador
     const orientadorFilters = ['filter-task-performer', 'filter-presentation-orientador'];
     const sortedOrientadores = orientadores.slice().sort((a,b) => a.name.localeCompare(b.name));
     orientadorFilters.forEach(id => {
@@ -2838,21 +2916,17 @@ function populateFilterSelects() {
         }
     });
 
-    // 4. Filtro de Cargo
+    // 5. Filtros Restantes (Cargo, Usuário...)
     const cargoEl = document.getElementById('filter-task-position');
     if (cargoEl) {
         const cur = cargoEl.value;
-        const sortedCargos = cargos.slice().sort((a,b) => a.name.localeCompare(b.name));
-        cargoEl.innerHTML = '<option value="">Todos</option>' + sortedCargos.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        cargoEl.innerHTML = '<option value="">Todos</option>' + cargos.slice().sort((a,b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         if(cur) cargoEl.value = cur;
     }
-
-    // 5. NOVO: Filtro de Usuário (Aba Solicitações) - Pega ativos e inativos
     const userEl = document.getElementById('filter-request-user');
     if (userEl) {
         const cur = userEl.value;
-        const sortedUsers = users.slice().sort((a,b) => a.name.localeCompare(b.name));
-        userEl.innerHTML = '<option value="">Todos</option>' + sortedUsers.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
+        userEl.innerHTML = '<option value="">Todos</option>' + users.slice().sort((a,b) => a.name.localeCompare(b.name)).map(u => `<option value="${u.name}">${u.name}</option>`).join('');
         if(cur) userEl.value = cur;
     }
 }
