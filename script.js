@@ -3143,7 +3143,57 @@ function closeVersionModal() {
 // Users
 function showUserModal(id=null){ const m=document.getElementById('user-modal'); document.getElementById('user-form').reset(); editingId=id; document.getElementById('user-login').disabled=false; if(id){const u=users.find(x=>x.id===id); document.getElementById('user-login').value=u.login; document.getElementById('user-login').disabled=true; document.getElementById('user-name').value=u.name; document.getElementById('user-permission').value=u.permission; document.getElementById('user-status').value=u.status;}else{document.getElementById('user-password').required=true;} m.classList.add('show'); }
 function saveUser(e){ e.preventDefault(); const login=document.getElementById('user-login').value.trim().toUpperCase(); if(!editingId && users.some(u=>u.login===login)){alert('Já existe');return;} const data={login, name:document.getElementById('user-name').value, permission:document.getElementById('user-permission').value, status:document.getElementById('user-status').value}; if(!editingId){data.id=getNextId('user'); data.salt=generateSalt(); data.passwordHash=hashPassword(document.getElementById('user-password').value, data.salt); users.push(data);}else{const i=users.findIndex(u=>u.id===editingId); users[i]={...users[i],...data}; if(document.getElementById('user-password').value){users[i].salt=generateSalt(); users[i].passwordHash=hashPassword(document.getElementById('user-password').value, users[i].salt);}} salvarNoArmazenamento('users',users); document.getElementById('user-modal').classList.remove('show'); renderUsers(); showToast('Salvo!'); }
-function renderUsers(){ const c=document.getElementById('users-table'); if(users.length===0){c.innerHTML='Vazio';return;} const rows=users.map(u=>`<tr><td>${u.login}</td><td>${u.name}</td><td>${u.status}</td><td><button class="btn btn--sm" onclick="showUserModal(${u.id})">✏️</button><button class="btn btn--sm" onclick="deleteUser(${u.id})">🗑️</button></td></tr>`).join(''); c.innerHTML=`<table><thead><th>Login</th><th>Nome</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`; }
+function renderUsers() { 
+    // 1. Captura o valor do filtro (busca)
+    const filterInput = document.getElementById('filter-user-name');
+    const filterValue = filterInput ? filterInput.value.toLowerCase() : '';
+
+    // 2. Cria a lista filtrada para a tabela
+    const filteredUsers = users.filter(u => {
+        return u.name.toLowerCase().includes(filterValue);
+    });
+
+    const c = document.getElementById('users-table'); 
+    
+    // --- ATUALIZAÇÃO DOS CONTADORES (Baseado no TOTAL do sistema, não no filtro) ---
+    if (document.getElementById('total-users')) {
+        document.getElementById('total-users').textContent = users.length;
+    }
+    if (document.getElementById('active-users')) {
+        document.getElementById('active-users').textContent = users.filter(u => u.status === 'Ativo').length;
+    }
+    if (document.getElementById('inactive-users')) {
+        document.getElementById('inactive-users').textContent = users.filter(u => u.status !== 'Ativo').length;
+    }
+    // -------------------------------------------------------------------------------
+
+    // 3. Renderiza a tabela com os dados FILTRADOS
+    if (filteredUsers.length === 0) { 
+        c.innerHTML = '<div class="empty-state">Nenhum usuário encontrado.</div>'; 
+        return; 
+    } 
+    
+    const rows = filteredUsers.map(u => 
+        `<tr>
+            <td class="text-primary-cell">${u.login}</td>
+            <td class="text-primary-cell">${u.name}</td>
+            <td>${u.status}</td>
+            <td>
+                <button class="btn btn--sm" onclick="showUserModal(${u.id})">✏️</button>
+                <button class="btn btn--sm" onclick="deleteUser(${u.id})">🗑️</button>
+            </td>
+        </tr>`
+    ).join(''); 
+    
+    c.innerHTML = `<table><thead><th>Login</th><th>Nome</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`; 
+}
+
+function clearUserFilters() {
+    const input = document.getElementById('filter-user-name');
+    if (input) input.value = '';
+    renderUsers();
+}
+
 function deleteUser(id) { const u=users.find(x=>x.id===id); if(u.login==='ADMIN'){alert('Não pode excluir ADMIN');return;} if(confirm('Excluir?')){users=users.filter(x=>x.id!==id); salvarNoArmazenamento('users',users); renderUsers();}}
 function closeUserModal(){document.getElementById('user-modal').classList.remove('show');}
 
