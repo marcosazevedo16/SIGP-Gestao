@@ -684,36 +684,31 @@ function initializeTabs() {
 }
 
 function refreshCurrentTab(sectionId) {
-    // Antes de renderizar, atualiza os dropdowns para garantir que novos cadastros apareçam
     updateGlobalDropdowns();
 
-    if (sectionId === 'municipios-section') {
-        renderMunicipalities();
-    }
-    if (sectionId === 'tarefas-section') {
-        renderTasks();
-    }
-    if (sectionId === 'solicitacoes-section') {
-        renderRequests();
-    }
-    if (sectionId === 'demandas-section') {
-        renderDemands();
-    }
-    if (sectionId === 'visitas-section') {
-        renderVisits();
-    }
-    if (sectionId === 'producao-section') {
-        renderProductions();
-    }
-    if (sectionId === 'apresentacoes-section') {
-        renderPresentations();
-    }
-    if (sectionId === 'versoes-section') {
-        renderVersions();
-    }
-    if (sectionId === 'dashboard-section') {
-        updateDashboardStats();
-        initializeDashboardCharts();
+    if (sectionId === 'municipios-section') renderMunicipalities();
+    if (sectionId === 'tarefas-section') renderTasks();
+    if (sectionId === 'solicitacoes-section') renderRequests();
+    if (sectionId === 'demandas-section') renderDemands();
+    if (sectionId === 'visitas-section') renderVisits();
+    if (sectionId === 'producao-section') renderProductions();
+    if (sectionId === 'apresentacoes-section') renderPresentations();
+    if (sectionId === 'versoes-section') renderVersions();
+    
+    // --- AQUI ESTAVA FALTANDO ESTA LINHA ---
+    if (sectionId === 'usuarios-section') renderUsers(); 
+    // ---------------------------------------
+
+    // Abas de Configuração (para garantir que o filtro funcione nelas também)
+    if (sectionId === 'cargos-section') renderCargos();
+    if (sectionId === 'orientadores-section') renderOrientadores();
+    if (sectionId === 'modulos-section') renderModulos();
+    if (sectionId === 'municipalities-list-section') renderMunicipalityList();
+    if (sectionId === 'formas-apresentacao-section') renderFormas();
+
+    if (sectionId === 'dashboard-section') { 
+        updateDashboardStats(); 
+        initializeDashboardCharts(); 
     }
 }
 
