@@ -535,7 +535,37 @@ let isAuthenticated = !!currentUser;
 let currentTheme = recuperarDoArmazenamento('theme', 'light');
 let editingId = null;
 
-// Carregamento das Listas de Dados
+// ----------------------------------------------------------------------------
+// CARREGAMENTO DE DADOS BLINDADO (Previne travamento na inicialização)
+// ----------------------------------------------------------------------------
+
+// 1. Função de Leitura Segura
+// (Essa versão substitui a antiga e ignora erros de texto como "light")
+function recuperarDoArmazenamento(chave, valorPadrao = []) {
+    try {
+        const dados = localStorage.getItem(chave);
+        if (!dados || dados === "undefined" || dados === "null") {
+            return valorPadrao;
+        }
+        try {
+            return JSON.parse(dados);
+        } catch (e) {
+            return dados; // Retorna texto puro se não for JSON
+        }
+    } catch (erro) {
+        console.error(`Erro ao ler ${chave}:`, erro);
+        return valorPadrao;
+    }
+}
+
+// 2. Carregamento de Variáveis
+let users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
+let currentUser = recuperarDoArmazenamento('currentUser', null);
+let isAuthenticated = !!currentUser;
+let currentTheme = recuperarDoArmazenamento('theme', 'light');
+let editingId = null;
+
+// Listas de Dados
 let municipalities = recuperarDoArmazenamento('municipalities', []);
 let municipalitiesList = recuperarDoArmazenamento('municipalitiesList', []);
 let tasks = recuperarDoArmazenamento('tasks', []);
@@ -550,78 +580,65 @@ let orientadores = recuperarDoArmazenamento('orientadores', []);
 let modulos = recuperarDoArmazenamento('modulos', DADOS_PADRAO.modulos);
 let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', []);
 
-// --- BLOCO DE SEGURANÇA (SANITIZAÇÃO) ---
-// Garante que as variáveis sejam do tipo correto para não travar a tela
-if (!Array.isArray(users)) users = DADOS_PADRAO.users;
-if (!Array.isArray(municipalities)) municipalities = [];
-if (!Array.isArray(municipalitiesList)) municipalitiesList = [];
-if (!Array.isArray(tasks)) tasks = [];
-if (!Array.isArray(requests)) requests = [];
-if (!Array.isArray(demands)) demands = [];
-if (!Array.isArray(visits)) visits = [];
-if (!Array.isArray(productions)) productions = [];
-if (!Array.isArray(presentations)) presentations = [];
-if (!Array.isArray(systemVersions)) systemVersions = [];
-if (!Array.isArray(cargos)) cargos = [];
-if (!Array.isArray(orientadores)) orientadores = [];
-if (!Array.isArray(modulos)) modulos = [];
-if (!Array.isArray(formasApresentacao)) formasApresentacao = [];
-
-// Garante que currentUser seja um objeto válido
-if (currentUser && typeof currentUser !== 'object') {
-    currentUser = null; // Força logout se a sessão estiver corrompida
-    isAuthenticated = false;
-}
-// -----------------------------------------
-
-// Contadores de ID (Persistidos)
+// Contadores
 let counters = recuperarDoArmazenamento('counters', {
     mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1
 });
 
-// --- BLOCO DE SEGURANÇA E REPARO AUTOMÁTICO ---
-// Esse bloco roda assim que o script carrega para corrigir dados quebrados na memória
+// 3. SANITIZAÇÃO PROFUNDA (O Segredo para não travar)
+// Roda imediatamente para corrigir dados corrompidos dentro das listas
+(function deepSanitize() {
+    
+    // Garante que as variáveis principais sejam Arrays
+    const ensureList = (val) => Array.isArray(val) ? val : [];
+    
+    // Correção de Usuários
+    users = ensureList(users);
+    if (users.length === 0) users = DADOS_PADRAO.users;
 
-(function sanitizeData() {
-    // 1. Garante que listas sejam Arrays
-    const arrays = [
-        { key: 'municipalities', val: municipalities, set: v => municipalities = v },
-        { key: 'tasks', val: tasks, set: v => tasks = v },
-        { key: 'requests', val: requests, set: v => requests = v },
-        { key: 'demands', val: demands, set: v => demands = v },
-        { key: 'visits', val: visits, set: v => visits = v },
-        { key: 'productions', val: productions, set: v => productions = v },
-        { key: 'presentations', val: presentations, set: v => presentations = v },
-        { key: 'users', val: users, set: v => users = v },
-        { key: 'cargos', val: cargos, set: v => cargos = v },
-        { key: 'orientadores', val: orientadores, set: v => orientadores = v },
-        { key: 'modulos', val: modulos, set: v => modulos = v },
-        { key: 'formasApresentacao', val: formasApresentacao, set: v => formasApresentacao = v },
-        { key: 'municipalitiesList', val: municipalitiesList, set: v => municipalitiesList = v }
-    ];
+    // Correção de Municípios (Evita erro no .map de modules)
+    municipalities = ensureList(municipalities).map(m => ({
+        ...m,
+        modules: Array.isArray(m.modules) ? m.modules : [],
+        status: m.status || 'Não Implantado',
+        name: m.name || 'Sem Nome'
+    }));
 
-    arrays.forEach(item => {
-        if (!Array.isArray(item.val)) {
-            console.warn(`Corrigindo lista corrompida: ${item.key}`);
-            item.set([]); // Reseta para lista vazia se estiver quebrado
-            salvarNoArmazenamento(item.key, []);
-        }
-    });
+    // Correção de Apresentações (Evita erro no .join de orientadores/forms)
+    presentations = ensureList(presentations).map(p => ({
+        ...p,
+        orientadores: Array.isArray(p.orientadores) ? p.orientadores : [],
+        forms: Array.isArray(p.forms) ? p.forms : [],
+        status: p.status || 'Pendente'
+    }));
 
-    // 2. Garante Usuários
-    if (users.length === 0) {
-        users.push(DADOS_PADRAO.users[0]);
-        salvarNoArmazenamento('users', users);
-    }
+    // Correção de Treinamentos/Tarefas
+    tasks = ensureList(tasks).map(t => ({
+        ...t,
+        status: t.status || 'Pendente',
+        observations: t.observations || ''
+    }));
+    
+    // Correção das demais listas simples
+    municipalitiesList = ensureList(municipalitiesList);
+    requests = ensureList(requests);
+    demands = ensureList(demands);
+    visits = ensureList(visits);
+    productions = ensureList(productions);
+    systemVersions = ensureList(systemVersions);
+    cargos = ensureList(cargos);
+    orientadores = ensureList(orientadores);
+    modulos = ensureList(modulos);
+    formasApresentacao = ensureList(formasApresentacao);
 
-    // 3. Garante Contadores
-    if (!counters || typeof counters !== 'object') {
-        counters = { mun:1, munList:1, task:1, req:1, dem:1, visit:1, prod:1, pres:1, ver:1, user:2, cargo:1, orient:1, mod:1, forma:1 };
-        salvarNoArmazenamento('counters', counters);
-    }
+    // Re-salva os dados corrigidos para a memória ficar limpa
+    // (Isso resolve o problema permanentemente para a próxima recarga)
+    /* Opcional: Descomente se quiser forçar a gravação imediata, 
+       mas só carregar na memória já destrava a tela. */
 })();
 
 function getNextId(key) {
+    if(!counters[key]) counters[key] = 1;
     const id = counters[key]++;
     salvarNoArmazenamento('counters', counters);
     return id;
