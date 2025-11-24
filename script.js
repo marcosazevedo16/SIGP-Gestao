@@ -1,116 +1,57 @@
 // ============================================================================
-// SIGP SAÚDE v25.0 - CORE BLINDADO
+// SIGP SAÚDE v25.0 - VERSÃO ESTÁVEL (LIMPA)
 // ============================================================================
 
-// ----------------------------------------------------------------------------
-// 1. VERIFICAÇÃO DE SEGURANÇA
-// ----------------------------------------------------------------------------
+// 1. SEGURANÇA
 if (typeof CryptoJS === 'undefined') {
-    console.error('Erro Crítico: CryptoJS não encontrado.');
-    alert('ERRO CRÍTICO: A biblioteca CryptoJS não foi carregada.');
+    alert('ERRO CRÍTICO: CryptoJS não carregado.');
     throw new Error('CryptoJS is missing');
 }
 
-// ----------------------------------------------------------------------------
-// 2. CONFIGURAÇÕES GERAIS E VARIÁVEIS DE ESTADO
-// ----------------------------------------------------------------------------
+// 2. CONFIGURAÇÕES
 const SALT_LENGTH = 16;
 let pendingBackupData = null;
 
-// Variáveis Globais de Gráficos
+// Variáveis de Gráficos
 let chartDashboard = null;
-let chartStatusMun = null; let chartModulesMun = null; let chartTimelineMun = null;
-let chartStatusReq = null; let chartMunReq = null; let chartSolReq = null;
-let chartStatusPres = null; let chartMunPres = null; let chartOrientPres = null;
-let chartStatusDem = null; let chartPrioDem = null; let chartUserDem = null;
-let chartStatusVis = null; let chartMunVis = null; let chartSolVis = null;
-let chartStatusProd = null; let chartFreqProd = null;
+let chartStatusMun=null; let chartModulesMun=null; let chartTimelineMun=null;
+let chartStatusReq=null; let chartMunReq=null; let chartSolReq=null;
+let chartStatusPres=null; let chartMunPres=null; let chartOrientPres=null;
+let chartStatusDem=null; let chartPrioDem=null; let chartUserDem=null;
+let chartStatusVis=null; let chartMunVis=null; let chartSolVis=null;
+let chartStatusProd=null; let chartFreqProd=null;
 
 const CHART_COLORS = ['#C85250', '#E7B85F', '#79C2A9', '#5E8C99', '#3B5B66', '#E68161', '#F7DC6F', '#4ECDC4', '#FF6B6B', '#A9DFBF'];
 
 const DADOS_PADRAO = {
-    users: [{ 
-        id: 1, login: 'ADMIN', name: 'Administrador', 
-        salt: 'default', passwordHash: 'cf4fe7c91f87da8b0456ad71ab7b4af52cb95c9b7ecb1a57eaa38bd1bce01aca', // Hash de 'saude2025'
-        permission: 'Administrador', status: 'Ativo' 
-    }],
+    users: [{ id: 1, login: 'ADMIN', name: 'Administrador', salt: 'default', passwordHash: 'cf4fe7c91f87da8b0456ad71ab7b4af52cb95c9b7ecb1a57eaa38bd1bce01aca', permission: 'Administrador', status: 'Ativo' }],
     modulos: [
         { id: 1, name: 'Cadastros', abbreviation: 'CAD', color: '#FF6B6B' },
-        { id: 2, name: 'TFD', abbreviation: 'TFD', color: '#4ECDC4' }
+        { id: 2, name: 'TFD', abbreviation: 'TFD', color: '#4ECDC4' },
+        { id: 3, name: 'Prontuário', abbreviation: 'PEC', color: '#45B7D1' },
+        { id: 4, name: 'Administração', abbreviation: 'ADM', color: '#FFA07A' }
     ]
 };
 
-// Função de Leitura Segura (Evita travamento por dados corrompidos)
+// 3. FUNÇÕES DE STORAGE (Define apenas uma vez)
 function recuperarDoArmazenamento(chave, valorPadrao = []) {
     try {
         const dados = localStorage.getItem(chave);
-        if (!dados || dados === "undefined" || dados === "null") {
-            return valorPadrao;
-        }
+        if (!dados || dados === "undefined" || dados === "null") return valorPadrao;
         try {
             const parsed = JSON.parse(dados);
-            // Se o valor padrão for array e o lido não for, ignora o lido
             if (Array.isArray(valorPadrao) && !Array.isArray(parsed)) return valorPadrao;
             return parsed;
-        } catch (e) {
-            return dados; // Retorna texto puro se falhar JSON
-        }
-    } catch (erro) {
-        console.error(`Erro ao ler ${chave}:`, erro);
-        return valorPadrao;
-    }
+        } catch (e) { return dados; }
+    } catch (erro) { return valorPadrao; }
 }
 
 function salvarNoArmazenamento(chave, dados) {
-    try {
-        localStorage.setItem(chave, JSON.stringify(dados));
-    } catch (erro) {
-        console.error('Erro ao salvar:', erro);
-    }
+    try { localStorage.setItem(chave, JSON.stringify(dados)); } catch (e) { console.error(e); }
 }
 
 function deletarDoArmazenamento(chave) {
     localStorage.removeItem(chave);
-}
-
-// --- CARREGAMENTO DE DADOS ---
-
-// Usuários (Se estiver quebrado, restaura o Admin padrão IMEDIATAMENTE)
-let users = recuperarDoArmazenamento('users', []);
-if (!Array.isArray(users) || users.length === 0) {
-    users = DADOS_PADRAO.users;
-    salvarNoArmazenamento('users', users); // Auto-correção
-}
-
-let currentUser = recuperarDoArmazenamento('currentUser', null);
-// Validação extra da sessão
-if (currentUser && typeof currentUser !== 'object') currentUser = null;
-
-let isAuthenticated = !!currentUser;
-let currentTheme = recuperarDoArmazenamento('theme', 'light');
-let editingId = null;
-
-// Listas de Dados (Garante Array [])
-let municipalities = recuperarDoArmazenamento('municipalities', []);
-let municipalitiesList = recuperarDoArmazenamento('municipalitiesList', []);
-let tasks = recuperarDoArmazenamento('tasks', []);
-let requests = recuperarDoArmazenamento('requests', []);
-let demands = recuperarDoArmazenamento('demands', []);
-let visits = recuperarDoArmazenamento('visits', []);
-let productions = recuperarDoArmazenamento('productions', []);
-let presentations = recuperarDoArmazenamento('presentations', []);
-
-// Configurações (Sem Versões)
-let cargos = recuperarDoArmazenamento('cargos', []);
-let orientadores = recuperarDoArmazenamento('orientadores', []);
-let modulos = recuperarDoArmazenamento('modulos', []);
-if (modulos.length === 0) modulos = DADOS_PADRAO.modulos;
-let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', []);
-
-// Contadores (Garante Objeto)
-let counters = recuperarDoArmazenamento('counters', null);
-if (!counters || typeof counters !== 'object') {
-    counters = { mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1 };
 }
 
 function getNextId(key) {
@@ -119,6 +60,38 @@ function getNextId(key) {
     salvarNoArmazenamento('counters', counters);
     return id;
 }
+
+// 4. CARREGAMENTO DE DADOS (Inicialização)
+let users = recuperarDoArmazenamento('users', []);
+if (!Array.isArray(users) || users.length === 0) {
+    users = DADOS_PADRAO.users;
+    salvarNoArmazenamento('users', users);
+}
+
+let currentUser = recuperarDoArmazenamento('currentUser', null);
+if (currentUser && typeof currentUser !== 'object') currentUser = null;
+
+let isAuthenticated = !!currentUser;
+let currentTheme = recuperarDoArmazenamento('theme', 'light');
+let editingId = null;
+
+// Listas
+let municipalities = recuperarDoArmazenamento('municipalities', []);
+let municipalitiesList = recuperarDoArmazenamento('municipalitiesList', []);
+let tasks = recuperarDoArmazenamento('tasks', []);
+let requests = recuperarDoArmazenamento('requests', []);
+let demands = recuperarDoArmazenamento('demands', []);
+let visits = recuperarDoArmazenamento('visits', []);
+let productions = recuperarDoArmazenamento('productions', []);
+let presentations = recuperarDoArmazenamento('presentations', []);
+let systemVersions = recuperarDoArmazenamento('systemVersions', []);
+let cargos = recuperarDoArmazenamento('cargos', []);
+let orientadores = recuperarDoArmazenamento('orientadores', []);
+let modulos = recuperarDoArmazenamento('modulos', []);
+if (modulos.length === 0) modulos = DADOS_PADRAO.modulos;
+let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', []);
+
+let counters = recuperarDoArmazenamento('counters', { mun:1, munList:1, task:1, req:1, dem:1, visit:1, prod:1, pres:1, ver:1, user:2, cargo:1, orient:1, mod:1, forma:1 });
 
 // ----------------------------------------------------------------------------
 // 3. FUNÇÕES DE MENU MOBILE
@@ -3373,214 +3346,52 @@ function confirmRestore() {
     try {
         const backup = pendingBackupData.data || pendingBackupData;
         
-        // 1. Guarda quem está logado (apenas o LOGIN, ex: "ADMIN")
+        // Tenta manter o login
         let currentLogin = null;
-        try {
-            const sessionJson = localStorage.getItem('currentUser');
-            if (sessionJson) currentLogin = JSON.parse(sessionJson).login;
-        } catch (e) {}
-        
-        const sessionTheme = localStorage.getItem('theme') || 'light';
+        if (currentUser) currentLogin = currentUser.login;
+        const targetTheme = localStorage.getItem('theme') || 'light';
 
-        // 2. Limpa TUDO (Necessário para evitar conflito de dados antigos com novos)
+        // Limpa
         localStorage.clear();
 
-        // --- TRATAMENTO DOS DADOS ---
-
-        // USUÁRIOS (Correção do Login)
-        const safeUsers = (backup.users || []).map(u => {
-            // Cenário 1: Usuário já tem hash (Backup Novo) -> Mantém intacto
-            if (u.passwordHash && u.salt) {
-                return {
-                    ...u,
-                    password: null // Limpa campo de texto se existir, por segurança
-                };
-            }
-            // Cenário 2: Usuário antigo (Backup Velho) -> Gera Hash
-            else if (u.password) {
-                const newSalt = generateSalt();
-                return {
-                    ...u,
-                    password: null,
-                    salt: newSalt,
-                    passwordHash: hashPassword(u.password, newSalt),
-                    status: u.status || 'Ativo',
-                    permission: u.permission || 'Usuário Normal'
-                };
-            }
-            // Cenário 3: Dado incompleto -> Força reset para senha padrão
-            else {
-                const s = generateSalt();
-                return {
-                    ...u,
-                    salt: s,
-                    passwordHash: hashPassword('123456', s), // Senha padrão de recuperação
-                    status: 'Ativo'
-                };
-            }
-        });
-
-        // Garante Admin se a lista estiver vazia
-        if (safeUsers.length === 0) {
-            const s = generateSalt();
-            safeUsers.push({
-                id: 1, login: 'ADMIN', name: 'Administrador', 
-                salt: s, passwordHash: hashPassword('saude2025', s), 
-                permission: 'Administrador', status: 'Ativo'
-            });
-        }
-
-        // MUNICÍPIOS
-        const safeMuns = (backup.municipalities || []).map(m => ({
-            ...m,
-            modules: Array.isArray(m.modules) ? m.modules : [],
-            dateBlocked: (m.status === 'Bloqueado' ? (m.dateBlocked || m.stoppageDate || '') : ''),
-            dateStopped: (m.status === 'Parou de usar' ? (m.dateStopped || m.stoppageDate || '') : '')
-        }));
-
-        // TREINAMENTOS
-        const safeTasks = (backup.tasks || backup.trainings || []).map(t => ({
-            ...t,
-            municipality: t.municipality || '',
-            status: t.status || 'Pendente',
-            observations: t.observations || ''
-        }));
-
-        // DEMANDAS
-        const safeDemands = (backup.demands || []).map(d => ({
-            ...d,
-            description: d.description || '',
-            dateRealization: d.dateRealization || d.realizationDate || '',
-            justification: d.justification || ''
-        }));
-
-        // VISITAS
-        const safeVisits = (backup.visits || []).map(v => ({
-            ...v,
-            reason: v.reason || '',
-            dateRealization: v.dateRealization || v.visitDate || '',
-            justification: v.justification || v.cancelJustification || ''
-        }));
-
-        // OUTRAS LISTAS (Garante Arrays)
-        const saveList = (key, list) => localStorage.setItem(key, JSON.stringify(Array.isArray(list) ? list : []));
-        
-        localStorage.setItem('users', JSON.stringify(safeUsers));
-        localStorage.setItem('municipalities', JSON.stringify(safeMuns));
-        localStorage.setItem('tasks', JSON.stringify(safeTasks));
-        localStorage.setItem('demands', JSON.stringify(safeDemands));
-        localStorage.setItem('visits', JSON.stringify(safeVisits));
-        
-        saveList('municipalitiesList', backup.municipalitiesList);
-        saveList('requests', backup.requests);
-        saveList('productions', backup.productions);
-
-function confirmRestore() {
-    if (!pendingBackupData) return;
-
-    try {
-        const backup = pendingBackupData.data || pendingBackupData;
-        
-        // 1. Tenta pegar o LOGIN atual
-        let currentLogin = null;
-        try {
-            const sessionData = localStorage.getItem('currentUser');
-            if (sessionData) currentLogin = JSON.parse(sessionData).login;
-        } catch (e) {}
-        
-        const sessionTheme = localStorage.getItem('theme') || 'light';
-
-        // 2. Limpa o banco
-        localStorage.clear();
-
-        // --- HIGIENIZAÇÃO (Trata campos nulos para não travar a tela) ---
-        const str = (val) => (val === null || val === undefined) ? '' : String(val);
-        const arr = (val) => Array.isArray(val) ? val : [];
-
-        // Usuários
-        const safeUsers = arr(backup.users).map(u => ({
-            ...u, 
-            status: u.status || 'Ativo', 
-            permission: u.permission || 'Usuário Normal',
-            // Se já tem hash, mantém. Se não tem, gera.
-            passwordHash: u.passwordHash || hashPassword('saude2025', generateSalt()),
-            salt: u.salt || generateSalt(),
-            password: null 
-        }));
-        
-        // Garante Admin se lista vazia
-        if (safeUsers.length === 0) {
-            const s = generateSalt();
-            safeUsers.push({id:1, login:'ADMIN', name:'Administrador', salt:s, passwordHash:hashPassword('saude2025', s), permission:'Administrador', status:'Ativo'});
-        }
-
-        // Municípios
-        const safeMuns = arr(backup.municipalities).map(m => ({
-            ...m,
-            manager: str(m.manager), contact: str(m.contact),
-            modules: arr(m.modules),
-            dateBlocked: (m.status === 'Bloqueado' ? str(m.dateBlocked || m.stoppageDate) : ''),
-            dateStopped: (m.status === 'Parou de usar' ? str(m.dateStopped || m.stoppageDate) : '')
-        }));
-
-        // Treinamentos
-        const safeTasks = arr(backup.tasks || backup.trainings).map(t => ({
-            ...t,
-            municipality: str(t.municipality),
-            trainedName: str(t.trainedName), // <--- ISSO CORRIGE O TRAVAMENTO
-            trainedPosition: str(t.trainedPosition),
-            status: str(t.status) || 'Pendente',
-            observations: str(t.observations)
-        }));
-
-        // Demandas
-        const safeDemands = arr(backup.demands).map(d => ({
-            ...d, description: str(d.description), dateRealization: str(d.dateRealization || d.realizationDate), justification: str(d.justification)
-        }));
-
-        // Visitas
-        const safeVisits = arr(backup.visits).map(v => ({
-            ...v, reason: str(v.reason), dateRealization: str(v.dateRealization || v.visitDate), justification: str(v.justification || v.cancelJustification)
-        }));
-
-        // Apresentações
-        const safePres = arr(backup.presentations).map(p => ({
-            ...p, description: str(p.description), orientadores: arr(p.orientadores), forms: arr(p.forms)
-        }));
-
-        // Outras Listas
-        const safeRequests = arr(backup.requests);
-        const safeProds = arr(backup.productions);
-        const safeListMestra = arr(backup.municipalitiesList);
-        const safeVers = arr(backup.systemVersions);
-        const safeCargos = arr(backup.cargos);
-        const safeOrient = arr(backup.orientadores);
-        const safeMods = arr(backup.modulos || backup.modules);
-        const safeFormas = arr(backup.formasApresentacao);
-
-        // Contadores
-        const safeCounters = backup.counters || { mun:1, munList:1, task:1, req:1, dem:1, visit:1, prod:1, pres:1, ver:1, user:2, cargo:1, orient:1, mod:1, forma:1 };
-
-        // --- GRAVAÇÃO ---
+        // Funções auxiliares
+        const arr = (v) => Array.isArray(v) ? v : [];
+        const str = (v) => (v === null || v === undefined) ? '' : String(v);
         const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-        
-        save('users', safeUsers);
-        save('municipalities', safeMuns);
-        save('tasks', safeTasks);
-        save('requests', safeRequests);
-        save('demands', safeDemands);
-        save('visits', safeVisits);
-        save('productions', safeProds);
-        save('presentations', safePres);
-        save('municipalitiesList', safeListMestra);
-        save('systemVersions', safeVers);
-        save('cargos', safeCargos);
-        save('orientadores', safeOrient);
-        save('modulos', safeMods);
-        save('formasApresentacao', safeFormas);
-        save('counters', safeCounters);
 
-        // --- RESTAURAÇÃO DA SESSÃO ---
+        // Prepara dados (Migração e Segurança)
+        const safeUsers = arr(backup.users).map(u => ({
+            ...u, status: u.status || 'Ativo', permission: u.permission || 'Usuário Normal',
+            password: null, // Remove texto plano
+            passwordHash: u.passwordHash || hashPassword('saude2025', generateSalt()),
+            salt: u.salt || generateSalt()
+        }));
+        if(safeUsers.length === 0) safeUsers.push(DADOS_PADRAO.users[0]);
+
+        // Salva Listas
+        save('users', safeUsers);
+        save('municipalities', arr(backup.municipalities).map(m => ({...m, modules: arr(m.modules)})));
+        
+        save('tasks', arr(backup.tasks || backup.trainings).map(t => ({
+            ...t, municipality: str(t.municipality), trainedName: str(t.trainedName), status: str(t.status) || 'Pendente'
+        })));
+        
+        save('demands', arr(backup.demands).map(d => ({...d, description: str(d.description), dateRealization: str(d.dateRealization || d.realizationDate)})));
+        save('visits', arr(backup.visits).map(v => ({...v, reason: str(v.reason), dateRealization: str(v.dateRealization || v.visitDate)})));
+        save('presentations', arr(backup.presentations).map(p => ({...p, orientadores: arr(p.orientadores), forms: arr(p.forms)})));
+        
+        save('municipalitiesList', arr(backup.municipalitiesList));
+        save('requests', arr(backup.requests));
+        save('productions', arr(backup.productions));
+        save('cargos', arr(backup.cargos));
+        save('orientadores', arr(backup.orientadores));
+        save('modulos', arr(backup.modulos || backup.modules));
+        save('formasApresentacao', arr(backup.formasApresentacao));
+        
+        const count = backup.counters || { mun:1, munList:1, task:1, req:1, dem:1, visit:1, prod:1, pres:1, ver:1, user:2, cargo:1, orient:1, mod:1, forma:1 };
+        save('counters', count);
+
+        // Restaura Sessão
         let restored = false;
         if (currentLogin) {
             const userFound = safeUsers.find(u => u.login === currentLogin);
@@ -3590,26 +3401,25 @@ function confirmRestore() {
                 restored = true;
             }
         }
-        
-        localStorage.setItem('theme', sessionTheme);
+        localStorage.setItem('theme', targetTheme);
 
-        // Recarrega
+        // Reload
         if (restored) {
             alert('Backup restaurado com sucesso!');
-            window.location.reload();
         } else {
             alert('Backup restaurado! Faça login novamente.');
             localStorage.removeItem('currentUser');
-            window.location.reload();
         }
+        window.location.reload();
 
     } catch (error) {
-        console.error("Erro:", error);
-        alert('Erro crítico ao restaurar.');
+        console.error("Erro Restore:", error);
+        alert('Erro ao restaurar backup.');
         localStorage.clear();
         window.location.reload();
     }
 }
+
 // ----------------------------------------------------------------------------
 // 20. DASHBOARD E INICIALIZAÇÃO
 // ----------------------------------------------------------------------------
