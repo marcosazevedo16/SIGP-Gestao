@@ -3512,3 +3512,21 @@ table th {
 [data-theme="dark"] table td {
     color: var(--color-text);
 }
+
+/* ==========================================================================
+   CORREÇÃO: ÍCONES DE INPUT DATE E SELECTS (TEMA ESCURO)
+   ========================================================================== */
+
+/* Inverte a cor do ícone de calendário no input date para ficar branco */
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+/* Opcional: Garante que o texto digitado dentro do input fique claro */
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] select.form-control,
+[data-theme="dark"] input.form-control {
+    color: var(--color-text);
+    background-color: var(--color-surface);
+}
