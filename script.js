@@ -3144,32 +3144,40 @@ function closeVersionModal() {
 function showUserModal(id=null){ const m=document.getElementById('user-modal'); document.getElementById('user-form').reset(); editingId=id; document.getElementById('user-login').disabled=false; if(id){const u=users.find(x=>x.id===id); document.getElementById('user-login').value=u.login; document.getElementById('user-login').disabled=true; document.getElementById('user-name').value=u.name; document.getElementById('user-permission').value=u.permission; document.getElementById('user-status').value=u.status;}else{document.getElementById('user-password').required=true;} m.classList.add('show'); }
 function saveUser(e){ e.preventDefault(); const login=document.getElementById('user-login').value.trim().toUpperCase(); if(!editingId && users.some(u=>u.login===login)){alert('Já existe');return;} const data={login, name:document.getElementById('user-name').value, permission:document.getElementById('user-permission').value, status:document.getElementById('user-status').value}; if(!editingId){data.id=getNextId('user'); data.salt=generateSalt(); data.passwordHash=hashPassword(document.getElementById('user-password').value, data.salt); users.push(data);}else{const i=users.findIndex(u=>u.id===editingId); users[i]={...users[i],...data}; if(document.getElementById('user-password').value){users[i].salt=generateSalt(); users[i].passwordHash=hashPassword(document.getElementById('user-password').value, users[i].salt);}} salvarNoArmazenamento('users',users); document.getElementById('user-modal').classList.remove('show'); renderUsers(); showToast('Salvo!'); }
 function renderUsers() { 
-    // 1. Captura o valor do filtro (busca)
-    const filterInput = document.getElementById('filter-user-name');
-    const filterValue = filterInput ? filterInput.value.toLowerCase() : '';
+    // 1. Captura os valores dos 3 filtros
+    const fName = document.getElementById('filter-user-name') ? document.getElementById('filter-user-name').value.toLowerCase() : '';
+    const fLogin = document.getElementById('filter-user-login') ? document.getElementById('filter-user-login').value.toLowerCase() : '';
+    const fStatus = document.getElementById('filter-user-status') ? document.getElementById('filter-user-status').value : '';
 
-    // 2. Cria a lista filtrada para a tabela
+    // 2. Aplica a lógica de filtragem (Nome E Login E Status)
     const filteredUsers = users.filter(u => {
-        return u.name.toLowerCase().includes(filterValue);
+        // Filtro de Nome
+        if (fName && !u.name.toLowerCase().includes(fName)) return false;
+        // Filtro de Login
+        if (fLogin && !u.login.toLowerCase().includes(fLogin)) return false;
+        // Filtro de Status (Exato)
+        if (fStatus && u.status !== fStatus) return false;
+        
+        return true;
     });
 
     const c = document.getElementById('users-table'); 
     
-    // --- ATUALIZAÇÃO DOS CONTADORES (Baseado no TOTAL do sistema, não no filtro) ---
-    if (document.getElementById('total-users')) {
-        document.getElementById('total-users').textContent = users.length;
+    // --- ATUALIZAÇÃO DOS CONTADORES (Baseado no TOTAL DO SISTEMA) ---
+    if (document.getElementById('total-users')) document.getElementById('total-users').textContent = users.length;
+    if (document.getElementById('active-users')) document.getElementById('active-users').textContent = users.filter(u => u.status === 'Ativo').length;
+    if (document.getElementById('inactive-users')) document.getElementById('inactive-users').textContent = users.filter(u => u.status !== 'Ativo').length;
+    
+    // Exibe contador de resultados da busca
+    if (document.getElementById('users-total-display')) {
+        const display = document.getElementById('users-total-display');
+        display.style.display = 'block';
+        display.innerHTML = `<strong>${filteredUsers.length}</strong> usuário(s) encontrado(s)`;
     }
-    if (document.getElementById('active-users')) {
-        document.getElementById('active-users').textContent = users.filter(u => u.status === 'Ativo').length;
-    }
-    if (document.getElementById('inactive-users')) {
-        document.getElementById('inactive-users').textContent = users.filter(u => u.status !== 'Ativo').length;
-    }
-    // -------------------------------------------------------------------------------
 
     // 3. Renderiza a tabela com os dados FILTRADOS
     if (filteredUsers.length === 0) { 
-        c.innerHTML = '<div class="empty-state">Nenhum usuário encontrado.</div>'; 
+        c.innerHTML = '<div class="empty-state">Nenhum usuário encontrado com os filtros atuais.</div>'; 
         return; 
     } 
     
@@ -3179,8 +3187,8 @@ function renderUsers() {
             <td class="text-primary-cell">${u.name}</td>
             <td>${u.status}</td>
             <td>
-                <button class="btn btn--sm" onclick="showUserModal(${u.id})">✏️</button>
-                <button class="btn btn--sm" onclick="deleteUser(${u.id})">🗑️</button>
+                <button class="btn btn--sm" onclick="showUserModal(${u.id})" title="Editar">✏️</button>
+                <button class="btn btn--sm" onclick="deleteUser(${u.id})" title="Excluir">🗑️</button>
             </td>
         </tr>`
     ).join(''); 
@@ -3189,8 +3197,9 @@ function renderUsers() {
 }
 
 function clearUserFilters() {
-    const input = document.getElementById('filter-user-name');
-    if (input) input.value = '';
+    if(document.getElementById('filter-user-name')) document.getElementById('filter-user-name').value = '';
+    if(document.getElementById('filter-user-login')) document.getElementById('filter-user-login').value = '';
+    if(document.getElementById('filter-user-status')) document.getElementById('filter-user-status').value = '';
     renderUsers();
 }
 
