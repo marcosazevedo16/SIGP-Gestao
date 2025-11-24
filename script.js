@@ -3212,9 +3212,37 @@ function closeFormaApresentacaoModal() { document.getElementById('forma-apresent
 // ----------------------------------------------------------------------------
 // 19. BACKUP E RESTORE (COM PREVIEW COMPLETO)
 // ----------------------------------------------------------------------------
+
 function updateBackupInfo() {
-    document.getElementById('backup-info-trainings').textContent = tasks.length;
-    document.getElementById('backup-info-municipalities').textContent = municipalities.length;
+    // 1. Treinamentos
+    if(document.getElementById('backup-info-trainings')) {
+        document.getElementById('backup-info-trainings').textContent = tasks.length;
+    }
+
+    // 2. Municípios
+    if(document.getElementById('backup-info-municipalities')) {
+        document.getElementById('backup-info-municipalities').textContent = municipalities.length;
+    }
+
+    // 3. Cargos/Funções
+    if(document.getElementById('backup-info-cargos')) {
+        document.getElementById('backup-info-cargos').textContent = cargos.length;
+    }
+
+    // 4. COLABORADORES (ID atualizado e variável interna mantida)
+    if(document.getElementById('backup-info-colaboradores')) {
+        document.getElementById('backup-info-colaboradores').textContent = orientadores.length;
+    }
+
+    // 5. Módulos
+    if(document.getElementById('backup-info-modules')) {
+        document.getElementById('backup-info-modules').textContent = modulos.length;
+    }
+
+    // 6. Usuários
+    if(document.getElementById('backup-info-users')) {
+        document.getElementById('backup-info-users').textContent = users.length;
+    }
 }
 
 function createBackup() {
@@ -3271,20 +3299,20 @@ function handleBackupFileSelect(event) {
                 const d = backup.data;
                 // LISTAGEM COMPLETA DE TODOS OS DADOS
                 const items = [
-                    {l:'Treinamentos',c:d.tasks ? d.tasks.length : (d.trainings ? d.trainings.length : 0)},
-                    {l:'Municípios Clientes',c:d.municipalities.length},
-                    {l:'Lista Mestra',c:d.municipalitiesList?.length||0},
-                    {l:'Solicitações',c:d.requests?.length||0},
-                    {l:'Apresentações',c:d.presentations?.length||0},
-                    {l:'Demandas',c:d.demands?.length||0},
-                    {l:'Visitas',c:d.visits?.length||0},
-                    {l:'Produção',c:d.productions?.length||0},
-                    {l:'Cargos',c:d.cargos?.length||0},
-                    {l:'Orientadores',c:d.orientadores?.length||0},
-                    {l:'Módulos',c:d.modules?.length||0},
-                    {l:'Formas',c:d.formasApresentacao?.length||0},
-                    {l:'Usuários',c:d.users.length},
-                    {l:'Versões',c:d.systemVersions?.length||0}
+                    {l:'Treinamentos', c: d.tasks ? d.tasks.length : (d.trainings ? d.trainings.length : 0)},
+                    {l:'Municípios Clientes', c: d.municipalities.length},
+                    {l:'Lista Mestra', c: d.municipalitiesList?.length || 0},
+                    {l:'Solicitações', c: d.requests?.length || 0},
+                    {l:'Apresentações', c: d.presentations?.length || 0},
+                    {l:'Demandas', c: d.demands?.length || 0},
+                    {l:'Visitas', c: d.visits?.length || 0},
+                    {l:'Produção', c: d.productions?.length || 0},
+                    {l:'Cargos', c: d.cargos?.length || 0},
+                    {l:'Colaboradores', c: d.orientadores?.length || 0}, // AJUSTADO PARA LER "COLABORADORES"
+                    {l:'Módulos', c: d.modules?.length || 0},
+                    {l:'Formas', c: d.formasApresentacao?.length || 0},
+                    {l:'Usuários', c: d.users.length},
+                    {l:'Versões', c: d.systemVersions?.length || 0}
                 ];
                 items.forEach(i => {
                     list.innerHTML += `<li><strong>${i.l}:</strong> ${i.c}</li>`;
@@ -3300,44 +3328,42 @@ function handleBackupFileSelect(event) {
 
 function confirmRestore() {
     if (!pendingBackupData) return;
-    const data = pendingBackupData.data;
+    const d = pendingBackupData.data; // Atalho para os dados
     
+    // 1. Limpa tudo atual
     localStorage.clear();
     
-    // Função auxiliar para evitar salvar "undefined" no localStorage
-    // Se o valor não existir, salva o valor padrão (geralmente lista vazia [])
+    // 2. Função auxiliar segura (se o dado não existir no backup, salva array vazio)
     const safeSave = (key, value, defaultVal = []) => {
         localStorage.setItem(key, JSON.stringify(value || defaultVal));
     };
     
-    // Restaura tudo explicitamente com proteção contra falhas
-    safeSave('users', data.users);
-    safeSave('municipalities', data.municipalities);
-    safeSave('municipalitiesList', data.municipalitiesList);
-    safeSave('tasks', data.tasks || data.trainings); // Suporte a legado (trainings)
-    safeSave('requests', data.requests);
-    safeSave('demands', data.demands);
-    safeSave('visits', data.visits);
-    safeSave('productions', data.productions);
-    safeSave('presentations', data.presentations);
-    safeSave('systemVersions', data.systemVersions);
-    safeSave('cargos', data.cargos);
-    safeSave('orientadores', data.orientadores);
-    safeSave('modulos', data.modules || data.modulos); // Suporte a legado (modules)
-    safeSave('formasApresentacao', data.formasApresentacao);
+    // 3. Restaura Item por Item
+    safeSave('users', d.users);
+    safeSave('municipalities', d.municipalities);
+    safeSave('municipalitiesList', d.municipalitiesList);
+    safeSave('tasks', d.tasks || d.trainings); // Suporte a backups antigos
+    safeSave('requests', d.requests);
+    safeSave('demands', d.demands);
+    safeSave('visits', d.visits);
+    safeSave('productions', d.productions);
+    safeSave('presentations', d.presentations);
+    safeSave('systemVersions', d.systemVersions);
+    safeSave('cargos', d.cargos);
+    safeSave('orientadores', d.orientadores);
+    safeSave('modulos', d.modules || d.modulos); // Suporte a backups antigos
+    safeSave('formasApresentacao', d.formasApresentacao);
     
-    // Counters é um objeto, então o padrão deve ser objeto, não array
-    safeSave('counters', data.counters, {
-        mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1
-    });
-    
-    // Logout forçado para garantir integridade
-    deletarDoArmazenamento('currentUser');
-    deletarDoArmazenamento('isAuthenticated');
-    
-    alert('Restauração com sucesso! Faça login novamente.');
+    // Restaura contadores (importante para não repetir IDs)
+    if (d.counters) {
+        localStorage.setItem('counters', JSON.stringify(d.counters));
+    }
+
+    // 4. Feedback e Reload
+    alert('Restauração realizada com sucesso! O sistema será reiniciado.');
     location.reload();
 }
+
 // ----------------------------------------------------------------------------
 // 20. DASHBOARD E INICIALIZAÇÃO
 // ----------------------------------------------------------------------------
