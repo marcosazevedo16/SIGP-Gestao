@@ -1,6 +1,5 @@
 // ============================================================================
-// SIGP SAÚDE v25.0 - VERSÃO FINAL "EXTENSA" (SEM COMPACTAÇÃO)
-// Todas as funcionalidades + Ajustes de Layout + Backup Completo
+// SIGP SAÚDE v25.0 - CORE BLINDADO
 // ============================================================================
 
 // ----------------------------------------------------------------------------
@@ -8,67 +7,121 @@
 // ----------------------------------------------------------------------------
 if (typeof CryptoJS === 'undefined') {
     console.error('Erro Crítico: CryptoJS não encontrado.');
-    alert('ERRO CRÍTICO: A biblioteca CryptoJS não foi carregada. Verifique sua conexão ou o cabeçalho do HTML.');
+    alert('ERRO CRÍTICO: A biblioteca CryptoJS não foi carregada.');
     throw new Error('CryptoJS is missing');
-} else {
-    console.log('Segurança: CryptoJS carregado com sucesso.');
 }
 
 // ----------------------------------------------------------------------------
 // 2. CONFIGURAÇÕES GERAIS E VARIÁVEIS DE ESTADO
 // ----------------------------------------------------------------------------
 const SALT_LENGTH = 16;
-let pendingBackupData = null; // Variável temporária para o restore
+let pendingBackupData = null;
 
-// Variáveis Globais para Instâncias de Gráficos (Chart.js)
-// Necessário para destruir o gráfico anterior antes de criar um novo
+// Variáveis Globais de Gráficos
 let chartDashboard = null;
+let chartStatusMun = null; let chartModulesMun = null; let chartTimelineMun = null;
+let chartStatusReq = null; let chartMunReq = null; let chartSolReq = null;
+let chartStatusPres = null; let chartMunPres = null; let chartOrientPres = null;
+let chartStatusDem = null; let chartPrioDem = null; let chartUserDem = null;
+let chartStatusVis = null; let chartMunVis = null; let chartSolVis = null;
+let chartStatusProd = null; let chartFreqProd = null;
 
-// Gráficos de Municípios
-let chartStatusMun = null;
-let chartModulesMun = null;
-let chartTimelineMun = null;
+const CHART_COLORS = ['#C85250', '#E7B85F', '#79C2A9', '#5E8C99', '#3B5B66', '#E68161', '#F7DC6F', '#4ECDC4', '#FF6B6B', '#A9DFBF'];
 
-// Gráficos de Solicitações
-let chartStatusReq = null;
-let chartMunReq = null;
-let chartSolReq = null;
+const DADOS_PADRAO = {
+    users: [{ 
+        id: 1, login: 'ADMIN', name: 'Administrador', 
+        salt: 'default', passwordHash: 'cf4fe7c91f87da8b0456ad71ab7b4af52cb95c9b7ecb1a57eaa38bd1bce01aca', // Hash de 'saude2025'
+        permission: 'Administrador', status: 'Ativo' 
+    }],
+    modulos: [
+        { id: 1, name: 'Cadastros', abbreviation: 'CAD', color: '#FF6B6B' },
+        { id: 2, name: 'TFD', abbreviation: 'TFD', color: '#4ECDC4' }
+    ]
+};
 
-// Gráficos de Apresentações
-let chartStatusPres = null;
-let chartMunPres = null;
-let chartOrientPres = null;
+// Função de Leitura Segura (Evita travamento por dados corrompidos)
+function recuperarDoArmazenamento(chave, valorPadrao = []) {
+    try {
+        const dados = localStorage.getItem(chave);
+        if (!dados || dados === "undefined" || dados === "null") {
+            return valorPadrao;
+        }
+        try {
+            const parsed = JSON.parse(dados);
+            // Se o valor padrão for array e o lido não for, ignora o lido
+            if (Array.isArray(valorPadrao) && !Array.isArray(parsed)) return valorPadrao;
+            return parsed;
+        } catch (e) {
+            return dados; // Retorna texto puro se falhar JSON
+        }
+    } catch (erro) {
+        console.error(`Erro ao ler ${chave}:`, erro);
+        return valorPadrao;
+    }
+}
 
-// Gráficos de Demandas
-let chartStatusDem = null;
-let chartPrioDem = null;
-let chartUserDem = null;
+function salvarNoArmazenamento(chave, dados) {
+    try {
+        localStorage.setItem(chave, JSON.stringify(dados));
+    } catch (erro) {
+        console.error('Erro ao salvar:', erro);
+    }
+}
 
-// Gráficos de Visitas
-let chartStatusVis = null;
-let chartMunVis = null;
-let chartSolVis = null;
+function deletarDoArmazenamento(chave) {
+    localStorage.removeItem(chave);
+}
 
-// Gráficos de Produção
-let chartStatusProd = null;
-let chartFreqProd = null;
+// --- CARREGAMENTO DE DADOS ---
 
-// Paleta de Cores Padrão
-const CHART_COLORS = [
-    '#C85250', // Vermelho
-    '#E7B85F', // Amarelo
-    '#79C2A9', // Verde Água
-    '#5E8C99', // Azul Petróleo
-    '#3B5B66', // Azul Escuro
-    '#E68161', // Laranja
-    '#F7DC6F', // Amarelo Claro
-    '#4ECDC4', // Turquesa
-    '#FF6B6B', // Vermelho Claro
-    '#A9DFBF'  // Verde Claro
-];
+// Usuários (Se estiver quebrado, restaura o Admin padrão IMEDIATAMENTE)
+let users = recuperarDoArmazenamento('users', []);
+if (!Array.isArray(users) || users.length === 0) {
+    users = DADOS_PADRAO.users;
+    salvarNoArmazenamento('users', users); // Auto-correção
+}
+
+let currentUser = recuperarDoArmazenamento('currentUser', null);
+// Validação extra da sessão
+if (currentUser && typeof currentUser !== 'object') currentUser = null;
+
+let isAuthenticated = !!currentUser;
+let currentTheme = recuperarDoArmazenamento('theme', 'light');
+let editingId = null;
+
+// Listas de Dados (Garante Array [])
+let municipalities = recuperarDoArmazenamento('municipalities', []);
+let municipalitiesList = recuperarDoArmazenamento('municipalitiesList', []);
+let tasks = recuperarDoArmazenamento('tasks', []);
+let requests = recuperarDoArmazenamento('requests', []);
+let demands = recuperarDoArmazenamento('demands', []);
+let visits = recuperarDoArmazenamento('visits', []);
+let productions = recuperarDoArmazenamento('productions', []);
+let presentations = recuperarDoArmazenamento('presentations', []);
+
+// Configurações (Sem Versões)
+let cargos = recuperarDoArmazenamento('cargos', []);
+let orientadores = recuperarDoArmazenamento('orientadores', []);
+let modulos = recuperarDoArmazenamento('modulos', []);
+if (modulos.length === 0) modulos = DADOS_PADRAO.modulos;
+let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', []);
+
+// Contadores (Garante Objeto)
+let counters = recuperarDoArmazenamento('counters', null);
+if (!counters || typeof counters !== 'object') {
+    counters = { mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1 };
+}
+
+function getNextId(key) {
+    if (!counters[key]) counters[key] = 1;
+    const id = counters[key]++;
+    salvarNoArmazenamento('counters', counters);
+    return id;
+}
 
 // ----------------------------------------------------------------------------
-// 3. FUNÇÕES DE MENU MOBILE (CORRIGIDO v14)
+// 3. FUNÇÕES DE MENU MOBILE
 // ----------------------------------------------------------------------------
 function toggleMobileMenu() {
     const sidebar = document.querySelector('.sidebar');
