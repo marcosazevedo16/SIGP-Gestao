@@ -10,19 +10,13 @@
 
     <title>SIGP Saúde v4.3 - Gestão de Setor</title>
 
-    
-
     <!-- Seu CSS -->
 
     <link rel="stylesheet" href="style.css">
 
-
-
     <!-- Chart.js -->
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-
 
     <!-- jsPDF + html2canvas (para exportar PDF) -->
 
@@ -30,13 +24,9 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-
-
     <!-- CRYPTO-JS ← ESSA LINHA É OBRIGATÓRIA PARA A SEGURANÇA v4.3 -->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
-
-
 
     <!-- Favicon (opcional, mas bonito) -->
 
@@ -83,26 +73,19 @@
     </div>
 
     
-
     <div class="form-group">
 
         <label class="form-label">Senha</label>
 
         <input type="password" class="form-control" id="login-password" required placeholder="Digite sua senha" autocomplete="current-password">
 
-    </div>
-
-    
+    </div> 
 
     <div id="login-error" class="login-error"></div>
-
-    
 
     <button type="submit" class="btn btn--primary btn--full-width login-btn">Entrar no Sistema</button>
 
 </form>
-
-
 
                 </div>
 
@@ -131,8 +114,6 @@
         </div>
 
     </div>
-
-
 
     <!-- Main App (hidden until login) -->
 
@@ -214,8 +195,6 @@
         </div>
 
     </header>
-
-
 
     <div class="app-layout">
 
@@ -299,8 +278,6 @@
 
         </aside>
 
-
-
     <main class="main-content">
 
         <section id="versoes-section" class="tab-content">
@@ -326,8 +303,6 @@
                 <h2>Dashboard - Painel de Controle</h2>
 
             </div>
-
-
 
             <div class="stats-cards" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: var(--space-32);">
 
@@ -365,8 +340,6 @@
 
             </div>
 
-
-
             <div class="chart-card" style="margin-bottom: var(--space-32);">
 
                 <h4>Evolução de Implantações por Ano</h4>
@@ -380,8 +353,6 @@
             </div>
 
         </section>
-
-
 
         <!-- Aba Demandas do Suporte -->
 
@@ -724,8 +695,6 @@
 
             </div>
 
-
-
             <div class="municipalities-table" id="municipalities-list-table">
 
                 <!-- Tabela de municípios será inserida aqui -->
@@ -735,8 +704,6 @@
             <div id="municipalities-list-total" class="results-count" style="display: none; margin-top: var(--space-16);"></div>
 
         </section>
-
-
 
         <!-- Aba de Formas de Apresentação -->
 
@@ -749,9 +716,7 @@
                 <button class="btn btn--primary" onclick="showFormaApresentacaoModal()">+ Nova Forma</button>
 
             </div>
-
-
-
+            
             <div class="municipalities-table" id="formas-apresentacao-table">
 
                 <!-- Tabela de formas será inserida aqui -->
@@ -761,8 +726,6 @@
             <div id="formas-apresentacao-total" class="results-count" style="display: none; margin-top: var(--space-16);"></div>
 
         </section>
-
-
 
         <!-- Aba de Cadastro de Cargo/Função -->
 
@@ -776,8 +739,6 @@
 
             </div>
 
-
-
             <div class="municipalities-table" id="cargos-table">
 
                 <!-- Tabela de cargos será inserida aqui -->
@@ -787,8 +748,6 @@
             <div id="cargos-total" class="results-count" style="display: none; margin-top: var(--space-16);"></div>
 
         </section>
-
-
 
         <!-- Aba de Cadastro de Colaborador -->
 
@@ -801,8 +760,6 @@
 
             </div>
 
-
-
             <div class="municipalities-table" id="orientadores-table">
 
                 <!-- Tabela de orientadores será inserida aqui -->
@@ -812,8 +769,6 @@
             <div id="orientadores-total" class="results-count" style="display: none; margin-top: var(--space-16);"></div>
 
         </section>
-
-
 
         <!-- Aba de Cadastro de Módulos -->
 
@@ -827,8 +782,6 @@
 
             </div>
 
-
-
             <div class="municipalities-table" id="modulos-table">
 
                 <!-- Tabela de módulos será inserida aqui -->
@@ -839,8 +792,6 @@
 
         </section>
 
-
-
         <!-- Aba de Backup e Restauração -->
 
         <section id="backup-section" class="tab-content">
@@ -850,8 +801,6 @@
                 <h2>Backup e Restauração do Sistema</h2>
 
             </div>
-
-
 
             <div class="backup-container">
 
@@ -869,11 +818,7 @@
 
                 </div>
 
-
-
                 <div class="section-divider"></div>
-
-
 
                 <!-- Seção 2: Restaurar Backup -->
 
@@ -891,11 +836,7 @@
 
                 </div>
 
-
-
                 <div class="section-divider"></div>
-
-
 
                 <!-- Seção 3: Informações do Sistema -->
 
@@ -925,8 +866,6 @@
 
         </section>
 
-
-
         <!-- Aba de Gestão de Usuários -->
 
         <section id="usuarios-section" class="tab-content">
@@ -939,12 +878,7 @@
 
             </div>
 
-
-
             <h3 class="section-subtitle">Filtros</h3>
-
-
-
             <h3 class="section-subtitle">Filtros</h3>
 
             <div class="filters-section">
@@ -974,26 +908,15 @@
                 </div>
             </div>
 
-
-
             <div class="municipalities-table" id="users-table">
 
                 <!-- Tabela de usuários será inserida aqui -->
 
             </div>
 
-
-
             <div id="users-total-display" class="results-count" style="display: none; margin-top: var(--space-16);"></div>
-
-
-
             <div class="section-divider"></div>
-
-
-
             <div class="stats-cards">
-
                 <div class="stat-card">
 
                     <h3 id="total-users">0</h3>
@@ -1021,8 +944,6 @@
             </div>
 
         </section>
-
-
 
         <!-- Aba de Solicitações/Sugestões -->
 
@@ -1355,8 +1276,6 @@
             </div>
         </section>
 
-
-
         <!-- Aba de Municípios -->
 
         <section id="municipios-section" class="tab-content">
@@ -1377,11 +1296,7 @@
 
             </div>
 
-
-
             <h3 class="section-subtitle">Filtros</h3>
-
-
 
             <div class="filters-section">
 
@@ -1469,11 +1384,7 @@
 
             </div>
 
-
-
             <div id="municipalities-results-count" class="results-count" style="display: none;"></div>
-
-
 
             <div class="municipalities-table" id="municipalities-table">
 
@@ -1481,15 +1392,9 @@
 
             </div>
 
-
-
             <div class="section-divider"></div>
 
-
-
             <h3 class="section-subtitle">Relatórios e Gráficos</h3>
-
-
 
             <div class="stats-cards">
 
@@ -1527,8 +1432,6 @@
 
             </div>
 
-
-
             <div class="actions-bar">
 
                 <button class="btn btn--outline btn--sm" onclick="exportMunicipalitiesCSV()">📥 Exportar CSV</button>
@@ -1536,8 +1439,6 @@
                 <button class="btn btn--primary btn--sm" onclick="generateMunicipalitiesPDF()">📄 Gerar PDF</button>
 
             </div>
-
-
 
             <div class="charts-section">
 
@@ -1568,8 +1469,6 @@
     </main>
 
     </div>
-
-
 
     <!-- Modal para Tarefas -->
 
@@ -1741,8 +1640,6 @@
 
     </div>
 
-
-
     <!-- Modal para Municípios -->
 
     <div id="municipality-modal" class="modal">
@@ -1877,8 +1774,6 @@
 
     </div>
 
-
-
     <!-- Modal para Alterar Senha -->
 
     <div id="change-password-modal" class="modal">
@@ -1934,8 +1829,6 @@
         </div>
 
     </div>
-
-
 
     <!-- Modal para Gestão de Usuários -->
 
@@ -2021,8 +1914,6 @@
 
     </div>
 
-
-
     <!-- Modal para Cargo/Função -->
 
     <div id="cargo-modal" class="modal">
@@ -2070,8 +1961,6 @@
         </div>
 
     </div>
-
-
 
     <!-- Modal para Orientador -->
 
@@ -2128,8 +2017,6 @@
         </div>
 
     </div>
-
-
 
     <!-- Modal para Município (Lista Mestra) -->
 
@@ -2237,8 +2124,6 @@
 
     </div>
 
-
-
     <!-- Modal para Módulo -->
 
     <div id="modulo-modal" class="modal">
@@ -2286,8 +2171,6 @@
         </div>
 
     </div>
-
-
 
     <!-- Modal para Solicitações/Sugestões -->
 
