@@ -1409,7 +1409,7 @@ function renderTasks() {
                 <td>${t.trainedName || '-'}</td>
                 <td>${t.trainedPosition || '-'}</td>
                 <td>${t.contact || '-'}</td>
-                <td style="font-size:12px; color:#555;">${obs}</td>
+                <td class="text-secondary-cell">${obs}</td>
                 <td><span class="task-status ${t.status === 'Concluído' ? 'completed' : (t.status === 'Cancelado' ? 'cancelled' : 'pending')}">${t.status}</span></td>
                 <td>
                     <button class="btn btn--sm" onclick="showTaskModal(${t.id})" title="Editar">✏️</button>
@@ -1639,7 +1639,7 @@ function renderRequests() {
                 <td style="font-size:12px;">${desc}</td>
                 <td>${x.user || '-'}</td>
                 <td>${statusBadge}</td>
-                <td style="font-size:12px; color:#555;">${just}</td>
+                <td class="text-secondary-cell">${just}</td>
                 <td>
                     <button class="btn btn--sm" onclick="showRequestModal(${x.id})" title="Editar">✏️</button>
                     <button class="btn btn--sm" onclick="deleteRequest(${x.id})" title="Excluir">🗑️</button>
@@ -2031,7 +2031,7 @@ function renderPresentations() {
                 <td>${p.requester}</td>
                 <td>${orientadoresStr}</td>
                 <td>${formasStr}</td>
-                <td style="font-size:12px; color:#555;">${desc}</td>
+                <td class="text-secondary-cell">${desc}</td>
                 <td style="text-align:center;">${formatDate(p.dateRealizacao)}</td>
                 <td style="text-align:center;">${statusBadge}</td>
                 <td>
@@ -2610,7 +2610,7 @@ function renderVisits() {
                 <td style="font-size:12px;">${motivo}</td>
                 <td style="text-align:center;">${statusBadge}</td>
                 <td style="text-align:center;">${formatDate(v.dateRealization)}</td>
-                <td style="font-size:12px; color:#555;">${justif}</td>
+                <td class="text-secondary-cell">${justif}</td>
                 <td style="text-align:center;">
                     <button class="btn btn--sm" onclick="showVisitModal(${v.id})" title="Editar">✏️</button>
                     <button class="btn btn--sm" onclick="deleteVisit(${v.id})" title="Excluir">🗑️</button>
@@ -2885,7 +2885,7 @@ function renderProductions() {
                 <td style="text-align:center;">${formatDate(p.releaseDate)}</td>
                 <td style="text-align:center;">${statusBadge}</td>
                 <td style="text-align:center;">${formatDate(p.sendDate)}</td>
-                <td style="font-size:12px; color:#555;">${p.observations || '-'}</td>
+                <td class="text-secondary-cell">${p.observations || '-'}</td>
                 <td style="text-align:center;">
                     <button class="btn btn--sm" onclick="showProductionModal(${p.id})" title="Editar">✏️</button>
                     <button class="btn btn--sm" onclick="deleteProduction(${p.id})" title="Excluir">🗑️</button>
