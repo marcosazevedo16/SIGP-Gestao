@@ -3,11 +3,11 @@ Site live: [https://marcosazevedo16.github.io/SIGP-Gestao](https://marcosazevedo
 # 🏥 SIGP Saúde - Sistema de Gestão de Setor (v4.3)
 
 > **Status:** Em produção (Versão 4.3)  
-> **Foco:** Gestão Interna, CRM e Controle Operacional de Saúde Pública.
+> **Foco:** Gestão Interna, CRM e Controle Operacional de Setor.
 
 ## 🎯 Sobre o Projeto
 
-O **SIGP Saúde** é uma solução de *Back-Office* e Inteligência de Negócio desenvolvida para gerenciar a operação do setor de saúde que atende atualmente **37 municípios**. 
+O **SIGP Saúde** é uma solução de *Back-Office* e Inteligência de Negócio desenvolvida para gerenciar a operação do setor de saúde de uma empresa que atende atualmente **37 municípios** na area da saúde. 
 
 O objetivo do sistema é centralizar indicadores, históricos e demandas, permitindo o controle total sobre a carteira de clientes, treinamentos realizados, suporte técnico e evolução do produto (software de saúde municipal).
 
