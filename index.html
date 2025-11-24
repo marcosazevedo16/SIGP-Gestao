@@ -193,15 +193,10 @@
                         <div class="settings-divider" id="admin-divider" style="display: none;"></div>
 
                         <button class="settings-menu-item" id="cargo-management-menu-btn" style="display: none;" onclick="navigateToCargoManagement()">💼 Cadastro de Cargo/Função</button>
-
-                        <button class="settings-menu-item" id="orientador-management-menu-btn" style="display: none;" onclick="navigateToOrientadorManagement()">👨‍🏫 Cadastro de Orientador</button>
-
+                        <button class="settings-menu-item" id="orientador-management-menu-btn" style="display: none;" onclick="navigateToOrientadorManagement()">👨‍🏫 Cadastro de Colaborador</button>
                         <button class="settings-menu-item" id="modulo-management-menu-btn" style="display: none;" onclick="navigateToModuloManagement()">📦 Cadastro de Módulos</button>
-
                         <button class="settings-menu-item" id="municipality-list-management-menu-btn" style="display: none;" onclick="navigateToMunicipalityListManagement()">🏙️ Cadastro de Municípios</button>
-
                         <button class="settings-menu-item" id="forma-apresentacao-management-menu-btn" style="display: none;" onclick="navigateToFormaApresentacaoManagement()">📋 Formas de Apresentação</button>
-
                         <button class="settings-menu-item" id="backup-menu-btn" style="display: none;" onclick="navigateToBackupManagement()">💾 Backup e Restauração</button>
 
                     </div>
@@ -795,15 +790,14 @@
 
 
 
-        <!-- Aba de Cadastro de Orientador -->
+        <!-- Aba de Cadastro de Colaborador -->
 
         <section id="orientadores-section" class="tab-content">
 
             <div class="section-header">
 
-                <h2>Cadastro de Orientador</h2>
-
-                <button class="btn btn--primary" onclick="showOrientadorModal()">+ Novo Orientador</button>
+                <h2>Cadastro de Colaborador</h2>
+                <button class="btn btn--primary" onclick="showOrientadorModal()">+ Novo Colaborador</button>
 
             </div>
 
@@ -1631,7 +1625,7 @@
 
                 <div class="form-group">
 
-                    <label class="form-label">Orientador*</label>
+                    <label class="form-label">Colaborador*</label>
 
                     <select class="form-control" id="task-performed-by" required>
 
@@ -2087,7 +2081,7 @@
 
             <div class="modal-header">
 
-                <h3 id="orientador-modal-title">Novo Orientador</h3>
+                <h3 id="orientador-modal-title">Novo Colaborador</h3>
 
                 <button class="close-btn" onclick="closeOrientadorModal()">&times;</button>
 
@@ -2097,7 +2091,7 @@
 
                 <div class="form-group">
 
-                    <label class="form-label">Nome do Orientador*</label>
+                    <label class="form-label">Nome do Colaborador*</label>
 
                     <input type="text" class="form-control" id="orientador-name" required>
 
@@ -2441,7 +2435,7 @@
                 </div>
 
                 <div class="form-group" id="presentation-orientador-group">
-                    <label class="form-label" id="presentation-orientador-label">Orientador(es)</label>
+                    <label class="form-label" id="presentation-orientador-label">Colaborador(es) Responsável(is)</label>
                     <div class="checkbox-grid" id="presentation-orientador-checkboxes">
                         </div>
                 </div>
