@@ -1006,88 +1006,62 @@ function getFilteredMunicipalities() {
 }
 
 function renderMunicipalities() {
-    const filtered = getFilteredMunicipalities();
+    // --- LÓGICA DE FILTRO RESTAURADA ---
+    const fName = document.getElementById('filter-municipality-name') ? document.getElementById('filter-municipality-name').value : '';
+    const fStatus = document.getElementById('filter-municipality-status') ? document.getElementById('filter-municipality-status').value : '';
+    const fMod = document.getElementById('filter-municipality-module') ? document.getElementById('filter-municipality-module').value : '';
+    const fGest = document.getElementById('filter-municipality-manager') ? document.getElementById('filter-municipality-manager').value.toLowerCase() : '';
+
+    let filtered = municipalities.filter(m => {
+        if (fName && m.name !== fName) return false;
+        if (fStatus && m.status !== fStatus) return false;
+        if (fMod && !m.modules.includes(fMod)) return false;
+        if (fGest && !m.manager.toLowerCase().includes(fGest)) return false;
+        return true;
+    }).sort((a,b) => a.name.localeCompare(b.name));
+    // -----------------------------------
+
     const c = document.getElementById('municipalities-table');
     
-    if(document.getElementById('filter-municipality-name') && document.getElementById('filter-municipality-name').options.length <= 1) {
-        populateFilterSelects();
-    }
-
-    const counter = document.getElementById('municipalities-results-count');
-    if (counter) {
-        counter.style.display = 'block';
-        counter.innerHTML = '<strong>' + filtered.length + '</strong> município(s) no total';
+    if(document.getElementById('municipalities-results-count')) {
+        document.getElementById('municipalities-results-count').style.display = 'block';
+        document.getElementById('municipalities-results-count').innerHTML = `<strong>${filtered.length}</strong> município(s) no total`;
     }
 
     if (filtered.length === 0) {
-        c.innerHTML = '<div class="empty-state">Nenhum município encontrado com os filtros selecionados.</div>';
+        c.innerHTML = '<div class="empty-state">Nenhum município encontrado.</div>';
     } else {
-        const rows = filtered.map(function(m) {
-            let dataFim = '-';
-            let corDataFim = 'inherit';
-            
-            if (m.status === 'Bloqueado' && m.dateBlocked) {
-                dataFim = formatDate(m.dateBlocked);
-                corDataFim = '#C85250';
-            } else if (m.status === 'Parou de usar' && m.dateStopped) {
-                dataFim = formatDate(m.dateStopped);
-                corDataFim = '#E68161';
-            }
+        const rows = filtered.map(m => {
+            let dataFim = '-', corDataFim = 'inherit';
+            if (m.status === 'Bloqueado' && m.dateBlocked) { dataFim = formatDate(m.dateBlocked); corDataFim = '#C85250'; }
+            else if (m.status === 'Parou de usar' && m.dateStopped) { dataFim = formatDate(m.dateStopped); corDataFim = '#E68161'; }
 
-            // --- AJUSTE: Módulos mais compactos (Fonte 9px, Padding menor) ---
-            const modulesBadges = m.modules.map(function(modName) {
-                const modConfig = modulos.find(function(x) { return x.name === modName; });
-                const abbrev = modConfig ? modConfig.abbreviation : modName.substring(0,3).toUpperCase();
-                
-                // Mudanças: padding:0px 4px; font-size:9px;
-                return `<span style="background:rgba(0, 85, 128, 0.05); color:#005580; border:1px solid rgba(0, 85, 128, 0.3); padding:0px 4px; border-radius:3px; font-size:9px; margin-right:2px; display:inline-block; margin-bottom:2px; font-weight:700; line-height:1.4;" title="${modName}">${abbrev}</span>`;
+            const badges = m.modules.map(n => {
+                const mc = modulos.find(x => x.name === n);
+                const abbr = mc ? mc.abbreviation : n.substring(0,3).toUpperCase();
+                return `<span class="module-tag" style="background:rgba(0,85,128,0.1); color:#005580; border:1px solid rgba(0,85,128,0.3);" title="${n}">${abbr}</span>`;
             }).join('');
             
-            let statusClass = 'task-status';
-            let customStyle = '';
-
-            if (m.status === 'Em uso') statusClass += ' completed'; 
-            else if (m.status === 'Bloqueado') statusClass += ' cancelled'; 
-            else if (m.status === 'Parou de usar') statusClass += ' pending'; 
-            else {
-                customStyle = 'background:rgba(150,150,150,0.15); color:#666; border:1px solid rgba(150,150,150,0.25);';
-            }
+            let stCls = 'task-status';
+            if (m.status === 'Em uso') stCls += ' completed'; 
+            else if (m.status === 'Bloqueado') stCls += ' cancelled'; 
+            else if (m.status === 'Parou de usar') stCls += ' pending';
 
             return `<tr>
                 <td class="text-primary-cell">${m.name}</td>
-                <td style="max-width: 140px; white-space: normal; line-height:1.1;">${modulesBadges}</td>
+                <td class="module-tags-cell">${badges}</td>
                 <td style="font-size:12px;">${m.manager}</td>
                 <td>${m.contact}</td>
                 <td>${formatDate(m.implantationDate)}</td>
                 <td>${formatDate(m.lastVisit)}</td>
                 <td style="font-size:11px;">${calculateTimeInUse(m.implantationDate)}</td>
                 <td style="font-size:11px;">${calculateDaysSince(m.lastVisit)}</td>
-                <td><span class="${statusClass}" style="${customStyle}">${m.status}</span></td>
-                <td style="color:${corDataFim}; font-weight:500; font-size:11px;">${dataFim}</td>
-                <td>
-                    <button class="btn btn--sm" onclick="showMunicipalityModal(${m.id})" title="Editar">✏️</button>
-                    <button class="btn btn--sm" onclick="deleteMunicipality(${m.id})" title="Excluir">🗑️</button>
-                </td>
+                <td><span class="${stCls}">${m.status}</span></td>
+                <td style="color:${corDataFim}; font-size:11px;">${dataFim}</td>
+                <td><button class="btn btn--sm" onclick="showMunicipalityModal(${m.id})">✏️</button><button class="btn btn--sm" onclick="deleteMunicipality(${m.id})">🗑️</button></td>
             </tr>`;
         }).join('');
-        
-        c.innerHTML = `
-        <table class="compact-table">
-            <thead>
-                <th>Município</th>
-                <th>Módulos em Uso</th>
-                <th>Gestor(a) de Saúde Atual</th>
-                <th>Contato</th>
-                <th>Data<br>Implantação</th>
-                <th>Última Visita<br>Presencial</th>
-                <th>Tempo de Uso</th>
-                <th>Dias s/ Visita</th>
-                <th>Status</th>
-                <th>Data Bloqueio/<br>Parou de usar</th>
-                <th>Ações</th>
-            </thead>
-            <tbody>${rows}</tbody>
-        </table>`;
+        c.innerHTML = `<table><thead><th>Município</th><th>Módulos</th><th>Gestor(a)</th><th>Contato</th><th>Implantação</th><th>Últ. Visita</th><th>Tempo Uso</th><th>Dias s/ Visita</th><th>Status</th><th>Bloqueio/Parou</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
     updateMunicipalityCharts(filtered);
 }
@@ -1411,11 +1385,34 @@ function getFilteredTasks() {
 }
 
 function renderTasks() {
-    // Recupera a lógica de filtro original
-    const filtered = getFilteredTasks(); 
+    // --- LÓGICA DE FILTRO RESTAURADA ---
+    const fMun = document.getElementById('filter-task-municipality')?.value;
+    const fStatus = document.getElementById('filter-task-status')?.value;
+    const fReq = document.getElementById('filter-task-requester')?.value.toLowerCase();
+    const fPerf = document.getElementById('filter-task-performer')?.value; 
+    const fCargo = document.getElementById('filter-task-position')?.value; 
+    const fReqStart = document.getElementById('filter-task-req-start')?.value;
+    const fReqEnd = document.getElementById('filter-task-req-end')?.value;
+    const fPerfStart = document.getElementById('filter-task-perf-start')?.value;
+    const fPerfEnd = document.getElementById('filter-task-perf-end')?.value;
+
+    let filtered = tasks.filter(t => {
+        if (fMun && t.municipality !== fMun) return false;
+        if (fStatus && t.status !== fStatus) return false;
+        if (fReq && !t.requestedBy.toLowerCase().includes(fReq)) return false;
+        if (fPerf && t.performedBy !== fPerf) return false;
+        if (fCargo && t.trainedPosition !== fCargo) return false;
+        if (fReqStart && t.dateRequested < fReqStart) return false;
+        if (fReqEnd && t.dateRequested > fReqEnd) return false;
+        if (fPerfStart && (!t.datePerformed || t.datePerformed < fPerfStart)) return false;
+        if (fPerfEnd && (!t.datePerformed || t.datePerformed > fPerfEnd)) return false;
+        return true;
+    });
+    // -----------------------------------
+
     const c = document.getElementById('tasks-table');
     
-    // --- CORREÇÃO: ESTATÍSTICAS REATIVADAS ---
+    // Estatísticas
     if(document.getElementById('tasks-results-count')) {
         document.getElementById('tasks-results-count').style.display = 'block';
         document.getElementById('tasks-results-count').innerHTML = '<strong>' + filtered.length + '</strong> treinamentos encontrados';
@@ -1424,7 +1421,6 @@ function renderTasks() {
     if(document.getElementById('completed-tasks')) document.getElementById('completed-tasks').textContent = filtered.filter(t => t.status==='Concluído').length;
     if(document.getElementById('pending-tasks')) document.getElementById('pending-tasks').textContent = filtered.filter(t => t.status==='Pendente').length;
     if(document.getElementById('cancelled-tasks')) document.getElementById('cancelled-tasks').textContent = filtered.filter(t => t.status==='Cancelado').length;
-    // ----------------------------------------
 
     if (filtered.length === 0) { 
         c.innerHTML = '<div class="empty-state">Nenhum treinamento encontrado.</div>'; 
@@ -1438,7 +1434,8 @@ function renderTasks() {
                 <td style="text-align:center;">${formatDate(t.dateRequested)}</td>
                 <td style="text-align:center;">${formatDate(t.datePerformed)}</td>
                 <td>${t.requestedBy}</td>
-                <td>${t.performedBy}</td> <td>${t.trainedName||'-'}</td>
+                <td>${t.performedBy}</td>
+                <td>${t.trainedName||'-'}</td>
                 <td>${t.trainedPosition||'-'}</td>
                 <td>${t.contact||'-'}</td>
                 <td class="text-secondary-cell">${obs}</td>
@@ -1446,8 +1443,7 @@ function renderTasks() {
                 <td><button class="btn btn--sm" onclick="showTaskModal(${t.id})">✏️</button><button class="btn btn--sm" onclick="deleteTask(${t.id})">🗑️</button></td>
             </tr>`;
         }).join('');
-        
-        // CORREÇÃO: Coluna renomeada para "Colaborador Responsável"
+        // Coluna "Colaborador Responsável"
         c.innerHTML = `<table><thead><th>Município</th><th>Data Sol.</th><th>Data Real.</th><th>Solicitante</th><th>Colaborador Responsável</th><th>Profissional</th><th>Cargo</th><th>Contato</th><th>Obs</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
 }
@@ -1618,10 +1614,31 @@ function getFilteredRequests() {
 }
 
 function renderRequests() {
-    const filtered = getFilteredRequests();
+    // --- LÓGICA DE FILTRO RESTAURADA ---
+    const fMun = document.getElementById('filter-request-municipality')?.value;
+    const fStatus = document.getElementById('filter-request-status')?.value;
+    const fSol = document.getElementById('filter-request-solicitante')?.value.toLowerCase();
+    const fUser = document.getElementById('filter-request-user')?.value;
+    const fSolStart = document.getElementById('filter-request-sol-start')?.value;
+    const fSolEnd = document.getElementById('filter-request-sol-end')?.value;
+    const fRealStart = document.getElementById('filter-request-real-start')?.value;
+    const fRealEnd = document.getElementById('filter-request-real-end')?.value;
+
+    let filtered = requests.filter(r => {
+        if (fMun && r.municipality !== fMun) return false;
+        if (fStatus && r.status !== fStatus) return false;
+        if (fSol && !r.requester.toLowerCase().includes(fSol)) return false;
+        if (fUser && r.user !== fUser) return false;
+        if (fSolStart && r.date < fSolStart) return false;
+        if (fSolEnd && r.date > fSolEnd) return false;
+        if (fRealStart && (!r.dateRealization || r.dateRealization < fRealStart)) return false;
+        if (fRealEnd && (!r.dateRealization || r.dateRealization > fRealEnd)) return false;
+        return true;
+    }).sort((a, b) => new Date(a.date) - new Date(b.date));
+    // -----------------------------------
+
     const c = document.getElementById('requests-table');
     
-    // Estatísticas
     if(document.getElementById('requests-results-count')) {
         document.getElementById('requests-results-count').innerHTML = '<strong>' + filtered.length + '</strong> solicitações encontradas';
         document.getElementById('requests-results-count').style.display = 'block';
@@ -1637,29 +1654,24 @@ function renderRequests() {
         const rows = filtered.map(x => {
             const desc = x.description.length > 40 ? `<span title="${x.description}">${x.description.substring(0,40)}...</span>` : x.description;
             const just = x.justification ? (x.justification.length > 30 ? `<span title="${x.justification}">${x.justification.substring(0,30)}...</span>` : x.justification) : '-';
-            
             let stCls = x.status === 'Realizado' ? 'completed' : (x.status === 'Inviável' ? 'cancelled' : 'pending');
 
-            // CORREÇÃO: Ordem das colunas alterada (Data Realização foi para direita do Status)
             return `<tr>
                 <td class="text-primary-cell">${x.municipality}</td>
                 <td style="text-align:center;">${formatDate(x.date)}</td>
                 <td>${x.requester}</td>
                 <td>${x.contact}</td>
                 <td style="font-size:12px;">${desc}</td>
-                <td>${x.user || '-'}</td> <td style="text-align:center;"><span class="task-status ${stCls}">${x.status}</span></td>
-                <td style="text-align:center;">${formatDate(x.dateRealization)}</td> <td class="text-secondary-cell">${just}</td>
-                <td>
-                    <button class="btn btn--sm" onclick="showRequestModal(${x.id})">✏️</button>
-                    <button class="btn btn--sm" onclick="deleteRequest(${x.id})">🗑️</button>
-                </td>
+                <td>${x.user || '-'}</td>
+                <td style="text-align:center;"><span class="task-status ${stCls}">${x.status}</span></td>
+                <td style="text-align:center;">${formatDate(x.dateRealization)}</td>
+                <td class="text-secondary-cell">${just}</td>
+                <td><button class="btn btn--sm" onclick="showRequestModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteRequest(${x.id})">🗑️</button></td>
             </tr>`;
         }).join('');
         
-        // CORREÇÃO: Cabeçalho com ordem nova e nome novo ("Usuário que Registrou a Demanda")
         c.innerHTML = `<table><thead><th>Município</th><th>Data Sol.</th><th>Solicitante</th><th>Contato</th><th>Descrição</th><th>Usuário que Registrou a Demanda</th><th style="text-align:center;">Status</th><th style="text-align:center;">Data Real.</th><th>Justificativa</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
-    
     updateRequestCharts(filtered);
 }
 
@@ -3150,29 +3162,57 @@ function showCargoModal(id=null){ editingId=id; document.getElementById('cargo-f
 function saveCargo(e){ e.preventDefault(); const data={name:document.getElementById('cargo-name').value}; if(editingId){const i=cargos.findIndex(x=>x.id===editingId); cargos[i]={...cargos[i],...data};}else{cargos.push({id:getNextId('cargo'),...data});} salvarNoArmazenamento('cargos',cargos); document.getElementById('cargo-modal').classList.remove('show'); renderCargos(); }
 function renderCargos() {
     const c = document.getElementById('cargos-table');
-    // ATIVA O CONTADOR QUE JÁ EXISTIA NO SEU HTML
     const countDiv = document.getElementById('cargos-total');
-    if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`<strong>${cargos.length}</strong> Cargos/Funções cadastrados`; }
+    if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`Total de Cargos/Funções cadastrados: <strong>${cargos.length}</strong>`; }
 
-    const r = cargos.map(x => `<tr><td class="text-primary-cell">${x.name}</td><td><button class="btn btn--sm" onclick="showCargoModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteCargo(${x.id})">🗑️</button></td></tr>`).join('');
-    c.innerHTML = `<table><thead><th>Cargo/Função</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
+    const r = cargos.map(x => 
+        `<tr>
+            <td class="text-primary-cell">${x.name}</td>
+            <td class="text-secondary-cell">${x.description || '-'}</td> <td>
+                <button class="btn btn--sm" onclick="showCargoModal(${x.id})">✏️</button>
+                <button class="btn btn--sm" onclick="deleteCargo(${x.id})">🗑️</button>
+            </td>
+        </tr>`
+    ).join('');
+    
+    c.innerHTML = `<table><thead><th>Cargo/Função</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
 function deleteCargo(id){ if(confirm('Excluir?')){ cargos=cargos.filter(x=>x.id!==id); salvarNoArmazenamento('cargos',cargos); renderCargos(); }}
 function closeCargoModal(){document.getElementById('cargo-modal').classList.remove('show');}
 
 // Orientadores
-function showOrientadorModal(id=null){ editingId=id; document.getElementById('orientador-form').reset(); if(id){const o=orientadores.find(x=>x.id===id); document.getElementById('orientador-name').value=o.name; document.getElementById('orientador-contact').value=o.contact;} document.getElementById('orientador-modal').classList.add('show'); }
-function saveOrientador(e){ e.preventDefault(); const data={name:document.getElementById('orientador-name').value, contact:document.getElementById('orientador-contact').value}; if(editingId){const i=orientadores.findIndex(x=>x.id===editingId); orientadores[i]={...orientadores[i],...data};}else{orientadores.push({id:getNextId('orient'),...data});} salvarNoArmazenamento('orientadores',orientadores); document.getElementById('orientador-modal').classList.remove('show'); renderOrientadores(); }
+function showOrientadorModal(id=null){ 
+    editingId=id; 
+    document.getElementById('orientador-form').reset(); 
+    if(id){
+        const o=orientadores.find(x=>x.id===id); 
+        document.getElementById('orientador-name').value=o.name; 
+        document.getElementById('orientador-contact').value=o.contact;
+        // NOVOS CAMPOS
+        document.getElementById('orientador-email').value = o.email || '';
+        document.getElementById('orientador-birthdate').value = o.birthDate || '';
+    } 
+    document.getElementById('orientador-modal').classList.add('show'); 
+}
 
 function renderOrientadores() {
     const c = document.getElementById('orientadores-table');
-    // ATIVA O CONTADOR E RENOMEIA COLUNA
     const countDiv = document.getElementById('orientadores-total');
-    if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`<strong>${orientadores.length}</strong> Colaboradores cadastrados`; }
+    if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`Total de Colaboradores cadastrados: <strong>${orientadores.length}</strong>`; }
 
-    const r = orientadores.map(x => `<tr><td class="text-primary-cell">${x.name}</td><td>${x.contact||'-'}</td><td><button class="btn btn--sm" onclick="showOrientadorModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteOrientador(${x.id})">🗑️</button></td></tr>`).join('');
-    c.innerHTML = `<table><thead><th>Nome do Colaborador</th><th>Contato</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
+    const r = orientadores.map(x => 
+        `<tr>
+            <td class="text-primary-cell">${x.name}</td>
+            <td class="text-secondary-cell">${x.email || '-'}</td> <td style="text-align:center;">${formatDate(x.birthDate)}</td> <td>${x.contact || '-'}</td>
+            <td>
+                <button class="btn btn--sm" onclick="showOrientadorModal(${x.id})">✏️</button>
+                <button class="btn btn--sm" onclick="deleteOrientador(${x.id})">🗑️</button>
+            </td>
+        </tr>`
+    ).join('');
+    
+    c.innerHTML = `<table><thead><th>Nome do Colaborador</th><th>E-mail</th><th style="text-align:center;">Data Nasc.</th><th>Contato</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
 function deleteOrientador(id){ if(confirm('Excluir?')){ orientadores=orientadores.filter(x=>x.id!==id); salvarNoArmazenamento('orientadores',orientadores); renderOrientadores(); }}
@@ -3185,10 +3225,20 @@ function saveModulo(e){ e.preventDefault(); const data={name:document.getElement
 function renderModulos() {
     const c = document.getElementById('modulos-table');
     const countDiv = document.getElementById('modulos-total');
-    if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`<strong>${modulos.length}</strong> Módulos cadastrados`; }
+    if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`Total de Módulos cadastrados: <strong>${modulos.length}</strong>`; }
 
-    const r = modulos.map(m => `<tr><td class="text-primary-cell">${m.name}</td><td>${m.abbreviation||'-'}</td><td><button class="btn btn--sm" onclick="showModuloModal(${m.id})">✏️</button><button class="btn btn--sm" onclick="deleteModulo(${m.id})">🗑️</button></td></tr>`).join('');
-    c.innerHTML = `<table><thead><th>Módulo</th><th>Abrev.</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
+    const r = modulos.map(m => 
+        `<tr>
+            <td class="text-primary-cell">${m.name}</td>
+            <td style="text-align:center;">${m.abbreviation || '-'}</td>
+            <td class="text-secondary-cell">${m.description || '-'}</td> <td>
+                <button class="btn btn--sm" onclick="showModuloModal(${m.id})">✏️</button>
+                <button class="btn btn--sm" onclick="deleteModulo(${m.id})">🗑️</button>
+            </td>
+        </tr>`
+    ).join('');
+    
+    c.innerHTML = `<table><thead><th>Módulo</th><th style="text-align:center;">Abrev.</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
 function deleteModulo(id){ if(confirm('Excluir?')){ modulos=modulos.filter(x=>x.id!==id); salvarNoArmazenamento('modulos',modulos); renderModulos(); }}
@@ -3562,6 +3612,81 @@ function updateGlobalDropdowns() {
     
     // Filtros
     populateFilterSelects();
+}
+
+// ----------------------------------------------------------------------------
+// FUNÇÕES DE COLABORADORES (ORIENTADORES) - ATUALIZADAS
+// ----------------------------------------------------------------------------
+
+// 5. Salvar Colaborador (Com novos campos: Email e Nascimento)
+function saveOrientador(e){ 
+    e.preventDefault(); 
+    
+    const data = {
+        name: document.getElementById('orientador-name').value, 
+        contact: document.getElementById('orientador-contact').value,
+        // Novos campos adicionados
+        email: document.getElementById('orientador-email').value,
+        birthDate: document.getElementById('orientador-birthdate').value
+    }; 
+    
+    if(editingId){
+        // Modo Edição
+        const i = orientadores.findIndex(x => x.id === editingId); 
+        if (i !== -1) {
+            orientadores[i] = { ...orientadores[i], ...data };
+        }
+    } else {
+        // Modo Novo Cadastro
+        orientadores.push({ id: getNextId('orient'), ...data });
+    } 
+    
+    salvarNoArmazenamento('orientadores', orientadores); 
+    document.getElementById('orientador-modal').classList.remove('show'); 
+    
+    renderOrientadores(); 
+    updateGlobalDropdowns(); // Importante para atualizar a lista nos outros formulários
+    showToast('Colaborador salvo com sucesso!', 'success');
+}
+
+// 6. Listar Colaboradores (Mostrando E-mail e Data de Nascimento)
+function renderOrientadores() {
+    const c = document.getElementById('orientadores-table');
+    
+    // Contador no topo
+    const countDiv = document.getElementById('orientadores-total');
+    if(countDiv) { 
+        countDiv.style.display = 'block'; 
+        countDiv.innerHTML = `Total de Colaboradores cadastrados: <strong>${orientadores.length}</strong>`; 
+    }
+
+    if (orientadores.length === 0) {
+        c.innerHTML = '<div class="empty-state">Nenhum colaborador cadastrado.</div>';
+        return;
+    }
+
+    const r = orientadores.map(x => 
+        `<tr>
+            <td class="text-primary-cell">${x.name}</td>
+            <td class="text-secondary-cell">${x.email || '-'}</td> <td style="text-align:center;">${formatDate(x.birthDate)}</td> <td>${x.contact || '-'}</td>
+            <td>
+                <button class="btn btn--sm" onclick="showOrientadorModal(${x.id})" title="Editar">✏️</button>
+                <button class="btn btn--sm" onclick="deleteOrientador(${x.id})" title="Excluir">🗑️</button>
+            </td>
+        </tr>`
+    ).join('');
+    
+    // Cabeçalho da tabela atualizado
+    c.innerHTML = `<table>
+        <thead>
+            <th>Nome do Colaborador</th>
+            <th>E-mail</th>
+            <th style="text-align:center;">Data Nasc.</th>
+            <th>Contato</th>
+            <th>Ações</th>
+        </thead>
+        <tbody>${r}</tbody>
+    </table>`;
 }
 
 function initializeApp() {
