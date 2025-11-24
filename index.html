@@ -951,26 +951,33 @@
 
 
 
+            <h3 class="section-subtitle">Filtros</h3>
+
             <div class="filters-section">
-
                 <div class="filters-grid">
-
                     <div class="form-group">
-
                         <label class="form-label">Nome do Usuário</label>
-
                         <input type="text" class="form-control" id="filter-user-name" placeholder="Buscar por nome">
-
                     </div>
 
                     <div class="form-group">
-
-                        <button class="btn btn--secondary btn--full-width" onclick="clearUserFilters()">Limpar Filtros</button>
-
+                        <label class="form-label">Login</label>
+                        <input type="text" class="form-control" id="filter-user-login" placeholder="Buscar por login">
                     </div>
 
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-control" id="filter-user-status">
+                            <option value="">Todos</option>
+                            <option value="Ativo">Ativo</option>
+                            <option value="Inativo">Inativo</option>
+                        </select>
+                    </div>
 
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button class="btn btn--secondary btn--full-width" onclick="clearUserFilters()">Limpar Filtros</button>
+                    </div>
+                </div>
             </div>
 
 
