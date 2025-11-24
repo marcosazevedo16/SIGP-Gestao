@@ -589,114 +589,73 @@ let currentTheme = recuperarDoArmazenamento('theme', 'light');
 let editingId = null;
 
 // ----------------------------------------------------------------------------
-// CARREGAMENTO DE DADOS BLINDADO (Previne travamento na inicialização)
+// 8. CARREGAMENTO DE DADOS (STATE) - BLINDADO
 // ----------------------------------------------------------------------------
+const DADOS_PADRAO = {
+    users: [{ 
+        id: 1, login: 'ADMIN', name: 'Administrador', 
+        salt: 'default', passwordHash: 'cf4fe7c91f87da8b0456ad71ab7b4af52cb95c9b7ecb1a57eaa38bd1bce01aca', // Hash de 'saude2025'
+        permission: 'Administrador', status: 'Ativo' 
+    }],
+    modulos: [
+        { id: 1, name: 'Cadastros', abbreviation: 'CAD', color: '#FF6B6B' },
+        { id: 2, name: 'TFD', abbreviation: 'TFD', color: '#4ECDC4' },
+        { id: 3, name: 'Prontuário', abbreviation: 'PEC', color: '#45B7D1' },
+        { id: 4, name: 'Administração', abbreviation: 'ADM', color: '#FFA07A' }
+    ]
+};
 
-// 1. Função de Leitura Segura
-// (Essa versão substitui a antiga e ignora erros de texto como "light")
-function recuperarDoArmazenamento(chave, valorPadrao = []) {
+// --- Função de Leitura Segura (Correção do Bug de Login) ---
+function lerStorage(key, defaultVal) {
     try {
-        const dados = localStorage.getItem(chave);
-        if (!dados || dados === "undefined" || dados === "null") {
-            return valorPadrao;
-        }
-        try {
-            return JSON.parse(dados);
-        } catch (e) {
-            return dados; // Retorna texto puro se não for JSON
-        }
-    } catch (erro) {
-        console.error(`Erro ao ler ${chave}:`, erro);
-        return valorPadrao;
+        const item = localStorage.getItem(key);
+        if (!item || item === "undefined" || item === "null") return defaultVal;
+        const parsed = JSON.parse(item);
+        // Se esperamos array e veio objeto (ou vice-versa), ignora e usa padrão
+        if (Array.isArray(defaultVal) && !Array.isArray(parsed)) return defaultVal;
+        return parsed;
+    } catch (e) {
+        return defaultVal;
     }
 }
 
-// 2. Carregamento de Variáveis
-let users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
-let currentUser = recuperarDoArmazenamento('currentUser', null);
-let isAuthenticated = !!currentUser;
-let currentTheme = recuperarDoArmazenamento('theme', 'light');
-let editingId = null;
+// --- Carregamento com Sanitização Imediata ---
 
-// Listas de Dados
-let municipalities = recuperarDoArmazenamento('municipalities', []);
-let municipalitiesList = recuperarDoArmazenamento('municipalitiesList', []);
-let tasks = recuperarDoArmazenamento('tasks', []);
-let requests = recuperarDoArmazenamento('requests', []);
-let demands = recuperarDoArmazenamento('demands', []);
-let visits = recuperarDoArmazenamento('visits', []);
-let productions = recuperarDoArmazenamento('productions', []);
-let presentations = recuperarDoArmazenamento('presentations', []);
-let systemVersions = recuperarDoArmazenamento('systemVersions', []);
-let cargos = recuperarDoArmazenamento('cargos', []);
-let orientadores = recuperarDoArmazenamento('orientadores', []);
-let modulos = recuperarDoArmazenamento('modulos', DADOS_PADRAO.modulos);
-let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', []);
-
-// Contadores
-let counters = recuperarDoArmazenamento('counters', {
-    mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1
-});
-
-// 3. SANITIZAÇÃO PROFUNDA (O Segredo para não travar)
-// Roda imediatamente para corrigir dados corrompidos dentro das listas
-(function deepSanitize() {
-    
-    // Garante que as variáveis principais sejam Arrays
-    const ensureList = (val) => Array.isArray(val) ? val : [];
-    
-    // Correção de Usuários
-    users = ensureList(users);
-    if (users.length === 0) users = DADOS_PADRAO.users;
-
-    // Correção de Municípios (Evita erro no .map de modules)
-    municipalities = ensureList(municipalities).map(m => ({
-        ...m,
-        modules: Array.isArray(m.modules) ? m.modules : [],
-        status: m.status || 'Não Implantado',
-        name: m.name || 'Sem Nome'
-    }));
-
-    // Correção de Apresentações (Evita erro no .join de orientadores/forms)
-    presentations = ensureList(presentations).map(p => ({
-        ...p,
-        orientadores: Array.isArray(p.orientadores) ? p.orientadores : [],
-        forms: Array.isArray(p.forms) ? p.forms : [],
-        status: p.status || 'Pendente'
-    }));
-
-    // Correção de Treinamentos/Tarefas
-    tasks = ensureList(tasks).map(t => ({
-        ...t,
-        status: t.status || 'Pendente',
-        observations: t.observations || ''
-    }));
-    
-    // Correção das demais listas simples
-    municipalitiesList = ensureList(municipalitiesList);
-    requests = ensureList(requests);
-    demands = ensureList(demands);
-    visits = ensureList(visits);
-    productions = ensureList(productions);
-    systemVersions = ensureList(systemVersions);
-    cargos = ensureList(cargos);
-    orientadores = ensureList(orientadores);
-    modulos = ensureList(modulos);
-    formasApresentacao = ensureList(formasApresentacao);
-
-    // Re-salva os dados corrigidos para a memória ficar limpa
-    // (Isso resolve o problema permanentemente para a próxima recarga)
-    /* Opcional: Descomente se quiser forçar a gravação imediata, 
-       mas só carregar na memória já destrava a tela. */
-})();
-
-function getNextId(key) {
-    if(!counters[key]) counters[key] = 1;
-    const id = counters[key]++;
-    salvarNoArmazenamento('counters', counters);
-    return id;
+// 1. Usuários (Crítico para Login)
+let users = lerStorage('users', []);
+if (users.length === 0) {
+    users = DADOS_PADRAO.users;
+    localStorage.setItem('users', JSON.stringify(users));
 }
 
+// 2. Sessão
+let currentUser = lerStorage('currentUser', null);
+if (currentUser && typeof currentUser !== 'object') currentUser = null;
+
+let isAuthenticated = !!currentUser;
+let currentTheme = localStorage.getItem('theme') || 'light';
+let editingId = null;
+
+// 3. Listas de Dados (Garante Arrays para não travar tabelas)
+let municipalities = lerStorage('municipalities', []);
+let municipalitiesList = lerStorage('municipalitiesList', []);
+let tasks = lerStorage('tasks', []);
+let requests = lerStorage('requests', []);
+let demands = lerStorage('demands', []);
+let visits = lerStorage('visits', []);
+let productions = lerStorage('productions', []);
+let presentations = lerStorage('presentations', []);
+let systemVersions = lerStorage('systemVersions', []);
+let cargos = lerStorage('cargos', []);
+let orientadores = lerStorage('orientadores', []);
+let modulos = lerStorage('modulos', []); 
+if (modulos.length === 0) modulos = DADOS_PADRAO.modulos;
+let formasApresentacao = lerStorage('formasApresentacao', []);
+
+// 4. Contadores
+let counters = lerStorage('counters', {
+    mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1
+});
 // ----------------------------------------------------------------------------
 // 9. INTERFACE E NAVEGAÇÃO
 // ----------------------------------------------------------------------------
@@ -3515,77 +3474,94 @@ function confirmRestore() {
         saveList('municipalitiesList', backup.municipalitiesList);
         saveList('requests', backup.requests);
         saveList('productions', backup.productions);
+
 function confirmRestore() {
     if (!pendingBackupData) return;
 
     try {
         const backup = pendingBackupData.data || pendingBackupData;
         
-        // 1. Guarda QUEM é você (apenas o Login, ex: "ADMIN")
-        let targetLogin = null;
+        // 1. Tenta pegar o LOGIN atual
+        let currentLogin = null;
         try {
-            const sessionStr = localStorage.getItem('currentUser');
-            if (sessionStr) targetLogin = JSON.parse(sessionStr).login;
+            const sessionData = localStorage.getItem('currentUser');
+            if (sessionData) currentLogin = JSON.parse(sessionData).login;
         } catch (e) {}
         
-        const targetTheme = localStorage.getItem('theme') || 'light';
+        const sessionTheme = localStorage.getItem('theme') || 'light';
 
-        // 2. Limpa o Armazenamento (Zera tudo)
+        // 2. Limpa o banco
         localStorage.clear();
 
-        // --- HIGIENIZAÇÃO DOS DADOS (Prepara o terreno) ---
-
-        // Helper para garantir arrays
-        const ensureArr = (arr) => Array.isArray(arr) ? arr : [];
+        // --- HIGIENIZAÇÃO (Trata campos nulos para não travar a tela) ---
         const str = (val) => (val === null || val === undefined) ? '' : String(val);
+        const arr = (val) => Array.isArray(val) ? val : [];
 
-        // Usuários (Recria com segurança)
-        const safeUsers = ensureArr(backup.users).map(u => ({
+        // Usuários
+        const safeUsers = arr(backup.users).map(u => ({
             ...u, 
             status: u.status || 'Ativo', 
             permission: u.permission || 'Usuário Normal',
-            // Garante hash se não tiver
+            // Se já tem hash, mantém. Se não tem, gera.
             passwordHash: u.passwordHash || hashPassword('saude2025', generateSalt()),
             salt: u.salt || generateSalt(),
             password: null 
         }));
-        // Garante Admin de emergência
+        
+        // Garante Admin se lista vazia
         if (safeUsers.length === 0) {
             const s = generateSalt();
             safeUsers.push({id:1, login:'ADMIN', name:'Administrador', salt:s, passwordHash:hashPassword('saude2025', s), permission:'Administrador', status:'Ativo'});
         }
 
         // Municípios
-        const safeMuns = ensureArr(backup.municipalities).map(m => ({
+        const safeMuns = arr(backup.municipalities).map(m => ({
             ...m,
             manager: str(m.manager), contact: str(m.contact),
-            modules: ensureArr(m.modules),
+            modules: arr(m.modules),
             dateBlocked: (m.status === 'Bloqueado' ? str(m.dateBlocked || m.stoppageDate) : ''),
             dateStopped: (m.status === 'Parou de usar' ? str(m.dateStopped || m.stoppageDate) : '')
         }));
 
         // Treinamentos
-        const safeTasks = ensureArr(backup.tasks || backup.trainings).map(t => ({
-            ...t, municipality: str(t.municipality), status: str(t.status) || 'Pendente', observations: str(t.observations)
+        const safeTasks = arr(backup.tasks || backup.trainings).map(t => ({
+            ...t,
+            municipality: str(t.municipality),
+            trainedName: str(t.trainedName), // <--- ISSO CORRIGE O TRAVAMENTO
+            trainedPosition: str(t.trainedPosition),
+            status: str(t.status) || 'Pendente',
+            observations: str(t.observations)
         }));
 
-        // Outras listas (Processamento simplificado)
-        const safeRequests = ensureArr(backup.requests);
-        const safeDemands = ensureArr(backup.demands);
-        const safeVisits = ensureArr(backup.visits);
-        const safeProds = ensureArr(backup.productions);
-        const safePres = ensureArr(backup.presentations);
-        const safeListMestra = ensureArr(backup.municipalitiesList);
-        const safeVers = ensureArr(backup.systemVersions);
-        const safeCargos = ensureArr(backup.cargos);
-        const safeOrient = ensureArr(backup.orientadores);
-        const safeMods = ensureArr(backup.modulos || backup.modules);
-        const safeFormas = ensureArr(backup.formasApresentacao);
+        // Demandas
+        const safeDemands = arr(backup.demands).map(d => ({
+            ...d, description: str(d.description), dateRealization: str(d.dateRealization || d.realizationDate), justification: str(d.justification)
+        }));
+
+        // Visitas
+        const safeVisits = arr(backup.visits).map(v => ({
+            ...v, reason: str(v.reason), dateRealization: str(v.dateRealization || v.visitDate), justification: str(v.justification || v.cancelJustification)
+        }));
+
+        // Apresentações
+        const safePres = arr(backup.presentations).map(p => ({
+            ...p, description: str(p.description), orientadores: arr(p.orientadores), forms: arr(p.forms)
+        }));
+
+        // Outras Listas
+        const safeRequests = arr(backup.requests);
+        const safeProds = arr(backup.productions);
+        const safeListMestra = arr(backup.municipalitiesList);
+        const safeVers = arr(backup.systemVersions);
+        const safeCargos = arr(backup.cargos);
+        const safeOrient = arr(backup.orientadores);
+        const safeMods = arr(backup.modulos || backup.modules);
+        const safeFormas = arr(backup.formasApresentacao);
 
         // Contadores
         const safeCounters = backup.counters || { mun:1, munList:1, task:1, req:1, dem:1, visit:1, prod:1, pres:1, ver:1, user:2, cargo:1, orient:1, mod:1, forma:1 };
 
-        // --- GRAVAÇÃO (Persistência) ---
+        // --- GRAVAÇÃO ---
         const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
         
         save('users', safeUsers);
@@ -3604,50 +3580,36 @@ function confirmRestore() {
         save('formasApresentacao', safeFormas);
         save('counters', safeCounters);
 
-        // --- RECONEXÃO DA SESSÃO (O Segredo) ---
-        let loginSuccess = false;
-        
-        if (targetLogin) {
-            // Busca o usuário no banco NOVO (já higienizado e com ID correto)
-            const freshUser = safeUsers.find(u => u.login === targetLogin);
-            
-            if (freshUser) {
-                // Injeta a sessão "fresca" e compatível
-                save('currentUser', freshUser);
+        // --- RESTAURAÇÃO DA SESSÃO ---
+        let restored = false;
+        if (currentLogin) {
+            const userFound = safeUsers.find(u => u.login === currentLogin);
+            if (userFound) {
+                save('currentUser', userFound);
                 localStorage.setItem('isAuthenticated', 'true');
-                loginSuccess = true;
+                restored = true;
             }
         }
         
-        localStorage.setItem('theme', targetTheme);
+        localStorage.setItem('theme', sessionTheme);
 
-        // Mensagem e Reload com Delay Seguro
-        const msg = document.getElementById('restore-message');
-        if(msg) {
-            msg.textContent = "Dados restaurados! Atualizando...";
-            msg.style.display = 'block';
-            msg.className = 'backup-message success show';
+        // Recarrega
+        if (restored) {
+            alert('Backup restaurado com sucesso!');
+            window.location.reload();
+        } else {
+            alert('Backup restaurado! Faça login novamente.');
+            localStorage.removeItem('currentUser');
+            window.location.reload();
         }
-
-        setTimeout(() => {
-            if (loginSuccess) {
-                window.location.reload();
-            } else {
-                alert('Backup restaurado! Como seu usuário mudou, faça login novamente.');
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('isAuthenticated');
-                window.location.reload();
-            }
-        }, 1000); // 1 segundo para garantir a gravação no disco
 
     } catch (error) {
-        console.error("Erro Fatal:", error);
-        alert('Erro crítico na restauração.');
+        console.error("Erro:", error);
+        alert('Erro crítico ao restaurar.');
         localStorage.clear();
         window.location.reload();
     }
 }
-
 // ----------------------------------------------------------------------------
 // 20. DASHBOARD E INICIALIZAÇÃO
 // ----------------------------------------------------------------------------
