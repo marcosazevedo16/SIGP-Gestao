@@ -1033,7 +1033,7 @@ function renderMunicipalities() {
             }
 
             return `<tr>
-                <td style="font-weight:bold; color:#000000;">${m.name}</td>
+                <td class="text-primary-cell">${m.name}</td>
                 <td style="max-width: 140px; white-space: normal; line-height:1.1;">${modulesBadges}</td>
                 <td style="font-size:12px;">${m.manager}</td>
                 <td>${m.contact}</td>
@@ -1402,7 +1402,7 @@ function renderTasks() {
             if (obs.length > 30) obs = `<span title="${t.observations}">${t.observations.substring(0, 30)}...</span>`;
 
             return `<tr>
-                <td style="font-weight:bold; color:#000000;">${t.municipality}</td> <td style="text-align:center;">${formatDate(t.dateRequested)}</td>
+                <td class="text-primary-cell">${t.municipality}</td> <td style="text-align:center;">${formatDate(t.dateRequested)}</td>
                 <td style="text-align:center;">${formatDate(t.datePerformed)}</td>
                 <td>${t.requestedBy}</td>
                 <td>${t.performedBy}</td>
@@ -1632,7 +1632,7 @@ function renderRequests() {
             const statusBadge = `<span class="${statusClass}">${x.status}</span>`;
 
             return `<tr>
-                <td style="font-weight:bold; color:#000000;">${x.municipality}</td> <td style="text-align:center;">${formatDate(x.date)}</td>
+                <td class="text-primary-cell">${x.municipality}</td> <td style="text-align:center;">${formatDate(x.date)}</td>
                 <td style="text-align:center;">${formatDate(x.dateRealization)}</td>
                 <td>${x.requester}</td>
                 <td>${x.contact}</td>
@@ -2027,7 +2027,7 @@ function renderPresentations() {
             const formasStr = (Array.isArray(p.forms) && p.forms.length > 0) ? p.forms.join(', ') : '-';
 
             return `<tr>
-                <td style="font-weight:bold; color:#000000;">${p.municipality}</td> <td style="text-align:center;">${formatDate(p.dateSolicitacao)}</td>
+                <td class="text-primary-cell">${p.municipality}</td> <td style="text-align:center;">${formatDate(p.dateSolicitacao)}</td>
                 <td>${p.requester}</td>
                 <td>${orientadoresStr}</td>
                 <td>${formasStr}</td>
@@ -2319,7 +2319,7 @@ function renderDemands() {
             if (d.priority === 'Baixa') prioColor = '#79C2A9';
 
             return `<tr>
-                <td style="font-weight:bold; color:#000000;">${d.user || '-'}</td> <td style="text-align:center;">${formatDate(d.date)}</td>
+                <td class="text-primary-cell">${d.user || '-'}</td> <td style="text-align:center;">${formatDate(d.date)}</td>
                 <td>${d.description}</td>
                 <td style="color:${prioColor}; font-weight:bold;">${d.priority}</td>
                 <td style="text-align:center;">${statusBadge}</td>
@@ -2605,7 +2605,7 @@ function renderVisits() {
             const justif = v.justification ? (v.justification.length > 30 ? `<span title="${v.justification}">${v.justification.substring(0,30)}...</span>` : v.justification) : '-';
 
             return `<tr>
-                <td style="font-weight:bold; color:#000000;">${v.municipality}</td> <td style="text-align:center;">${formatDate(v.date)}</td>
+                <td class="text-primary-cell">${v.municipality}</td> <td style="text-align:center;">${formatDate(v.date)}</td>
                 <td>${v.applicant}</td>
                 <td style="font-size:12px;">${motivo}</td>
                 <td style="text-align:center;">${statusBadge}</td>
@@ -2878,7 +2878,7 @@ function renderProductions() {
             const freqBadge = `<span style="color:${freqColor}; font-weight:bold;">${p.frequency}</span>`;
 
             return `<tr>
-                <td style="font-weight:bold; color:#000000;">${p.municipality}</td> <td>${p.professional || '-'}</td>
+                <td class="text-primary-cell">${p.municipality}</td> <td>${p.professional || '-'}</td>
                 <td>${freqBadge}</td>
                 <td>${p.competence}</td>
                 <td>${p.frequency === 'Diário' ? '-' : (p.period || '-')}</td>
