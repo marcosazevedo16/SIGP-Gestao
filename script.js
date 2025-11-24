@@ -1264,6 +1264,13 @@ function clearMunicipalityFilters() {
 function showTaskModal(id = null) {
     editingId = id;
     document.getElementById('task-form').reset();
+
+// --- ADICIONE ESTAS 2 LINHAS AQUI: ---
+    // Isso popula o select com os Colaboradores cadastrados, removendo a lista fixa do HTML
+    const selectColab = document.getElementById('task-performed-by');
+    populateSelect(selectColab, orientadores, 'name', 'name'); 
+    // -------------------------------------
+    
     updateGlobalDropdowns();
     
     // AJUSTE 1: Mover município para o topo
