@@ -3477,3 +3477,38 @@ table th {
         grid-column: span 2;
     }
 }
+/* ==========================================================================
+   CORREÇÃO DE CORES (TEMA CLARO/ESCURO) E REMOÇÃO DE NEGRITO
+   Adicione ao final do style.css
+   ========================================================================== */
+
+/* Célula Principal (Nome do Município, Usuário, etc) */
+.text-primary-cell {
+    font-weight: normal !important; /* Remove o negrito (Pedido 1 e 2) */
+    color: #000000;                 /* Cor Preta no modo Claro */
+    font-size: 14px;
+}
+
+/* Célula Secundária (Observações, Justificativas - estava cinza fixo #555) */
+.text-secondary-cell {
+    font-size: 12px;
+    color: var(--color-text-secondary); /* Usa a variável do tema (Cinza escuro ou claro) */
+}
+
+/* --- REGRAS PARA O TEMA ESCURO (Pedido 3) --- */
+/* Quando o atributo data-theme for "dark" ou data-color-scheme for "dark" */
+[data-theme="dark"] .text-primary-cell,
+[data-color-scheme="dark"] .text-primary-cell {
+    color: #ffffff !important;      /* Muda para Branco no modo Escuro */
+}
+
+/* Garante que o texto secundário fique legível no escuro */
+[data-theme="dark"] .text-secondary-cell,
+[data-color-scheme="dark"] .text-secondary-cell {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Removemos a cor preta forçada de links ou textos dentro das tabelas no modo escuro */
+[data-theme="dark"] table td {
+    color: var(--color-text);
+}
