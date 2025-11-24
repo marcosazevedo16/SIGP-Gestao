@@ -3158,8 +3158,47 @@ function deleteUser(id) { const u=users.find(x=>x.id===id); if(u.login==='ADMIN'
 function closeUserModal(){document.getElementById('user-modal').classList.remove('show');}
 
 // Cargos
-function showCargoModal(id=null){ editingId=id; document.getElementById('cargo-form').reset(); if(id){const c=cargos.find(x=>x.id===id); document.getElementById('cargo-name').value=c.name;} document.getElementById('cargo-modal').classList.add('show'); }
-function saveCargo(e){ e.preventDefault(); const data={name:document.getElementById('cargo-name').value}; if(editingId){const i=cargos.findIndex(x=>x.id===editingId); cargos[i]={...cargos[i],...data};}else{cargos.push({id:getNextId('cargo'),...data});} salvarNoArmazenamento('cargos',cargos); document.getElementById('cargo-modal').classList.remove('show'); renderCargos(); }
+// 1. Função para Abrir o Modal (Agora carregando a descrição ao editar)
+function showCargoModal(id = null) {
+    editingId = id;
+    document.getElementById('cargo-form').reset();
+    
+    if (id) {
+        const c = cargos.find(x => x.id === id);
+        if (c) {
+            document.getElementById('cargo-name').value = c.name;
+            // Esta linha abaixo estava faltando para carregar a descrição existente:
+            document.getElementById('cargo-description').value = c.description || ''; 
+        }
+    }
+    document.getElementById('cargo-modal').classList.add('show');
+}
+
+// 2. Função para Salvar (Agora gravando a descrição)
+function saveCargo(e) {
+    e.preventDefault();
+    
+    const data = {
+        name: document.getElementById('cargo-name').value,
+        // Esta linha abaixo estava faltando para salvar o texto:
+        description: document.getElementById('cargo-description').value 
+    };
+
+    if (editingId) {
+        const i = cargos.findIndex(x => x.id === editingId);
+        if (i !== -1) {
+            cargos[i] = { ...cargos[i], ...data };
+        }
+    } else {
+        cargos.push({ id: getNextId('cargo'), ...data });
+    }
+    
+    salvarNoArmazenamento('cargos', cargos);
+    document.getElementById('cargo-modal').classList.remove('show');
+    renderCargos();
+    showToast('Cargo salvo com sucesso!', 'success');
+}
+
 function renderCargos() {
     const c = document.getElementById('cargos-table');
     const countDiv = document.getElementById('cargos-total');
