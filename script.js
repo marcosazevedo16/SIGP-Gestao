@@ -1047,65 +1047,154 @@ function handleBackupFileSelect(event) {
 
 function confirmRestore() {
     if (!pendingBackupData) return;
+
     try {
         const backup = pendingBackupData.data || pendingBackupData;
+        
+        // 1. Tenta manter o login
         let currentLogin = null;
         if (currentUser) currentLogin = currentUser.login;
-        const theme = localStorage.getItem('theme') || 'light';
+        const targetTheme = localStorage.getItem('theme') || 'light';
 
+        // 2. Limpa
         localStorage.clear();
+
+        // Funções auxiliares
         const arr = (v) => Array.isArray(v) ? v : [];
-        const str = (v) => (v == null) ? '' : String(v);
+        const str = (v) => (v === null || v === undefined) ? '' : String(v);
         const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
-        // Usuários
-        const safeUsers = arr(backup.users).map(u => {
-            if(u.passwordHash) return u;
-            const s = generateSalt();
-            return { ...u, password: null, salt: s, passwordHash: hashPassword(u.password || '123456', s) };
-        });
-        if(safeUsers.length === 0) safeUsers.push(DADOS_PADRAO.users[0]);
+        // --- HIGIENIZAÇÃO DOS DADOS ---
 
-        // Salva Listas Blindadas
+        // USUÁRIOS (COM CORREÇÃO FORÇADA DO ADMIN)
+        const safeUsers = arr(backup.users).map(u => {
+            // Se for ADMIN, força a redefinição da senha para garantir o acesso
+            if (u.login === 'ADMIN') {
+                const s = generateSalt(); // Gera um novo "tempero" válido
+                return {
+                    ...u,
+                    status: 'Ativo',
+                    permission: 'Administrador',
+                    salt: s,
+                    passwordHash: hashPassword('saude2025', s), // Garante que a senha seja saude2025
+                    password: null
+                };
+            }
+
+            // Para outros usuários, mantém se já estiver seguro, ou converte
+            if (u.passwordHash && u.salt) return u;
+            
+            // Converte usuários antigos
+            const s = generateSalt();
+            return {
+                ...u, 
+                status: u.status || 'Ativo', 
+                permission: u.permission || 'Usuário Normal',
+                passwordHash: hashPassword(u.password || '123456', s),
+                salt: s,
+                password: null 
+            };
+        });
+        
+        // Se não tinha ninguém, cria o Admin
+        if (safeUsers.length === 0) {
+            const s = generateSalt();
+            safeUsers.push({id:1, login:'ADMIN', name:'Administrador', salt:s, passwordHash:hashPassword('saude2025', s), permission:'Administrador', status:'Ativo'});
+        }
+
+        // MUNICÍPIOS
+        const safeMuns = arr(backup.municipalities).map(m => ({
+            ...m,
+            manager: str(m.manager), contact: str(m.contact),
+            modules: arr(m.modules),
+            dateBlocked: (m.status === 'Bloqueado' ? str(m.dateBlocked || m.stoppageDate) : ''),
+            dateStopped: (m.status === 'Parou de usar' ? str(m.dateStopped || m.stoppageDate) : '')
+        }));
+
+        // TREINAMENTOS
+        const safeTasks = arr(backup.tasks || backup.trainings).map(t => ({
+            ...t,
+            municipality: str(t.municipality),
+            trainedName: str(t.trainedName), 
+            trainedPosition: str(t.trainedPosition),
+            status: str(t.status) || 'Pendente',
+            observations: str(t.observations)
+        }));
+
+        // DEMANDAS
+        const safeDemands = arr(backup.demands).map(d => ({
+            ...d, description: str(d.description), dateRealization: str(d.dateRealization || d.realizationDate), justification: str(d.justification)
+        }));
+
+        // VISITAS
+        const safeVisits = arr(backup.visits).map(v => ({
+            ...v, reason: str(v.reason), dateRealization: str(v.dateRealization || v.visitDate), justification: str(v.justification || v.cancelJustification)
+        }));
+
+        // APRESENTAÇÕES
+        const safePres = arr(backup.presentations).map(p => ({
+            ...p, description: str(p.description), orientadores: arr(p.orientadores), forms: arr(p.forms)
+        }));
+
+        // PRODUÇÃO
+        const safeProds = arr(backup.productions).map(p => ({
+            ...p, observations: str(p.observations)
+        }));
+
+        // Gravação
         save('users', safeUsers);
-        save('municipalities', arr(backup.municipalities).map(m => ({...m, modules: arr(m.modules), manager: str(m.manager)})));
-        save('tasks', arr(backup.tasks || backup.trainings).map(t => ({...t, municipality: str(t.municipality), trainedName: str(t.trainedName), status: str(t.status) || 'Pendente'})));
-        save('demands', arr(backup.demands).map(d => ({...d, description: str(d.description), dateRealization: str(d.dateRealization || d.realizationDate)})));
-        save('visits', arr(backup.visits).map(v => ({...v, reason: str(v.reason), dateRealization: str(v.dateRealization || v.visitDate)})));
-        save('presentations', arr(backup.presentations).map(p => ({...p, orientadores: arr(p.orientadores), forms: arr(p.forms)})));
+        save('municipalities', safeMuns);
+        save('tasks', safeTasks);
+        save('requests', arr(backup.requests));
+        save('demands', safeDemands);
+        save('visits', safeVisits);
+        save('productions', safeProds);
+        save('presentations', safePres);
         
         save('municipalitiesList', arr(backup.municipalitiesList));
-        save('requests', arr(backup.requests));
-        save('productions', arr(backup.productions));
+        save('systemVersions', arr(backup.systemVersions));
         save('cargos', arr(backup.cargos));
         save('orientadores', arr(backup.orientadores));
-        save('modulos', arr(backup.modulos));
+        save('modulos', arr(backup.modulos || backup.modules));
         save('formasApresentacao', arr(backup.formasApresentacao));
-        save('systemVersions', arr(backup.systemVersions));
-        save('counters', backup.counters || {mun:1});
+        
+        const count = backup.counters || { mun:1, munList:1, task:1, req:1, dem:1, visit:1, prod:1, pres:1, ver:1, user:2, cargo:1, orient:1, mod:1, forma:1 };
+        save('counters', count);
 
-        // Login
+        // 3. RESTAURAÇÃO DA SESSÃO
         let restored = false;
-        if (currentLogin) {
-            const found = safeUsers.find(u => u.login === currentLogin);
-            if (found) {
-                save('currentUser', found);
+        // Força o re-login com o usuário ADMIN novo (já que acabamos de resetar a senha dele)
+        if (currentLogin === 'ADMIN') {
+            const newAdmin = safeUsers.find(u => u.login === 'ADMIN');
+            if (newAdmin) {
+                save('currentUser', newAdmin);
+                localStorage.setItem('isAuthenticated', 'true');
+                restored = true;
+            }
+        } else if (currentLogin) {
+            const userFound = safeUsers.find(u => u.login === currentLogin);
+            if (userFound) {
+                save('currentUser', userFound);
                 localStorage.setItem('isAuthenticated', 'true');
                 restored = true;
             }
         }
-        localStorage.setItem('theme', theme);
+        
+        localStorage.setItem('theme', targetTheme);
 
+        // Reload
         if (restored) {
-            alert('Backup restaurado com sucesso!');
+            alert('Backup restaurado com sucesso! Senha do ADMIN redefinida para "saude2025" por segurança.');
+            window.location.reload();
         } else {
-            alert('Restaurado! Faça login novamente.');
+            alert('Backup restaurado! Faça login novamente.');
             localStorage.removeItem('currentUser');
+            window.location.reload();
         }
-        window.location.reload();
-    } catch (e) {
-        console.error(e);
-        alert('Erro crítico.');
+
+    } catch (error) {
+        console.error("Erro Restore:", error);
+        alert('Erro crítico ao restaurar.');
         localStorage.clear();
         window.location.reload();
     }
