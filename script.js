@@ -557,11 +557,37 @@ function getNextId(key) {
 // 9. INTERFACE E NAVEGAÇÃO
 // ----------------------------------------------------------------------------
 
+// Substitua a função antiga por esta nova versão
 function initializeTheme() {
+    // 1. Aplica o atributo no HTML para o CSS funcionar
     document.documentElement.setAttribute('data-theme', currentTheme);
+    
+    // 2. Atualiza o texto do botão
     const btn = document.getElementById('theme-toggle');
     if (btn) {
         btn.innerHTML = currentTheme === 'light' ? '🌙 Tema' : '☀️ Tema';
+    }
+
+    // 3. ATUALIZAÇÃO DO CHART.JS (CORREÇÃO DE CORES DOS GRÁFICOS)
+    if (window.Chart) {
+        if (currentTheme === 'dark') {
+            // Configurações para TEMA ESCURO
+            Chart.defaults.color = '#e0e0e0';         // Cor do texto (legendas, eixos)
+            Chart.defaults.borderColor = '#444444';   // Cor das linhas de grade
+        } else {
+            // Configurações para TEMA CLARO
+            Chart.defaults.color = '#666666';         // Cor do texto original
+            Chart.defaults.borderColor = '#e5e5e5';   // Cor das linhas de grade original
+        }
+    }
+
+    // 4. Força a atualização da aba atual para redesenhar os gráficos com a nova cor
+    const activeTab = document.querySelector('.tab-content.active');
+    if (activeTab) {
+        // Pequeno delay para garantir que o CSS trocou antes de redesenhar
+        setTimeout(() => {
+            refreshCurrentTab(activeTab.id);
+        }, 50);
     }
 }
 
