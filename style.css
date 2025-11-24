@@ -3530,3 +3530,19 @@ table th {
     color: var(--color-text);
     background-color: var(--color-surface);
 }
+/* ==========================================================================
+   CORREÇÃO: TEXTO DOS CARDS DE ESTATÍSTICA (RODAPÉ DAS TABELAS)
+   Adicione ao final do style.css
+   ========================================================================== */
+
+/* Força a descrição (ex: "Total de Municípios") a ficar clara no tema escuro */
+[data-theme="dark"] .stat-card p,
+[data-color-scheme="dark"] .stat-card p {
+    color: rgba(255, 255, 255, 0.7) !important; /* Cinza claro / Branco */
+}
+
+/* Opcional: Caso o número (Título) também esteja difícil de ler, use isto: */
+[data-theme="dark"] .stat-card h3,
+[data-color-scheme="dark"] .stat-card h3 {
+    color: #ffffff !important; /* Garante que o número fique branco puro */
+}
