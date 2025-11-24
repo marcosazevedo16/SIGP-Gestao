@@ -1411,11 +1411,24 @@ function getFilteredTasks() {
 }
 
 function renderTasks() {
-    // ... (lógica de filtro simplificada)
-    const filtered = tasks; 
+    // Recupera a lógica de filtro original
+    const filtered = getFilteredTasks(); 
     const c = document.getElementById('tasks-table');
     
-    if (filtered.length === 0) { c.innerHTML = '<div class="empty-state">Vazio.</div>'; } else {
+    // --- CORREÇÃO: ESTATÍSTICAS REATIVADAS ---
+    if(document.getElementById('tasks-results-count')) {
+        document.getElementById('tasks-results-count').style.display = 'block';
+        document.getElementById('tasks-results-count').innerHTML = '<strong>' + filtered.length + '</strong> treinamentos encontrados';
+    }
+    if(document.getElementById('total-tasks')) document.getElementById('total-tasks').textContent = tasks.length;
+    if(document.getElementById('completed-tasks')) document.getElementById('completed-tasks').textContent = filtered.filter(t => t.status==='Concluído').length;
+    if(document.getElementById('pending-tasks')) document.getElementById('pending-tasks').textContent = filtered.filter(t => t.status==='Pendente').length;
+    if(document.getElementById('cancelled-tasks')) document.getElementById('cancelled-tasks').textContent = filtered.filter(t => t.status==='Cancelado').length;
+    // ----------------------------------------
+
+    if (filtered.length === 0) { 
+        c.innerHTML = '<div class="empty-state">Nenhum treinamento encontrado.</div>'; 
+    } else {
         const rows = filtered.map(t => {
             let obs = t.observations ? (t.observations.length > 30 ? t.observations.substring(0,30)+'...' : t.observations) : '-';
             const stCls = t.status === 'Concluído' ? 'completed' : (t.status === 'Cancelado' ? 'cancelled' : 'pending');
@@ -1433,8 +1446,9 @@ function renderTasks() {
                 <td><button class="btn btn--sm" onclick="showTaskModal(${t.id})">✏️</button><button class="btn btn--sm" onclick="deleteTask(${t.id})">🗑️</button></td>
             </tr>`;
         }).join('');
-        // CABEÇALHO ATUALIZADO AQUI (Orientador -> Colaborador):
-        c.innerHTML = `<table><thead><th>Município</th><th>Data Sol.</th><th>Data Real.</th><th>Solicitante</th><th>Colaborador</th><th>Profissional</th><th>Cargo</th><th>Contato</th><th>Obs</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+        
+        // CORREÇÃO: Coluna renomeada para "Colaborador Responsável"
+        c.innerHTML = `<table><thead><th>Município</th><th>Data Sol.</th><th>Data Real.</th><th>Solicitante</th><th>Colaborador Responsável</th><th>Profissional</th><th>Cargo</th><th>Contato</th><th>Obs</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
 }
 
@@ -1607,11 +1621,11 @@ function renderRequests() {
     const filtered = getFilteredRequests();
     const c = document.getElementById('requests-table');
     
+    // Estatísticas
     if(document.getElementById('requests-results-count')) {
         document.getElementById('requests-results-count').innerHTML = '<strong>' + filtered.length + '</strong> solicitações encontradas';
         document.getElementById('requests-results-count').style.display = 'block';
     }
-    
     if(document.getElementById('total-requests')) document.getElementById('total-requests').textContent = requests.length;
     if(document.getElementById('pending-requests')) document.getElementById('pending-requests').textContent = filtered.filter(r => r.status === 'Pendente').length;
     if(document.getElementById('completed-requests')) document.getElementById('completed-requests').textContent = filtered.filter(r => r.status === 'Realizado').length;
@@ -1620,49 +1634,30 @@ function renderRequests() {
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhuma solicitação encontrada.</div>';
     } else {
-        const rows = filtered.map(function(x) {
+        const rows = filtered.map(x => {
             const desc = x.description.length > 40 ? `<span title="${x.description}">${x.description.substring(0,40)}...</span>` : x.description;
             const just = x.justification ? (x.justification.length > 30 ? `<span title="${x.justification}">${x.justification.substring(0,30)}...</span>` : x.justification) : '-';
             
-            let statusClass = 'task-status';
-            if (x.status === 'Realizado') statusClass += ' completed';
-            else if (x.status === 'Inviável') statusClass += ' cancelled';
-            else statusClass += ' pending';
+            let stCls = x.status === 'Realizado' ? 'completed' : (x.status === 'Inviável' ? 'cancelled' : 'pending');
 
-            const statusBadge = `<span class="${statusClass}">${x.status}</span>`;
-
+            // CORREÇÃO: Ordem das colunas alterada (Data Realização foi para direita do Status)
             return `<tr>
-                <td class="text-primary-cell">${x.municipality}</td> <td style="text-align:center;">${formatDate(x.date)}</td>
-                <td style="text-align:center;">${formatDate(x.dateRealization)}</td>
+                <td class="text-primary-cell">${x.municipality}</td>
+                <td style="text-align:center;">${formatDate(x.date)}</td>
                 <td>${x.requester}</td>
                 <td>${x.contact}</td>
                 <td style="font-size:12px;">${desc}</td>
-                <td>${x.user || '-'}</td>
-                <td>${statusBadge}</td>
-                <td class="text-secondary-cell">${just}</td>
+                <td>${x.user || '-'}</td> <td style="text-align:center;"><span class="task-status ${stCls}">${x.status}</span></td>
+                <td style="text-align:center;">${formatDate(x.dateRealization)}</td> <td class="text-secondary-cell">${just}</td>
                 <td>
-                    <button class="btn btn--sm" onclick="showRequestModal(${x.id})" title="Editar">✏️</button>
-                    <button class="btn btn--sm" onclick="deleteRequest(${x.id})" title="Excluir">🗑️</button>
+                    <button class="btn btn--sm" onclick="showRequestModal(${x.id})">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteRequest(${x.id})">🗑️</button>
                 </td>
             </tr>`;
         }).join('');
         
-        c.innerHTML = `
-        <table class="compact-table">
-            <thead>
-                <th>Município</th>
-                <th style="text-align:center;">Data<br>Solicitação</th>
-                <th style="text-align:center;">Data<br>Realização</th>
-                <th>Solicitante</th>
-                <th>Contato</th>
-                <th>Descrição da<br>Solicitação</th>
-                <th>Usuário</th>
-                <th>Status</th>
-                <th>Justificativa</th>
-                <th>Ações</th>
-            </thead>
-            <tbody>${rows}</tbody>
-        </table>`;
+        // CORREÇÃO: Cabeçalho com ordem nova e nome novo ("Usuário que Registrou a Demanda")
+        c.innerHTML = `<table><thead><th>Município</th><th>Data Sol.</th><th>Solicitante</th><th>Contato</th><th>Descrição</th><th>Usuário que Registrou a Demanda</th><th style="text-align:center;">Status</th><th style="text-align:center;">Data Real.</th><th>Justificativa</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
     
     updateRequestCharts(filtered);
@@ -1985,34 +1980,49 @@ function getFilteredPresentations() {
 }
 
 function renderPresentations() {
-    // ... (lógica de filtro simplificada mantida do código anterior)
-    const filtered = presentations; 
+    const filtered = getFilteredPresentations(); // Usa a função de filtro real
     const c = document.getElementById('presentations-table');
     
-    // Atualiza contador da aba principal
-    const counter = document.getElementById('presentations-results-count');
-    if(counter) { counter.style.display='block'; counter.innerHTML=`<strong>${filtered.length}</strong> apresentações encontradas`; }
+    // --- CORREÇÃO: ESTATÍSTICAS REATIVADAS ---
+    if(document.getElementById('presentations-results-count')) {
+        document.getElementById('presentations-results-count').innerHTML = '<strong>' + filtered.length + '</strong> apresentações encontradas';
+        document.getElementById('presentations-results-count').style.display = 'block';
+    }
+    if(document.getElementById('total-presentations')) document.getElementById('total-presentations').textContent = presentations.length;
+    if(document.getElementById('pending-presentations')) document.getElementById('pending-presentations').textContent = filtered.filter(p => p.status === 'Pendente').length;
+    if(document.getElementById('completed-presentations')) document.getElementById('completed-presentations').textContent = filtered.filter(p => p.status === 'Realizada').length;
+    if(document.getElementById('cancelled-presentations')) document.getElementById('cancelled-presentations').textContent = filtered.filter(p => p.status === 'Cancelada').length;
+    // ----------------------------------------
 
-    if(filtered.length===0) { c.innerHTML='<div class="empty-state">Vazio.</div>'; } else {
+    if (filtered.length === 0) {
+        c.innerHTML = '<div class="empty-state">Nenhuma apresentação encontrada.</div>';
+    } else {
         const rows = filtered.map(p => {
-            const desc = p.description ? (p.description.length>30?p.description.substring(0,30)+'...':p.description) : '-';
-            const stCls = p.status==='Realizada'?'completed':(p.status==='Cancelada'?'cancelled':'pending');
-            const oStr = (p.orientadores||[]).join(', ');
-            
+            const desc = p.description ? (p.description.length > 30 ? p.description.substring(0, 30) + '...' : p.description) : '-';
+            const stCls = p.status === 'Realizada' ? 'completed' : (p.status === 'Cancelada' ? 'cancelled' : 'pending');
+            const oStr = (p.orientadores || []).join(', ');
+
             return `<tr>
                 <td class="text-primary-cell">${p.municipality}</td>
                 <td style="text-align:center;">${formatDate(p.dateSolicitacao)}</td>
                 <td>${p.requester}</td>
-                <td>${oStr}</td> <td>${(p.forms||[]).join(', ')}</td>
+                <td>${oStr}</td>
+                <td>${(p.forms || []).join(', ')}</td>
                 <td class="text-secondary-cell">${desc}</td>
                 <td style="text-align:center;">${formatDate(p.dateRealizacao)}</td>
                 <td><span class="task-status ${stCls}">${p.status}</span></td>
-                <td><button class="btn btn--sm" onclick="showPresentationModal(${p.id})">✏️</button><button class="btn btn--sm" onclick="deletePresentation(${p.id})">🗑️</button></td>
+                <td>
+                    <button class="btn btn--sm" onclick="showPresentationModal(${p.id})">✏️</button>
+                    <button class="btn btn--sm" onclick="deletePresentation(${p.id})">🗑️</button>
+                </td>
             </tr>`;
         }).join('');
-        // CABEÇALHO ATUALIZADO AQUI:
+        
         c.innerHTML = `<table><thead><th>Município</th><th>Data Sol.</th><th>Solicitante(s)</th><th>Colaborador(es) Responsável(is)</th><th>Formas</th><th>Descrição</th><th>Data Real.</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
+    
+    // --- CORREÇÃO: GRÁFICOS REATIVADOS ---
+    updatePresentationCharts(filtered);
 }
 
 function updatePresentationCharts(data) {
@@ -3189,11 +3199,38 @@ function showMunicipalityListModal(id=null){ editingId=id; document.getElementBy
 function saveMunicipalityList(e){ e.preventDefault(); const data={name:document.getElementById('municipality-list-name').value, uf:document.getElementById('municipality-list-uf').value}; if(editingId){const i=municipalitiesList.findIndex(x=>x.id===editingId); municipalitiesList[i]={...municipalitiesList[i],...data};}else{municipalitiesList.push({id:getNextId('munList'),...data});} salvarNoArmazenamento('municipalitiesList',municipalitiesList); document.getElementById('municipality-list-modal').classList.remove('show'); renderMunicipalityList(); updateGlobalDropdowns(); showToast('Salvo!'); }
 
 function renderMunicipalityList() {
+    // Lógica do Novo Filtro
+    const filterInput = document.getElementById('filter-municipality-list-name');
+    const filterVal = filterInput ? filterInput.value.toLowerCase() : '';
+    
+    const filtered = municipalitiesList.filter(m => m.name.toLowerCase().includes(filterVal));
+    
+    // Ordena alfabeticamente
+    filtered.sort((a,b) => a.name.localeCompare(b.name));
+
     const c = document.getElementById('municipalities-list-table');
     const countDiv = document.getElementById('municipalities-list-total');
-    if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`<strong>${municipalitiesList.length}</strong> Municípios cadastrados`; }
+    
+    if(countDiv) { 
+        countDiv.style.display = 'block'; 
+        countDiv.innerHTML = `Total de Municípios cadastrados: <strong>${filtered.length}</strong>`; 
+    }
 
-    const r = municipalitiesList.map(m => `<tr><td class="text-primary-cell">${m.name}</td><td>${m.uf}</td><td><button class="btn btn--sm" onclick="showMunicipalityListModal(${m.id})">✏️</button><button class="btn btn--sm" onclick="deleteMunicipalityList(${m.id})">🗑️</button></td></tr>`).join('');
+    if (filtered.length === 0) {
+        c.innerHTML = '<div class="empty-state">Nenhum município encontrado.</div>';
+        return;
+    }
+
+    const r = filtered.map(m => 
+        `<tr>
+            <td class="text-primary-cell">${m.name}</td>
+            <td>${m.uf}</td>
+            <td>
+                <button class="btn btn--sm" onclick="showMunicipalityListModal(${m.id})">✏️</button>
+                <button class="btn btn--sm" onclick="deleteMunicipalityList(${m.id})">🗑️</button>
+            </td>
+        </tr>`
+    ).join('');
     c.innerHTML = `<table><thead><th>Nome</th><th>UF</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
