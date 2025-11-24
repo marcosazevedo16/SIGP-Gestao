@@ -3445,44 +3445,134 @@ function confirmRestore() {
         saveList('municipalitiesList', backup.municipalitiesList);
         saveList('requests', backup.requests);
         saveList('productions', backup.productions);
-        saveList('presentations', backup.presentations);
-        saveList('systemVersions', backup.systemVersions);
-        saveList('cargos', backup.cargos);
-        saveList('orientadores', backup.orientadores);
-        saveList('modulos', backup.modulos || backup.modules);
-        saveList('formasApresentacao', backup.formasApresentacao);
+function confirmRestore() {
+    if (!pendingBackupData) return;
 
-        // CONTADORES
+    try {
+        const backup = pendingBackupData.data || pendingBackupData;
+        
+        // 1. Guarda QUEM é você (apenas o Login, ex: "ADMIN")
+        let targetLogin = null;
+        try {
+            const sessionStr = localStorage.getItem('currentUser');
+            if (sessionStr) targetLogin = JSON.parse(sessionStr).login;
+        } catch (e) {}
+        
+        const targetTheme = localStorage.getItem('theme') || 'light';
+
+        // 2. Limpa o Armazenamento (Zera tudo)
+        localStorage.clear();
+
+        // --- HIGIENIZAÇÃO DOS DADOS (Prepara o terreno) ---
+
+        // Helper para garantir arrays
+        const ensureArr = (arr) => Array.isArray(arr) ? arr : [];
+        const str = (val) => (val === null || val === undefined) ? '' : String(val);
+
+        // Usuários (Recria com segurança)
+        const safeUsers = ensureArr(backup.users).map(u => ({
+            ...u, 
+            status: u.status || 'Ativo', 
+            permission: u.permission || 'Usuário Normal',
+            // Garante hash se não tiver
+            passwordHash: u.passwordHash || hashPassword('saude2025', generateSalt()),
+            salt: u.salt || generateSalt(),
+            password: null 
+        }));
+        // Garante Admin de emergência
+        if (safeUsers.length === 0) {
+            const s = generateSalt();
+            safeUsers.push({id:1, login:'ADMIN', name:'Administrador', salt:s, passwordHash:hashPassword('saude2025', s), permission:'Administrador', status:'Ativo'});
+        }
+
+        // Municípios
+        const safeMuns = ensureArr(backup.municipalities).map(m => ({
+            ...m,
+            manager: str(m.manager), contact: str(m.contact),
+            modules: ensureArr(m.modules),
+            dateBlocked: (m.status === 'Bloqueado' ? str(m.dateBlocked || m.stoppageDate) : ''),
+            dateStopped: (m.status === 'Parou de usar' ? str(m.dateStopped || m.stoppageDate) : '')
+        }));
+
+        // Treinamentos
+        const safeTasks = ensureArr(backup.tasks || backup.trainings).map(t => ({
+            ...t, municipality: str(t.municipality), status: str(t.status) || 'Pendente', observations: str(t.observations)
+        }));
+
+        // Outras listas (Processamento simplificado)
+        const safeRequests = ensureArr(backup.requests);
+        const safeDemands = ensureArr(backup.demands);
+        const safeVisits = ensureArr(backup.visits);
+        const safeProds = ensureArr(backup.productions);
+        const safePres = ensureArr(backup.presentations);
+        const safeListMestra = ensureArr(backup.municipalitiesList);
+        const safeVers = ensureArr(backup.systemVersions);
+        const safeCargos = ensureArr(backup.cargos);
+        const safeOrient = ensureArr(backup.orientadores);
+        const safeMods = ensureArr(backup.modulos || backup.modules);
+        const safeFormas = ensureArr(backup.formasApresentacao);
+
+        // Contadores
         const safeCounters = backup.counters || { mun:1, munList:1, task:1, req:1, dem:1, visit:1, prod:1, pres:1, ver:1, user:2, cargo:1, orient:1, mod:1, forma:1 };
-        localStorage.setItem('counters', JSON.stringify(safeCounters));
 
-        // --- RESTAURAÇÃO DE SESSÃO (CRÍTICO: RE-LOGIN IMEDIATO) ---
-        let restored = false;
-        if (currentLogin) {
-            // Encontra o usuário no banco NOVO
-            const userFound = safeUsers.find(u => u.login === currentLogin);
-            if (userFound) {
-                // Atualiza a sessão com o objeto que ACABOU de ser salvo (garante compatibilidade)
-                localStorage.setItem('currentUser', JSON.stringify(userFound));
+        // --- GRAVAÇÃO (Persistência) ---
+        const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+        
+        save('users', safeUsers);
+        save('municipalities', safeMuns);
+        save('tasks', safeTasks);
+        save('requests', safeRequests);
+        save('demands', safeDemands);
+        save('visits', safeVisits);
+        save('productions', safeProds);
+        save('presentations', safePres);
+        save('municipalitiesList', safeListMestra);
+        save('systemVersions', safeVers);
+        save('cargos', safeCargos);
+        save('orientadores', safeOrient);
+        save('modulos', safeMods);
+        save('formasApresentacao', safeFormas);
+        save('counters', safeCounters);
+
+        // --- RECONEXÃO DA SESSÃO (O Segredo) ---
+        let loginSuccess = false;
+        
+        if (targetLogin) {
+            // Busca o usuário no banco NOVO (já higienizado e com ID correto)
+            const freshUser = safeUsers.find(u => u.login === targetLogin);
+            
+            if (freshUser) {
+                // Injeta a sessão "fresca" e compatível
+                save('currentUser', freshUser);
                 localStorage.setItem('isAuthenticated', 'true');
-                restored = true;
+                loginSuccess = true;
             }
         }
         
-        localStorage.setItem('theme', sessionTheme);
+        localStorage.setItem('theme', targetTheme);
 
-        // Feedback e Reload
-        if (restored) {
-            alert('Backup restaurado! Login mantido.');
-            window.location.reload();
-        } else {
-            alert('Backup restaurado! Seu usuário mudou, faça login novamente.');
-            window.location.reload();
+        // Mensagem e Reload com Delay Seguro
+        const msg = document.getElementById('restore-message');
+        if(msg) {
+            msg.textContent = "Dados restaurados! Atualizando...";
+            msg.style.display = 'block';
+            msg.className = 'backup-message success show';
         }
+
+        setTimeout(() => {
+            if (loginSuccess) {
+                window.location.reload();
+            } else {
+                alert('Backup restaurado! Como seu usuário mudou, faça login novamente.');
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('isAuthenticated');
+                window.location.reload();
+            }
+        }, 1000); // 1 segundo para garantir a gravação no disco
 
     } catch (error) {
         console.error("Erro Fatal:", error);
-        alert('Erro crítico ao restaurar.');
+        alert('Erro crítico na restauração.');
         localStorage.clear();
         window.location.reload();
     }
