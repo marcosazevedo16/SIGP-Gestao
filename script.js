@@ -3430,40 +3430,75 @@ function handleBackupFileSelect(event) {
     reader.onload = function(e) {
         try {
             const backup = JSON.parse(e.target.result);
-            if (!backup.data) { alert('Inválido.'); return; }
+            if (!backup.data) { alert('Arquivo de backup inválido.'); return; }
+            
+            // Salva os dados na variável temporária para usar no botão "Confirmar"
             pendingBackupData = backup;
             
             const list = document.getElementById('restore-preview-list');
             if(list) {
-                list.innerHTML = '';
+                list.innerHTML = ''; // Limpa a lista anterior
                 const d = backup.data;
-                // LISTAGEM COMPLETA DE TODOS OS DADOS
-                const items = [
-                    {l:'Treinamentos', c: d.tasks ? d.tasks.length : (d.trainings ? d.trainings.length : 0)},
-                    {l:'Municípios Clientes', c: d.municipalities.length},
-                    {l:'Lista Mestra', c: d.municipalitiesList?.length || 0},
-                    {l:'Solicitações', c: d.requests?.length || 0},
-                    {l:'Apresentações', c: d.presentations?.length || 0},
-                    {l:'Demandas', c: d.demands?.length || 0},
-                    {l:'Visitas', c: d.visits?.length || 0},
-                    {l:'Produção', c: d.productions?.length || 0},
-                    {l:'Cargos', c: d.cargos?.length || 0},
-                    {l:'Colaboradores', c: d.orientadores?.length || 0}, // AJUSTADO PARA LER "COLABORADORES"
-                    {l:'Módulos', c: d.modules?.length || 0},
-                    {l:'Formas', c: d.formasApresentacao?.length || 0},
-                    {l:'Usuários', c: d.users.length},
-                    {l:'Versões', c: d.systemVersions?.length || 0}
+
+                // --- CONFIGURAÇÃO DOS NOMES E DADOS ---
+                // Aqui definimos o nome que aparece na tela e onde buscar os dados
+                const mapa = [
+                    { label: 'Treinamentos', dados: d.tasks || d.trainings },
+                    { label: 'Municípios Clientes', dados: d.municipalities },
+                    { label: 'Lista Mestra de Municípios', dados: d.municipalitiesList },
+                    { label: 'Solicitações/Sugestões de Clientes', dados: d.requests },
+                    { label: 'Apresentações do Software', dados: d.presentations },
+                    { label: 'Demandas do Suporte', dados: d.demands },
+                    { label: 'Visitas', dados: d.visits },
+                    { label: 'Envios de Produção', dados: d.productions },
+                    { label: 'Cargos/Funções', dados: d.cargos },
+                    { label: 'Colaboradores', dados: d.orientadores },
+                    { label: 'Módulos', dados: d.modulos || d.modules },
+                    { label: 'Formas de Apresentação', dados: d.formasApresentacao },
+                    { label: 'Usuários', dados: d.users }
+                    // Nota: "Versões" foi removido conforme seu pedido
                 ];
-                items.forEach(i => {
-                    list.innerHTML += `<li><strong>${i.l}:</strong> ${i.c}</li>`;
+
+                // Gera a lista na tela
+                mapa.forEach(item => {
+                    const qtd = item.dados ? item.dados.length : 0;
+                    const textoResultado = qtd === 1 ? 'Resultado encontrado' : 'Resultados encontrados';
+                    
+                    // Cria o item da lista (li)
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>- ${item.label}:</strong> ${qtd} ${textoResultado}`;
+                    list.appendChild(li);
                 });
             }
+            
+            // Abre o modal
             document.getElementById('restore-confirm-modal').classList.add('show');
+            
         } catch (err) { 
-            alert('Erro ao ler arquivo.'); 
+            console.error(err);
+            alert('Erro ao ler o arquivo. Verifique se é um backup válido.'); 
         }
     };
     reader.readAsText(file);
+    
+    // Limpa o input para permitir selecionar o mesmo arquivo novamente se cancelar
+    event.target.value = ''; 
+}
+
+function closeRestoreConfirmModal() {
+    // 1. Fecha o modal removendo a classe que o exibe
+    document.getElementById('restore-confirm-modal').classList.remove('show');
+    
+    // 2. Limpa os dados temporários da memória
+    pendingBackupData = null;
+    
+    // 3. Limpa a lista visual para não duplicar na próxima vez
+    const list = document.getElementById('restore-preview-list');
+    if(list) list.innerHTML = '';
+
+    // 4. Limpa o input de arquivo para permitir selecionar o mesmo arquivo novamente se quiser
+    const fileInput = document.getElementById('backup-file-input');
+    if(fileInput) fileInput.value = '';
 }
 
 function confirmRestore() {
