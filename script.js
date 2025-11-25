@@ -1006,23 +1006,23 @@ function getFilteredMunicipalities() {
 }
 
 function renderMunicipalities() {
-    // --- LÓGICA DE FILTRO RESTAURADA ---
     const fName = document.getElementById('filter-municipality-name') ? document.getElementById('filter-municipality-name').value : '';
     const fStatus = document.getElementById('filter-municipality-status') ? document.getElementById('filter-municipality-status').value : '';
     const fMod = document.getElementById('filter-municipality-module') ? document.getElementById('filter-municipality-module').value : '';
     const fGest = document.getElementById('filter-municipality-manager') ? document.getElementById('filter-municipality-manager').value.toLowerCase() : '';
 
     let filtered = municipalities.filter(m => {
+        // CORREÇÃO C: Comparação exata (se fName existe e for diferente, remove da lista)
         if (fName && m.name !== fName) return false;
         if (fStatus && m.status !== fStatus) return false;
         if (fMod && !m.modules.includes(fMod)) return false;
         if (fGest && !m.manager.toLowerCase().includes(fGest)) return false;
         return true;
     }).sort((a,b) => a.name.localeCompare(b.name));
-    // -----------------------------------
 
+    // ... (Restante da função renderMunicipalities continua igual: contadores, tabela, etc)
+    // Mantenha o código de exibição da tabela que você já tem
     const c = document.getElementById('municipalities-table');
-    
     if(document.getElementById('municipalities-results-count')) {
         document.getElementById('municipalities-results-count').style.display = 'block';
         document.getElementById('municipalities-results-count').innerHTML = `<strong>${filtered.length}</strong> município(s) no total`;
@@ -1385,8 +1385,10 @@ function getFilteredTasks() {
 }
 
 function renderTasks() {
-    // --- LÓGICA DE FILTRO RESTAURADA ---
     const fMun = document.getElementById('filter-task-municipality')?.value;
+    // ... (capture as outras variáveis de filtro aqui conforme seu código original)
+    
+    // Se quiser garantir que todas as variáveis estão sendo lidas:
     const fStatus = document.getElementById('filter-task-status')?.value;
     const fReq = document.getElementById('filter-task-requester')?.value.toLowerCase();
     const fPerf = document.getElementById('filter-task-performer')?.value; 
@@ -1397,7 +1399,9 @@ function renderTasks() {
     const fPerfEnd = document.getElementById('filter-task-perf-end')?.value;
 
     let filtered = tasks.filter(t => {
+        // CORREÇÃO C: Comparação exata
         if (fMun && t.municipality !== fMun) return false;
+        
         if (fStatus && t.status !== fStatus) return false;
         if (fReq && !t.requestedBy.toLowerCase().includes(fReq)) return false;
         if (fPerf && t.performedBy !== fPerf) return false;
@@ -1408,15 +1412,16 @@ function renderTasks() {
         if (fPerfEnd && (!t.datePerformed || t.datePerformed > fPerfEnd)) return false;
         return true;
     });
-    // -----------------------------------
 
+    // ... (Mantenha o restante da renderização da tabela e estatísticas que você já tem) ...
+    // Vou replicar o bloco de tabela para garantir que use a versão atualizada
     const c = document.getElementById('tasks-table');
     
-    // Estatísticas
     if(document.getElementById('tasks-results-count')) {
         document.getElementById('tasks-results-count').style.display = 'block';
         document.getElementById('tasks-results-count').innerHTML = '<strong>' + filtered.length + '</strong> treinamentos encontrados';
     }
+    // Atualiza estatísticas
     if(document.getElementById('total-tasks')) document.getElementById('total-tasks').textContent = tasks.length;
     if(document.getElementById('completed-tasks')) document.getElementById('completed-tasks').textContent = filtered.filter(t => t.status==='Concluído').length;
     if(document.getElementById('pending-tasks')) document.getElementById('pending-tasks').textContent = filtered.filter(t => t.status==='Pendente').length;
@@ -1428,7 +1433,6 @@ function renderTasks() {
         const rows = filtered.map(t => {
             let obs = t.observations ? (t.observations.length > 30 ? t.observations.substring(0,30)+'...' : t.observations) : '-';
             const stCls = t.status === 'Concluído' ? 'completed' : (t.status === 'Cancelado' ? 'cancelled' : 'pending');
-            
             return `<tr>
                 <td class="text-primary-cell">${t.municipality}</td>
                 <td style="text-align:center;">${formatDate(t.dateRequested)}</td>
@@ -1443,7 +1447,6 @@ function renderTasks() {
                 <td><button class="btn btn--sm" onclick="showTaskModal(${t.id})">✏️</button><button class="btn btn--sm" onclick="deleteTask(${t.id})">🗑️</button></td>
             </tr>`;
         }).join('');
-        // Coluna "Colaborador Responsável"
         c.innerHTML = `<table><thead><th>Município</th><th>Data Sol.</th><th>Data Real.</th><th>Solicitante</th><th>Colaborador Responsável</th><th>Profissional</th><th>Cargo</th><th>Contato</th><th>Obs</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
 }
@@ -1614,8 +1617,8 @@ function getFilteredRequests() {
 }
 
 function renderRequests() {
-    // --- LÓGICA DE FILTRO RESTAURADA ---
     const fMun = document.getElementById('filter-request-municipality')?.value;
+    // ... (capture as outras variáveis)
     const fStatus = document.getElementById('filter-request-status')?.value;
     const fSol = document.getElementById('filter-request-solicitante')?.value.toLowerCase();
     const fUser = document.getElementById('filter-request-user')?.value;
@@ -1625,7 +1628,9 @@ function renderRequests() {
     const fRealEnd = document.getElementById('filter-request-real-end')?.value;
 
     let filtered = requests.filter(r => {
+        // CORREÇÃO C: Comparação exata
         if (fMun && r.municipality !== fMun) return false;
+        
         if (fStatus && r.status !== fStatus) return false;
         if (fSol && !r.requester.toLowerCase().includes(fSol)) return false;
         if (fUser && r.user !== fUser) return false;
@@ -1635,9 +1640,11 @@ function renderRequests() {
         if (fRealEnd && (!r.dateRealization || r.dateRealization > fRealEnd)) return false;
         return true;
     }).sort((a, b) => new Date(a.date) - new Date(b.date));
-    // -----------------------------------
 
+    // ... (Mantenha o restante da função renderRequests que já está correta no seu código) ...
+    // Apenas garantindo o cabeçalho e tabela:
     const c = document.getElementById('requests-table');
+    // (Lógica de contadores...)
     
     if(document.getElementById('requests-results-count')) {
         document.getElementById('requests-results-count').innerHTML = '<strong>' + filtered.length + '</strong> solicitações encontradas';
@@ -1669,7 +1676,6 @@ function renderRequests() {
                 <td><button class="btn btn--sm" onclick="showRequestModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteRequest(${x.id})">🗑️</button></td>
             </tr>`;
         }).join('');
-        
         c.innerHTML = `<table><thead><th>Município</th><th>Data Sol.</th><th>Solicitante</th><th>Contato</th><th>Descrição</th><th>Usuário que Registrou a Demanda</th><th style="text-align:center;">Status</th><th style="text-align:center;">Data Real.</th><th>Justificativa</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
     updateRequestCharts(filtered);
@@ -3180,12 +3186,12 @@ function saveCargo(e) {
     
     const data = {
         name: document.getElementById('cargo-name').value,
-        // Esta linha abaixo estava faltando para salvar o texto:
-        description: document.getElementById('cargo-description').value 
+        description: document.getElementById('cargo-description').value
     };
 
     if (editingId) {
-        const i = cargos.findIndex(x => x.id === editingId);
+        // CORREÇÃO AQUI: Usamos '==' para funcionar mesmo se o ID vier como texto do backup
+        const i = cargos.findIndex(x => x.id == editingId);
         if (i !== -1) {
             cargos[i] = { ...cargos[i], ...data };
         }
@@ -3196,6 +3202,7 @@ function saveCargo(e) {
     salvarNoArmazenamento('cargos', cargos);
     document.getElementById('cargo-modal').classList.remove('show');
     renderCargos();
+    updateGlobalDropdowns(); // Atualiza a lista no modal de treinamento
     showToast('Cargo salvo com sucesso!', 'success');
 }
 
@@ -3643,14 +3650,125 @@ function populateFilterSelects() {
 }
 
 function updateGlobalDropdowns() {
-    const activeMuns = municipalities.filter(function(m) { return m.status === 'Em uso'; });
+    // ------------------------------------------------------------------------
+    // REGRA ÚNICA: TODOS OS DROPDOWNS DE MUNICÍPIO USAM A LISTA MESTRA
+    // ------------------------------------------------------------------------
     
-    ['task-municipality','request-municipality','visit-municipality','production-municipality','presentation-municipality'].forEach(function(id) { 
-        populateSelect(document.getElementById(id), activeMuns, 'name', 'name'); 
+    // 1. Prepara a lista ordenada (Fonte: Configurações > Cadastro de Municípios)
+    const listaMestraOrdenada = municipalitiesList.slice().sort((a,b) => a.name.localeCompare(b.name));
+
+    // 2. Lista de TODOS os IDs de selects de município (Filtros + Formulários)
+    const allMunicipalitySelects = [
+        // Formulários (Modais)
+        'task-municipality',
+        'request-municipality',
+        'visit-municipality',
+        'production-municipality',
+        'presentation-municipality',
+        'municipality-name', // O próprio cadastro de cliente também busca da lista mestra
+        
+        // Filtros (Acima das tabelas)
+        'filter-municipality-name', 
+        'filter-task-municipality', 
+        'filter-request-municipality', 
+        'filter-visit-municipality', 
+        'filter-production-municipality',
+        'filter-presentation-municipality'
+    ];
+
+    // 3. Aplica a lista em todos os campos
+    allMunicipalitySelects.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const currentVal = el.value; // Tenta manter o que estava selecionado
+            
+            // Se for Filtro, adiciona a opção "Todos". Se for Formulário, adiciona "Selecione..."
+            const isFilter = id.startsWith('filter-');
+            const defaultOption = isFilter ? '<option value="">Todos</option>' : '<option value="">Selecione o município</option>';
+            
+            el.innerHTML = defaultOption + 
+                           listaMestraOrdenada.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+            
+            el.value = currentVal;
+        }
+    });
+
+    // ------------------------------------------------------------------------
+    // OUTROS DROPDOWNS (Cargos, Colaboradores, Usuários)
+    // ------------------------------------------------------------------------
+
+    // Cargos (Modal e Filtro)
+    const cargoSelects = ['task-trained-position', 'filter-task-position'];
+    cargoSelects.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) populateSelect(el, cargos, 'name', 'name');
+    });
+
+    // Colaboradores (Modal e Filtros)
+    // Nota: O modal de apresentação usa checkboxes (tratado no showModal), aqui são só selects
+    const colabSelects = ['task-performed-by', 'filter-task-performer', 'filter-presentation-orientador'];
+    colabSelects.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) populateSelect(el, orientadores, 'name', 'name');
     });
     
-    // Filtros
-    populateFilterSelects();
+    // Usuários (Filtros)
+    ['filter-request-user', 'filter-demand-user'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) populateSelect(el, users, 'name', 'name');
+    });
+}
+
+    // 2. Preencher Selects de Municípios nos FILTROS (Acima das tabelas)
+    const filterSelects = [
+        'filter-municipality-name', 
+        'filter-task-municipality', 
+        'filter-request-municipality', 
+        'filter-visit-municipality', 
+        'filter-production-municipality',
+        'filter-presentation-municipality'
+    ];
+
+    // Ordenamos a lista para os filtros
+    const munListSorted = listaMestra.slice().sort((a,b) => a.name.localeCompare(b.name));
+
+    filterSelects.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const currentVal = el.value;
+            // Recria as opções mantendo "Todos" no topo
+            el.innerHTML = '<option value="">Todos</option>' + 
+                           munListSorted.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+            el.value = currentVal; // Tenta manter o valor selecionado pelo usuário
+        }
+    });
+
+    // 3. Preencher Select de CARGOS no Modal de Treinamento
+    const elCargo = document.getElementById('task-trained-position');
+    if(elCargo) populateSelect(elCargo, cargos, 'name', 'name');
+
+    // 4. Preencher Select de COLABORADORES no Modal de Treinamento e Apresentação
+    ['task-performed-by', 'presentation-orientador-checkboxes'].forEach(id => {
+        // Apenas para selects simples (task), checkboxes são tratados no showModal
+        const el = document.getElementById('task-performed-by');
+        if(el) populateSelect(el, orientadores, 'name', 'name');
+    });
+    
+    // 5. Popula Filtros de Colaborador e Cargo
+    const elFiltroColab = document.getElementById('filter-task-performer');
+    if(elFiltroColab) populateSelect(elFiltroColab, orientadores, 'name', 'name');
+    
+    const elFiltroColabPres = document.getElementById('filter-presentation-orientador');
+    if(elFiltroColabPres) populateSelect(elFiltroColabPres, orientadores, 'name', 'name');
+
+    const elFiltroCargo = document.getElementById('filter-task-position');
+    if(elFiltroCargo) populateSelect(elFiltroCargo, cargos, 'name', 'name');
+    
+    // 6. Popula Filtros de Usuário
+    ['filter-request-user', 'filter-demand-user'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) populateSelect(el, users, 'name', 'name');
+    });
 }
 
 // ----------------------------------------------------------------------------
