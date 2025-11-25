@@ -3449,13 +3449,13 @@ function handleBackupFileSelect(event) {
                     { label: 'Solicitações/Sugestões de Clientes', dados: d.requests },
                     { label: 'Apresentações do Software', dados: d.presentations },
                     { label: 'Demandas do Suporte', dados: d.demands },
-                    { label: 'Visitas', dados: d.visits },
+                    { label: 'Visitas Presenciais', dados: d.visits },
                     { label: 'Envios de Produção', dados: d.productions },
                     { label: 'Cargos/Funções', dados: d.cargos },
                     { label: 'Colaboradores', dados: d.orientadores },
-                    { label: 'Módulos', dados: d.modulos || d.modules },
+                    { label: 'Módulos do Sistema', dados: d.modulos || d.modules },
                     { label: 'Formas de Apresentação', dados: d.formasApresentacao },
-                    { label: 'Usuários', dados: d.users }
+                    { label: 'Usuários do Sistema', dados: d.users }
                     // Nota: "Versões" foi removido conforme seu pedido
                 ];
 
