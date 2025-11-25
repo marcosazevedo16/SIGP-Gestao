@@ -1061,7 +1061,7 @@ function renderMunicipalities() {
                 <td><button class="btn btn--sm" onclick="showMunicipalityModal(${m.id})">✏️</button><button class="btn btn--sm" onclick="deleteMunicipality(${m.id})">🗑️</button></td>
             </tr>`;
         }).join('');
-        c.innerHTML = `<table><thead><th>Município</th><th>Módulos</th><th>Gestor(a)</th><th>Contato</th><th>Implantação</th><th>Última Visita Presencial</th><th>Tempo Uso</th><th>Dias s/ Visita</th><th>Status</th><th>Bloqueio/Parou</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+        c.innerHTML = `<table><thead><th>Município</th><th>Módulos Em Uso</th><th>Gestor(a) Atual</th><th>Contato</th><th>Implantação</th><th>Última Visita Presencial</th><th>Tempo de Uso</th><th>Dias s/ Visita</th><th>Status</th><th>Data Bloqueio/Parou de Usar</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
     updateMunicipalityCharts(filtered);
 }
@@ -1442,7 +1442,7 @@ function renderTasks() {
                 <td>${t.trainedName||'-'}</td>
                 <td>${t.trainedPosition||'-'}</td>
                 <td>${t.contact||'-'}</td>
-                <td class="text-secondary-cell">${obs}</td>
+                <td class="text-secondary-cell">${observações}</td>
                 <td><span class="task-status ${stCls}">${t.status}</span></td>
                 <td><button class="btn btn--sm" onclick="showTaskModal(${t.id})">✏️</button><button class="btn btn--sm" onclick="deleteTask(${t.id})">🗑️</button></td>
             </tr>`;
