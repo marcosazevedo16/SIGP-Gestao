@@ -3548,45 +3548,32 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL: BADGES DE MÓDULOS (ULTRA COMPACTOS + LINHA HORIZONTAL)
-   Substitua o bloco anterior no style.css
+   CORREÇÃO DEFINITIVA: BADGES ALINHADOS E COMPACTOS
+   Substitua o bloco anterior no final do style.css
    ========================================================================== */
 
-/* 1. Força a coluna da tabela a ser larga o suficiente para caber vários */
-#municipalities-table td:nth-child(2), 
-#municipalities-table th:nth-child(2) {
-    min-width: 280px !important; /* Garante espaço horizontal */
-    max-width: 400px !important;
-    white-space: normal !important; /* Permite quebra de linha do conjunto */
-}
-
-/* 2. Container dos badges (Flex Row) */
+/* 1. Célula da Tabela (Container) */
 .module-tags-cell {
-    display: flex !important;
-    flex-direction: row !important; /* Garante lado a lado */
-    flex-wrap: wrap !important;     /* Quebra linha quando enche */
-    gap: 2px !important;            /* Espacinho mínimo entre eles */
-    align-items: center !important;
-    justify-content: flex-start !important;
-    width: 100% !important;
+    display: table-cell !important;    /* Garante comportamento de tabela */
+    vertical-align: middle !important; /* Alinha ao CENTRO verticalmente */
+    white-space: normal !important;    /* Permite quebra de linha natural */
+    padding: 4px 6px !important;       /* Espaçamento interno */
+    width: auto !important;            /* Largura automática */
+    min-width: 250px !important;       /* Largura mínima para caber vários */
+    max-width: 400px !important;       /* Limite para não esticar demais */
 }
 
-/* 3. O Badge Individual (Bem pequeno) */
+/* 2. O Badge Individual (Quadradinho) */
 .module-tag {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    display: inline-block !important;  /* Fica um ao lado do outro como texto */
+    vertical-align: middle !important; /* Alinha com o texto vizinho */
     
-    /* Tamanho Mini */
+    /* Tamanho e Espaçamento */
     font-size: 9px !important;
     font-weight: 800 !important;
-    height: 16px !important;      /* Altura fixa bem fina */
-    padding: 0 5px !important;    /* Apenas lateral */
-    border-radius: 3px !important; /* Cantos levemente arredondados */
-    
-    /* Comportamento */
-    white-space: nowrap !important;
-    flex: 0 0 auto !important;    /* Impede de esticar */
+    padding: 2px 5px !important;
+    margin: 1px 1px !important;        /* Espacinho entre eles (Cima/Baixo/Lad) */
+    border-radius: 3px !important;
     line-height: 1 !important;
     
     /* Cores Padrão (CLARO) - Azul Suave */
@@ -3595,10 +3582,10 @@ table th {
     border: 1px solid #bae6fd !important;
 }
 
-/* 4. Cores no TEMA ESCURO (Neon para leitura) */
+/* 3. Cores no TEMA ESCURO */
 [data-theme="dark"] .module-tag,
 [data-color-scheme="dark"] .module-tag {
-    background-color: rgba(14, 165, 233, 0.2) !important; /* Fundo translúcido */
-    color: #7dd3fc !important;                            /* Texto ciano claro */
-    border: 1px solid rgba(56, 189, 248, 0.4) !important; /* Borda sutil */
+    background-color: rgba(14, 165, 233, 0.2) !important; 
+    color: #7dd3fc !important;
+    border: 1px solid rgba(56, 189, 248, 0.4) !important;
 }
