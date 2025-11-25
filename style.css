@@ -3548,37 +3548,57 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÃO: BADGES DE MÓDULOS (COMPACTOS E VISÍVEIS)
-   Adicione ao final do style.css
+   CORREÇÃO FINAL: BADGES DE MÓDULOS (ULTRA COMPACTOS + LINHA HORIZONTAL)
+   Substitua o bloco anterior no style.css
    ========================================================================== */
 
-/* Container da célula da tabela (Permite quebra de linha) */
+/* 1. Força a coluna da tabela a ser larga o suficiente para caber vários */
+#municipalities-table td:nth-child(2), 
+#municipalities-table th:nth-child(2) {
+    min-width: 280px !important; /* Garante espaço horizontal */
+    max-width: 400px !important;
+    white-space: normal !important; /* Permite quebra de linha do conjunto */
+}
+
+/* 2. Container dos badges (Flex Row) */
 .module-tags-cell {
-    display: flex;
-    flex-wrap: wrap; /* Força pular para linha de baixo se não couber */
-    gap: 4px;        /* Espaço pequeno entre os quadradinhos */
-    max-width: 200px; /* Limita largura para forçar a quebra em telas grandes */
+    display: flex !important;
+    flex-direction: row !important; /* Garante lado a lado */
+    flex-wrap: wrap !important;     /* Quebra linha quando enche */
+    gap: 2px !important;            /* Espacinho mínimo entre eles */
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
 }
 
-/* O Quadradinho do Módulo (Badge) */
+/* 3. O Badge Individual (Bem pequeno) */
 .module-tag {
-    font-size: 10px !important;       /* Letra bem pequena */
-    padding: 2px 6px !important;      /* Fundo compacto */
-    border-radius: 4px;               /* Bordas levemente arredondadas */
-    font-weight: 700;                 /* Negrito para leitura fácil */
-    line-height: 1.2;
-    white-space: nowrap;              /* O texto do módulo não quebra dentro do quadrado */
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     
-    /* Cores Padrão (TEMA CLARO - Azul Escuro Forte) */
-    background-color: #e0f2fe !important; /* Azul muito claro */
-    color: #0369a1 !important;            /* Azul escuro */
-    border: 1px solid #bae6fd !important; /* Borda azul claro */
+    /* Tamanho Mini */
+    font-size: 9px !important;
+    font-weight: 800 !important;
+    height: 16px !important;      /* Altura fixa bem fina */
+    padding: 0 5px !important;    /* Apenas lateral */
+    border-radius: 3px !important; /* Cantos levemente arredondados */
+    
+    /* Comportamento */
+    white-space: nowrap !important;
+    flex: 0 0 auto !important;    /* Impede de esticar */
+    line-height: 1 !important;
+    
+    /* Cores Padrão (CLARO) - Azul Suave */
+    background-color: #e0f2fe !important;
+    color: #0284c7 !important;
+    border: 1px solid #bae6fd !important;
 }
 
-/* Cores Específicas para TEMA ESCURO (Para não ficarem apagados) */
+/* 4. Cores no TEMA ESCURO (Neon para leitura) */
 [data-theme="dark"] .module-tag,
 [data-color-scheme="dark"] .module-tag {
-    background-color: rgba(56, 189, 248, 0.15) !important; /* Azul neon transparente */
-    color: #38bdf8 !important;                             /* Azul neon brilhante */
-    border: 1px solid rgba(56, 189, 248, 0.3) !important;  /* Borda brilhante */
+    background-color: rgba(14, 165, 233, 0.2) !important; /* Fundo translúcido */
+    color: #7dd3fc !important;                            /* Texto ciano claro */
+    border: 1px solid rgba(56, 189, 248, 0.4) !important; /* Borda sutil */
 }
