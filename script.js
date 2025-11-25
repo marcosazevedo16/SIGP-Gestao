@@ -1676,7 +1676,7 @@ function renderRequests() {
                 <td><button class="btn btn--sm" onclick="showRequestModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteRequest(${x.id})">🗑️</button></td>
             </tr>`;
         }).join('');
-        c.innerHTML = `<table><thead><th>Município</th><th>Data Sol.</th><th>Solicitante</th><th>Contato</th><th>Descrição</th><th>Usuário que Registrou a Demanda</th><th style="text-align:center;">Status</th><th style="text-align:center;">Data Real.</th><th>Justificativa</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+        c.innerHTML = `<table><thead><th>Município</th><th>Data Sol.</th><th>Solicitante</th><th>Contato</th><th>Descrição</th><th>Usuário que Registrou a Solicitação</th><th style="text-align:center;">Status</th><th style="text-align:center;">Data Real.</th><th>Justificativa</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
     updateRequestCharts(filtered);
 }
