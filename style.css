@@ -3546,3 +3546,39 @@ table th {
 [data-color-scheme="dark"] .stat-card h3 {
     color: #ffffff !important; /* Garante que o número fique branco puro */
 }
+
+/* ==========================================================================
+   CORREÇÃO: BADGES DE MÓDULOS (COMPACTOS E VISÍVEIS)
+   Adicione ao final do style.css
+   ========================================================================== */
+
+/* Container da célula da tabela (Permite quebra de linha) */
+.module-tags-cell {
+    display: flex;
+    flex-wrap: wrap; /* Força pular para linha de baixo se não couber */
+    gap: 4px;        /* Espaço pequeno entre os quadradinhos */
+    max-width: 200px; /* Limita largura para forçar a quebra em telas grandes */
+}
+
+/* O Quadradinho do Módulo (Badge) */
+.module-tag {
+    font-size: 10px !important;       /* Letra bem pequena */
+    padding: 2px 6px !important;      /* Fundo compacto */
+    border-radius: 4px;               /* Bordas levemente arredondadas */
+    font-weight: 700;                 /* Negrito para leitura fácil */
+    line-height: 1.2;
+    white-space: nowrap;              /* O texto do módulo não quebra dentro do quadrado */
+    
+    /* Cores Padrão (TEMA CLARO - Azul Escuro Forte) */
+    background-color: #e0f2fe !important; /* Azul muito claro */
+    color: #0369a1 !important;            /* Azul escuro */
+    border: 1px solid #bae6fd !important; /* Borda azul claro */
+}
+
+/* Cores Específicas para TEMA ESCURO (Para não ficarem apagados) */
+[data-theme="dark"] .module-tag,
+[data-color-scheme="dark"] .module-tag {
+    background-color: rgba(56, 189, 248, 0.15) !important; /* Azul neon transparente */
+    color: #38bdf8 !important;                             /* Azul neon brilhante */
+    border: 1px solid rgba(56, 189, 248, 0.3) !important;  /* Borda brilhante */
+}
