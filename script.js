@@ -1447,13 +1447,13 @@ function renderTasks() {
                 <td><button class="btn btn--sm" onclick="showTaskModal(${t.id})">✏️</button><button class="btn btn--sm" onclick="deleteTask(${t.id})">🗑️</button></td>
             </tr>`;
         }).join('');
-        c.innerHTML = `<table><thead><th>Município</th><th>Data Sol.</th><th>Data Real.</th><th>Solicitante</th><th>Colaborador Responsável</th><th>Profissional</th><th>Cargo</th><th>Contato</th><th>Obs</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+        c.innerHTML = `<table><thead><th>Município</th><th>Data Solicitação</th><th>Data Realização</th><th>Solicitante</th><th>Colaborador Responsável</th><th>Profissional</th><th>Cargo</th><th>Contato</th><th>Obs</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
 }
 
 function exportTasksCSV() {
     const data = getFilteredTasks();
-    const headers = ['Município', 'Data Sol.', 'Data Real.', 'Solicitante', 'Orientador', 'Profissional', 'Cargo', 'Contato', 'Status'];
+    const headers = ['Município', 'Data Solicitação', 'Data Realização', 'Solicitante', 'Orientador', 'Profissional', 'Cargo', 'Contato', 'Status'];
     const rows = data.map(function(t) { 
         return [t.municipality, formatDate(t.dateRequested), formatDate(t.datePerformed), t.requestedBy, t.performedBy, t.trainedName, t.trainedPosition, t.contact, t.status]; 
     });
@@ -1462,7 +1462,7 @@ function exportTasksCSV() {
 
 function generateTasksPDF() {
     const data = getFilteredTasks();
-    const headers = ['Município', 'Data Sol.', 'Orientador', 'Status'];
+    const headers = ['Município', 'Data Solicitação', 'Orientador', 'Status'];
     const rows = data.map(function(t) { 
         return [t.municipality, formatDate(t.dateRequested), t.performedBy, t.status]; 
     });
@@ -1676,7 +1676,7 @@ function renderRequests() {
                 <td><button class="btn btn--sm" onclick="showRequestModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteRequest(${x.id})">🗑️</button></td>
             </tr>`;
         }).join('');
-        c.innerHTML = `<table><thead><th>Município</th><th>Data Sol.</th><th>Solicitante</th><th>Contato</th><th>Descrição</th><th>Usuário que Registrou a Solicitação</th><th style="text-align:center;">Status</th><th style="text-align:center;">Data Real.</th><th>Justificativa</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+        c.innerHTML = `<table><thead><th>Município</th><th>Data Solicitação</th><th>Solicitante</th><th>Contato</th><th>Descrição</th><th>Usuário que Registrou a Solicitação</th><th style="text-align:center;">Status</th><th style="text-align:center;">Data Realização</th><th>Justificativa</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
     updateRequestCharts(filtered);
 }
@@ -1745,7 +1745,7 @@ function updateRequestCharts(data) {
 
 function exportRequestsCSV() {
     const data = getFilteredRequests();
-    const headers = ['Município', 'Data Sol.', 'Data Real.', 'Solicitante', 'Contato', 'Descrição', 'Status', 'Usuário'];
+    const headers = ['Município', 'Data Solicitação', 'Data Realização', 'Solicitante', 'Contato', 'Descrição', 'Status', 'Usuário'];
     const rows = data.map(function(r) { 
         return [r.municipality, formatDate(r.date), formatDate(r.dateRealization), r.requester, r.contact, r.description, r.status, r.user]; 
     });
@@ -1754,7 +1754,7 @@ function exportRequestsCSV() {
 
 function generateRequestsPDF() {
     const data = getFilteredRequests();
-    const headers = ['Município', 'Data Sol.', 'Status', 'Descrição'];
+    const headers = ['Município', 'Data Solicitação', 'Status', 'Descrição'];
     const rows = data.map(function(r) { 
         return [r.municipality, formatDate(r.date), r.status, r.description]; 
     });
@@ -2036,7 +2036,7 @@ function renderPresentations() {
             </tr>`;
         }).join('');
         
-        c.innerHTML = `<table><thead><th>Município</th><th>Data Sol.</th><th>Solicitante(s)</th><th>Colaborador(es) Responsável(is)</th><th>Formas</th><th>Descrição</th><th>Data Real.</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+        c.innerHTML = `<table><thead><th>Município</th><th>Data Solicitação</th><th>Solicitante(s)</th><th>Colaborador(es) Responsável(is)</th><th>Formas</th><th>Descrição</th><th>Data Realização</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
     
     // --- CORREÇÃO: GRÁFICOS REATIVADOS ---
