@@ -3718,7 +3718,6 @@ function updateGlobalDropdowns() {
         if(el) populateSelect(el, users, 'name', 'name');
     });
 }
-
     // 2. Preencher Selects de Municípios nos FILTROS (Acima das tabelas)
     const filterSelects = [
         'filter-municipality-name', 
@@ -3769,6 +3768,7 @@ function updateGlobalDropdowns() {
         const el = document.getElementById(id);
         if(el) populateSelect(el, users, 'name', 'name');
     });
+}
 }
 
 // ----------------------------------------------------------------------------
