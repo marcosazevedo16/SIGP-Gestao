@@ -3590,15 +3590,14 @@ table th {
     border: 1px solid rgba(56, 189, 248, 0.4) !important;
 }
 /* ==========================================================================
-   CORREÇÃO FINAL V4.9 - FORÇAR ESTRUTURA DE TABELA (SEM DEGRAUS)
+   CORREÇÃO FINAL V5.0 - LINHAS SUTIS (COR ADAPTÁVEL)
    Substitua o final do style.css por este bloco
    ========================================================================== */
 
 /* 1. FORÇAR COMPORTAMENTO DE TABELA (Hard Reset) */
-/* Isso impede que estilos flex/block antigos quebrem o alinhamento das linhas */
 #municipalities-table table {
     display: table !important;
-    border-collapse: collapse !important; /* Funde as bordas numa linha contínua */
+    border-collapse: collapse !important; /* Funde as bordas */
     width: 100%;
     border-spacing: 0;
     border: none !important;
@@ -3612,21 +3611,24 @@ table th {
     background-color: transparent;
 }
 
-/* 2. CÉLULAS UNIFICADAS */
+/* 2. CÉLULAS UNIFICADAS E BORDAS SUAVES */
 #municipalities-table th,
 #municipalities-table td {
-    display: table-cell !important; /* Garante que ajam como células de tabela */
-    vertical-align: middle !important; /* Centraliza conteúdo na altura da linha */
+    display: table-cell !important;
+    vertical-align: middle !important;
     
-    /* Borda APENAS embaixo, cor sólida para evitar sombras */
-    border-bottom: 1px solid #dee2e6 !important; 
+    /* --- AQUI ESTÁ A CORREÇÃO DA COR --- */
+    /* Usamos a variável do tema em vez de uma cor fixa. 
+       Isso faz a linha ficar suave tanto no claro quanto no escuro. */
+    border-bottom: 1px solid var(--color-border) !important; 
+    
     border-top: none !important;
     border-left: none !important;
     border-right: none !important;
     
     padding: 8px 6px !important;
     line-height: 1.25 !important;
-    height: auto !important; /* Remove altura fixa que pode causar conflito */
+    height: auto !important;
 }
 
 /* 3. AJUSTE DA COLUNA DE MÓDULOS */
@@ -3638,21 +3640,19 @@ table th {
     white-space: normal !important;
 }
 
-/* 4. CONTAINER DOS BADGES (MÓDULOS) */
+/* 4. CONTAINER DOS BADGES */
 .module-tags-cell {
     display: flex !important;
     flex-wrap: wrap !important;
     gap: 4px !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    min-height: 24px !important; /* Altura mínima visual se estiver vazio */
+    min-height: 24px !important;
     width: 100%;
 }
 
-/* 5. COLUNAS ESPECÍFICAS (Larguras e Alinhamentos) */
-
-/* Coluna Bloqueio/Parou (Quebra Cabeçalho) */
-#municipalities-table th:nth-child(10),
+/* 5. COLUNAS ESPECÍFICAS (Larguras) */
+#municipalities-table th:nth-child(10), /* Bloqueio */
 #municipalities-table td:nth-child(10) {
     width: 90px !important;
     max-width: 90px !important;
@@ -3661,22 +3661,20 @@ table th {
     font-size: 11px !important;
 }
 
-/* Coluna Última Visita (Largura para a quebra <br>) */
-#municipalities-table th:nth-child(6),
+#municipalities-table th:nth-child(6), /* Visita */
 #municipalities-table td:nth-child(6) {
     width: 100px !important;
     text-align: center !important;
 }
 
-/* Centralização das Datas e Status */
-#municipalities-table td:nth-child(5), /* Implantação */
-#municipalities-table td:nth-child(7), /* Tempo */
-#municipalities-table td:nth-child(8), /* Dias */
-#municipalities-table td:nth-child(9)  /* Status */ {
+/* Centralização */
+#municipalities-table td:nth-child(5),
+#municipalities-table td:nth-child(7),
+#municipalities-table td:nth-child(8),
+#municipalities-table td:nth-child(9) {
     text-align: center !important;
 }
 
-/* Cabeçalhos centralizados */
 #municipalities-table th:nth-child(5),
 #municipalities-table th:nth-child(6),
 #municipalities-table th:nth-child(7),
