@@ -1063,8 +1063,19 @@ function renderMunicipalities() {
                 <td><button class="btn btn--sm" onclick="showMunicipalityModal(${m.id})">✏️</button><button class="btn btn--sm" onclick="deleteMunicipality(${m.id})">🗑️</button></td>
             </tr>`;
         }).join('');
-        c.innerHTML = `<table><thead><th>Município</th><th>Módulos Em Uso</th><th>Gestor(a) Atual</th><th>Contato</th><th>Data Implantação</th><th>Última Visita Presencial</th><th>Tempo de Uso</th><th>Dias sem Visita</th><th>Status</th><th>Bloqueio/Parou de Usar</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
-    }
+c.innerHTML = `<table><thead>
+    <th>Município</th>
+    <th>Módulos Em Uso</th>
+    <th>Gestor(a) Atual</th>
+    <th>Contato</th>
+    <th>Data Implantação</th>
+    <th>Última Visita Presencial</th>
+    <th>Tempo de Uso</th>
+    <th>Dias sem Visita</th>
+    <th>Status</th>
+    <th>Bloqueio/<br>Parou de Usar</th> 
+    <th>Ações</th>
+</thead><tbody>${rows}</tbody></table>`;    }
     updateMunicipalityCharts(filtered);
 }
 
