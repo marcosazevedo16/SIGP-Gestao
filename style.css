@@ -3770,3 +3770,8 @@ table th {
     .form-grid { grid-template-columns: 1fr; }
     .col-12, .col-8, .col-6, .col-4 { grid-column: span 1; }
 }
+
+/* Regra específica para o Modal de Solicitações (Mais estreito) */
+#request-modal .modal-content {
+    max-width: 750px; /* Ideal para 2 colunas */
+}
