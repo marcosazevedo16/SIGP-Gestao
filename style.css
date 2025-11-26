@@ -3590,44 +3590,52 @@ table th {
     border: 1px solid rgba(56, 189, 248, 0.4) !important;
 }
 /* ==========================================================================
-   CORREÇÃO FINAL V4.7 - LIMPEZA DE BORDAS E CABEÇALHOS
+   CORREÇÃO FINAL V4.8 - GRADE PERFEITA (SEM DEGRAUS, SEM SOBRAS)
    Substitua o final do style.css por este bloco
    ========================================================================== */
 
-/* 1. Reset total de bordas da tabela para evitar linhas duplas/sobras */
+/* 1. FORÇAR O MODO GRADE (Isso elimina o degrau entre colunas) */
 #municipalities-table table {
-    border-collapse: collapse !important;
+    border-collapse: collapse !important; /* Funde todas as bordas numa só */
+    border-spacing: 0 !important;
     width: 100%;
     border: none !important;
-    box-shadow: none !important;
+    box-shadow: none !important; /* Remove sombras que parecem linhas soltas */
 }
 
-/* 2. Remove bordas das linhas (TR) para não duplicar */
+/* 2. Limpeza das Linhas (TR) */
 #municipalities-table tr {
-    border: none !important;
     background-color: transparent;
+    border: none !important; /* A borda será desenhada na célula, não na linha */
 }
 
-/* 3. Define APENAS a borda inferior fina nas células (TD/TH) */
+/* 3. Estilo das Células (TD e TH) - Onde a mágica acontece */
 #municipalities-table td,
 #municipalities-table th {
-    border-top: none !important;    /* Remove linha de cima "sobrando" */
+    /* Desenha APENAS a linha de baixo */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important; 
+    
+    /* Remove qualquer outra linha sobrando */
+    border-top: none !important;
     border-left: none !important;
     border-right: none !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important; /* Linha bem suave */
-    
-    vertical-align: middle !important;
+    box-shadow: none !important;
+
+    /* Alinhamento e Espaçamento */
+    vertical-align: middle !important; /* Centraliza texto verticalmente */
     padding: 8px 6px !important;
     line-height: 1.25 !important;
+    height: 1px; /* Truque para forçar alturas iguais */
 }
 
-/* 4. Coluna de Módulos (Largura e Quebra) */
+/* 4. Coluna de Módulos (Largura Fixa e Quebra) */
 #municipalities-table td:nth-child(2),
 #municipalities-table th:nth-child(2) {
     width: 230px !important;
     min-width: 230px !important;
     max-width: 230px !important;
     white-space: normal !important;
+    height: auto !important; /* Permite crescer se tiver muitos módulos */
 }
 
 /* 5. Container dos Badges */
@@ -3636,10 +3644,10 @@ table th {
     flex-wrap: wrap !important;
     gap: 4px !important;
     align-items: center !important;
-    min-height: 24px !important;
+    min-height: 24px !important; /* Garante altura mínima */
 }
 
-/* 6. Coluna Bloqueio/Parou (Largura Fixa) */
+/* 6. Coluna Bloqueio/Parou (Quebra Cabeçalho) */
 #municipalities-table th:nth-child(10),
 #municipalities-table td:nth-child(10) {
     width: 90px !important;
@@ -3649,14 +3657,14 @@ table th {
     font-size: 11px !important;
 }
 
-/* 7. Coluna Última Visita (Largura Fixa para a quebra ficar bonita) */
+/* 7. Coluna Última Visita (Largura para a quebra <br>) */
 #municipalities-table th:nth-child(6),
 #municipalities-table td:nth-child(6) {
-    width: 100px !important; /* Garante espaço para o texto quebrado */
+    width: 100px !important;
     text-align: center !important;
 }
 
-/* 8. Centralização Geral */
+/* 8. Centralização Geral das Datas e Status */
 #municipalities-table td:nth-child(5), /* Implantação */
 #municipalities-table td:nth-child(7), /* Tempo */
 #municipalities-table td:nth-child(8), /* Dias */
@@ -3664,18 +3672,13 @@ table th {
     text-align: center !important;
 }
 
-#municipalities-table th {
-    text-align: left; /* Padrão */
-    vertical-align: middle !important;
-    font-weight: 600;
-}
-
-/* Centraliza cabeçalhos específicos */
+/* Cabeçalhos alinhados com o conteúdo */
 #municipalities-table th:nth-child(5),
-#municipalities-table th:nth-child(6), /* Visita */
+#municipalities-table th:nth-child(6),
 #municipalities-table th:nth-child(7),
 #municipalities-table th:nth-child(8),
 #municipalities-table th:nth-child(9),
 #municipalities-table th:nth-child(10) {
     text-align: center !important;
+    vertical-align: middle !important;
 }
