@@ -3590,31 +3590,38 @@ table th {
     border: 1px solid rgba(56, 189, 248, 0.4) !important;
 }
 /* ==========================================================================
-   CORREÇÃO FINAL V4.6 - TABELA PERFEITA (LINHAS E QUEBRA)
-   Substitua o final do seu style.css por este bloco
+   CORREÇÃO FINAL V4.7 - LIMPEZA DE BORDAS E CABEÇALHOS
+   Substitua o final do style.css por este bloco
    ========================================================================== */
 
-/* 1. CORREÇÃO CRÍTICA DE BORDAS (Isso alinha as linhas horizontais) */
+/* 1. Reset total de bordas da tabela para evitar linhas duplas/sobras */
 #municipalities-table table {
-    border-collapse: collapse !important; /* OBRIGATÓRIO: Funde as bordas */
+    border-collapse: collapse !important;
     width: 100%;
-    border-spacing: 0;
+    border: none !important;
+    box-shadow: none !important;
 }
 
+/* 2. Remove bordas das linhas (TR) para não duplicar */
 #municipalities-table tr {
-    border-bottom: 1px solid rgba(0,0,0,0.1); /* Borda na linha inteira */
+    border: none !important;
+    background-color: transparent;
 }
 
-/* 2. Alinhamento Vertical e Espaçamento */
+/* 3. Define APENAS a borda inferior fina nas células (TD/TH) */
 #municipalities-table td,
 #municipalities-table th {
-    vertical-align: middle !important; /* Centraliza verticalmente */
+    border-top: none !important;    /* Remove linha de cima "sobrando" */
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important; /* Linha bem suave */
+    
+    vertical-align: middle !important;
     padding: 8px 6px !important;
-    line-height: 1.2 !important;
-    border-bottom: 1px solid rgba(0,0,0,0.1); /* Garante a linha */
+    line-height: 1.25 !important;
 }
 
-/* 3. Coluna de Módulos (Largura fixa e Quebra) */
+/* 4. Coluna de Módulos (Largura e Quebra) */
 #municipalities-table td:nth-child(2),
 #municipalities-table th:nth-child(2) {
     width: 230px !important;
@@ -3623,16 +3630,16 @@ table th {
     white-space: normal !important;
 }
 
-/* 4. Container dos Badges (Flexbox com Quebra) */
+/* 5. Container dos Badges */
 .module-tags-cell {
     display: flex !important;
-    flex-wrap: wrap !important; /* Faz os módulos pularem linha */
+    flex-wrap: wrap !important;
     gap: 4px !important;
     align-items: center !important;
-    min-height: 24px !important; /* Garante altura mesmo se vazio */
+    min-height: 24px !important;
 }
 
-/* 5. Coluna Bloqueio/Parou (Quebra de Texto do Cabeçalho) */
+/* 6. Coluna Bloqueio/Parou (Largura Fixa) */
 #municipalities-table th:nth-child(10),
 #municipalities-table td:nth-child(10) {
     width: 90px !important;
@@ -3642,22 +3649,33 @@ table th {
     font-size: 11px !important;
 }
 
-/* 6. Centralização das colunas de dados/datas */
+/* 7. Coluna Última Visita (Largura Fixa para a quebra ficar bonita) */
+#municipalities-table th:nth-child(6),
+#municipalities-table td:nth-child(6) {
+    width: 100px !important; /* Garante espaço para o texto quebrado */
+    text-align: center !important;
+}
+
+/* 8. Centralização Geral */
 #municipalities-table td:nth-child(5), /* Implantação */
-#municipalities-table td:nth-child(6), /* Visita */
 #municipalities-table td:nth-child(7), /* Tempo */
 #municipalities-table td:nth-child(8), /* Dias */
 #municipalities-table td:nth-child(9)  /* Status */ {
     text-align: center !important;
 }
 
-/* Cabeçalhos centralizados */
+#municipalities-table th {
+    text-align: left; /* Padrão */
+    vertical-align: middle !important;
+    font-weight: 600;
+}
+
+/* Centraliza cabeçalhos específicos */
 #municipalities-table th:nth-child(5),
-#municipalities-table th:nth-child(6),
+#municipalities-table th:nth-child(6), /* Visita */
 #municipalities-table th:nth-child(7),
 #municipalities-table th:nth-child(8),
 #municipalities-table th:nth-child(9),
 #municipalities-table th:nth-child(10) {
     text-align: center !important;
-    vertical-align: middle !important;
 }
