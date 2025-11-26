@@ -876,9 +876,15 @@ function showMunicipalityModal(id = null) {
     editingId = id;
     document.getElementById('municipality-form').reset();
     
-    // 1. Popula o dropdown com a Lista Mestra atual
-    const munSelect = document.getElementById('municipality-name');
-    populateSelect(munSelect, municipalitiesList, 'name', 'name');
+    // 1. Popula o dropdown com a Lista Mestra atual (AGORA COM UF)
+const munSelect = document.getElementById('municipality-name');
+
+// Ordena a lista
+const sortedList = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
+
+// Gera as opções mostrando "Nome - UF"
+munSelect.innerHTML = '<option value="">Selecione o município</option>' + 
+                      sortedList.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
     
     const statusSel = document.getElementById('municipality-status');
     statusSel.onchange = handleMunicipalityStatusChange;
