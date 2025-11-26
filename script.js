@@ -1380,10 +1380,8 @@ function getFilteredTasks() {
 }
 
 function renderTasks() {
+    // 1. Captura dos Filtros
     const fMun = document.getElementById('filter-task-municipality')?.value;
-    // ... (capture as outras variáveis de filtro aqui conforme seu código original)
-    
-    // Se quiser garantir que todas as variáveis estão sendo lidas:
     const fStatus = document.getElementById('filter-task-status')?.value;
     const fReq = document.getElementById('filter-task-requester')?.value.toLowerCase();
     const fPerf = document.getElementById('filter-task-performer')?.value; 
@@ -1393,10 +1391,9 @@ function renderTasks() {
     const fPerfStart = document.getElementById('filter-task-perf-start')?.value;
     const fPerfEnd = document.getElementById('filter-task-perf-end')?.value;
 
+    // 2. Filtragem
     let filtered = tasks.filter(t => {
-        // CORREÇÃO C: Comparação exata
         if (fMun && t.municipality !== fMun) return false;
-        
         if (fStatus && t.status !== fStatus) return false;
         if (fReq && !t.requestedBy.toLowerCase().includes(fReq)) return false;
         if (fPerf && t.performedBy !== fPerf) return false;
@@ -1408,14 +1405,14 @@ function renderTasks() {
         return true;
     });
 
-    // ... (Mantenha o restante da renderização da tabela e estatísticas que você já tem) ...
-    // Vou replicar o bloco de tabela para garantir que use a versão atualizada
+    // 3. Elementos da DOM
     const c = document.getElementById('tasks-table');
     
     if(document.getElementById('tasks-results-count')) {
         document.getElementById('tasks-results-count').style.display = 'block';
         document.getElementById('tasks-results-count').innerHTML = '<strong>' + filtered.length + '</strong> treinamentos encontrados';
     }
+    
     // Atualiza estatísticas
     if(document.getElementById('total-tasks')) document.getElementById('total-tasks').textContent = tasks.length;
     if(document.getElementById('completed-tasks')) document.getElementById('completed-tasks').textContent = filtered.filter(t => t.status==='Concluído').length;
@@ -1426,23 +1423,52 @@ function renderTasks() {
         c.innerHTML = '<div class="empty-state">Nenhum treinamento encontrado.</div>'; 
     } else {
         const rows = filtered.map(t => {
+            // Lógica para observação curta
             let obs = t.observations ? (t.observations.length > 30 ? t.observations.substring(0,30)+'...' : t.observations) : '-';
+            
+            // Define classe de status
             const stCls = t.status === 'Concluído' ? 'completed' : (t.status === 'Cancelado' ? 'cancelled' : 'pending');
+
+            // --- NOVO: Busca a UF na lista mestra para exibir na tabela ---
+            // Procura na lista mestra um município com o mesmo nome
+            const munData = municipalitiesList.find(m => m.name === t.municipality);
+            // Se achar, monta "Nome - UF", senão mostra só o "Nome"
+            const munDisplay = munData ? `${t.municipality} - ${munData.uf}` : t.municipality;
+
+            // --- Montagem da Linha (Colunas Reordenadas) ---
             return `<tr>
-                <td class="text-primary-cell">${t.municipality}</td>
+                <td class="text-primary-cell">${munDisplay}</td>
                 <td style="text-align:center;">${formatDate(t.dateRequested)}</td>
-                <td style="text-align:center;">${formatDate(t.datePerformed)}</td>
                 <td>${t.requestedBy}</td>
                 <td>${t.performedBy}</td>
                 <td>${t.trainedName||'-'}</td>
                 <td>${t.trainedPosition||'-'}</td>
                 <td>${t.contact||'-'}</td>
+                
+                <td style="text-align:center;">${formatDate(t.datePerformed)}</td>
+
                 <td class="text-secondary-cell">${obs}</td>
                 <td><span class="task-status ${stCls}">${t.status}</span></td>
                 <td><button class="btn btn--sm" onclick="showTaskModal(${t.id})">✏️</button><button class="btn btn--sm" onclick="deleteTask(${t.id})">🗑️</button></td>
             </tr>`;
         }).join('');
-        c.innerHTML = `<table><thead><th>Município</th><th>Data Solicitação</th><th>Data Realização</th><th>Solicitante</th><th>Colaborador Responsável</th><th>Profissional</th><th>Cargo</th><th>Contato</th><th>Obs</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+        
+        // --- Cabeçalho Reordenado ---
+        c.innerHTML = `<table>
+            <thead>
+                <th>Município</th>
+                <th>Data Solicitação</th>
+                <th>Solicitante</th>
+                <th>Colaborador Responsável</th>
+                <th>Profissional</th>
+                <th>Cargo</th>
+                <th>Contato</th>
+                <th>Data Realização</th> <th>Obs</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>`;
     }
 }
 
@@ -3790,7 +3816,8 @@ function updateGlobalDropdowns() {
             const defaultOption = isFilter ? '<option value="">Todos</option>' : '<option value="">Selecione o município</option>';
             
             el.innerHTML = defaultOption + 
-                           listaMestraOrdenada.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+                           // Agora exibe o Nome + UF no texto da opção
+listaMestraOrdenada.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
             
             el.value = currentVal;
         }
