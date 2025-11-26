@@ -265,6 +265,15 @@
                     <span>Controle de Envio de Produção</span>
 
                 </button>
+                <button class="sidebar-btn" data-tab="apis">
+    <span class="sidebar-icon">🔌</span>
+    <span>APIs de Integração</span>
+</button>
+
+<button class="sidebar-btn" data-tab="info-colaboradores">
+    <span class="sidebar-icon">ℹ️</span>
+    <span>Informações de Colaboradores</span>
+</button>
 
                 <button class="sidebar-btn" data-tab="relatorios">
 
@@ -1421,6 +1430,24 @@
 
         </section>
 
+        <section id="apis-section" class="tab-content">
+    <div class="section-header">
+        <h2>APIs de Integração</h2>
+    </div>
+    <div class="empty-state">
+        <p>Funcionalidade em desenvolvimento.</p>
+    </div>
+</section>
+
+<section id="info-colaboradores-section" class="tab-content">
+    <div class="section-header">
+        <h2>Informações de Colaboradores</h2>
+    </div>
+    <div class="empty-state">
+        <p>Funcionalidade em desenvolvimento.</p>
+    </div>
+</section>
+
     </main>
 
     </div>
@@ -1730,6 +1757,10 @@
 
         <input type="password" class="form-control" id="user-password" required minlength="4" autocomplete="new-password">
 
+    </div>
+    <div class="form-group">
+        <label class="form-label">E-mail para Recuperação*</label>
+        <input type="email" class="form-control" id="user-email" placeholder="exemplo@email.com" required>
     </div>
 
     <div class="form-group">
