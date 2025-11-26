@@ -1983,7 +1983,7 @@
 
     <!-- Modal para Solicitações/Sugestões -->
 
-    <div id="request-modal" class="modal">
+ <div id="request-modal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
             <h3 id="request-modal-title">Nova Solicitação/Sugestão</h3>
@@ -1993,23 +1993,15 @@
         <form id="request-form" onsubmit="saveRequest(event)">
             <div class="form-grid">
 
-                <div class="form-group col-4">
+                <div class="form-group col-6">
                     <label class="form-label">Município*</label>
                     <select class="form-control" id="request-municipality" required>
                         <option value="">Selecione o município</option>
                     </select>
                 </div>
-                <div class="form-group col-4">
+                <div class="form-group col-6">
                     <label class="form-label">Data da Solicitação*</label>
                     <input type="date" class="form-control" id="request-date" required>
-                </div>
-                <div class="form-group col-4">
-                    <label class="form-label">Status*</label>
-                    <select class="form-control" id="request-status" required onchange="handleRequestStatusChange()">
-                        <option value="Pendente">Pendente</option>
-                        <option value="Realizado">Realizado</option>
-                        <option value="Inviável">Inviável</option>
-                    </select>
                 </div>
 
                 <div class="form-group col-6">
@@ -2021,15 +2013,24 @@
                     <input type="text" class="form-control" id="request-contact" required placeholder="(XX) 9XXXX-XXXX" maxlength="15">
                 </div>
 
-                <div class="form-group col-4" id="group-request-date-realization" style="display:none;">
-                    <label class="form-label">Data de Realização*</label>
-                    <input type="date" class="form-control" id="request-date-realization">
-                </div>
-
                 <div class="form-group col-12">
                     <label class="form-label">Descrição da Solicitação* (máx. 200)</label>
                     <textarea class="form-control" id="request-description" rows="3" required maxlength="200"></textarea>
                     <div class="char-counter" id="request-char-counter">0 / 200</div>
+                </div>
+
+                <div class="form-group col-6">
+                    <label class="form-label">Status*</label>
+                    <select class="form-control" id="request-status" required onchange="handleRequestStatusChange()">
+                        <option value="Pendente">Pendente</option>
+                        <option value="Realizado">Realizado</option>
+                        <option value="Inviável">Inviável</option>
+                    </select>
+                </div>
+                
+                <div class="form-group col-6" id="group-request-date-realization" style="display:none;">
+                    <label class="form-label">Data de Realização*</label>
+                    <input type="date" class="form-control" id="request-date-realization">
                 </div>
 
                 <div class="form-group col-12" id="group-request-justification" style="display:none;">
