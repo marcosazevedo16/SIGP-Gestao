@@ -3589,15 +3589,17 @@ table th {
     color: #7dd3fc !important;
     border: 1px solid rgba(56, 189, 248, 0.4) !important;
 }
+/* 
+
 /* ==========================================================================
-   CORREÇÃO FINAL V5.0 - LINHAS SUTIS (COR ADAPTÁVEL)
+   CORREÇÃO FINAL V5.1 - TABELA PERFEITA + DESTAQUE AO PASSAR O MOUSE
    Substitua o final do style.css por este bloco
    ========================================================================== */
 
-/* 1. FORÇAR COMPORTAMENTO DE TABELA (Hard Reset) */
+/* 1. FORÇAR COMPORTAMENTO DE TABELA */
 #municipalities-table table {
     display: table !important;
-    border-collapse: collapse !important; /* Funde as bordas */
+    border-collapse: collapse !important;
     width: 100%;
     border-spacing: 0;
     border: none !important;
@@ -3605,21 +3607,28 @@ table th {
 
 #municipalities-table thead { display: table-header-group !important; }
 #municipalities-table tbody { display: table-row-group !important; }
+
+/* 2. ESTILO DAS LINHAS (TR) - AGORA COM EFEITO HOVER */
 #municipalities-table tr { 
     display: table-row !important; 
     border: none !important;
     background-color: transparent;
+    transition: background-color 0.15s ease-in-out; /* Suaviza a mudança de cor */
 }
 
-/* 2. CÉLULAS UNIFICADAS E BORDAS SUAVES */
+/* --- AQUI ESTÁ O DESTAQUE QUE VOCÊ PEDIU --- */
+#municipalities-table tbody tr:hover {
+    background-color: var(--color-bg-1) !important; /* Cor de destaque do tema */
+    cursor: default;
+}
+
+/* 3. CÉLULAS UNIFICADAS E BORDAS SUAVES */
 #municipalities-table th,
 #municipalities-table td {
     display: table-cell !important;
     vertical-align: middle !important;
     
-    /* --- AQUI ESTÁ A CORREÇÃO DA COR --- */
-    /* Usamos a variável do tema em vez de uma cor fixa. 
-       Isso faz a linha ficar suave tanto no claro quanto no escuro. */
+    /* Linha divisória sutil */
     border-bottom: 1px solid var(--color-border) !important; 
     
     border-top: none !important;
@@ -3631,7 +3640,7 @@ table th {
     height: auto !important;
 }
 
-/* 3. AJUSTE DA COLUNA DE MÓDULOS */
+/* 4. AJUSTE DA COLUNA DE MÓDULOS */
 #municipalities-table td:nth-child(2),
 #municipalities-table th:nth-child(2) {
     width: 230px !important;
@@ -3640,7 +3649,7 @@ table th {
     white-space: normal !important;
 }
 
-/* 4. CONTAINER DOS BADGES */
+/* 5. CONTAINER DOS BADGES */
 .module-tags-cell {
     display: flex !important;
     flex-wrap: wrap !important;
@@ -3651,7 +3660,7 @@ table th {
     width: 100%;
 }
 
-/* 5. COLUNAS ESPECÍFICAS (Larguras) */
+/* 6. COLUNAS ESPECÍFICAS (Larguras) */
 #municipalities-table th:nth-child(10), /* Bloqueio */
 #municipalities-table td:nth-child(10) {
     width: 90px !important;
