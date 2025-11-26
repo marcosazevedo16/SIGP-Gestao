@@ -3655,3 +3655,24 @@ table th {
 #municipalities-table th:nth-child(10) {
     text-align: center !important;
 }
+/* ==========================================================================
+   AJUSTE FINAL V4.5 - COLUNA BLOQUEIO COMPACTA
+   Adicione ao final do style.css
+   ========================================================================== */
+
+/* Coluna 10: Bloqueio/Parou de Usar */
+/* Forçamos uma largura pequena para o cabeçalho quebrar linha e economizar espaço */
+#municipalities-table th:nth-child(10),
+#municipalities-table td:nth-child(10) {
+    width: 90px !important;      /* Largura fixa pequena */
+    max-width: 90px !important;  /* Não deixa esticar */
+    white-space: normal !important; /* Permite quebra de texto */
+    text-align: center !important;
+    font-size: 11px !important;  /* Fonte levemente menor para caber bem */
+    line-height: 1.1 !important; /* Altura de linha compacta para o cabeçalho */
+}
+
+/* Garante que o cabeçalho fique alinhado no meio verticalmente */
+#municipalities-table th {
+    vertical-align: middle !important;
+}
