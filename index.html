@@ -2049,64 +2049,70 @@
     <!-- Modal para Apresentações -->
 
     <div id="presentation-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="presentation-modal-title">Nova Apresentação</h3>
-                <button class="close-btn" onclick="closePresentationModal()">&times;</button>
-            </div>
-            <form id="presentation-form" onsubmit="savePresentation(event)">
-                <div class="form-group">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="presentation-modal-title">Nova Apresentação</h3>
+            <button class="close-btn" onclick="closePresentationModal()">&times;</button>
+        </div>
+        <form id="presentation-form" onsubmit="savePresentation(event)">
+            <div class="form-grid">
+                
+                <div class="form-group col-4">
                     <label class="form-label">Município*</label>
                     <select class="form-control" id="presentation-municipality" required>
                         <option value="">Selecione o município</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Data de Solicitação</label>
+                <div class="form-group col-4">
+                    <label class="form-label">Data Solicitação</label>
                     <input type="date" class="form-control" id="presentation-date-solicitacao">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Solicitante(s) da Apresentação</label>
+                <div class="form-group col-4">
+                    <label class="form-label">Solicitante</label>
                     <input type="text" class="form-control" id="presentation-requester">
                 </div>
-                <div class="form-group">
+
+                <div class="form-group col-12" id="presentation-orientador-group">
+                    <label class="form-label" id="presentation-orientador-label">Colaboradores Responsáveis</label>
+                    <div class="checkbox-grid" id="presentation-orientador-checkboxes" style="grid-template-columns: repeat(3, 1fr);">
+                        </div>
+                </div>
+
+                <div class="form-group col-12" id="presentation-forms-group" style="display:none;">
+                    <label class="form-label" id="presentation-forms-label">Formas de Apresentação</label>
+                    <div class="checkbox-grid" id="presentation-forms-checkboxes" style="grid-template-columns: repeat(3, 1fr);">
+                        </div>
+                </div>
+
+                <div class="form-group col-6">
                     <label class="form-label">Status*</label>
                     <select class="form-control" id="presentation-status" required onchange="handlePresentationStatusChange()">
                         <option value="Pendente">Pendente</option>
-                        <option value="Cancelada">Cancelada</option>
                         <option value="Realizada">Realizada</option>
+                        <option value="Cancelada">Cancelada</option>
                     </select>
                 </div>
-                
-                <div class="form-group" id="presentation-date-realizacao-group">
+                <div class="form-group col-6" id="presentation-date-realizacao-group" style="display:none;">
                     <label class="form-label" id="presentation-date-realizacao-label">Data de Realização</label>
                     <input type="date" class="form-control" id="presentation-date-realizacao">
                 </div>
 
-                <div class="form-group" id="presentation-orientador-group">
-                    <label class="form-label" id="presentation-orientador-label">Colaborador(es) Responsável(is)</label>
-                    <div class="checkbox-grid" id="presentation-orientador-checkboxes">
-                        </div>
+                <div class="form-group col-12">
+                    <label class="form-label" id="presentation-description-label">Descrição/Detalhes (máx. 200)</label>
+                    <textarea class="form-control" id="presentation-description" rows="3" maxlength="200" 
+                        oninput="document.getElementById('presentation-char-counter').textContent = this.value.length + ' / 200'"></textarea>
+                    <div class="char-counter" id="presentation-char-counter">0 / 200</div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label" id="presentation-forms-label">Formas de Apresentação</label>
-                    <div class="checkbox-grid" id="presentation-forms-checkboxes">
-                        </div>
-                </div>
+            </div>
 
-                <div class="form-group">
-                    <label class="form-label" id="presentation-description-label">Descrição/Detalhes</label>
-                    <textarea class="form-control" id="presentation-description" rows="4"></textarea>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn btn--secondary" onclick="closePresentationModal()">Cancelar</button>
-                    <button type="submit" class="btn btn--primary">Salvar</button>
-                </div>
-            </form>
-        </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closePresentationModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <!-- Modal para Demandas do Suporte -->
 
