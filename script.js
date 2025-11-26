@@ -3098,8 +3098,80 @@ function closeVersionModal() {
 }
 
 // Users
-function showUserModal(id=null){ const m=document.getElementById('user-modal'); document.getElementById('user-form').reset(); editingId=id; document.getElementById('user-login').disabled=false; if(id){const u=users.find(x=>x.id===id); document.getElementById('user-login').value=u.login; document.getElementById('user-login').disabled=true; document.getElementById('user-name').value=u.name; document.getElementById('user-permission').value=u.permission; document.getElementById('user-status').value=u.status;}else{document.getElementById('user-password').required=true;} m.classList.add('show'); }
-function saveUser(e){ e.preventDefault(); const login=document.getElementById('user-login').value.trim().toUpperCase(); if(!editingId && users.some(u=>u.login===login)){alert('Já existe');return;} const data={login, name:document.getElementById('user-name').value, permission:document.getElementById('user-permission').value, status:document.getElementById('user-status').value}; if(!editingId){data.id=getNextId('user'); data.salt=generateSalt(); data.passwordHash=hashPassword(document.getElementById('user-password').value, data.salt); users.push(data);}else{const i=users.findIndex(u=>u.id===editingId); users[i]={...users[i],...data}; if(document.getElementById('user-password').value){users[i].salt=generateSalt(); users[i].passwordHash=hashPassword(document.getElementById('user-password').value, users[i].salt);}} salvarNoArmazenamento('users',users); document.getElementById('user-modal').classList.remove('show'); renderUsers(); showToast('Salvo!'); }
+function showUserModal(id = null) {
+    const m = document.getElementById('user-modal');
+    document.getElementById('user-form').reset();
+    editingId = id;
+    
+    // Controle do campo Login (não edita se já existir)
+    document.getElementById('user-login').disabled = false;
+
+    if (id) {
+        const u = users.find(x => x.id === id);
+        if (u) {
+            document.getElementById('user-login').value = u.login;
+            document.getElementById('user-login').disabled = true;
+            document.getElementById('user-name').value = u.name;
+            // NOVO CAMPO:
+            document.getElementById('user-email').value = u.email || ''; 
+            document.getElementById('user-permission').value = u.permission;
+            document.getElementById('user-status').value = u.status;
+            document.getElementById('user-password').required = false; // Senha opcional na edição
+        }
+    } else {
+        document.getElementById('user-password').required = true; // Senha obrigatória no cadastro
+    }
+    m.classList.add('show');
+}
+function saveUser(e) {
+    e.preventDefault();
+    const login = document.getElementById('user-login').value.trim().toUpperCase();
+    
+    // Validação de duplicidade (apenas se for novo)
+    if (!editingId && users.some(u => u.login === login)) {
+        alert('Erro: Este login já existe.');
+        return;
+    }
+
+    const data = {
+        login: login,
+        name: document.getElementById('user-name').value,
+        email: document.getElementById('user-email').value, // NOVO CAMPO
+        permission: document.getElementById('user-permission').value,
+        status: document.getElementById('user-status').value
+    };
+
+    if (!editingId) {
+        // Novo Usuário
+        data.id = getNextId('user');
+        data.salt = generateSalt();
+        data.passwordHash = hashPassword(document.getElementById('user-password').value, data.salt);
+        users.push(data);
+    } else {
+        // Edição
+        const i = users.findIndex(u => u.id === editingId);
+        if (i !== -1) {
+            // Mantém salt/senha antigos se não for informado nova senha
+            const oldUser = users[i];
+            data.salt = oldUser.salt;
+            data.passwordHash = oldUser.passwordHash;
+
+            // Se digitou senha nova, atualiza
+            const newPass = document.getElementById('user-password').value;
+            if (newPass) {
+                data.salt = generateSalt();
+                data.passwordHash = hashPassword(newPass, data.salt);
+            }
+            // Atualiza o objeto mesclando ID
+            users[i] = { ...oldUser, ...data };
+        }
+    }
+    
+    salvarNoArmazenamento('users', users);
+    document.getElementById('user-modal').classList.remove('show');
+    renderUsers();
+    showToast('Usuário salvo com sucesso!', 'success');
+}
 function renderUsers() { 
     // 1. Captura os valores dos 3 filtros
     const fName = document.getElementById('filter-user-name') ? document.getElementById('filter-user-name').value.toLowerCase() : '';
@@ -3138,19 +3210,20 @@ function renderUsers() {
         return; 
     } 
     
-    const rows = filteredUsers.map(u => 
-        `<tr>
-            <td class="text-primary-cell">${u.login}</td>
-            <td class="text-primary-cell">${u.name}</td>
-            <td>${u.status}</td>
-            <td>
-                <button class="btn btn--sm" onclick="showUserModal(${u.id})" title="Editar">✏️</button>
-                <button class="btn btn--sm" onclick="deleteUser(${u.id})" title="Excluir">🗑️</button>
-            </td>
-        </tr>`
-    ).join(''); 
-    
-    c.innerHTML = `<table><thead><th>Login</th><th>Nome</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`; 
+    // ... dentro do map em renderUsers ...
+const rows = filteredUsers.map(u => 
+    `<tr>
+        <td class="text-primary-cell">${u.login}</td>
+        <td class="text-primary-cell">${u.name}</td>
+        <td>${u.email || '-'}</td> <td>${u.status}</td>
+        <td>
+            <button class="btn btn--sm" onclick="showUserModal(${u.id})" title="Editar">✏️</button>
+            <button class="btn btn--sm" onclick="deleteUser(${u.id})" title="Excluir">🗑️</button>
+        </td>
+    </tr>`
+).join(''); 
+
+c.innerHTML = `<table><thead><th>Login</th><th>Nome</th><th>E-mail</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`; 
 }
 
 function clearUserFilters() {
