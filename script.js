@@ -1077,8 +1077,7 @@ c.innerHTML = `<table><thead>
     <th>Bloqueio/<br>Parou de Usar</th>
     <th>Ações</th>
 </thead><tbody>${rows}</tbody></table>`;
-
-// ...   }
+}
     updateMunicipalityCharts(filtered);
 }
 
