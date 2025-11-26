@@ -3590,63 +3590,68 @@ table th {
     border: 1px solid rgba(56, 189, 248, 0.4) !important;
 }
 /* ==========================================================================
-   AJUSTES FINAIS v4.3 - TABELA OTIMIZADA E FLUIDA
+   CORREÇÃO DE TABELA V4.4 - ALINHAMENTO E QUEBRA DE MÓDULOS
+   Substitua o final do seu CSS por este bloco
    ========================================================================== */
 
-/* 1. Regra Geral para Tabelas: Permitir quebra de linha */
-table th, table td {
-    white-space: normal !important; /* Permite que o texto desça para a próxima linha */
-    vertical-align: top !important; /* Alinha tudo ao topo para ficar organizado */
-    line-height: 1.3 !important;
+/* 1. Regra Geral: Centralizar tudo verticalmente */
+/* Isso conserta o problema do nome da cidade ficar no topo */
+#municipalities-table td,
+#municipalities-table th {
+    vertical-align: middle !important;
+    line-height: 1.2 !important;
+    padding: 8px 6px !important;
+    font-size: 13px;
 }
 
-/* 2. Ajuste específico para a Tabela de Municípios */
-#municipalities-table td {
-    font-size: 13px; /* Letra levemente menor para caber mais */
-    padding: 6px 8px !important; /* Compactar espaçamento */
-}
-
-/* Coluna 1: Nome do Município (Largura fixa para não espremer) */
-#municipalities-table td:nth-child(1),
-#municipalities-table th:nth-child(1) {
-    min-width: 120px;
-    max-width: 180px;
-    font-weight: 700;
-}
-
-/* Coluna 2: Módulos (Onde ocorre a mágica do ajuste) */
+/* 2. Coluna de Módulos (Ajuste de Largura para quebrar linha) */
+/* Definindo max-width 230px, cabem +/- 6 módulos, depois o resto desce */
 #municipalities-table td:nth-child(2),
 #municipalities-table th:nth-child(2) {
-    width: 25%; /* Tenta ocupar 25% da tabela */
-    min-width: 200px; /* Mínimo aceitável */
-    max-width: 350px; /* Máximo para forçar a quebra dos módulos */
-}
-
-/* Container dos Badges de Módulos */
-.module-tags-cell {
-    display: flex !important;
-    flex-wrap: wrap !important; /* ISSO faz os módulos caírem para a linha de baixo */
-    gap: 3px !important;
+    width: 230px !important;      /* Largura ideal para 6 itens */
+    min-width: 230px !important;  /* Não deixa diminuir */
+    max-width: 230px !important;  /* Não deixa esticar, força a quebra */
     white-space: normal !important;
 }
 
-/* Ajuste fino dos cabeçalhos para centralizar o que é data/status */
-#municipalities-table th:nth-child(5), /* Implantação */
-#municipalities-table th:nth-child(6), /* Visita */
-#municipalities-table th:nth-child(7), /* Tempo */
-#municipalities-table th:nth-child(8), /* Dias */
-#municipalities-table th:nth-child(9), /* Status */
-#municipalities-table th:nth-child(10) { /* Bloqueio */
-    text-align: center !important;
-    font-size: 11px !important; /* Cabeçalho um pouco menor */
+/* Container dos Badges (Ajuste flexível) */
+.module-tags-cell {
+    display: flex !important;
+    flex-wrap: wrap !important; /* OBRIGATÓRIO para pular linha */
+    gap: 4px !important;        /* Espacinho entre os blocos */
+    align-items: center !important;
+    justify-content: flex-start !important;
 }
 
-/* Centraliza conteúdo dessas colunas */
-#municipalities-table td:nth-child(5),
-#municipalities-table td:nth-child(6),
-#municipalities-table td:nth-child(7),
-#municipalities-table td:nth-child(8),
-#municipalities-table td:nth-child(9),
-#municipalities-table td:nth-child(10) {
+/* 3. Badges (Estilo Visual) */
+.module-tag {
+    flex: 0 0 auto; /* Garante que o tamanho respeite o texto */
+}
+
+/* 4. Ajuste das outras colunas para distribuir o espaço */
+/* Coluna 1: Nome da Cidade */
+#municipalities-table td:nth-child(1) {
+    font-weight: 600;
+    color: #003d5c;
+    min-width: 130px;
+}
+
+/* Colunas de Datas e Status (Centralizadas) */
+#municipalities-table td:nth-child(5), /* Implantação */
+#municipalities-table td:nth-child(6), /* Visita */
+#municipalities-table td:nth-child(7), /* Tempo */
+#municipalities-table td:nth-child(8), /* Dias */
+#municipalities-table td:nth-child(9), /* Status */
+#municipalities-table td:nth-child(10) { /* Bloqueio */
+    text-align: center !important;
+}
+
+/* Cabeçalhos Centralizados onde necessário */
+#municipalities-table th:nth-child(5),
+#municipalities-table th:nth-child(6),
+#municipalities-table th:nth-child(7),
+#municipalities-table th:nth-child(8),
+#municipalities-table th:nth-child(9),
+#municipalities-table th:nth-child(10) {
     text-align: center !important;
 }
