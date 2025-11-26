@@ -1449,71 +1449,69 @@
                 <button class="close-btn" onclick="closeTaskModal()">&times;</button>
             </div>
             <form id="task-form" onsubmit="saveTask(event)">
-                <div class="form-group">
-                    <label class="form-label">Município*</label>
-                    <select class="form-control" id="task-municipality" required>
-                        <option value="">Selecione o município</option>
-                    </select>
-                </div>
+    <div class="form-grid">
+        
+        <div class="form-group col-8">
+            <label class="form-label">Município*</label>
+            <select class="form-control" id="task-municipality" required>
+                <option value="">Selecione o município</option>
+            </select>
+        </div>
+        <div class="form-group col-4">
+            <label class="form-label">Status*</label>
+            <select class="form-control" id="task-status" required>
+                <option value="Concluído">Concluído</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Cancelado">Cancelado</option>
+            </select>
+        </div>
 
-                <div class="form-group">
-                    <label class="form-label">Data de Solicitação*</label>
-                    <input type="date" class="form-control" id="task-date-requested" required>
-                </div>
+        <div class="form-group col-6">
+            <label class="form-label">Data de Solicitação*</label>
+            <input type="date" class="form-control" id="task-date-requested" required>
+        </div>
+        <div class="form-group col-6">
+            <label class="form-label">Data de Realização</label>
+            <input type="date" class="form-control" id="task-date-performed">
+        </div>
 
-                <div class="form-group">
-                    <label class="form-label">Data de Realização</label>
-                    <input type="date" class="form-control" id="task-date-performed">
-                </div>
+        <div class="form-group col-6">
+            <label class="form-label">Solicitante*</label>
+            <input type="text" class="form-control" id="task-requested-by" required>
+        </div>
+        <div class="form-group col-6">
+            <label class="form-label">Colaborador*</label>
+            <select class="form-control" id="task-performed-by" required>
+                <option value="">Selecione o colaborador</option>
+            </select>
+        </div>
 
-                <div class="form-group">
-                    <label class="form-label">Solicitante*</label>
-                    <input type="text" class="form-control" id="task-requested-by" required>
-                </div>
+        <div class="form-group col-6">
+            <label class="form-label">Profissional treinado</label>
+            <input type="text" class="form-control" id="task-trained-name">
+        </div>
+        <div class="form-group col-6">
+            <label class="form-label">Cargo/Função</label>
+            <select class="form-control" id="task-trained-position">
+                <option value="">Selecione o cargo/função</option>
+            </select>
+        </div>
 
-                <div class="form-group">
-                    <label class="form-label">Colaborador*</label>
-                    <select class="form-control" id="task-performed-by" required>
-                        <option value="">Selecione o colaborador</option>
-                    </select>
-                </div>
+        <div class="form-group col-12">
+            <label class="form-label">Contato</label>
+            <input type="text" class="form-control" id="task-contact" placeholder="(XX) 9XXXX-XXXX" maxlength="15">
+        </div>
 
-                <div class="form-group">
-                    <label class="form-label">Profissional à treinar/treinado</label>
-                    <input type="text" class="form-control" id="task-trained-name">
-                </div>
+        <div class="form-group col-12">
+            <label class="form-label">Observações</label>
+            <textarea class="form-control" id="task-observations" rows="3"></textarea>
+        </div>
 
-                <div class="form-group">
-                    <label class="form-label">Cargo/Função</label>
-                    <select class="form-control" id="task-trained-position">
-                        <option value="">Selecione o cargo/função</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Contato</label>
-                    <input type="text" class="form-control" id="task-contact" placeholder="(XX) 9XXXX-XXXX" maxlength="15">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Status*</label>
-                    <select class="form-control" id="task-status" required>
-                        <option value="Concluído">Concluído</option>
-                        <option value="Pendente">Pendente</option>
-                        <option value="Cancelado">Cancelado</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Observações</label>
-                    <textarea class="form-control" id="task-observations" rows="4"></textarea>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn btn--secondary" onclick="closeTaskModal()">Cancelar</button>
-                    <button type="submit" class="btn btn--primary">Salvar</button>
-                </div>
-            </form>
+    </div> <div class="modal-actions">
+        <button type="button" class="btn btn--secondary" onclick="closeTaskModal()">Cancelar</button>
+        <button type="submit" class="btn btn--primary">Salvar</button>
+    </div>
+</form>
         </div>
     </div>
 
