@@ -3728,3 +3728,28 @@ table th {
         grid-column: span 1;
     }
 }
+
+/* --- Novo Layout Grid para Formulários --- */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+    padding: 8px 0;
+}
+
+/* Classes utilitárias para largura das colunas */
+.col-12 { grid-column: span 12; }
+.col-8  { grid-column: span 8; }
+.col-6  { grid-column: span 6; }
+.col-4  { grid-column: span 4; }
+
+/* Remove margem inferior extra dentro do grid */
+.form-grid .form-group {
+    margin-bottom: 0;
+}
+
+/* Responsividade para celular */
+@media (max-width: 768px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .col-12, .col-8, .col-6, .col-4 { grid-column: span 1; }
+}
