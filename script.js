@@ -1541,50 +1541,82 @@ function clearTaskFilters() {
 // ----------------------------------------------------------------------------
 
 function handleRequestStatusChange() {
-    const status = document.getElementById('request-status').value;
+    const statusEl = document.getElementById('request-status');
+    if(!statusEl) return;
+    
+    const status = statusEl.value;
+    
+    // Grupos (Divs)
     const grpReal = document.getElementById('group-request-date-realization');
     const grpJust = document.getElementById('group-request-justification');
     
-    if(grpReal) grpReal.style.display = (status === 'Realizado') ? 'block' : 'none';
-    if(grpJust) grpJust.style.display = (status === 'Inviável') ? 'block' : 'none';
-}
+    // Inputs (para required)
+    const inpReal = document.getElementById('request-date-realization');
+    const inpJust = document.getElementById('request-justification');
 
+    // Reset inicial
+    if(grpReal) grpReal.style.display = 'none';
+    if(grpJust) grpJust.style.display = 'none';
+    if(inpReal) inpReal.required = false;
+    if(inpJust) inpJust.required = false;
+
+    // Lógica
+    if (status === 'Realizado') {
+        if(grpReal) grpReal.style.display = 'block';
+        if(inpReal) inpReal.required = true;
+    } else if (status === 'Inviável') {
+        if(grpJust) grpJust.style.display = 'block';
+        if(inpJust) inpJust.required = true;
+    }
+}
 function showRequestModal(id = null) {
     editingId = id;
     const form = document.getElementById('request-form');
     form.reset();
+
+    // 1. Configura o listener de status
+    const statusSel = document.getElementById('request-status');
+    if (statusSel) statusSel.onchange = handleRequestStatusChange;
+
+    // 2. Atualiza dropdowns globais e depois SOBRESCREVE o de município para mostrar a UF
+    updateGlobalDropdowns(); 
     
-    // Item 9: Município no topo
-    const fieldMun = document.getElementById('request-municipality').closest('.form-group');
-    if(fieldMun) {
-        form.insertBefore(fieldMun, form.firstChild);
+    const munSelect = document.getElementById('request-municipality');
+    if (munSelect) {
+        const sortedList = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
+        // Aqui está o segredo: Mostra "Nome - UF" no texto, mas salva só o "Nome" no value
+        munSelect.innerHTML = '<option value="">Selecione o município</option>' + 
+                              sortedList.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
     }
 
-    const statusSel = document.getElementById('request-status');
-    statusSel.onchange = handleRequestStatusChange;
-    updateGlobalDropdowns();
-
+    // 3. Preenchimento em caso de Edição
     if (id) {
         const r = requests.find(function(x) { return x.id === id; });
-        document.getElementById('request-municipality').value = r.municipality;
-        document.getElementById('request-date').value = r.date;
-        document.getElementById('request-contact').value = r.contact;
-        document.getElementById('request-requester').value = r.requester;
-        document.getElementById('request-description').value = r.description;
-        document.getElementById('request-status').value = r.status;
-        
-        if(document.getElementById('request-date-realization')) {
-            document.getElementById('request-date-realization').value = r.dateRealization || '';
+        if (r) {
+            document.getElementById('request-municipality').value = r.municipality;
+            document.getElementById('request-date').value = r.date;
+            document.getElementById('request-contact').value = r.contact;
+            document.getElementById('request-requester').value = r.requester;
+            document.getElementById('request-description').value = r.description;
+            document.getElementById('request-status').value = r.status;
+            
+            if(document.getElementById('request-date-realization')) {
+                document.getElementById('request-date-realization').value = r.dateRealization || '';
+            }
+            if(document.getElementById('request-justification')) {
+                document.getElementById('request-justification').value = r.justification || '';
+            }
+            
+            // Atualiza a visibilidade dos campos (Data Realização / Justificativa)
+            handleRequestStatusChange();
         }
-        if(document.getElementById('request-justification')) {
-            document.getElementById('request-justification').value = r.justification || '';
-        }
-        
+    } else {
+        // Se for novo, garante que os campos ocultos estejam escondidos
         handleRequestStatusChange();
     }
+    
     document.getElementById('request-modal').classList.add('show');
 }
-
 function saveRequest(e) {
     e.preventDefault();
     const status = document.getElementById('request-status').value;
