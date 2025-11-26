@@ -3692,3 +3692,39 @@ table th {
 #municipalities-table th:nth-child(10) {
     text-align: center !important;
 }
+
+/* ==========================================================================
+   SISTEMA DE GRID PARA FORMULÁRIOS MODERNOS
+   Adicione ao final do style.css
+   ========================================================================== */
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr); /* 12 colunas virtuais */
+    gap: 16px; /* Espaço entre os campos */
+    padding-bottom: 8px;
+}
+
+/* Utilitários de Coluna */
+.col-12 { grid-column: span 12; } /* Ocupa linha inteira */
+.col-8  { grid-column: span 8; }  /* Ocupa 2/3 */
+.col-6  { grid-column: span 6; }  /* Ocupa metade */
+.col-4  { grid-column: span 4; }  /* Ocupa 1/3 */
+.col-3  { grid-column: span 3; }  /* Ocupa 1/4 (bom para datas) */
+
+/* Remove a margem inferior padrão dos form-groups quando dentro do grid,
+   pois o 'gap' do grid já cuida do espaçamento vertical e horizontal */
+.form-grid .form-group {
+    margin-bottom: 0;
+}
+
+/* RESPONSIVIDADE: No celular, tudo vira 1 coluna só */
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .col-12, .col-8, .col-6, .col-4, .col-3 {
+        grid-column: span 1;
+    }
+}
