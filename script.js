@@ -1249,13 +1249,6 @@ function showTaskModal(id = null) {
     
     updateGlobalDropdowns();
     
-    // AJUSTE 1: Mover município para o topo
-    const form = document.getElementById('task-form');
-    const fieldMun = document.getElementById('task-municipality').closest('.form-group');
-    if(fieldMun) {
-        form.insertBefore(fieldMun, form.firstChild);
-    }
-    
     if (id) {
         const t = tasks.find(function(x) { return x.id === id; });
         if (t) {
@@ -1444,7 +1437,7 @@ function renderTasks() {
                 <td>${t.trainedName||'-'}</td>
                 <td>${t.trainedPosition||'-'}</td>
                 <td>${t.contact||'-'}</td>
-                <td class="text-secondary-cell">${observações}</td>
+                <td class="text-secondary-cell">${obs}</td>
                 <td><span class="task-status ${stCls}">${t.status}</span></td>
                 <td><button class="btn btn--sm" onclick="showTaskModal(${t.id})">✏️</button><button class="btn btn--sm" onclick="deleteTask(${t.id})">🗑️</button></td>
             </tr>`;
@@ -3839,8 +3832,7 @@ function updateGlobalDropdowns() {
         'filter-presentation-municipality'
     ];
 
-    // Ordenamos a lista para os filtros
-    const munListSorted = listaMestra.slice().sort((a,b) => a.name.localeCompare(b.name));
+const munListSorted = municipalitiesList.slice().sort((a,b) => a.name.localeCompare(b.name));
 
     filterSelects.forEach(id => {
         const el = document.getElementById(id);
