@@ -705,6 +705,8 @@ function refreshCurrentTab(sectionId) {
     if (sectionId === 'modulos-section') renderModulos();
     if (sectionId === 'municipalities-list-section') renderMunicipalityList();
     if (sectionId === 'formas-apresentacao-section') renderFormas();
+    if (sectionId === 'apis-section') { /* Futura lógica aqui */ }
+    if (sectionId === 'info-colaboradores-section') { /* Futura lógica aqui */ }
 
     if (sectionId === 'dashboard-section') { 
         updateDashboardStats(); 
