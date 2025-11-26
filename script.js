@@ -1070,11 +1070,11 @@ c.innerHTML = `<table><thead>
     <th>Módulos Em Uso</th>
     <th>Gestor(a) Atual</th>
     <th>Contato</th>
-    <th>Data Implantação</th>
+    <th>Data de Implantação</th>
     <th>Última Visita<br>Presencial</th> <th>Tempo de Uso</th>
-    <th>Dias sem Visita</th>
+    <th>Tempo sem Visita</th>
     <th>Status</th>
-    <th>Bloqueio/<br>Parou de Usar</th>
+    <th>Dt.Bloqueio/<br>Parou de Usar</th>
     <th>Ações</th>
 </thead><tbody>${rows}</tbody></table>`;
 }
