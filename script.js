@@ -1071,7 +1071,7 @@ function renderMunicipalities() {
             <th>Módulos Em Uso</th>
             <th>Gestor(a) Atual</th>
             <th>Contato</th>
-            <th>Data Implantação</th>
+            <th>Data de<br>Implantação</th>
             <th>Última Visita<br>Presencial</th>
             <th>Tempo de Uso</th>
             <th>Tempo sem Visita</th> <th>Status</th>
