@@ -1014,7 +1014,6 @@ function renderMunicipalities() {
     const fGest = document.getElementById('filter-municipality-manager') ? document.getElementById('filter-municipality-manager').value.toLowerCase() : '';
 
     let filtered = municipalities.filter(m => {
-        // CORREÇÃO C: Comparação exata (se fName existe e for diferente, remove da lista)
         if (fName && m.name !== fName) return false;
         if (fStatus && m.status !== fStatus) return false;
         if (fMod && !m.modules.includes(fMod)) return false;
@@ -1022,8 +1021,6 @@ function renderMunicipalities() {
         return true;
     }).sort((a,b) => a.name.localeCompare(b.name));
 
-    // ... (Restante da função renderMunicipalities continua igual: contadores, tabela, etc)
-    // Mantenha o código de exibição da tabela que você já tem
     const c = document.getElementById('municipalities-table');
     if(document.getElementById('municipalities-results-count')) {
         document.getElementById('municipalities-results-count').style.display = 'block';
@@ -1055,7 +1052,7 @@ function renderMunicipalities() {
                 <td style="font-size:12px;">${m.manager}</td>
                 <td>${m.contact}</td>
                 <td>${formatDate(m.implantationDate)}</td>
-                <td>${formatDate(m.lastVisit)}</td>
+                <td style="font-size:11px;">${calculateTimeInUse(m.lastVisit)}</td>
                 <td style="font-size:11px;">${calculateTimeInUse(m.implantationDate)}</td>
                 <td style="font-size:11px;">${calculateDaysSince(m.lastVisit)}</td>
                 <td><span class="${stCls}">${m.status}</span></td>
@@ -1063,26 +1060,27 @@ function renderMunicipalities() {
                 <td><button class="btn btn--sm" onclick="showMunicipalityModal(${m.id})">✏️</button><button class="btn btn--sm" onclick="deleteMunicipality(${m.id})">🗑️</button></td>
             </tr>`;
         }).join('');
-// ... dentro de renderMunicipalities ...
-
-c.innerHTML = `<table><thead>
-    <th>Município</th>
-    <th>Módulos Em Uso</th>
-    <th>Gestor(a) Atual</th>
-    <th>Contato</th>
-    <th>Data de<br>Implantação</th>
-    <th>Última Visita<br>Presencial</th> <th>Tempo de Uso</th>
-    <th>Tempo sem Visita</th>
-    <th>Status</th>
-    <th>Dt.Bloqueio/<br>Parou de Usar</th>
-    <th>Ações</th>
-</thead><tbody>${rows}</tbody></table>`;
-}
+        
+        // Cabeçalho da Tabela
+        c.innerHTML = `<table><thead>
+            <th>Município</th>
+            <th>Módulos Em Uso</th>
+            <th>Gestor(a) Atual</th>
+            <th>Contato</th>
+            <th>Data Implantação</th>
+            <th>Última Visita<br>Presencial</th>
+            <th>Tempo de Uso</th>
+            <th>Dias sem Visita</th>
+            <th>Status</th>
+            <th>Bloqueio/<br>Parou de Usar</th>
+            <th>Ações</th>
+        </thead><tbody>${rows}</tbody></table>`;
+    }
     updateMunicipalityCharts(filtered);
 }
 
 function updateMunicipalityCharts(data) {
-    // 1. Gráfico de Status (Pizza) - Mantido
+    // 1. Gráfico de Status (Pizza)
     const ctxStatus = document.getElementById('statusChart');
     if (ctxStatus && window.Chart) {
         if (chartStatusMun) {
@@ -1106,7 +1104,7 @@ function updateMunicipalityCharts(data) {
         });
     }
     
-    // 2. Gráfico de Módulos (Barra Colorida) - ATUALIZADO
+    // 2. Gráfico de Módulos (Barra Colorida)
     const ctxModules = document.getElementById('modulesChart');
     if (ctxModules && window.Chart) {
         if (chartModulesMun) {
@@ -1122,8 +1120,6 @@ function updateMunicipalityCharts(data) {
         
         const labels = Object.keys(modCounts);
         const values = Object.values(modCounts);
-        
-        // Gera cores diferentes para cada barra (módulo)
         const bgColors = labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
         
         chartModulesMun = new Chart(document.getElementById('modulesChart'), {
@@ -1133,19 +1129,17 @@ function updateMunicipalityCharts(data) {
                 datasets: [{ 
                     label: 'Qtd Municípios', 
                     data: values, 
-                    backgroundColor: bgColors // Agora colorido
+                    backgroundColor: bgColors
                 }] 
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
-                // Opcional: Esconder labels do eixo X se tiver muitos módulos
-                // scales: { x: { ticks: { display: false } } } 
+                maintainAspectRatio: false
             }
         });
     }
 
-    // 3. Gráfico de Evolução (Linha Acumulada) - Mantido
+    // 3. Gráfico de Evolução (Linha Acumulada)
     const ctxTimeline = document.getElementById('timelineChart');
     if (ctxTimeline && window.Chart) {
         if (chartTimelineMun) {
@@ -1209,20 +1203,10 @@ function updateMunicipalityCharts(data) {
         });
     }
 
-    // Contadores
+    // Contadores (SEM A MÉDIA DE DIAS)
     if(document.getElementById('total-municipalities')) document.getElementById('total-municipalities').textContent = data.length;
     if(document.getElementById('active-municipalities')) document.getElementById('active-municipalities').textContent = data.filter(m => m.status === 'Em uso').length;
     if(document.getElementById('inactive-municipalities')) document.getElementById('inactive-municipalities').textContent = data.filter(m => m.status !== 'Em uso').length;
-    
-    const daysList = data.filter(m => m.lastVisit).map(m => {
-        const last = new Date(m.lastVisit);
-        const now = new Date();
-        const diffTime = Math.abs(now - last);
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    });
-    
-    const avgDays = daysList.length > 0 ? Math.floor(daysList.reduce((a,b)=>a+b,0)/daysList.length) : 0;
-    if(document.getElementById('avg-days-last-visit')) document.getElementById('avg-days-last-visit').textContent = `${avgDays} dias`;
 }
 
 function deleteMunicipality(id) {
