@@ -1052,9 +1052,13 @@ function renderMunicipalities() {
                 <td style="font-size:12px;">${m.manager}</td>
                 <td>${m.contact}</td>
                 <td>${formatDate(m.implantationDate)}</td>
-                <td style="font-size:11px;">${calculateTimeInUse(m.lastVisit)}</td>
+                
+                <td style="font-size:11px;">${formatDate(m.lastVisit)}</td> 
+                
                 <td style="font-size:11px;">${calculateTimeInUse(m.implantationDate)}</td>
-                <td style="font-size:11px;">${calculateDaysSince(m.lastVisit)}</td>
+                
+                <td style="font-size:11px;">${calculateTimeInUse(m.lastVisit)}</td>
+                
                 <td><span class="${stCls}">${m.status}</span></td>
                 <td style="color:${corDataFim}; font-size:11px;">${dataFim}</td>
                 <td><button class="btn btn--sm" onclick="showMunicipalityModal(${m.id})">✏️</button><button class="btn btn--sm" onclick="deleteMunicipality(${m.id})">🗑️</button></td>
@@ -1070,8 +1074,7 @@ function renderMunicipalities() {
             <th>Data Implantação</th>
             <th>Última Visita<br>Presencial</th>
             <th>Tempo de Uso</th>
-            <th>Dias sem Visita</th>
-            <th>Status</th>
+            <th>Tempo sem Visita</th> <th>Status</th>
             <th>Bloqueio/<br>Parou de Usar</th>
             <th>Ações</th>
         </thead><tbody>${rows}</tbody></table>`;
