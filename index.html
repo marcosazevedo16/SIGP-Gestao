@@ -1517,137 +1517,82 @@
     <!-- Modal para Municípios -->
 
     <div id="municipality-modal" class="modal">
-
-        <div class="modal-content">
-
-            <div class="modal-header">
-
-                <h3 id="municipality-modal-title">Novo Município</h3>
-
-                <button class="close-btn" onclick="closeMunicipalityModal()">&times;</button>
-
-            </div>
-
-            <form id="municipality-form" onsubmit="saveMunicipality(event)">
-
-                <div class="form-group">
-
-                    <label class="form-label">Nome do Município*</label>
-
-                    <select class="form-control" id="municipality-name" required>
-
-                        <option value="">Selecione o município</option>
-
-                    </select>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="form-label">Status*</label>
-
-                    <select class="form-control" id="municipality-status" required onchange="handleStatusChange()">
-
-                        <option value="Em uso">Em uso</option>
-
-                        <option value="Bloqueado">Bloqueado</option>
-
-                        <option value="Parou de usar">Parou de usar</option>
-
-                        <option value="Não Implantado">Não Implantado</option>
-
-                    </select>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="form-label">Gestor Responsável*</label>
-
-                    <input type="text" class="form-control" id="municipality-manager" required>
-
-                </div>
-
-                <div class="form-group" id="contact-group">
-
-                    <label class="form-label" id="contact-label">Contato do Gestor*</label>
-
-                    <input type="text" class="form-control" id="municipality-contact" placeholder="(XX) 9XXXX-XXXX" maxlength="15" required>
-
-                </div>
-
-                <div class="form-group" id="modules-group">
-
-                    <label class="form-label" id="modules-label">Módulos em Uso*</label>
-
-                    <div class="checkbox-grid">
-
-                        <label><input type="checkbox" value="Cadastros" class="module-checkbox"> Cadastros</label>
-
-                        <label><input type="checkbox" value="TFD" class="module-checkbox"> TFD</label>
-
-                        <label><input type="checkbox" value="Prontuário eletrônico" class="module-checkbox"> Prontuário eletrônico</label>
-
-                        <label><input type="checkbox" value="Administração" class="module-checkbox"> Administração</label>
-
-                        <label><input type="checkbox" value="Almoxarifado" class="module-checkbox"> Almoxarifado</label>
-
-                        <label><input type="checkbox" value="Laboratório" class="module-checkbox"> Laboratório</label>
-
-                        <label><input type="checkbox" value="Gestor" class="module-checkbox"> Gestor</label>
-
-                        <label><input type="checkbox" value="Painel Indicadores" class="module-checkbox"> Painel Indicadores</label>
-
-                        <label><input type="checkbox" value="Pronto Atendimento" class="module-checkbox"> Pronto Atendimento</label>
-
-                        <label><input type="checkbox" value="Frotas" class="module-checkbox"> Frotas</label>
-
-                        <label><input type="checkbox" value="Regulação" class="module-checkbox"> Regulação</label>
-
-                        <label><input type="checkbox" value="CAPS" class="module-checkbox"> CAPS</label>
-
-                    </div>
-
-                </div>
-
-                <div class="form-group" id="implantation-group">
-
-                    <label class="form-label" id="implantation-label">Data de Implantação*</label>
-
-                    <input type="date" class="form-control" id="municipality-implantation-date" required>
-
-                </div>
-
-                <div class="form-group" id="lastvisit-group">
-
-                    <label class="form-label" id="lastvisit-label">Última visita*</label>
-
-                    <input type="date" class="form-control" id="municipality-last-visit" required>
-
-                </div>
-
-                <div class="form-group" id="stoppage-group" style="display: none;">
-
-                    <label class="form-label" id="stoppage-label">Data de Bloqueio/Parada*</label>
-
-                    <input type="date" class="form-control" id="municipality-stoppage-date">
-
-                </div>
-
-                <div class="modal-actions">
-
-                    <button type="button" class="btn btn--secondary" onclick="closeMunicipalityModal()">Cancelar</button>
-
-                    <button type="submit" class="btn btn--primary">Salvar</button>
-
-                </div>
-
-            </form>
-
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="municipality-modal-title">Novo Município</h3>
+            <button class="close-btn" onclick="closeMunicipalityModal()">&times;</button>
         </div>
 
-    </div>
+        <form id="municipality-form" onsubmit="saveMunicipality(event)">
+            <div class="form-grid">
 
+                <div class="form-group col-4">
+                    <label class="form-label">Nome do Município*</label>
+                    <select class="form-control" id="municipality-name" required>
+                        <option value="">Selecione o município</option>
+                    </select>
+                </div>
+                <div class="form-group col-4">
+                    <label class="form-label">Status*</label>
+                    <select class="form-control" id="municipality-status" required onchange="handleMunicipalityStatusChange()">
+                        <option value="Em uso">Em uso</option>
+                        <option value="Bloqueado">Bloqueado</option>
+                        <option value="Parou de usar">Parou de usar</option>
+                        <option value="Não Implantado">Não Implantado</option>
+                    </select>
+                </div>
+                <div class="form-group col-4">
+                    <label class="form-label" id="implantation-label">Data de Implantação*</label>
+                    <input type="date" class="form-control" id="municipality-implantation-date" required>
+                </div>
+
+                <div class="form-group col-4">
+                    <label class="form-label">Gestor Responsável*</label>
+                    <input type="text" class="form-control" id="municipality-manager" required>
+                </div>
+                <div class="form-group col-4">
+                    <label class="form-label" id="contact-label">Contato do Gestor*</label>
+                    <input type="text" class="form-control" id="municipality-contact" placeholder="(XX) 9XXXX-XXXX" maxlength="15" required>
+                </div>
+                <div class="form-group col-4">
+                    <label class="form-label" id="lastvisit-label">Última visita*</label>
+                    <input type="date" class="form-control" id="municipality-last-visit" required>
+                </div>
+
+                <div class="form-group col-4" id="group-date-blocked" style="display:none;">
+                    <label class="form-label">Data em que foi Bloqueado*</label>
+                    <input type="date" class="form-control" id="municipality-date-blocked">
+                </div>
+                <div class="form-group col-4" id="group-date-stopped" style="display:none;">
+                    <label class="form-label">Data em que Parou de Usar</label>
+                    <input type="date" class="form-control" id="municipality-date-stopped">
+                </div>
+
+                <div class="form-group col-12" id="modules-group">
+                    <label class="form-label" id="modules-label">Módulos em Uso*</label>
+                    <div class="checkbox-grid">
+                        <label><input type="checkbox" value="Cadastros" class="module-checkbox"> Cadastros</label>
+                        <label><input type="checkbox" value="TFD" class="module-checkbox"> TFD</label>
+                        <label><input type="checkbox" value="Prontuário eletrônico" class="module-checkbox"> PEC</label>
+                        <label><input type="checkbox" value="Administração" class="module-checkbox"> ADM</label>
+                        <label><input type="checkbox" value="Almoxarifado" class="module-checkbox"> Almoxarifado</label>
+                        <label><input type="checkbox" value="Laboratório" class="module-checkbox"> Laboratório</label>
+                        <label><input type="checkbox" value="Gestor" class="module-checkbox"> Gestor</label>
+                        <label><input type="checkbox" value="Painel Indicadores" class="module-checkbox"> Painel Indicadores</label>
+                        <label><input type="checkbox" value="Pronto Atendimento" class="module-checkbox"> Pronto Atendimento</label>
+                        <label><input type="checkbox" value="Frotas" class="module-checkbox"> Frotas</label>
+                        <label><input type="checkbox" value="Regulação" class="module-checkbox"> Regulação</label>
+                        <label><input type="checkbox" value="CAPS" class="module-checkbox"> CAPS</label>
+                    </div>
+                </div>
+
+            </div> <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeMunicipalityModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
     <!-- Modal para Alterar Senha -->
 
     <div id="change-password-modal" class="modal">
