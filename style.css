@@ -3590,63 +3590,68 @@ table th {
     border: 1px solid rgba(56, 189, 248, 0.4) !important;
 }
 /* ==========================================================================
-   CORREÇÃO DE TABELA V4.4 - ALINHAMENTO E QUEBRA DE MÓDULOS
-   Substitua o final do seu CSS por este bloco
+   CORREÇÃO FINAL V4.6 - TABELA PERFEITA (LINHAS E QUEBRA)
+   Substitua o final do seu style.css por este bloco
    ========================================================================== */
 
-/* 1. Regra Geral: Centralizar tudo verticalmente */
-/* Isso conserta o problema do nome da cidade ficar no topo */
-#municipalities-table td,
-#municipalities-table th {
-    vertical-align: middle !important;
-    line-height: 1.2 !important;
-    padding: 8px 6px !important;
-    font-size: 13px;
+/* 1. CORREÇÃO CRÍTICA DE BORDAS (Isso alinha as linhas horizontais) */
+#municipalities-table table {
+    border-collapse: collapse !important; /* OBRIGATÓRIO: Funde as bordas */
+    width: 100%;
+    border-spacing: 0;
 }
 
-/* 2. Coluna de Módulos (Ajuste de Largura para quebrar linha) */
-/* Definindo max-width 230px, cabem +/- 6 módulos, depois o resto desce */
+#municipalities-table tr {
+    border-bottom: 1px solid rgba(0,0,0,0.1); /* Borda na linha inteira */
+}
+
+/* 2. Alinhamento Vertical e Espaçamento */
+#municipalities-table td,
+#municipalities-table th {
+    vertical-align: middle !important; /* Centraliza verticalmente */
+    padding: 8px 6px !important;
+    line-height: 1.2 !important;
+    border-bottom: 1px solid rgba(0,0,0,0.1); /* Garante a linha */
+}
+
+/* 3. Coluna de Módulos (Largura fixa e Quebra) */
 #municipalities-table td:nth-child(2),
 #municipalities-table th:nth-child(2) {
-    width: 230px !important;      /* Largura ideal para 6 itens */
-    min-width: 230px !important;  /* Não deixa diminuir */
-    max-width: 230px !important;  /* Não deixa esticar, força a quebra */
+    width: 230px !important;
+    min-width: 230px !important;
+    max-width: 230px !important;
     white-space: normal !important;
 }
 
-/* Container dos Badges (Ajuste flexível) */
+/* 4. Container dos Badges (Flexbox com Quebra) */
 .module-tags-cell {
     display: flex !important;
-    flex-wrap: wrap !important; /* OBRIGATÓRIO para pular linha */
-    gap: 4px !important;        /* Espacinho entre os blocos */
+    flex-wrap: wrap !important; /* Faz os módulos pularem linha */
+    gap: 4px !important;
     align-items: center !important;
-    justify-content: flex-start !important;
+    min-height: 24px !important; /* Garante altura mesmo se vazio */
 }
 
-/* 3. Badges (Estilo Visual) */
-.module-tag {
-    flex: 0 0 auto; /* Garante que o tamanho respeite o texto */
+/* 5. Coluna Bloqueio/Parou (Quebra de Texto do Cabeçalho) */
+#municipalities-table th:nth-child(10),
+#municipalities-table td:nth-child(10) {
+    width: 90px !important;
+    max-width: 90px !important;
+    white-space: normal !important;
+    text-align: center !important;
+    font-size: 11px !important;
 }
 
-/* 4. Ajuste das outras colunas para distribuir o espaço */
-/* Coluna 1: Nome da Cidade */
-#municipalities-table td:nth-child(1) {
-    font-weight: 600;
-    color: #003d5c;
-    min-width: 130px;
-}
-
-/* Colunas de Datas e Status (Centralizadas) */
+/* 6. Centralização das colunas de dados/datas */
 #municipalities-table td:nth-child(5), /* Implantação */
 #municipalities-table td:nth-child(6), /* Visita */
 #municipalities-table td:nth-child(7), /* Tempo */
 #municipalities-table td:nth-child(8), /* Dias */
-#municipalities-table td:nth-child(9), /* Status */
-#municipalities-table td:nth-child(10) { /* Bloqueio */
+#municipalities-table td:nth-child(9)  /* Status */ {
     text-align: center !important;
 }
 
-/* Cabeçalhos Centralizados onde necessário */
+/* Cabeçalhos centralizados */
 #municipalities-table th:nth-child(5),
 #municipalities-table th:nth-child(6),
 #municipalities-table th:nth-child(7),
@@ -3654,25 +3659,5 @@ table th {
 #municipalities-table th:nth-child(9),
 #municipalities-table th:nth-child(10) {
     text-align: center !important;
-}
-/* ==========================================================================
-   AJUSTE FINAL V4.5 - COLUNA BLOQUEIO COMPACTA
-   Adicione ao final do style.css
-   ========================================================================== */
-
-/* Coluna 10: Bloqueio/Parou de Usar */
-/* Forçamos uma largura pequena para o cabeçalho quebrar linha e economizar espaço */
-#municipalities-table th:nth-child(10),
-#municipalities-table td:nth-child(10) {
-    width: 90px !important;      /* Largura fixa pequena */
-    max-width: 90px !important;  /* Não deixa esticar */
-    white-space: normal !important; /* Permite quebra de texto */
-    text-align: center !important;
-    font-size: 11px !important;  /* Fonte levemente menor para caber bem */
-    line-height: 1.1 !important; /* Altura de linha compacta para o cabeçalho */
-}
-
-/* Garante que o cabeçalho fique alinhado no meio verticalmente */
-#municipalities-table th {
     vertical-align: middle !important;
 }
