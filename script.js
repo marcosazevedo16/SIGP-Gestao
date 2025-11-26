@@ -836,27 +836,42 @@ function handleChangePassword(e) {
 // ----------------------------------------------------------------------------
 
 // Função para controlar campos baseados no status
+// Função atualizada para o novo Layout Grid
 function handleMunicipalityStatusChange() {
-    const status = document.getElementById('municipality-status').value;
+    const statusEl = document.getElementById('municipality-status');
+    if (!statusEl) return; // Segurança
+    
+    const status = statusEl.value;
+    
+    // 1. Captura os grupos (divs) que já estão no HTML
     const groupBlocked = document.getElementById('group-date-blocked');
     const groupStopped = document.getElementById('group-date-stopped');
     
-    // Reseta visualização
-    if (groupBlocked) {
-        groupBlocked.style.display = 'none';
-    }
-    if (groupStopped) {
-        groupStopped.style.display = 'none';
+    // 2. Captura os inputs para controlar a obrigatoriedade (required)
+    const inputBlocked = document.getElementById('municipality-date-blocked');
+    const inputStopped = document.getElementById('municipality-date-stopped');
+
+    // 3. RESET: Esconde tudo e tira obrigatoriedade antes de checar
+    if (groupBlocked) groupBlocked.style.display = 'none';
+    if (groupStopped) groupStopped.style.display = 'none';
+    
+    if (inputBlocked) { inputBlocked.value = ''; inputBlocked.required = false; }
+    if (inputStopped) { inputStopped.value = ''; inputStopped.required = false; }
+
+    // 4. LÓGICA: Mostra o campo específico baseado no status
+    if (status === 'Bloqueado') {
+        if (groupBlocked) groupBlocked.style.display = 'block';
+        if (inputBlocked) inputBlocked.required = true; // Torna obrigatório
+    } 
+    else if (status === 'Parou de usar') {
+        if (groupStopped) groupStopped.style.display = 'block';
+        // Se quiser que a data de parada seja obrigatória, descomente abaixo:
+        // if (inputStopped) inputStopped.required = true; 
     }
     
-    // Aplica lógica PDF
-    if (status === 'Bloqueado' && groupBlocked) {
-        groupBlocked.style.display = 'block';
-    } else if (status === 'Parou de usar' && groupStopped) {
-        groupStopped.style.display = 'block';
-    }
+    // Se estiver editando, a função showMunicipalityModal vai repopular os valores
+    // logo após chamar esta função, então o reset acima não perde dados salvos.
 }
-
 function showMunicipalityModal(id = null) {
     editingId = id;
     document.getElementById('municipality-form').reset();
