@@ -70,7 +70,9 @@ Para o primeiro acesso, utilize as credenciais de administrador:
 
 | Login | Senha |
 |-------|-------|
-| **ADMIN** | `saude2025` |
+| **ADMIN** | [Senha configurada localmente] |
+
+> ⚠️ **IMPORTANTE:** Altere a senha padrão imediatamente no primeiro login!
 
 > **Nota:** O sistema solicitará a troca de senha no primeiro login por segurança.
 
