@@ -1900,6 +1900,7 @@ tbody tr:hover {
   width: 90%;
   max-width: 900px;
   max-height: 90vh;
+  min-height: 200px;
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
   animation: slideIn 0.3s;
