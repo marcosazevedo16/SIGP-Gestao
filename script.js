@@ -1253,35 +1253,7 @@ function clearMunicipalityFilters() {
 // 12. TREINAMENTOS (Itens 3, 16)
 // ----------------------------------------------------------------------------
 
-function showTaskModal(id = null) {
-    editingId = id;
-    document.getElementById('task-form').reset();
-
-// --- ADICIONE ESTAS 2 LINHAS AQUI: ---
-    // Isso popula o select com os Colaboradores cadastrados, removendo a lista fixa do HTML
-    const selectColab = document.getElementById('task-performed-by');
-    populateSelect(selectColab, orientadores, 'name', 'name'); 
-    // -------------------------------------
-    
-    updateGlobalDropdowns();
-    
-    if (id) {
-        const t = tasks.find(function(x) { return x.id === id; });
-        if (t) {
-            document.getElementById('task-date-requested').value = t.dateRequested;
-            document.getElementById('task-municipality').value = t.municipality;
-            document.getElementById('task-requested-by').value = t.requestedBy;
-            document.getElementById('task-performed-by').value = t.performedBy;
-            document.getElementById('task-status').value = t.status;
-            document.getElementById('task-trained-name').value = t.trainedName || '';
-            document.getElementById('task-trained-position').value = t.trainedPosition || '';
-            document.getElementById('task-contact').value = t.contact || '';
-            document.getElementById('task-observations').value = t.observations || '';
-            document.getElementById('task-date-performed').value = t.datePerformed || '';
-        }
-    }
-    document.getElementById('task-modal').classList.add('show');
-}
+function showTaskModal(id = null)
 
 function saveTask(e) {
     e.preventDefault();
