@@ -3874,94 +3874,6 @@ function updateDashboardStats() {
     document.getElementById('dashboard-presentations-completed').textContent = presentations.filter(function(p) { return p.status === 'Realizada'; }).length;
 }
 
-// Variáveis globais para guardar as instâncias (para destruir antes de recriar)
-let chartInstance1 = null;
-let chartInstance2 = null;
-let chartInstance3 = null;
-let chartInstance4 = null;
-
-function initializeDashboardCharts() {
-    if (!window.Chart) return;
-
-    // --- 1. SAÚDE DA CARTEIRA (Rosca) ---
-    const ctx1 = document.getElementById('chartMunicipalityStatus');
-    if (ctx1) {
-        if (chartInstance1) chartInstance1.destroy();
-        
-        // Dados
-        const statusCounts = { 'Em uso': 0, 'Bloqueado': 0, 'Parou de usar': 0, 'Não Implantado': 0 };
-        municipalities.forEach(m => { if (statusCounts[m.status] !== undefined) statusCounts[m.status]++; });
-
-        chartInstance1 = new Chart(ctx1, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(statusCounts),
-                datasets: [{
-                    data: Object.values(statusCounts),
-                    backgroundColor: ['#005580', '#C85250', '#E68161', '#79C2A9'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } }
-            }
-        });
-    }
-
-    // --- 2. PRODUTIVIDADE OPERACIONAL (Linha - Últimos 6 meses) ---
-    const ctx2 = document.getElementById('chartProductivity');
-    if (ctx2) {
-        if (chartInstance2) chartInstance2.destroy();
-
-        // Gera os últimos 6 meses (MM/AAAA)
-        const labelsMeses = [];
-        const dadosTreinamentos = [0,0,0,0,0,0];
-        const dadosVisitas = [0,0,0,0,0,0];
-        
-        for (let i = 5; i >= 0; i--) {
-            const d = new Date();
-            d.setMonth(d.getMonth() - i);
-            const key = d.toISOString().substring(0, 7); // "2025-11"
-            labelsMeses.push(d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })); // "nov/25"
-            
-            // Conta Treinamentos (Data Realização)
-            dadosTreinamentos[5-i] = tasks.filter(t => t.status === 'Concluído' && t.datePerformed && t.datePerformed.startsWith(key)).length;
-            // Conta Visitas (Data Realização)
-            dadosVisitas[5-i] = visits.filter(v => v.status === 'Realizada' && v.dateRealization && v.dateRealization.startsWith(key)).length;
-        }
-
-        chartInstance2 = new Chart(ctx2, {
-            type: 'line',
-            data: {
-                labels: labelsMeses,
-                datasets: [
-                    { label: 'Treinamentos', data: dadosTreinamentos, borderColor: '#005580', tension: 0.4, fill: false },
-                    { label: 'Visitas', data: dadosVisitas, borderColor: '#E68161', tension: 0.4, fill: false }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-            }
-        });
-    }
-
-    // --- 3. TOP MÓDULOS (Barras Horizontais) ---
-    const ctx3 = document.getElementById('chartTopModules');
-    if (ctx3) {
-        if (chartInstance3) chartInstance3.destroy();
-
-        const modMap = {};
-        municipalities.forEach(m => {
-            if (m.modules && Array.isArray(m.modules)) {
-                m.modules.forEach(mod => { modMap[mod] = (modMap[mod] || 0) + 1; });
-            }
-        });
-
 // Variáveis globais para as instâncias dos gráficos
 let chartInstanceEvo = null; // Evolução
 let chartInstance1 = null;   // Carteira
@@ -4728,4 +4640,3 @@ function handlePresentationCSVImport(event) {
         console.log("IDs de produção corrigidos e reordenados com sucesso.");
     }
 })();
-
