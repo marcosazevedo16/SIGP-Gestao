@@ -3746,7 +3746,7 @@ table th {
     }
 }
 
-/* --- Novo Layout Grid para Formulários --- */
+/* --- SISTEMA DE GRID COMPLETO (Cole no style.css) --- */
 .form-grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
@@ -3754,21 +3754,29 @@ table th {
     padding: 8px 0;
 }
 
-/* Classes utilitárias para largura das colunas */
-.col-12 { grid-column: span 12; }
-.col-8  { grid-column: span 8; }
-.col-6  { grid-column: span 6; }
+/* Todas as larguras de coluna possíveis */
+.col-1  { grid-column: span 1; }
+.col-2  { grid-column: span 2; }
+.col-3  { grid-column: span 3; }
 .col-4  { grid-column: span 4; }
+.col-5  { grid-column: span 5; }
+.col-6  { grid-column: span 6; }
+.col-7  { grid-column: span 7; }
+.col-8  { grid-column: span 8; }
+.col-9  { grid-column: span 9; }
+.col-10 { grid-column: span 10; }
+.col-11 { grid-column: span 11; }
+.col-12 { grid-column: span 12; }
 
-/* Remove margem inferior extra dentro do grid */
-.form-grid .form-group {
-    margin-bottom: 0;
-}
+.form-grid .form-group { margin-bottom: 0; }
 
-/* Responsividade para celular */
+/* Responsividade: No celular vira 1 coluna */
 @media (max-width: 768px) {
     .form-grid { grid-template-columns: 1fr; }
-    .col-12, .col-8, .col-6, .col-4 { grid-column: span 1; }
+    .col-1, .col-2, .col-3, .col-4, .col-5, .col-6, 
+    .col-7, .col-8, .col-9, .col-10, .col-11, .col-12 { 
+        grid-column: span 1; 
+    }
 }
 
 /* Regra específica para o Modal de Solicitações (Mais estreito) */
