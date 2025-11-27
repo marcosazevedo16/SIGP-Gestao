@@ -2191,21 +2191,21 @@
                         <option value="">Selecione o município</option>
                     </select>
                 </div>
-                <div class="form-group col-4">
-                    <label class="form-label">Data da Solicitação*</label>
+                <div class="form-group col-3">
+                    <label class="form-label">Data Solicitação*</label>
                     <input type="date" class="form-control" id="visit-date" required>
                 </div>
-                <div class="form-group col-4">
+                <div class="form-group col-5">
                     <label class="form-label">Solicitante*</label>
                     <input type="text" class="form-control" id="visit-applicant" required>
                 </div>
 
                 <div class="form-group col-12">
-                    <label class="form-label">Motivo da Solicitação</label>
-                    <textarea class="form-control" id="visit-reason" rows="3" maxlength="200"></textarea>
+                    <label class="form-label">Motivo da Solicitação*</label>
+                    <textarea class="form-control" id="visit-reason" rows="3" maxlength="200" required></textarea>
                 </div>
 
-                <div class="form-group col-6">
+                <div class="form-group col-4">
                     <label class="form-label">Status*</label>
                     <select class="form-control" id="visit-status" required onchange="handleVisitStatusChange()">
                         <option value="Pendente">Pendente</option>
@@ -2214,12 +2214,12 @@
                     </select>
                 </div>
 
-                <div class="form-group col-6" id="group-visit-date-realization" style="display:none;">
+                <div class="form-group col-8" id="group-visit-date-realization" style="display:none;">
                     <label class="form-label">Data de Realização*</label>
                     <input type="date" class="form-control" id="visit-date-realization">
                 </div>
 
-                <div class="form-group col-6" id="group-visit-justification" style="display:none;">
+                <div class="form-group col-8" id="group-visit-justification" style="display:none;">
                     <label class="form-label">Justificativa (Obrigatória)*</label>
                     <textarea class="form-control" id="visit-justification" rows="1"></textarea>
                 </div>
