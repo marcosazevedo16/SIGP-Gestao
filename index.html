@@ -1652,91 +1652,56 @@
     <!-- Modal para Gestão de Usuários -->
 
     <div id="user-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="user-modal-title">Novo Usuário</h3>
+            <button class="close-btn" onclick="closeUserModal()">&times;</button>
+        </div>
+        <form id="user-form" onsubmit="saveUser(event)">
+            <div class="form-grid">
+                
+                <div class="form-group col-4">
+                    <label class="form-label">Login*</label>
+                    <input type="text" class="form-control" id="user-login" required autocomplete="off" style="text-transform: uppercase;">
+                </div>
+                <div class="form-group col-8">
+                    <label class="form-label">Nome Completo*</label>
+                    <input type="text" class="form-control" id="user-name" required>
+                </div>
 
-        <div class="modal-content">
+                <div class="form-group col-6">
+                    <label class="form-label">Senha Inicial*</label>
+                    <input type="password" class="form-control" id="user-password" required minlength="4" autocomplete="new-password">
+                </div>
+                <div class="form-group col-6">
+                    <label class="form-label">E-mail Recuperação*</label>
+                    <input type="email" class="form-control" id="user-email" placeholder="exemplo@email.com" required>
+                </div>
 
-            <div class="modal-header">
-
-                <h3 id="user-modal-title">Novo Usuário</h3>
-
-                <button class="close-btn" onclick="closeUserModal()">&times;</button>
+                <div class="form-group col-6">
+                    <label class="form-label">Permissão*</label>
+                    <select class="form-control" id="user-permission" required>
+                        <option value="Usuário Normal">Usuário Normal</option>
+                        <option value="Administrador">Administrador</option>
+                    </select>
+                </div>
+                <div class="form-group col-6">
+                    <label class="form-label">Status*</label>
+                    <select class="form-control" id="user-status" required>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Inativo">Inativo</option>
+                    </select>
+                </div>
 
             </div>
-
-           <form id="user-form" onsubmit="saveUser(event)">
-
-    <div class="form-group">
-
-        <label class="form-label">Login*</label>
-
-        <input type="text" class="form-control" id="user-login" required autocomplete="off">
-
+            <div id="user-error" class="error-message"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeUserModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
     </div>
-
-    <div class="form-group">
-
-        <label class="form-label">Nome Completo*</label>
-
-        <input type="text" class="form-control" id="user-name" required>
-
-    </div>
-
-    <div class="form-group">
-
-        <label class="form-label">Senha Inicial*</label>
-
-        <input type="password" class="form-control" id="user-password" required minlength="4" autocomplete="new-password">
-
-    </div>
-    <div class="form-group">
-        <label class="form-label">E-mail para Recuperação*</label>
-        <input type="email" class="form-control" id="user-email" placeholder="exemplo@email.com" required>
-    </div>
-
-    <div class="form-group">
-
-        <label class="form-label">Permissão*</label>
-
-        <select class="form-control" id="user-permission" required>
-
-            <option value="Usuário Normal">Usuário Normal</option>
-
-            <option value="Administrador">Administrador</option>
-
-        </select>
-
-    </div>
-
-    <div class="form-group">
-
-        <label class="form-label">Status*</label>
-
-        <select class="form-control" id="user-status" required>
-
-            <option value="Ativo">Ativo</option>
-
-            <option value="Inativo">Inativo</option>
-
-        </select>
-
-    </div>
-
-    <div id="user-error" class="error-message"></div>
-
-    <div class="modal-actions">
-
-        <button type="button" class="btn btn--secondary" onclick="closeUserModal()">Cancelar</button>
-
-        <button type="submit" class="btn btn--primary">Salvar</button>
-
-    </div>
-
-</form>
-
-        </div>
-
-    </div>
-
+</div>
     <!-- Modal para Cargo/Função -->
 
     <div id="cargo-modal" class="modal">
@@ -1788,199 +1753,108 @@
     <!-- Modal para Colaborador -->
 
     <div id="orientador-modal" class="modal">
-
-        <div class="modal-content">
-
-            <div class="modal-header">
-
-                <h3 id="orientador-modal-title">Novo Colaborador</h3>
-
-                <button class="close-btn" onclick="closeOrientadorModal()">&times;</button>
-
-            </div>
-
-            <form id="orientador-form" onsubmit="saveOrientador(event)">
-    <div class="form-group">
-        <label class="form-label">Nome do Colaborador*</label>
-        <input type="text" class="form-control" id="orientador-name" required>
-    </div>
-    <div class="form-group">
-        <label class="form-label">Data de Nascimento</label>
-        <input type="date" class="form-control" id="orientador-birthdate">
-    </div>
-    <div class="form-group">
-        <label class="form-label">Contato</label>
-        <input type="text" class="form-control" id="orientador-contact" placeholder="(XX) 9XXXX-XXXX" maxlength="15">
-    </div>
-    <div class="form-group">
-        <label class="form-label">Email</label>
-        <input type="email" class="form-control" id="orientador-email">
-    </div>
-    <div id="orientador-error" class="error-message"></div>
-    <div class="modal-actions">
-        <button type="button" class="btn btn--secondary" onclick="closeOrientadorModal()">Cancelar</button>
-        <button type="submit" class="btn btn--primary">Salvar</button>
-    </div>
-</form>
-
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="orientador-modal-title">Novo Colaborador</h3>
+            <button class="close-btn" onclick="closeOrientadorModal()">&times;</button>
         </div>
-
+        <form id="orientador-form" onsubmit="saveOrientador(event)">
+            <div class="form-grid">
+                <div class="form-group col-8">
+                    <label class="form-label">Nome do Colaborador*</label>
+                    <input type="text" class="form-control" id="orientador-name" required>
+                </div>
+                <div class="form-group col-4">
+                    <label class="form-label">Data de Nascimento</label>
+                    <input type="date" class="form-control" id="orientador-birthdate">
+                </div>
+                <div class="form-group col-6">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="orientador-email">
+                </div>
+                <div class="form-group col-6">
+                    <label class="form-label">Contato</label>
+                    <input type="text" class="form-control" id="orientador-contact" placeholder="(XX) 9XXXX-XXXX" maxlength="15">
+                </div>
+            </div>
+            <div id="orientador-error" class="error-message"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeOrientadorModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
     </div>
-
+</div>
     <!-- Modal para Município (Lista Mestra) -->
 
     <div id="municipality-list-modal" class="modal">
-
-        <div class="modal-content">
-
-            <div class="modal-header">
-
-                <h3 id="municipality-list-modal-title">Novo Município</h3>
-
-                <button class="close-btn" onclick="closeMunicipalityListModal()">&times;</button>
-
-            </div>
-
-            <form id="municipality-list-form" onsubmit="saveMunicipalityList(event)">
-
-                <div class="form-group">
-
-                    <label class="form-label">Nome do Município*</label>
-
-                    <input type="text" class="form-control" id="municipality-list-name" required>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="form-label">UF</label>
-
-                    <select class="form-control" id="municipality-list-uf">
-
-                        <option value="">Selecione</option>
-
-                        <option value="AC">AC</option>
-
-                        <option value="AL">AL</option>
-
-                        <option value="AP">AP</option>
-
-                        <option value="AM">AM</option>
-
-                        <option value="BA">BA</option>
-
-                        <option value="CE">CE</option>
-
-                        <option value="DF">DF</option>
-
-                        <option value="ES">ES</option>
-
-                        <option value="GO">GO</option>
-
-                        <option value="MA">MA</option>
-
-                        <option value="MT">MT</option>
-
-                        <option value="MS">MS</option>
-
-                        <option value="MG">MG</option>
-
-                        <option value="PA">PA</option>
-
-                        <option value="PB">PB</option>
-
-                        <option value="PR">PR</option>
-
-                        <option value="PE">PE</option>
-
-                        <option value="PI">PI</option>
-
-                        <option value="RJ">RJ</option>
-
-                        <option value="RN">RN</option>
-
-                        <option value="RS">RS</option>
-
-                        <option value="RO">RO</option>
-
-                        <option value="RR">RR</option>
-
-                        <option value="SC">SC</option>
-
-                        <option value="SP">SP</option>
-
-                        <option value="SE">SE</option>
-
-                        <option value="TO">TO</option>
-
-                    </select>
-
-                </div>
-
-                <div id="municipality-list-error" class="error-message"></div>
-
-                <div class="modal-actions">
-
-                    <button type="button" class="btn btn--secondary" onclick="closeMunicipalityListModal()">Cancelar</button>
-
-                    <button type="submit" class="btn btn--primary">Salvar</button>
-
-                </div>
-
-            </form>
-
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="municipality-list-modal-title">Novo Município</h3>
+            <button class="close-btn" onclick="closeMunicipalityListModal()">&times;</button>
         </div>
-
+        <form id="municipality-list-form" onsubmit="saveMunicipalityList(event)">
+            <div class="form-grid">
+                <div class="form-group col-9">
+                    <label class="form-label">Nome do Município*</label>
+                    <input type="text" class="form-control" id="municipality-list-name" required>
+                </div>
+                <div class="form-group col-3">
+                    <label class="form-label">UF</label>
+                    <select class="form-control" id="municipality-list-uf">
+                        <option value="">UF</option>
+                        <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
+                        <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
+                        <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
+                        <option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
+                        <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option>
+                        <option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option>
+                        <option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option>
+                        <option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
+                        <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+                    </select>
+                </div>
+            </div>
+            <div id="municipality-list-error" class="error-message"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeMunicipalityListModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <!-- Modal para Módulo -->
 
     <div id="modulo-modal" class="modal">
-
-        <div class="modal-content">
-
-            <div class="modal-header">
-
-                <h3 id="modulo-modal-title">Novo Módulo</h3>
-
-                <button class="close-btn" onclick="closeModuloModal()">&times;</button>
-
-            </div>
-
-            <form id="modulo-form" onsubmit="saveModulo(event)">
-
-                <div class="form-group">
-
-                    <label class="form-label">Nome do Módulo*</label>
-
-                    <input type="text" class="form-control" id="modulo-name" required>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="form-label">Abreviação* (3-4 letras)</label>
-
-                    <input type="text" class="form-control" id="modulo-abbreviation" required maxlength="4" placeholder="Ex: CAD, TFD, PRO">
-
-                </div>
-
-                <div id="modulo-error" class="error-message"></div>
-
-                <div class="modal-actions">
-
-                    <button type="button" class="btn btn--secondary" onclick="closeModuloModal()">Cancelar</button>
-
-                    <button type="submit" class="btn btn--primary">Salvar</button>
-
-                </div>
-
-            </form>
-
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modulo-modal-title">Novo Módulo</h3>
+            <button class="close-btn" onclick="closeModuloModal()">&times;</button>
         </div>
-
+        <form id="modulo-form" onsubmit="saveModulo(event)">
+            <div class="form-grid">
+                <div class="form-group col-9">
+                    <label class="form-label">Nome do Módulo*</label>
+                    <input type="text" class="form-control" id="modulo-name" required>
+                </div>
+                <div class="form-group col-3">
+                    <label class="form-label">Abreviação*</label>
+                    <input type="text" class="form-control" id="modulo-abbreviation" required maxlength="4" placeholder="Ex: CAD">
+                </div>
+                <div class="form-group col-12">
+                    <label class="form-label">Descrição do Módulo* (Máx 250)</label>
+                    <textarea class="form-control" id="modulo-description" rows="3" maxlength="250" required></textarea>
+                </div>
+            </div>
+            <div id="modulo-error" class="error-message"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeModuloModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
     </div>
-
+</div>
     <!-- Modal para Solicitações/Sugestões -->
 
  <div id="request-modal" class="modal">
