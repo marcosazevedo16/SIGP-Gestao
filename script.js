@@ -2680,7 +2680,7 @@ function saveVisit(e) {
     const data = {
         municipality: document.getElementById('visit-municipality').value,
         date: document.getElementById('visit-date').value,
-        626Id('visit-applicant').value,
+        applicant: document.getElementById('visit-applicant').value,
         // --- CORREÇÃO: Adicionado o campo Motivo que faltava ---
         reason: document.getElementById('visit-reason').value, 
         // -------------------------------------------------------
