@@ -622,7 +622,7 @@ function updateUserInterface() {
         'modulo-management-menu-btn',
         'municipality-list-management-menu-btn',
         'forma-apresentacao-management-menu-btn',
-        'backup-menu-btn'
+        'backup-menu-btn',
         'audit-menu-btn'
     ];
     
@@ -2680,7 +2680,7 @@ function saveVisit(e) {
     const data = {
         municipality: document.getElementById('visit-municipality').value,
         date: document.getElementById('visit-date').value,
-        applicant: document.getElementById('visit-applicant').value,
+        626Id('visit-applicant').value,
         // --- CORREÇÃO: Adicionado o campo Motivo que faltava ---
         reason: document.getElementById('visit-reason').value, 
         // -------------------------------------------------------
