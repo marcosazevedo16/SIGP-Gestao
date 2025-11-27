@@ -1596,59 +1596,34 @@
     <!-- Modal para Alterar Senha -->
 
     <div id="change-password-modal" class="modal">
-
-        <div class="modal-content">
-
-            <div class="modal-header">
-
-                <h3>Alterar Senha</h3>
-
-                <button class="close-btn" onclick="closeChangePasswordModal()">&times;</button>
-
-            </div>
-
-            <form id="change-password-form" onsubmit="handleChangePassword(event)">
-
-                <div class="form-group">
-
-                    <label class="form-label">Senha Atual*</label>
-
-                    <input type="password" class="form-control" id="current-password" required autocomplete="current-password">
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="form-label">Nova Senha*</label>
-
-                    <input type="password" class="form-control" id="new-password" required minlength="4" autocomplete="new-password">
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="form-label">Confirmar Nova Senha*</label>
-
-                    <input type="password" class="form-control" id="confirm-password" required minlength="4" autocomplete="new-password">
-
-                </div>
-
-                <div id="change-password-error" class="error-message"></div>
-
-                <div class="modal-actions">
-
-                    <button type="button" class="btn btn--secondary" onclick="closeChangePasswordModal()">Cancelar</button>
-
-                    <button type="submit" class="btn btn--primary">Alterar Senha</button>
-
-                </div>
-
-            </form>
-
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Alterar Senha</h3>
+            <button class="close-btn" onclick="closeChangePasswordModal()">&times;</button>
         </div>
-
+        <form id="change-password-form" onsubmit="handleChangePassword(event)">
+            <div class="form-grid">
+                <div class="form-group col-12">
+                    <label class="form-label">Senha Atual*</label>
+                    <input type="password" class="form-control" id="current-password" required autocomplete="current-password">
+                </div>
+                <div class="form-group col-12">
+                    <label class="form-label">Nova Senha*</label>
+                    <input type="password" class="form-control" id="new-password" required minlength="4" autocomplete="new-password">
+                </div>
+                <div class="form-group col-12">
+                    <label class="form-label">Confirmar Nova Senha*</label>
+                    <input type="password" class="form-control" id="confirm-password" required minlength="4" autocomplete="new-password">
+                </div>
+            </div>
+            <div id="change-password-error" class="error-message"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeChangePasswordModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Alterar Senha</button>
+            </div>
+        </form>
     </div>
-
+</div>
     <!-- Modal para Gestão de Usuários -->
 
     <div id="user-modal" class="modal">
@@ -1705,51 +1680,30 @@
     <!-- Modal para Cargo/Função -->
 
     <div id="cargo-modal" class="modal">
-
-        <div class="modal-content">
-
-            <div class="modal-header">
-
-                <h3 id="cargo-modal-title">Novo Cargo/Função</h3>
-
-                <button class="close-btn" onclick="closeCargoModal()">&times;</button>
-
-            </div>
-
-            <form id="cargo-form" onsubmit="saveCargo(event)">
-
-                <div class="form-group">
-
-                    <label class="form-label">Nome do Cargo/Função*</label>
-
-                    <input type="text" class="form-control" id="cargo-name" required>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="form-label">Descrição</label>
-
-                    <textarea class="form-control" id="cargo-description" rows="3"></textarea>
-
-                </div>
-
-                <div id="cargo-error" class="error-message"></div>
-
-                <div class="modal-actions">
-
-                    <button type="button" class="btn btn--secondary" onclick="closeCargoModal()">Cancelar</button>
-
-                    <button type="submit" class="btn btn--primary">Salvar</button>
-
-                </div>
-
-            </form>
-
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="cargo-modal-title">Novo Cargo/Função</h3>
+            <button class="close-btn" onclick="closeCargoModal()">&times;</button>
         </div>
-
+        <form id="cargo-form" onsubmit="saveCargo(event)">
+            <div class="form-grid">
+                <div class="form-group col-12">
+                    <label class="form-label">Nome do Cargo/Função*</label>
+                    <input type="text" class="form-control" id="cargo-name" required>
+                </div>
+                <div class="form-group col-12">
+                    <label class="form-label">Descrição</label>
+                    <textarea class="form-control" id="cargo-description" rows="3"></textarea>
+                </div>
+            </div>
+            <div id="cargo-error" class="error-message"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeCargoModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
     </div>
-
+</div>
     <!-- Modal para Colaborador -->
 
     <div id="orientador-modal" class="modal">
@@ -2191,34 +2145,26 @@
     <!-- Modal para Forma de Apresentação -->
 
     <div id="forma-apresentacao-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="forma-apresentacao-modal-title">Nova Forma de Apresentação</h3>
-                <button class="close-btn" onclick="closeFormaApresentacaoModal()">&times;</button>
-            </div>
-            <form id="forma-apresentacao-form" onsubmit="saveFormaApresentacao(event)">
-                <div class="form-group">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="forma-apresentacao-modal-title">Nova Forma de Apresentação</h3>
+            <button class="close-btn" onclick="closeFormaApresentacaoModal()">&times;</button>
+        </div>
+        <form id="forma-apresentacao-form" onsubmit="saveFormaApresentacao(event)">
+            <div class="form-grid">
+                <div class="form-group col-12">
                     <label class="form-label">Nome da Forma de Apresentação*</label>
                     <input type="text" class="form-control" id="forma-apresentacao-name" required>
-
                 </div>
-
-                <div id="forma-apresentacao-error" class="error-message"></div>
-
-                <div class="modal-actions">
-
-                    <button type="button" class="btn btn--secondary" onclick="closeFormaApresentacaoModal()">Cancelar</button>
-
-                    <button type="submit" class="btn btn--primary">Salvar</button>
-
-                </div>
-
-            </form>
-
-        </div>
-
+            </div>
+            <div id="forma-apresentacao-error" class="error-message"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeFormaApresentacaoModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
     </div>
-
+</div>
     <!-- Modal de Confirmação de Restauração -->
 
     <div id="restore-confirm-modal" class="modal">
