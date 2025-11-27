@@ -369,9 +369,16 @@ function applyMasks() {
 // 7. INJEÇÃO DE CAMPOS DINÂMICOS (REGRAS PDF)
 // ----------------------------------------------------------------------------
 function setupDynamicFormFields() {
+    // 0. Injeto do Modal de Confirmação de Restore
     
-    // 0. Injeção do Modal de Confirmação de Restore (Se não existir)
+    // Remove modal anterior para evitar memory leak
+    const existingModal = document.getElementById('restore-confirm-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
     if (!document.getElementById('restore-confirm-modal')) {
+
         const modalHTML = `
         <div id="restore-confirm-modal" class="modal">
             <div class="modal-content">
@@ -851,24 +858,18 @@ function handleChangePassword(e) {
 function handleMunicipalityStatusChange() {
     const statusEl = document.getElementById('municipality-status');
     if (!statusEl) return; // Segurança
-    
-    const status = statusEl.value;
-    
+    const status = statusEl.value; 
     // 1. Captura os grupos (divs) que já estão no HTML
     const groupBlocked = document.getElementById('group-date-blocked');
-    const groupStopped = document.getElementById('group-date-stopped');
-    
+    const groupStopped = document.getElementById('group-date-stopped'); 
     // 2. Captura os inputs para controlar a obrigatoriedade (required)
     const inputBlocked = document.getElementById('municipality-date-blocked');
     const inputStopped = document.getElementById('municipality-date-stopped');
-
     // 3. RESET: Esconde tudo e tira obrigatoriedade antes de checar
     if (groupBlocked) groupBlocked.style.display = 'none';
-    if (groupStopped) groupStopped.style.display = 'none';
-    
+    if (groupStopped) groupStopped.style.display = 'none';    
     if (inputBlocked) { inputBlocked.value = ''; inputBlocked.required = false; }
     if (inputStopped) { inputStopped.value = ''; inputStopped.required = false; }
-
     // 4. LÓGICA: Mostra o campo específico baseado no status
     if (status === 'Bloqueado') {
         if (groupBlocked) groupBlocked.style.display = 'block';
