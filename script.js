@@ -849,10 +849,9 @@ function handleChangePassword(e) {
 }
 
 // ----------------------------------------------------------------------------
-// 11. MUNICÍPIOS CLIENTES (REGRAS PDF 1)
+// 11. MUNICÍPIOS CLIENTES
 // ----------------------------------------------------------------------------
 
-// Função para controlar campos baseados no status
 // Função atualizada para o novo Layout Grid
 function handleMunicipalityStatusChange() {
     const statusEl = document.getElementById('municipality-status');
@@ -867,8 +866,14 @@ function handleMunicipalityStatusChange() {
     // 3. RESET: Esconde tudo e tira obrigatoriedade antes de checar
     if (groupBlocked) groupBlocked.style.display = 'none';
     if (groupStopped) groupStopped.style.display = 'none';    
-    if (inputBlocked) { inputBlocked.value = ''; inputBlocked.required = false; }
-    if (inputStopped) { inputStopped.value = ''; inputStopped.required = false; }
+    if (inputBlocked) { 
+        inputBlocked.value = ''; 
+        inputBlocked.required = false; 
+    }
+    if (inputStopped) { 
+        inputStopped.value = ''; 
+        inputStopped.required = false; 
+    }
     // 4. LÓGICA: Mostra o campo específico baseado no status
     if (status === 'Bloqueado') {
         if (groupBlocked) groupBlocked.style.display = 'block';
