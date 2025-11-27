@@ -3773,5 +3773,6 @@ table th {
 
 /* Regra específica para o Modal de Solicitações (Mais estreito) */
 #request-modal .modal-content {
+#demand-modal .modal-content {
     max-width: 750px; /* Ideal para 2 colunas */
 }
