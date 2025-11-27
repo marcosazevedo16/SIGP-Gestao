@@ -3792,8 +3792,12 @@ table th {
 }
 
 /* GRUPO 2: Modais MÉDIOS (750px)
-   Para formulários de 2 ou 3 colunas com textos longos */
+   Ideal para formulários de 2 ou 3 colunas */
 #request-modal .modal-content,
 #demand-modal .modal-content,
+#user-modal .modal-content,
+#orientador-modal .modal-content,
+#modulo-modal .modal-content,
+#municipality-list-modal .modal-content {
     max-width: 750px !important;
 }
