@@ -491,12 +491,7 @@ const DADOS_PADRAO = {
             mustChangePassword: true 
         }
     ],
-    modulos: [
-        { id: 1, name: 'Cadastros', abbreviation: 'CAD', color: '#FF6B6B', description: 'Módulo de cadastros gerais' },
-        { id: 2, name: 'TFD', abbreviation: 'TFD', color: '#4ECDC4', description: 'Tratamento Fora de Domicílio' },
-        { id: 3, name: 'Prontuário', abbreviation: 'PEC', color: '#45B7D1', description: 'Prontuário Eletrônico do Cidadão' },
-        { id: 4, name: 'Administração', abbreviation: 'ADM', color: '#FFA07A', description: 'Gestão administrativa' }
-    ],
+    modulos: [],
     // Arrays vazios iniciais
     municipalities: [],
     municipalitiesList: [],
