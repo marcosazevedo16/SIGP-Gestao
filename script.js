@@ -3742,7 +3742,8 @@ function updateBackupInfo() {
     }
 }
 
-function createBackup() {
+function createBackup(filenamePersonalizado = null) {
+    // 1. Coleta todos os dados atuais
     const backupData = { 
         version: "v25.0", 
         date: new Date().toISOString(), 
@@ -3761,18 +3762,36 @@ function createBackup() {
             orientadores: orientadores, 
             modulos: modulos, 
             formasApresentacao: formasApresentacao, 
-            counters: counters 
+            counters: counters,
+            auditLogs: auditLogs // Importante salvar a auditoria também
         } 
     };
     
+    // 2. Gera o Timestamp (Data + Hora) para versionamento
+    const now = new Date();
+    const timestamp = now.getFullYear() + '-' +
+                     String(now.getMonth()+1).padStart(2,'0') + '-' +
+                     String(now.getDate()).padStart(2,'0') + '_' +
+                     String(now.getHours()).padStart(2,'0') + 'h' +
+                     String(now.getMinutes()).padStart(2,'0');
+
+    // 3. Define o nome do arquivo
+    const filename = filenamePersonalizado 
+        ? `${filenamePersonalizado}.json` 
+        : `backup_sigp_${timestamp}.json`;
+
+    // 4. Gera o Download
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
     const dl = document.createElement('a');
     dl.setAttribute("href", dataStr);
-    dl.setAttribute("download", "backup_sigp_" + new Date().toISOString().slice(0,10) + ".json");
+    dl.setAttribute("download", filename);
     document.body.appendChild(dl); 
     dl.click(); 
     dl.remove();
-    showToast('Backup Baixado!');
+    
+    if(!filenamePersonalizado) {
+        showToast('Backup (Versão ' + timestamp + ') baixado com sucesso!', 'success');
+    }
 }
 
 function triggerRestoreBackup() { 
@@ -3860,12 +3879,36 @@ function closeRestoreConfirmModal() {
 
 function confirmRestore() {
     if (!pendingBackupData) return;
-    const d = pendingBackupData.data; // Atalho para os dados
+    
+    // =================================================================
+    // SEGURANÇA: BACKUP AUTOMÁTICO ANTES DE SOBRESCREVER
+    // =================================================================
+    // Isso garante que, se o usuário restaurar o arquivo errado,
+    // ele terá uma cópia do que existia no sistema até 1 segundo atrás.
+    try {
+        const agora = new Date();
+        const timeTag = String(agora.getHours()).padStart(2,'0') + 'h' + String(agora.getMinutes()).padStart(2,'0');
+        const nomeSeguranca = `AUTO-BACKUP_antes_de_restaurar_${timeTag}`;
+        
+        // Chama a função de backup forçando esse nome especial
+        createBackup(nomeSeguranca);
+        
+        alert('🛡️ SISTEMA DE SEGURANÇA:\n\nUm backup automático dos seus dados atuais foi baixado para a pasta Downloads ("' + nomeSeguranca + '").\n\nIsso garante que você possa desfazer essa ação se necessário.');
+        
+    } catch (err) {
+        console.error("Erro ao criar backup de segurança:", err);
+        if(!confirm("Erro ao gerar backup de segurança automático. Deseja continuar mesmo assim? (Dados atuais serão perdidos)")) {
+            return;
+        }
+    }
+    // =================================================================
+
+    const d = pendingBackupData.data; // Atalho para os novos dados
     
     // 1. Limpa tudo atual
     localStorage.clear();
     
-    // 2. Função auxiliar segura (se o dado não existir no backup, salva array vazio)
+    // 2. Função auxiliar segura
     const safeSave = (key, value, defaultVal = []) => {
         localStorage.setItem(key, JSON.stringify(value || defaultVal));
     };
@@ -3874,7 +3917,7 @@ function confirmRestore() {
     safeSave('users', d.users);
     safeSave('municipalities', d.municipalities);
     safeSave('municipalitiesList', d.municipalitiesList);
-    safeSave('tasks', d.tasks || d.trainings); // Suporte a backups antigos
+    safeSave('tasks', d.tasks || d.trainings); 
     safeSave('requests', d.requests);
     safeSave('demands', d.demands);
     safeSave('visits', d.visits);
@@ -3883,16 +3926,32 @@ function confirmRestore() {
     safeSave('systemVersions', d.systemVersions);
     safeSave('cargos', d.cargos);
     safeSave('orientadores', d.orientadores);
-    safeSave('modulos', d.modules || d.modulos); // Suporte a backups antigos
+    safeSave('modulos', d.modules || d.modulos);
     safeSave('formasApresentacao', d.formasApresentacao);
     
-    // Restaura contadores (importante para não repetir IDs)
+    // Restaura auditoria e contadores
+    safeSave('auditLogs', d.auditLogs); // Restaura histórico de logs também
     if (d.counters) {
         localStorage.setItem('counters', JSON.stringify(d.counters));
     }
 
-    // 4. Feedback e Reload
-    alert('Restauração realizada com sucesso! O sistema será reiniciado.');
+    // 4. Auditoria da Ação
+    // (Precisamos salvar manualmente no array e no localStorage agora, pois o reload vem a seguir)
+    // Mas como vamos dar reload, o log se perderia se não salvo no storage novo.
+    // Vamos adicionar um log no novo banco:
+    let newLogs = d.auditLogs || [];
+    newLogs.unshift({
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        user: currentUser ? currentUser.name : 'Admin',
+        action: 'Restauração',
+        target: 'Sistema Completo',
+        details: 'Restaurou backup de: ' + (pendingBackupData.date || 'Data desconhecida')
+    });
+    localStorage.setItem('auditLogs', JSON.stringify(newLogs));
+
+    // 5. Feedback e Reload
+    alert('✅ Restauração realizada com sucesso!\nO sistema será reiniciado com os novos dados.');
     location.reload();
 }
 
@@ -4744,3 +4803,157 @@ function changePage(delta, renderFunctionName) {
     // Chama a função de renderização passada por nome (Ex: "renderAuditLogs")
     window[renderFunctionName]();
 }
+
+// ============================================================================
+// 22. SINCRONIZAÇÃO ENTRE ABAS (MULTI-TAB)
+// ============================================================================
+
+window.addEventListener('storage', function(e) {
+    // Se a chave não for uma das nossas ou se o valor for nulo (limpeza), ignoramos ou recarregamos tudo
+    if (!e.key || !e.newValue) return;
+
+    console.log(`🔄 Sincronizando dados externos: ${e.key}`);
+
+    // Atualiza a variável local correspondente com o dado novo vindo da outra aba
+    try {
+        const data = JSON.parse(e.newValue);
+
+        switch (e.key) {
+            case 'municipalities': municipalities = data; break;
+            case 'municipalitiesList': municipalitiesList = data; break;
+            case 'tasks': tasks = data; break;
+            case 'requests': requests = data; break;
+            case 'demands': demands = data; break;
+            case 'visits': visits = data; break;
+            case 'productions': productions = data; break;
+            case 'presentations': presentations = data; break;
+            case 'systemVersions': systemVersions = data; break;
+            case 'users': users = data; break;
+            case 'cargos': cargos = data; break;
+            case 'orientadores': orientadores = data; break;
+            case 'modulos': modulos = data; break;
+            case 'formasApresentacao': formasApresentacao = data; break;
+            case 'auditLogs': auditLogs = data; break;
+            case 'counters': counters = data; break;
+        }
+
+        // Atualiza a tela atual para refletir a mudança imediatamente
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab) {
+            refreshCurrentTab(activeTab.id);
+        }
+        
+        // Se estivermos na auditoria, avisa que chegaram novos logs
+        if (activeTab && activeTab.id === 'audit-section') {
+            showToast('Novos registros de auditoria recebidos.', 'info');
+        }
+
+    } catch (err) {
+        console.error("Erro ao sincronizar aba:", err);
+    }
+});
+
+// ============================================================================
+// 23. SISTEMA DE ATALHOS DE TECLADO (HOTKEYS)
+// ============================================================================
+
+document.addEventListener('keydown', function(e) {
+    // Se o usuário estiver digitando em um input ou textarea, ignoramos a maioria dos atalhos
+    // para não atrapalhar a digitação (Exceto Ctrl+Enter e ESC)
+    const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT';
+
+    // 1. FECHAR MODAL (ESC) - Funciona sempre
+    if (e.key === 'Escape') {
+        const openModal = document.querySelector('.modal.show');
+        if (openModal) {
+            openModal.classList.remove('show');
+            return;
+        }
+    }
+
+    // 2. SALVAR FORMULÁRIO (Ctrl + Enter) - Funciona dentro de inputs
+    if (e.ctrlKey && e.key === 'Enter') {
+        const openModal = document.querySelector('.modal.show');
+        if (openModal) {
+            // Busca o botão de salvar (submit) dentro do modal aberto e clica nele
+            const btnSalvar = openModal.querySelector('button[type="submit"]');
+            if (btnSalvar) {
+                e.preventDefault();
+                btnSalvar.click();
+                return;
+            }
+        }
+    }
+
+    // --- Se estiver digitando, para por aqui para não navegar sem querer ---
+    if (isTyping) return;
+
+    // 3. NAVEGAÇÃO ENTRE ABAS (Alt + Tecla)
+    if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+        
+        switch(e.key.toLowerCase()) {
+            case 'd': // Dashboard
+                document.querySelector('.sidebar-btn[data-tab="dashboard"]').click();
+                break;
+            case 'm': // Municípios
+                document.querySelector('.sidebar-btn[data-tab="municipios"]').click();
+                break;
+            case 't': // Treinamentos
+                document.querySelector('.sidebar-btn[data-tab="tarefas"]').click();
+                break;
+            case 's': // Solicitações
+                document.querySelector('.sidebar-btn[data-tab="solicitacoes"]').click();
+                break;
+            case 'a': // Apresentações
+                document.querySelector('.sidebar-btn[data-tab="apresentacoes"]').click();
+                break;
+            case 'v': // Visitas
+                document.querySelector('.sidebar-btn[data-tab="visitas"]').click();
+                break;
+            case 'p': // Produção
+                document.querySelector('.sidebar-btn[data-tab="producao"]').click();
+                break;
+            case 'h': // Help (Ajuda)
+                alert('🎹 ATALHOS DO SISTEMA:\n\n' +
+                      'Alt + N: Novo Item (na aba atual)\n' +
+                      'Ctrl + Enter: Salvar (dentro do formulário)\n' +
+                      'Esc: Fechar formulário\n\n' +
+                      'NAVEGAÇÃO:\n' +
+                      'Alt + D: Dashboard\n' +
+                      'Alt + M: Municípios\n' +
+                      'Alt + T: Treinamentos\n' +
+                      'Alt + S: Solicitações\n' +
+                      'Alt + A: Apresentações\n' +
+                      'Alt + V: Visitas\n' +
+                      'Alt + P: Produção');
+                break;
+        }
+    }
+
+    // 4. AÇÃO "NOVO ITEM" (Alt + N) - Contextual
+    if (e.altKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault(); // Evita abrir nova janela do navegador
+        
+        // Descobre qual aba está ativa no momento
+        const activeSection = document.querySelector('.tab-content.active');
+        if (!activeSection) return;
+
+        switch(activeSection.id) {
+            case 'municipios-section': showMunicipalityModal(); break;
+            case 'tarefas-section': showTaskModal(); break;
+            case 'solicitacoes-section': showRequestModal(); break;
+            case 'demandas-section': showDemandModal(); break;
+            case 'visitas-section': showVisitModal(); break;
+            case 'producao-section': showProductionModal(); break;
+            case 'apresentacoes-section': showPresentationModal(); break;
+            case 'versoes-section': showVersionModal(); break;
+            case 'usuarios-section': showUserModal(); break;
+            // Configurações
+            case 'cargos-section': showCargoModal(); break;
+            case 'orientadores-section': showOrientadorModal(); break;
+            case 'modulos-section': showModuloModal(); break;
+            case 'municipalities-list-section': showMunicipalityListModal(); break;
+            case 'formas-apresentacao-section': showFormaApresentacaoModal(); break;
+        }
+    }
+});
