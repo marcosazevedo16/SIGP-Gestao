@@ -2252,11 +2252,11 @@
                         <option value="">Selecione o município</option>
                     </select>
                 </div>
-                <div class="form-group col-4">
+                <div class="form-group col-5">
                     <label class="form-label">Profissional Informado</label>
                     <input type="text" class="form-control" id="production-professional">
                 </div>
-                <div class="form-group col-4">
+                <div class="form-group col-3">
                     <label class="form-label" id="lbl-prod-contact">Contato*</label>
                     <input type="tel" class="form-control" id="production-contact" placeholder="(XX) 9XXXX-XXXX" maxlength="15" required>
                 </div>
@@ -2284,19 +2284,19 @@
                     <input type="date" class="form-control" id="production-release-date" required>
                 </div>
 
-                <div class="form-group col-3">
-                    <label class="form-label" id="lbl-prod-status">Status de Envio*</label>
-                    <select class="form-control" id="production-status" required>
+                <div class="form-group col-2">
+                    <label class="form-label" id="lbl-prod-status">Status de Envio</label>
+                    <select class="form-control" id="production-status">
                         <option value="Enviada">Enviada</option>
                         <option value="Pendente">Pendente</option>
                         <option value="Cancelada">Cancelada</option>
                     </select>
                 </div>
-                <div class="form-group col-3">
+                <div class="form-group col-2">
                     <label class="form-label">Data de Envio</label>
                     <input type="date" class="form-control" id="production-send-date">
                 </div>
-                <div class="form-group col-6">
+                <div class="form-group col-8">
                     <label class="form-label">Observações (máx. 150)</label>
                     <textarea class="form-control" id="production-observations" rows="1" maxlength="150"
                         oninput="document.getElementById('production-char-counter').textContent = this.value.length + ' / 150'"></textarea>
