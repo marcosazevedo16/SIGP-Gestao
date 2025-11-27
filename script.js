@@ -2961,13 +2961,38 @@ function getFilteredProductions() {
 }
 
 function renderProductions() {
-    const filtered = getFilteredProductions();
+    // 1. Captura Filtros
+    const fMun = document.getElementById('filter-production-municipality')?.value;
+    const fStatus = document.getElementById('filter-production-status')?.value;
+    const fProf = document.getElementById('filter-production-professional')?.value.toLowerCase();
+    const fFreq = document.getElementById('filter-production-frequency')?.value;
+    const fRelStart = document.getElementById('filter-production-release-start')?.value;
+    const fRelEnd = document.getElementById('filter-production-release-end')?.value;
+    const fSendStart = document.getElementById('filter-production-send-start')?.value;
+    const fSendEnd = document.getElementById('filter-production-send-end')?.value;
+    
+    // 2. Filtragem
+    let filtered = productions.filter(p => {
+        if (fMun && p.municipality !== fMun) return false;
+        if (fStatus && p.status !== fStatus) return false;
+        if (fProf && p.professional && !p.professional.toLowerCase().includes(fProf)) return false;
+        if (fFreq && p.frequency !== fFreq) return false;
+        if (fRelStart && p.releaseDate < fRelStart) return false;
+        if (fRelEnd && p.releaseDate > fRelEnd) return false;
+        if (fSendStart && (!p.sendDate || p.sendDate < fSendStart)) return false;
+        if (fSendEnd && (!p.sendDate || p.sendDate > fSendEnd)) return false;
+        return true;
+    }).sort((a,b) => new Date(a.releaseDate) - new Date(b.releaseDate));
+
+    // 3. Renderização
     const c = document.getElementById('productions-table');
     
     if(document.getElementById('productions-results-count')) {
-        document.getElementById('productions-results-count').innerHTML = '<strong>' + filtered.length + '</strong> envios encontrados';
+        document.getElementById('productions-results-count').innerHTML = `<strong>${filtered.length}</strong> envios encontrados`;
         document.getElementById('productions-results-count').style.display = 'block';
     }
+    
+    // Atualiza Estatísticas
     if(document.getElementById('total-productions')) document.getElementById('total-productions').textContent = productions.length;
     if(document.getElementById('sent-productions')) document.getElementById('sent-productions').textContent = filtered.filter(p => p.status === 'Enviada').length;
     if(document.getElementById('pending-productions')) document.getElementById('pending-productions').textContent = filtered.filter(p => p.status === 'Pendente').length;
@@ -2976,13 +3001,12 @@ function renderProductions() {
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhum envio encontrado.</div>';
     } else {
-        const rows = filtered.map(function(p) {
+        const rows = filtered.map(p => {
             let statusClass = 'task-status';
             if (p.status === 'Enviada') statusClass += ' completed';
             else if (p.status === 'Cancelada') statusClass += ' cancelled';
             else statusClass += ' pending';
-            const statusBadge = `<span class="${statusClass}">${p.status}</span>`;
-
+            
             let freqColor = '#003d5c';
             if (p.frequency === 'Diário') freqColor = '#C85250';
             else if (p.frequency === 'Semanal') freqColor = '#E68161';
@@ -2991,13 +3015,18 @@ function renderProductions() {
             
             const freqBadge = `<span style="color:${freqColor}; font-weight:bold;">${p.frequency}</span>`;
 
+            // Busca UF na lista mestra
+            const munData = municipalitiesList.find(m => m.name === p.municipality);
+            const munDisplay = munData ? `${p.municipality} - ${munData.uf}` : p.municipality;
+
             return `<tr>
-                <td class="text-primary-cell">${p.municipality}</td> <td>${p.professional || '-'}</td>
-                <td>${freqBadge}</td>
+                <td class="text-primary-cell">${munDisplay}</td>
+                <td>${p.professional || '-'}</td>
+                <td>${p.contact || '-'}</td> <td>${freqBadge}</td>
                 <td>${p.competence}</td>
                 <td>${p.frequency === 'Diário' ? '-' : (p.period || '-')}</td>
                 <td style="text-align:center;">${formatDate(p.releaseDate)}</td>
-                <td style="text-align:center;">${statusBadge}</td>
+                <td style="text-align:center;"><span class="${statusClass}">${p.status}</span></td>
                 <td style="text-align:center;">${formatDate(p.sendDate)}</td>
                 <td class="text-secondary-cell">${p.observations || '-'}</td>
                 <td style="text-align:center;">
@@ -3008,17 +3037,17 @@ function renderProductions() {
         }).join('');
         
         c.innerHTML = `
-        <table class="compact-table">
+        <table>
             <thead>
                 <th>Município</th>
-                <th>Profissional<br>Informado</th>
-                <th>Frequência<br>de Envio</th>
-                <th>Competência<br>de Envio</th>
-                <th>Período<br>do Envio</th>
-                <th style="text-align:center;">Data<br>Liberação</th>
-                <th style="text-align:center;">Status<br>de Envio</th>
-                <th style="text-align:center;">Data<br>de Envio</th>
-                <th>Observações</th>
+                <th>Profissional</th>
+                <th>Contato</th> <th>Frequência</th>
+                <th>Competência</th>
+                <th>Período</th>
+                <th style="text-align:center;">Liberação</th>
+                <th style="text-align:center;">Status</th>
+                <th style="text-align:center;">Envio</th>
+                <th>Obs</th>
                 <th style="text-align:center;">Ações</th>
             </thead>
             <tbody>${rows}</tbody>
