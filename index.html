@@ -2177,95 +2177,60 @@
     <!-- Modal para Visitas Presenciais -->
 
     <div id="visit-modal" class="modal">
-
-        <div class="modal-content">
-
-            <div class="modal-header">
-
-                <h3 id="visit-modal-title">Nova Solicitação de Visita</h3>
-
-                <button class="close-btn" onclick="closeVisitModal()">&times;</button>
-
-            </div>
-
-            <form id="visit-form" onsubmit="saveVisit(event)">
-
-                <div class="form-group">
-
-                    <label class="form-label">Município*</label>
-
-                    <select class="form-control" id="visit-municipality" required>
-
-                        <option value="">Selecione o município</option>
-
-                    </select>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="form-label">Data da Solicitação da Visita*</label>
-
-                    <input type="date" class="form-control" id="visit-date" required>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="form-label">Solicitante*</label>
-
-                    <input type="text" class="form-control" id="visit-applicant" required>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="form-label">Motivo da Solicitação</label>
-
-                    <textarea class="form-control" id="visit-reason" rows="3" maxlength="200"></textarea>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="form-label">Status*</label>
-
-                    <select class="form-control" id="visit-status" required onchange="handleVisitStatusChange()">
-
-                        <option value="Pendente">Pendente</option>
-
-                        <option value="Realizada">Realizada</option>
-
-                        <option value="Cancelada">Cancelada</option>
-
-                    </select>
-
-                </div>
-
-                <div class="form-group" id="visit-visit-date-group" style="display: none;">
-
-                    <label class="form-label">Data da Visita*</label>
-
-                    <input type="date" class="form-control" id="visit-visit-date">
-
-                </div>
-
-                <div class="form-group" id="visit-cancel-justification-group" style="display: none;">
-
-                    <label class="form-label">Justificativa*</label>
-
-                    <textarea class="form-control" id="visit-cancel-justification" rows="3"></textarea>
-
-                </div>
-                <div class="modal-actions">
-
-                    <button type="button" class="btn btn--secondary" onclick="closeVisitModal()">Cancelar</button>
-
-                    <button type="submit" class="btn btn--primary">Salvar</button>
-                </div>
-            </form>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="visit-modal-title">Nova Solicitação de Visita</h3>
+            <button class="close-btn" onclick="closeVisitModal()">&times;</button>
         </div>
+        <form id="visit-form" onsubmit="saveVisit(event)">
+            <div class="form-grid">
+                
+                <div class="form-group col-4">
+                    <label class="form-label">Município*</label>
+                    <select class="form-control" id="visit-municipality" required>
+                        <option value="">Selecione o município</option>
+                    </select>
+                </div>
+                <div class="form-group col-4">
+                    <label class="form-label">Data da Solicitação*</label>
+                    <input type="date" class="form-control" id="visit-date" required>
+                </div>
+                <div class="form-group col-4">
+                    <label class="form-label">Solicitante*</label>
+                    <input type="text" class="form-control" id="visit-applicant" required>
+                </div>
+
+                <div class="form-group col-12">
+                    <label class="form-label">Motivo da Solicitação</label>
+                    <textarea class="form-control" id="visit-reason" rows="3" maxlength="200"></textarea>
+                </div>
+
+                <div class="form-group col-6">
+                    <label class="form-label">Status*</label>
+                    <select class="form-control" id="visit-status" required onchange="handleVisitStatusChange()">
+                        <option value="Pendente">Pendente</option>
+                        <option value="Realizada">Realizada</option>
+                        <option value="Cancelada">Cancelada</option>
+                    </select>
+                </div>
+
+                <div class="form-group col-6" id="group-visit-date-realization" style="display:none;">
+                    <label class="form-label">Data de Realização*</label>
+                    <input type="date" class="form-control" id="visit-date-realization">
+                </div>
+
+                <div class="form-group col-6" id="group-visit-justification" style="display:none;">
+                    <label class="form-label">Justificativa (Obrigatória)*</label>
+                    <textarea class="form-control" id="visit-justification" rows="1"></textarea>
+                </div>
+
+            </div> <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeVisitModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <!-- Modal para Produção -->
 
