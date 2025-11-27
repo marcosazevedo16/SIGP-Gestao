@@ -2117,23 +2117,20 @@
     <!-- Modal para Demandas do Suporte -->
 
     <div id="demand-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="demand-modal-title">Nova Demanda</h3>
-                <button class="close-btn" onclick="closeDemandModal()">&times;</button>
-            </div>
-            <form id="demand-form" onsubmit="saveDemand(event)">
-                <div class="form-group">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="demand-modal-title">Nova Demanda</h3>
+            <button class="close-btn" onclick="closeDemandModal()">&times;</button>
+        </div>
+        <form id="demand-form" onsubmit="saveDemand(event)">
+            <div class="form-grid">
+                
+                <div class="form-group col-4">
                     <label class="form-label">Data da Solicitação*</label>
                     <input type="date" class="form-control" id="demand-date" required>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Descrição da Demanda* (máx. 250)</label>
-                    <textarea class="form-control" id="demand-description" rows="4" required maxlength="250"></textarea>
-                    <div class="char-counter" id="demand-char-counter">0 / 250</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Prioridade da Demanda*</label>
+                <div class="form-group col-4">
+                    <label class="form-label">Prioridade*</label>
                     <select class="form-control" id="demand-priority" required>
                         <option value="">Selecione</option>
                         <option value="Alta">Alta</option>
@@ -2141,7 +2138,7 @@
                         <option value="Baixa">Baixa</option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group col-4">
                     <label class="form-label">Status*</label>
                     <select class="form-control" id="demand-status" required onchange="handleDemandStatusChange()">
                         <option value="Pendente">Pendente</option>
@@ -2149,24 +2146,33 @@
                         <option value="Inviável">Inviável</option>
                     </select>
                 </div>
-                
-                <div class="form-group" id="demand-realization-date-group" style="display: none;">
-                    <label class="form-label" id="demand-realization-label">Data de Realização</label>
+
+                <div class="form-group col-4" id="group-demand-realization-date" style="display:none;">
+                    <label class="form-label">Data de Realização*</label>
                     <input type="date" class="form-control" id="demand-realization-date">
                 </div>
-                
-                <div class="form-group" id="demand-justification-group" style="display: none;">
-                    <label class="form-label" id="demand-justification-label">Justificativa Inviabilidade</label>
-                    <textarea class="form-control" id="demand-justification" rows="3" maxlength="250"></textarea>
+
+                <div class="form-group col-12">
+                    <label class="form-label">Descrição da Demanda* (máx. 250)</label>
+                    <textarea class="form-control" id="demand-description" rows="4" required maxlength="250"
+                        oninput="document.getElementById('demand-char-counter').textContent = this.value.length + ' / 250'"></textarea>
+                    <div class="char-counter" id="demand-char-counter">0 / 250</div>
                 </div>
 
-                <div class="modal-actions">
-                    <button type="button" class="btn btn--secondary" onclick="closeDemandModal()">Cancelar</button>
-                    <button type="submit" class="btn btn--primary">Salvar</button>
+                <div class="form-group col-12" id="group-demand-justification" style="display:none;">
+                    <label class="form-label">Justificativa Inviabilidade (Obrigatória)*</label>
+                    <textarea class="form-control" id="demand-justification" rows="2" maxlength="250"></textarea>
                 </div>
-            </form>
-        </div>
+
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeDemandModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <!-- Modal para Visitas Presenciais -->
 
