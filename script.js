@@ -2574,7 +2574,13 @@ function showVisitModal(id = null) {
     editingId = id;
     document.getElementById('visit-form').reset();
     
-    // 1. Popula dropdown com Nome - UF
+    // 1. Reseta contadores visuais
+    if(document.getElementById('visit-reason-counter')) 
+        document.getElementById('visit-reason-counter').textContent = '0 / 200';
+    if(document.getElementById('visit-justification-counter')) 
+        document.getElementById('visit-justification-counter').textContent = '0 / 200';
+
+    // 2. Popula dropdown com Nome - UF
     const munSelect = document.getElementById('visit-municipality');
     if (munSelect) {
         const sortedList = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
@@ -2582,11 +2588,11 @@ function showVisitModal(id = null) {
                               sortedList.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
     }
 
-    // 2. Configura listener de status
+    // 3. Configura listener de status
     const statusSel = document.getElementById('visit-status');
     if(statusSel) statusSel.onchange = handleVisitStatusChange;
 
-    // 3. Preenchimento (Edição)
+    // 4. Preenchimento (Edição)
     if (id) {
         const v = visits.find(x => x.id === id);
         if(v) {
@@ -2596,12 +2602,24 @@ function showVisitModal(id = null) {
             document.getElementById('visit-reason').value = v.reason || '';
             document.getElementById('visit-status').value = v.status;
             
+            // Atualiza contador do Motivo
+            if(document.getElementById('visit-reason-counter')) {
+                const len = v.reason ? v.reason.length : 0;
+                document.getElementById('visit-reason-counter').textContent = len + ' / 200';
+            }
+            
             // Campos Condicionais
             if(document.getElementById('visit-date-realization')) 
                 document.getElementById('visit-date-realization').value = v.dateRealization || '';
             
-            if(document.getElementById('visit-justification')) 
+            if(document.getElementById('visit-justification')) {
                 document.getElementById('visit-justification').value = v.justification || '';
+                // Atualiza contador da Justificativa
+                if(document.getElementById('visit-justification-counter')) {
+                    const lenJ = v.justification ? v.justification.length : 0;
+                    document.getElementById('visit-justification-counter').textContent = lenJ + ' / 200';
+                }
+            }
             
             handleVisitStatusChange();
         }
@@ -2611,7 +2629,6 @@ function showVisitModal(id = null) {
     
     document.getElementById('visit-modal').classList.add('show');
 }
-
 function saveVisit(e) {
     e.preventDefault();
     const status = document.getElementById('visit-status').value;
