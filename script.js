@@ -21,8 +21,7 @@ const SALT_LENGTH = 16;
 let pendingBackupData = null; // Variável temporária para o restore
 
 // Carrega logs ou inicia vazio
-let auditLogs = recovering('auditLogs', []);
-
+let auditLogs = recuperarDoArmazenamento('auditLogs', []);
 // Variáveis Globais para Instâncias de Gráficos (Chart.js)
 // Necessário para destruir o gráfico anterior antes de criar um novo
 let chartDashboard = null;
@@ -1264,7 +1263,47 @@ function clearMunicipalityFilters() {
 // 12. TREINAMENTOS (Itens 3, 16)
 // ----------------------------------------------------------------------------
 
-function showTaskModal(id = null)
+function showTaskModal(id = null) {
+    editingId = id;
+    document.getElementById('task-form').reset();
+
+    // 1. Reset do contador visual
+    if(document.getElementById('task-char-counter')) {
+        document.getElementById('task-char-counter').textContent = '0 / 200';
+    }
+
+    // 2. Popula dropdowns e colaboradores
+    updateGlobalDropdowns();
+    const selectColab = document.getElementById('task-performed-by');
+    // Garante que a lista de colaboradores seja carregada
+    if(selectColab && typeof orientadores !== 'undefined') {
+        populateSelect(selectColab, orientadores, 'name', 'name');
+    }
+    
+    // 3. Edição
+    if (id) {
+        const t = tasks.find(function(x) { return x.id === id; });
+        if (t) {
+            document.getElementById('task-date-requested').value = t.dateRequested;
+            document.getElementById('task-municipality').value = t.municipality;
+            document.getElementById('task-requested-by').value = t.requestedBy;
+            document.getElementById('task-performed-by').value = t.performedBy;
+            document.getElementById('task-status').value = t.status;
+            document.getElementById('task-trained-name').value = t.trainedName || '';
+            document.getElementById('task-trained-position').value = t.trainedPosition || '';
+            document.getElementById('task-contact').value = t.contact || '';
+            document.getElementById('task-date-performed').value = t.datePerformed || '';
+            
+            // Preenche observações e atualiza contador
+            document.getElementById('task-observations').value = t.observations || '';
+            if(document.getElementById('task-char-counter')) {
+                const len = t.observations ? t.observations.length : 0;
+                document.getElementById('task-char-counter').textContent = len + ' / 200';
+            }
+        }
+    }
+    document.getElementById('task-modal').classList.add('show');
+}
 
 function saveTask(e) {
     e.preventDefault();
