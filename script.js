@@ -2633,6 +2633,7 @@ function saveVisit(e) {
     e.preventDefault();
     const status = document.getElementById('visit-status').value;
     
+    // Validações de campos condicionais
     if (status === 'Realizada' && !document.getElementById('visit-date-realization').value) {
         alert('Data de Realização é obrigatória.'); return;
     }
@@ -2644,6 +2645,9 @@ function saveVisit(e) {
         municipality: document.getElementById('visit-municipality').value,
         date: document.getElementById('visit-date').value,
         applicant: document.getElementById('visit-applicant').value,
+        // --- CORREÇÃO: Adicionado o campo Motivo que faltava ---
+        reason: document.getElementById('visit-reason').value, 
+        // -------------------------------------------------------
         status: status,
         dateRealization: document.getElementById('visit-date-realization').value,
         justification: document.getElementById('visit-justification').value
@@ -2655,12 +2659,14 @@ function saveVisit(e) {
     } else {
         visits.push({ id: getNextId('visit'), ...data });
     }
+    
     salvarNoArmazenamento('visits', visits);
     document.getElementById('visit-modal').classList.remove('show');
-    renderVisits();
-    showToast('Salvo!');
+    
+    // Limpa filtros e recarrega a tabela
+    clearVisitFilters(); 
+    showToast('Visita salva com sucesso!', 'success');
 }
-
 function getFilteredVisits() {
     const fMun = document.getElementById('filter-visit-municipality')?.value;
     const fStatus = document.getElementById('filter-visit-status')?.value;
@@ -2692,7 +2698,31 @@ function getFilteredVisits() {
 }
 
 function renderVisits() {
-    const filtered = getFilteredVisits();
+    // 1. Captura Filtros
+    const fMun = document.getElementById('filter-visit-municipality')?.value;
+    const fStatus = document.getElementById('filter-visit-status')?.value;
+    const fApp = document.getElementById('filter-visit-applicant')?.value.toLowerCase();
+    const fSolStart = document.getElementById('filter-visit-sol-start')?.value;
+    const fSolEnd = document.getElementById('filter-visit-sol-end')?.value;
+    const fRealStart = document.getElementById('filter-visit-real-start')?.value;
+    const fRealEnd = document.getElementById('filter-visit-real-end')?.value;
+
+    // 2. Filtragem
+    let filtered = visits.filter(function(v) {
+        if (fMun && v.municipality !== fMun) return false;
+        if (fStatus && v.status !== fStatus) return false;
+        if (fApp && !v.applicant.toLowerCase().includes(fApp)) return false;
+        if (fSolStart && v.date < fSolStart) return false;
+        if (fSolEnd && v.date > fSolEnd) return false;
+        if (fRealStart && (!v.dateRealization || v.dateRealization < fRealStart)) return false;
+        if (fRealEnd && (!v.dateRealization || v.dateRealization > fRealEnd)) return false;
+        return true;
+    });
+
+    // Ordenação
+    filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // 3. Renderização
     const c = document.getElementById('visits-table');
     
     if(document.getElementById('visits-results-count')) {
@@ -2700,6 +2730,7 @@ function renderVisits() {
         document.getElementById('visits-results-count').style.display = 'block';
     }
 
+    // Estatísticas
     if(document.getElementById('total-visits')) document.getElementById('total-visits').textContent = visits.length;
     if(document.getElementById('pending-visits')) document.getElementById('pending-visits').textContent = filtered.filter(v => v.status === 'Pendente').length;
     if(document.getElementById('completed-visits')) document.getElementById('completed-visits').textContent = filtered.filter(v => v.status === 'Realizada').length;
@@ -2715,11 +2746,18 @@ function renderVisits() {
             else statusClass += ' pending';
 
             const statusBadge = `<span class="${statusClass}">${v.status}</span>`;
+            
+            // Tratamento de textos longos
             const motivo = v.reason ? (v.reason.length > 40 ? `<span title="${v.reason}">${v.reason.substring(0,40)}...</span>` : v.reason) : '-';
             const justif = v.justification ? (v.justification.length > 30 ? `<span title="${v.justification}">${v.justification.substring(0,30)}...</span>` : v.justification) : '-';
 
+            // --- CORREÇÃO: Busca UF na lista mestra ---
+            const munData = municipalitiesList.find(m => m.name === v.municipality);
+            const munDisplay = munData ? `${v.municipality} - ${munData.uf}` : v.municipality;
+
             return `<tr>
-                <td class="text-primary-cell">${v.municipality}</td> <td style="text-align:center;">${formatDate(v.date)}</td>
+                <td class="text-primary-cell">${munDisplay}</td>
+                <td style="text-align:center;">${formatDate(v.date)}</td>
                 <td>${v.applicant}</td>
                 <td style="font-size:12px;">${motivo}</td>
                 <td style="text-align:center;">${statusBadge}</td>
@@ -2733,15 +2771,15 @@ function renderVisits() {
         }).join('');
         
         c.innerHTML = `
-        <table class="compact-table">
+        <table>
             <thead>
                 <th>Município</th>
-                <th style="text-align:center;">Data<br>Solicitação</th>
-                <th>Solicitante da Visita</th>
+                <th style="text-align:center;">Data Solic.</th>
+                <th>Solicitante</th>
                 <th>Motivo da Visita</th>
                 <th style="text-align:center;">Status</th>
-                <th style="text-align:center;">Data<br>Realização</th>
-                <th>Justificativa de<br>Cancelamento</th>
+                <th style="text-align:center;">Data Realiz.</th>
+                <th>Justificativa</th>
                 <th style="text-align:center; width:90px;">Ações</th>
             </thead>
             <tbody>${rows}</tbody>
@@ -2749,7 +2787,6 @@ function renderVisits() {
     }
     updateVisitCharts(filtered);
 }
-
 function updateVisitCharts(data) {
     // 1. Status (Cores Corretas)
     if (document.getElementById('visitStatusChart') && window.Chart) {
