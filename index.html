@@ -350,31 +350,38 @@
 
             </div>
 
-            <div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 32px;">
+            <div class="chart-card" style="margin-bottom: 24px;">
+    <h4>Evolução de Implantações por Ano (Histórico)</h4>
+    <div style="height: 300px;">
+        <canvas id="chartEvolution"></canvas>
+    </div>
+</div>
+
+<div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 24px;">
     
     <div class="chart-card">
-        <h4>Saúde da Carteira de Clientes</h4>
+        <h4>Saúde da Carteira</h4>
         <div style="height: 250px;">
             <canvas id="chartMunicipalityStatus"></canvas>
         </div>
     </div>
 
     <div class="chart-card">
-        <h4>Produtividade Operacional (6 Meses)</h4>
+        <h4>Produtividade (6 Meses)</h4>
         <div style="height: 250px;">
             <canvas id="chartProductivity"></canvas>
         </div>
     </div>
 
     <div class="chart-card">
-        <h4>Top Módulos Utilizados</h4>
+        <h4>Top Módulos</h4>
         <div style="height: 250px;">
             <canvas id="chartTopModules"></canvas>
         </div>
     </div>
 
     <div class="chart-card">
-        <h4>Gargalos de Suporte (Status)</h4>
+        <h4>Gargalos de Suporte</h4>
         <div style="height: 250px;">
             <canvas id="chartSupportBacklog"></canvas>
         </div>
@@ -382,7 +389,24 @@
 
 </div>
 
-        </section>
+<div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 32px;">
+    
+    <div class="chart-card">
+        <h4>Demandas Cadastradas por Usuário</h4>
+        <div style="height: 300px;">
+            <canvas id="chartDemandsByUser"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <h4>Treinamentos por Colaborador (Últimos 12 Meses)</h4>
+        <div style="height: 300px;">
+            <canvas id="chartTrainingByColab"></canvas>
+        </div>
+    </div>
+
+</div>
+ </section>
 
         <!-- Aba Demandas do Suporte -->
 
