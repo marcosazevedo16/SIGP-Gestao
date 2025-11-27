@@ -608,22 +608,32 @@ function updateUserInterface() {
         elName.textContent = currentUser.name;
     }
 
+    // Verifica se é Admin
     const isAdmin = currentUser.permission === 'Administrador';
     
-    // Controle explícito de visibilidade dos botões do menu
+    // --- CONTROLE DE ACESSO (ADMINISTRADOR) ---
+    
+    // 1. Botão de Gestão de Usuários
     const btnUser = document.getElementById('user-management-menu-btn');
     if (btnUser) {
         btnUser.style.display = isAdmin ? 'flex' : 'none';
     }
+
+    // 2. Botão de Auditoria (NOVO - Apenas Admin)
+    const btnAudit = document.getElementById('audit-menu-btn');
+    if (btnAudit) {
+        btnAudit.style.display = isAdmin ? 'flex' : 'none';
+    }
     
+    // --- ITENS ACESSÍVEIS A TODOS OS USUÁRIOS LOGADOS ---
+    // (Removi o 'audit-menu-btn' desta lista geral)
     const itemsToEnable = [
         'cargo-management-menu-btn',
         'orientador-management-menu-btn',
         'modulo-management-menu-btn',
         'municipality-list-management-menu-btn',
         'forma-apresentacao-management-menu-btn',
-        'backup-menu-btn',
-        'audit-menu-btn'
+        'backup-menu-btn'
     ];
     
     itemsToEnable.forEach(function(id) {
@@ -633,6 +643,7 @@ function updateUserInterface() {
         }
     });
 
+    // Divisor do menu
     const divider = document.getElementById('admin-divider');
     if (divider) {
         divider.style.display = isAdmin ? 'block' : 'none';
@@ -4274,8 +4285,14 @@ function logSystemAction(action, target, details) {
     salvarNoArmazenamento('auditLogs', auditLogs);
 }
 
-// Navegação
+// Navegação para Auditoria (Com Trava de Segurança)
 function navigateToAudit() {
+    // Trava de Segurança: Se não for Admin, bloqueia e avisa
+    if (currentUser.permission !== 'Administrador') {
+        alert('⛔ Acesso Negado: Esta função é restrita a Administradores.');
+        return;
+    }
+
     toggleSettingsMenu();
     openTab('audit-section');
     renderAuditLogs();
