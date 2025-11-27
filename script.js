@@ -20,6 +20,9 @@ if (typeof CryptoJS === 'undefined') {
 const SALT_LENGTH = 16;
 let pendingBackupData = null; // Variável temporária para o restore
 
+// Carrega logs ou inicia vazio
+let auditLogs = recovering('auditLogs', []);
+
 // Variáveis Globais para Instâncias de Gráficos (Chart.js)
 // Necessário para destruir o gráfico anterior antes de criar um novo
 let chartDashboard = null;
@@ -621,6 +624,7 @@ function updateUserInterface() {
         'municipality-list-management-menu-btn',
         'forma-apresentacao-management-menu-btn',
         'backup-menu-btn'
+        'audit-menu-btn'
     ];
     
     itemsToEnable.forEach(function(id) {
@@ -762,6 +766,8 @@ function handleLogin(e) {
         if (hashedPassword === user.passwordHash) {
             currentUser = user;
             isAuthenticated = true;
+            // AUDITORIA
+logSystemAction('Login', 'Acesso', 'Usuário realizou login no sistema');
             salvarNoArmazenamento('currentUser', currentUser);
             
             checkAuthentication();
@@ -1001,6 +1007,8 @@ function saveMunicipality(e) {
     document.getElementById('municipality-modal').classList.remove('show');
     renderMunicipalities();
     updateGlobalDropdowns();
+    // AUDITORIA
+logSystemAction(editingId ? 'Edição' : 'Criação', 'Municípios', `Município: ${data.name} | Status: ${data.status}`);
     showToast('Município salvo com sucesso!', 'success');
 }
 
@@ -1234,6 +1242,9 @@ function deleteMunicipality(id) {
         salvarNoArmazenamento('municipalities', municipalities);
         renderMunicipalities();
         updateGlobalDropdowns();
+        // AUDITORIA
+const munParaDeletar = municipalities.find(x => x.id === id);
+if(munParaDeletar) logSystemAction('Exclusão', 'Municípios', `Município excluído: ${munParaDeletar.name}`);
     }
 }
 
@@ -1283,6 +1294,15 @@ function saveTask(e) {
     // CORREÇÃO: Limpa os filtros para garantir que o novo item apareça na lista
     // Se preferir manter os filtros, remova a linha abaixo, mas o item pode ficar oculto se não bater com o filtro
     clearTaskFilters(); 
+
+    // LÓGICA DE AUDITORIA
+const actionType = editingId ? 'Edição' : 'Criação';
+const detailsMsg = `${actionType} de treinamento para ${data.municipality} (Solicitante: ${data.requestedBy})`;
+logSystemAction(actionType, 'Treinamentos', detailsMsg);
+
+// ...
+    // AUDITORIA
+logSystemAction(editingId ? 'Edição' : 'Criação', 'Treinamentos', `Para: ${data.municipality} | Solicitante: ${data.requestedBy}`);
     
     showToast('Treinamento salvo com sucesso!', 'success');
 }
@@ -1483,6 +1503,8 @@ function deleteTask(id) {
         tasks = tasks.filter(function(x) { return x.id !== id; });
         salvarNoArmazenamento('tasks', tasks);
         renderTasks();
+        const tDel = tasks.find(x => x.id === id);
+if(tDel) logSystemAction('Exclusão', 'Treinamentos', `Treinamento excluído de ${tDel.municipality} (${tDel.requestedBy})`);
     }
 }
 
@@ -1617,6 +1639,8 @@ function saveRequest(e) {
     salvarNoArmazenamento('requests', requests);
     document.getElementById('request-modal').classList.remove('show');
     renderRequests();
+    // AUDITORIA
+logSystemAction(editingId ? 'Edição' : 'Criação', 'Solicitações', `Para: ${data.municipality} | Solicitante: ${data.requester}`);
     showToast('Salvo!');
 }
 
@@ -1807,6 +1831,8 @@ function deleteRequest(id) {
         requests = requests.filter(function(x) { return x.id !== id; });
         salvarNoArmazenamento('requests', requests);
         renderRequests();
+        const rDel = requests.find(x => x.id === id);
+if(rDel) logSystemAction('Exclusão', 'Solicitações', `Solicitação excluída de ${rDel.municipality}`);
     }
 }
 
@@ -2300,6 +2326,8 @@ function saveDemand(e) {
     salvarNoArmazenamento('demands', demands);
     document.getElementById('demand-modal').classList.remove('show');
     clearDemandFilters();
+    // AUDITORIA
+logSystemAction(editingId ? 'Edição' : 'Criação', 'Demandas', `Prioridade: ${data.priority} | Desc: ${data.description.substring(0,30)}...`);
     showToast('Demanda salva com sucesso!', 'success');
 }
 
@@ -2485,6 +2513,8 @@ function deleteDemand(id) {
         demands = demands.filter(function(x) { return x.id !== id; });
         salvarNoArmazenamento('demands', demands);
         renderDemands();
+        const dDel = demands.find(x => x.id === id);
+if(dDel) logSystemAction('Exclusão', 'Demandas', `Demanda excluída (ID ${id})`);
     }
 }
 
@@ -2632,6 +2662,8 @@ function saveVisit(e) {
     
     // Limpa filtros e recarrega a tabela
     clearVisitFilters(); 
+    // AUDITORIA
+logSystemAction(editingId ? 'Edição' : 'Criação', 'Visitas', `Para: ${data.municipality} | Motivo: ${data.reason}`);
     showToast('Visita salva com sucesso!', 'success');
 }
 function getFilteredVisits() {
@@ -2829,6 +2861,8 @@ function deleteVisit(id) {
         visits = visits.filter(function(x) { return x.id !== id; });
         salvarNoArmazenamento('visits', visits);
         renderVisits();
+        const vDel = visits.find(x => x.id === id);
+if(vDel) logSystemAction('Exclusão', 'Visitas', `Visita excluída de ${vDel.municipality}`);
     }
 }
 
@@ -2927,6 +2961,8 @@ function saveProduction(e) {
     salvarNoArmazenamento('productions', productions);
     document.getElementById('production-modal').classList.remove('show');
     clearProductionFilters();
+    // AUDITORIA
+logSystemAction(editingId ? 'Edição' : 'Criação', 'Produção', `Para: ${data.municipality} | Frequência: ${data.frequency}`);
     showToast('Envio salvo com sucesso!', 'success');
 }
 
@@ -3120,6 +3156,8 @@ function deleteProduction(id) {
         productions = productions.filter(function(x) { return x.id !== id; });
         salvarNoArmazenamento('productions', productions);
         renderProductions();
+        const pDel = productions.find(x => x.id === id);
+if(pDel) logSystemAction('Exclusão', 'Produção', `Envio excluído de ${pDel.municipality}`);
     }
 }
 
@@ -4171,6 +4209,100 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// --- 21. SISTEMA DE AUDITORIA ---
+
+// Função central para registrar ações
+function logSystemAction(action, target, details) {
+    const newLog = {
+        id: Date.now(), // ID único baseado no tempo
+        timestamp: new Date().toISOString(),
+        user: currentUser ? currentUser.name : 'Sistema/Desconhecido',
+        action: action, // Ex: "Criação", "Edição", "Exclusão"
+        target: target, // Ex: "Município", "Treinamento"
+        details: details // Ex: "Cadastrou município Serro - MG"
+    };
+
+    // Adiciona no início do array (mais recente primeiro)
+    auditLogs.unshift(newLog);
+
+    // LIMITE DE SEGURANÇA (Local-First):
+    // Mantém apenas os últimos 500 logs para não lotar a memória do navegador
+    if (auditLogs.length > 500) {
+        auditLogs = auditLogs.slice(0, 500);
+    }
+
+    salvarNoArmazenamento('auditLogs', auditLogs);
+}
+
+// Navegação
+function navigateToAudit() {
+    toggleSettingsMenu();
+    openTab('audit-section');
+    renderAuditLogs();
+}
+
+// Renderização da Tabela
+function renderAuditLogs() {
+    const fAction = document.getElementById('filter-audit-action').value;
+    const fUser = document.getElementById('filter-audit-user').value.toLowerCase();
+    const fTarget = document.getElementById('filter-audit-target').value.toLowerCase();
+
+    const filtered = auditLogs.filter(log => {
+        if (fAction && log.action !== fAction) return false;
+        if (fUser && !log.user.toLowerCase().includes(fUser)) return false;
+        if (fTarget && !log.target.toLowerCase().includes(fTarget)) return false;
+        return true;
+    });
+
+    const c = document.getElementById('audit-table');
+    document.getElementById('audit-count').innerHTML = `<strong>${filtered.length}</strong> registros encontrados`;
+
+    if (filtered.length === 0) {
+        c.innerHTML = '<div class="empty-state">Nenhum registro de auditoria encontrado.</div>';
+        return;
+    }
+
+    // Formatação da data/hora
+    const formatDateTime = (isoStr) => {
+        const d = new Date(isoStr);
+        return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR');
+    };
+
+    // Cores para as ações
+    const getActionColor = (act) => {
+        if(act === 'Exclusão') return '#C85250'; // Vermelho
+        if(act === 'Criação') return '#005580'; // Azul
+        if(act === 'Edição') return '#E68161'; // Laranja
+        return 'inherit';
+    };
+
+    const rows = filtered.map(log => `
+        <tr>
+            <td style="font-size:12px; white-space:nowrap;">${formatDateTime(log.timestamp)}</td>
+            <td><strong>${log.user}</strong></td>
+            <td style="color:${getActionColor(log.action)}; font-weight:bold;">${log.action}</td>
+            <td>${log.target}</td>
+            <td class="text-secondary-cell">${log.details}</td>
+        </tr>
+    `).join('');
+
+    c.innerHTML = `<table><thead><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Módulo</th><th>Detalhes</th></thead><tbody>${rows}</tbody></table>`;
+}
+
+function clearAuditLogs() {
+    if(confirm('Tem certeza? Isso apagará todo o histórico de auditoria.')) {
+        auditLogs = [];
+        salvarNoArmazenamento('auditLogs', auditLogs);
+        renderAuditLogs();
+    }
+}
+
+function exportAuditCSV() {
+    const headers = ['DataHora', 'Usuario', 'Acao', 'Alvo', 'Detalhes'];
+    const rows = auditLogs.map(l => [l.timestamp, l.user, l.action, l.target, l.details]);
+    downloadCSV('auditoria_sistema.csv', headers, rows);
+}
 
 // --- BLOCO DE CORREÇÃO AUTOMÁTICA DE IDs (Pode manter no arquivo) ---
 (function autoFixPresentationIds() {
