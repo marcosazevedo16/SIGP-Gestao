@@ -3874,47 +3874,150 @@ function updateDashboardStats() {
     document.getElementById('dashboard-presentations-completed').textContent = presentations.filter(function(p) { return p.status === 'Realizada'; }).length;
 }
 
-function initializeDashboardCharts() {
-    const ctx = document.getElementById('implantationsYearChart');
-    if(!ctx || !window.Chart) return;
-    
-    if(chartDashboard) {
-        chartDashboard.destroy();
-    }
-    
-    const dataMap = {}; 
-    municipalities.forEach(function(m) { 
-        if(m.implantationDate) { 
-            const y = m.implantationDate.split('-')[0]; 
-            dataMap[y] = (dataMap[y] || 0) + 1; 
-        } 
-    });
-    
-    const years = Object.keys(dataMap).sort();
-    const counts = years.map(function(y) { return dataMap[y]; });
-    
-    // Cores diferentes para cada ano
-    const bgColors = years.map(function(_, i) { 
-        return CHART_COLORS[i % CHART_COLORS.length]; 
-    });
+// Variáveis globais para guardar as instâncias (para destruir antes de recriar)
+let chartInstance1 = null;
+let chartInstance2 = null;
+let chartInstance3 = null;
+let chartInstance4 = null;
 
-    chartDashboard = new Chart(ctx, { 
-        type: 'bar', 
-        data: { 
-            labels: years, 
-            datasets: [{ 
-                label: 'Implantações', 
-                data: counts, 
-                backgroundColor: bgColors, 
-                barPercentage: 0.6 
-            }] 
-        }, 
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { legend: { display: false } } 
-        } 
-    });
+function initializeDashboardCharts() {
+    if (!window.Chart) return;
+
+    // --- 1. SAÚDE DA CARTEIRA (Rosca) ---
+    const ctx1 = document.getElementById('chartMunicipalityStatus');
+    if (ctx1) {
+        if (chartInstance1) chartInstance1.destroy();
+        
+        // Dados
+        const statusCounts = { 'Em uso': 0, 'Bloqueado': 0, 'Parou de usar': 0, 'Não Implantado': 0 };
+        municipalities.forEach(m => { if (statusCounts[m.status] !== undefined) statusCounts[m.status]++; });
+
+        chartInstance1 = new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(statusCounts),
+                datasets: [{
+                    data: Object.values(statusCounts),
+                    backgroundColor: ['#005580', '#C85250', '#E68161', '#79C2A9'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } }
+            }
+        });
+    }
+
+    // --- 2. PRODUTIVIDADE OPERACIONAL (Linha - Últimos 6 meses) ---
+    const ctx2 = document.getElementById('chartProductivity');
+    if (ctx2) {
+        if (chartInstance2) chartInstance2.destroy();
+
+        // Gera os últimos 6 meses (MM/AAAA)
+        const labelsMeses = [];
+        const dadosTreinamentos = [0,0,0,0,0,0];
+        const dadosVisitas = [0,0,0,0,0,0];
+        
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const key = d.toISOString().substring(0, 7); // "2025-11"
+            labelsMeses.push(d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })); // "nov/25"
+            
+            // Conta Treinamentos (Data Realização)
+            dadosTreinamentos[5-i] = tasks.filter(t => t.status === 'Concluído' && t.datePerformed && t.datePerformed.startsWith(key)).length;
+            // Conta Visitas (Data Realização)
+            dadosVisitas[5-i] = visits.filter(v => v.status === 'Realizada' && v.dateRealization && v.dateRealization.startsWith(key)).length;
+        }
+
+        chartInstance2 = new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: labelsMeses,
+                datasets: [
+                    { label: 'Treinamentos', data: dadosTreinamentos, borderColor: '#005580', tension: 0.4, fill: false },
+                    { label: 'Visitas', data: dadosVisitas, borderColor: '#E68161', tension: 0.4, fill: false }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+    }
+
+    // --- 3. TOP MÓDULOS (Barras Horizontais) ---
+    const ctx3 = document.getElementById('chartTopModules');
+    if (ctx3) {
+        if (chartInstance3) chartInstance3.destroy();
+
+        const modMap = {};
+        municipalities.forEach(m => {
+            if (m.modules && Array.isArray(m.modules)) {
+                m.modules.forEach(mod => { modMap[mod] = (modMap[mod] || 0) + 1; });
+            }
+        });
+
+        // Ordena e pega top 5
+        const sortedMods = Object.entries(modMap).sort((a,b) => b[1] - a[1]).slice(0, 5);
+        
+        chartInstance3 = new Chart(ctx3, {
+            type: 'bar',
+            indexAxis: 'y', // Barra Horizontal
+            data: {
+                labels: sortedMods.map(i => i[0]),
+                datasets: [{
+                    label: 'Clientes Ativos',
+                    data: sortedMods.map(i => i[1]),
+                    backgroundColor: '#005580',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+    }
+
+    // --- 4. GARGALOS DE SUPORTE (Barras Empilhadas) ---
+    const ctx4 = document.getElementById('chartSupportBacklog');
+    if (ctx4) {
+        if (chartInstance4) chartInstance4.destroy();
+
+        // Dados Solicitações
+        const reqPendente = requests.filter(r => r.status === 'Pendente').length;
+        const reqRealizada = requests.filter(r => r.status === 'Realizado').length;
+        
+        // Dados Demandas
+        const demPendente = demands.filter(d => d.status === 'Pendente').length;
+        const demRealizada = demands.filter(d => d.status === 'Realizada').length;
+
+        chartInstance4 = new Chart(ctx4, {
+            type: 'bar',
+            data: {
+                labels: ['Solicitações', 'Demandas'],
+                datasets: [
+                    { label: 'Pendente', data: [reqPendente, demPendente], backgroundColor: '#E68161' }, // Laranja
+                    { label: 'Realizada', data: [reqRealizada, demRealizada], backgroundColor: '#79C2A9' }  // Verde
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { 
+                    x: { stacked: true }, 
+                    y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } 
+                }
+            }
+        });
+    }
 }
 
 function populateSelect(select, data, valKey, textKey) {
