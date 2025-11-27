@@ -1863,28 +1863,39 @@ function clearRequestFilters() {
 // Função Visual: Controla asteriscos e visibilidade conforme o Status
 function handlePresentationStatusChange() {
     const status = document.getElementById('presentation-status').value;
-    const grpDate = document.getElementById('presentation-date-realizacao-group');
     
+    // Grupos (Divs)
+    const grpDate = document.getElementById('presentation-date-realizacao-group');
+    const grpForms = document.getElementById('presentation-forms-group');
+    
+    // Labels (para adicionar asterisco)
     const lblDate = document.getElementById('presentation-date-realizacao-label');
     const lblOrient = document.getElementById('presentation-orientador-label');
     const lblForms = document.getElementById('presentation-forms-label');
     const lblDesc = document.getElementById('presentation-description-label');
 
-    // RESETA PARA O NOME NOVO
+    // RESET
     if(lblDate) lblDate.textContent = 'Data de Realização';
-    if(lblOrient) lblOrient.textContent = 'Colaborador(es) Responsável(is)'; // NOME NOVO
+    if(lblOrient) lblOrient.textContent = 'Colaboradores Responsáveis';
     if(lblForms) lblForms.textContent = 'Formas de Apresentação';
-    if(lblDesc) lblDesc.textContent = 'Descrição/Detalhes';
+    if(lblDesc) lblDesc.textContent = 'Descrição/Detalhes (máx. 200)';
 
-    if(grpDate) grpDate.style.display = 'block';
+    if(grpDate) grpDate.style.display = 'none';
+    if(grpForms) grpForms.style.display = 'none';
 
+    // LÓGICA
     if (status === 'Realizada') {
+        if(grpDate) grpDate.style.display = 'block';
+        if(grpForms) grpForms.style.display = 'block'; // Mostra Formas na Linha 3
+        
         if(lblDate) lblDate.textContent += '*';
         if(lblOrient) lblOrient.textContent += '*';
         if(lblForms) lblForms.textContent += '*';
-    } else if (status === 'Pendente') {
+    } 
+    else if (status === 'Pendente') {
         if(lblOrient) lblOrient.textContent += '*';
-    } else if (status === 'Cancelada') {
+    } 
+    else if (status === 'Cancelada') {
         if(lblDesc) lblDesc.textContent += '*';
     }
 }
@@ -1894,12 +1905,17 @@ function showPresentationModal(id = null) {
     const form = document.getElementById('presentation-form');
     if(form) form.reset();
     
-    // 1. Popula dropdown com Lista Mestra (Verificação de segurança)
+    // Reseta o contador de caracteres visualmente
+    if(document.getElementById('presentation-char-counter')) {
+        document.getElementById('presentation-char-counter').textContent = '0 / 200';
+    }
+    
+    // 1. Popula dropdown com Lista Mestra (COM UF)
     const munSelect = document.getElementById('presentation-municipality');
     if (munSelect) {
-        // Garante que municipalitiesList existe, senão usa array vazio
-        const listaMestra = (typeof municipalitiesList !== 'undefined') ? municipalitiesList : [];
-        populateSelect(munSelect, listaMestra, 'name', 'name');
+        const sortedList = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
+        munSelect.innerHTML = '<option value="">Selecione o município</option>' + 
+                              sortedList.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
     }
     
     // 2. Checkboxes dinâmicos (Orientadores)
@@ -1909,7 +1925,7 @@ function showPresentationModal(id = null) {
         if(listaOrient.length > 0) {
             divO.innerHTML = listaOrient.map(o => `<label><input type="checkbox" value="${o.name}" class="orientador-check"> ${o.name}</label>`).join('');
         } else {
-            divO.innerHTML = '<span style="font-size:11px; color:red;">Nenhum orientador cadastrado em configurações.</span>';
+            divO.innerHTML = '<span style="font-size:11px; color:red;">Nenhum colaborador cadastrado.</span>';
         }
     }
 
@@ -1920,38 +1936,29 @@ function showPresentationModal(id = null) {
         if(listaFormas.length > 0) {
             divF.innerHTML = listaFormas.map(f => `<label><input type="checkbox" value="${f.name}" class="forma-check"> ${f.name}</label>`).join('');
         } else {
-            divF.innerHTML = '<span style="font-size:11px; color:red;">Nenhuma forma cadastrada em configurações.</span>';
+            divF.innerHTML = '<span style="font-size:11px; color:red;">Nenhuma forma cadastrada.</span>';
         }
     }
 
+    // 4. Preenchimento (Edição)
     if (id) {
         const p = presentations.find(x => x.id === id);
         if(p) {
-            // Cria a opção no select se ela não existir (para edições antigas)
-            if(munSelect) {
-                let exists = false;
-                for (let i = 0; i < munSelect.options.length; i++) {
-                    if (munSelect.options[i].value === p.municipality) {
-                        exists = true;
-                        break;
-                    }
-                }
-                if (!exists) {
-                    const opt = document.createElement('option');
-                    opt.value = p.municipality;
-                    opt.textContent = p.municipality;
-                    munSelect.appendChild(opt);
-                }
-                munSelect.value = p.municipality;
-            }
-
-            if(document.getElementById('presentation-date-solicitacao')) document.getElementById('presentation-date-solicitacao').value = p.dateSolicitacao;
-            if(document.getElementById('presentation-requester')) document.getElementById('presentation-requester').value = p.requester;
-            if(document.getElementById('presentation-status')) document.getElementById('presentation-status').value = p.status;
-            if(document.getElementById('presentation-description')) document.getElementById('presentation-description').value = p.description;
-            if(document.getElementById('presentation-date-realizacao')) document.getElementById('presentation-date-realizacao').value = p.dateRealizacao || '';
+            document.getElementById('presentation-municipality').value = p.municipality;
+            document.getElementById('presentation-date-solicitacao').value = p.dateSolicitacao;
+            document.getElementById('presentation-requester').value = p.requester;
+            document.getElementById('presentation-status').value = p.status;
+            document.getElementById('presentation-description').value = p.description;
             
-            // Marca os checkboxes
+            // Atualiza contador na edição
+            if(document.getElementById('presentation-char-counter')) {
+                document.getElementById('presentation-char-counter').textContent = (p.description ? p.description.length : 0) + ' / 200';
+            }
+            
+            if(document.getElementById('presentation-date-realizacao')) 
+               document.getElementById('presentation-date-realizacao').value = p.dateRealizacao || '';
+            
+            // Marca checkboxes
             if (p.orientadores) {
                 document.querySelectorAll('.orientador-check').forEach(cb => {
                     cb.checked = p.orientadores.includes(cb.value);
@@ -1962,13 +1969,10 @@ function showPresentationModal(id = null) {
                     cb.checked = p.forms.includes(cb.value);
                 });
             }
-            
-            if(typeof handlePresentationStatusChange === 'function') handlePresentationStatusChange();
         }
-    } else {
-        if(typeof handlePresentationStatusChange === 'function') handlePresentationStatusChange();
     }
     
+    handlePresentationStatusChange();
     document.getElementById('presentation-modal').classList.add('show');
 }
 
