@@ -3787,6 +3787,7 @@ table th {
 #municipality-modal .modal-content,
 #presentation-modal .modal-content,
 #production-modal .modal-content {
+#visit-modal .modal-content {
     max-width: 900px !important;
 }
 
@@ -3794,6 +3795,5 @@ table th {
    Para formulários de 2 ou 3 colunas com textos longos */
 #request-modal .modal-content,
 #demand-modal .modal-content,
-#visit-modal .modal-content {
     max-width: 750px !important;
 }
