@@ -179,6 +179,7 @@
                         <button class="settings-menu-item" id="municipality-list-management-menu-btn" style="display: none;" onclick="navigateToMunicipalityListManagement()">🏙️ Cadastro de Municípios</button>
                         <button class="settings-menu-item" id="forma-apresentacao-management-menu-btn" style="display: none;" onclick="navigateToFormaApresentacaoManagement()">📋 Formas de Apresentação</button>
                         <button class="settings-menu-item" id="backup-menu-btn" style="display: none;" onclick="navigateToBackupManagement()">💾 Backup e Restauração</button>
+                        <button class="settings-menu-item" id="audit-menu-btn" style="display: none;" onclick="navigateToAudit()">🕵️ Auditoria (Logs)</button>
 
                     </div>
 
@@ -1435,6 +1436,46 @@
         <p>Funcionalidade em desenvolvimento.</p>
     </div>
 </section>
+
+        <section id="info-colaboradores-section" class="tab-content">
+        </section>
+
+    <section id="audit-section" class="tab-content">
+        <div class="section-header">
+            <h2>Auditoria do Sistema</h2>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn--secondary" onclick="clearAuditLogs()">Limpar Logs Antigos</button>
+                <button class="btn btn--primary" onclick="exportAuditCSV()">📥 Exportar Logs</button>
+            </div>
+        </div>
+
+        <div class="filters-section">
+            <div class="filters-grid">
+                <div class="form-group">
+                    <label class="form-label">Ação</label>
+                    <select class="form-control" id="filter-audit-action" onchange="renderAuditLogs()">
+                        <option value="">Todas</option>
+                        <option value="Criação">Criação</option>
+                        <option value="Edição">Edição</option>
+                        <option value="Exclusão">Exclusão</option>
+                        <option value="Login">Login</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Usuário</label>
+                    <input type="text" class="form-control" id="filter-audit-user" placeholder="Quem fez?" oninput="renderAuditLogs()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Módulo/Alvo</label>
+                    <input type="text" class="form-control" id="filter-audit-target" placeholder="Ex: Município, Visita..." oninput="renderAuditLogs()">
+                </div>
+            </div>
+        </div>
+
+        <div class="results-count" id="audit-count" style="margin-bottom: 10px; display:none;"></div>
+        
+        <div class="municipalities-table" id="audit-table"></div>
+    </section>
 
     </main>
 
