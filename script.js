@@ -18,6 +18,9 @@ if (typeof CryptoJS === 'undefined') {
 // 2. CONFIGURAÇÕES GERAIS E VARIÁVEIS DE ESTADO
 // ----------------------------------------------------------------------------
 const SALT_LENGTH = 16;
+// --- PAGINAÇÃO ---
+const ITEMS_PER_PAGE = 10; // Quantos itens por página
+let currentPage = 1;       // Página atual
 
 // Carrega logs ou inicia vazio
 let auditLogs = recuperarDoArmazenamento('auditLogs', []);
@@ -2991,6 +2994,19 @@ function saveProduction(e) {
     e.preventDefault();
     const freq = document.getElementById('production-frequency').value;
     
+    // Captura campos de data
+    const sendDateVal = document.getElementById('production-send-date').value;
+    
+    // --- NOVA VALIDAÇÃO: Bloqueia Data Futura no Envio ---
+    if (sendDateVal) {
+        const hoje = new Date().toISOString().split('T')[0]; // Pega data atual YYYY-MM-DD
+        if (sendDateVal > hoje) {
+            alert('Erro: A Data de Envio não pode ser uma data futura.');
+            return; // Para tudo aqui
+        }
+    }
+    // -----------------------------------------------------
+
     // Se diário, período é vazio. Senão, pega o valor.
     const period = (freq === 'Diário') ? '' : document.getElementById('production-period').value;
 
@@ -3001,7 +3017,7 @@ function saveProduction(e) {
         competence: document.getElementById('production-competence').value,
         period: period,
         releaseDate: document.getElementById('production-release-date').value,
-        sendDate: document.getElementById('production-send-date').value,
+        sendDate: sendDateVal,
         status: document.getElementById('production-status').value,
         professional: document.getElementById('production-professional').value,
         observations: document.getElementById('production-observations').value
@@ -3013,11 +3029,14 @@ function saveProduction(e) {
     } else {
         productions.push({ id: getNextId('prod'), ...data });
     }
+    
     salvarNoArmazenamento('productions', productions);
     document.getElementById('production-modal').classList.remove('show');
     clearProductionFilters();
+    
     // AUDITORIA
-logSystemAction(editingId ? 'Edição' : 'Criação', 'Produção', `Para: ${data.municipality} | Frequência: ${data.frequency}`);
+    logSystemAction(editingId ? 'Edição' : 'Criação', 'Produção', `Para: ${data.municipality} | Frequência: ${data.frequency}`);
+    
     showToast('Envio salvo com sucesso!', 'success');
 }
 
@@ -3384,16 +3403,20 @@ function saveUser(e) {
     e.preventDefault();
     const login = document.getElementById('user-login').value.trim().toUpperCase();
     
-    // Validação de duplicidade (apenas se for novo)
-    if (!editingId && users.some(u => u.login === login)) {
-        alert('Erro: Este login já existe.');
+    // --- CORREÇÃO: Validação de Duplicidade Robusta (Criação e Edição) ---
+    // Verifica se existe algum usuário com esse login, EXCLUINDO o próprio (caso seja edição)
+    const loginJaExiste = users.some(u => u.login === login && u.id !== editingId);
+
+    if (loginJaExiste) {
+        alert('Erro: Este Login já está sendo utilizado por outro usuário.');
         return;
     }
+    // ---------------------------------------------------------------------
 
     const data = {
         login: login,
         name: document.getElementById('user-name').value,
-        email: document.getElementById('user-email').value, // NOVO CAMPO
+        email: document.getElementById('user-email').value,
         permission: document.getElementById('user-permission').value,
         status: document.getElementById('user-status').value
     };
@@ -3404,23 +3427,26 @@ function saveUser(e) {
         data.salt = generateSalt();
         data.passwordHash = hashPassword(document.getElementById('user-password').value, data.salt);
         users.push(data);
+        
+        // AUDITORIA (Criação)
+        logSystemAction('Criação', 'Usuários', `Novo usuário: ${data.login} (${data.permission})`);
     } else {
         // Edição
         const i = users.findIndex(u => u.id === editingId);
         if (i !== -1) {
-            // Mantém salt/senha antigos se não for informado nova senha
             const oldUser = users[i];
             data.salt = oldUser.salt;
             data.passwordHash = oldUser.passwordHash;
 
-            // Se digitou senha nova, atualiza
             const newPass = document.getElementById('user-password').value;
             if (newPass) {
                 data.salt = generateSalt();
                 data.passwordHash = hashPassword(newPass, data.salt);
             }
-            // Atualiza o objeto mesclando ID
             users[i] = { ...oldUser, ...data };
+            
+            // AUDITORIA (Edição)
+            logSystemAction('Edição', 'Usuários', `Editou usuário: ${data.login}`);
         }
     }
     
@@ -3429,6 +3455,7 @@ function saveUser(e) {
     renderUsers();
     showToast('Usuário salvo com sucesso!', 'success');
 }
+
 function renderUsers() { 
     // 1. Captura os valores dos 3 filtros
     const fName = document.getElementById('filter-user-name') ? document.getElementById('filter-user-name').value.toLowerCase() : '';
@@ -4333,10 +4360,21 @@ const munListSorted = municipalitiesList.slice().sort((a,b) => a.name.localeComp
 function saveOrientador(e){ 
     e.preventDefault(); 
     
+    const name = document.getElementById('orientador-name').value.trim();
+
+    // --- CORREÇÃO: Validação de Duplicidade de Nome ---
+    // Verifica se já existe, ignorando maiúsculas/minúsculas
+    const nomeJaExiste = orientadores.some(o => o.name.toLowerCase() === name.toLowerCase() && o.id !== editingId);
+
+    if (nomeJaExiste) {
+        alert('Erro: Já existe um colaborador cadastrado com este Nome.');
+        return;
+    }
+    // --------------------------------------------------
+    
     const data = {
-        name: document.getElementById('orientador-name').value, 
+        name: name, 
         contact: document.getElementById('orientador-contact').value,
-        // Novos campos adicionados
         email: document.getElementById('orientador-email').value,
         birthDate: document.getElementById('orientador-birthdate').value
     }; 
@@ -4346,17 +4384,19 @@ function saveOrientador(e){
         const i = orientadores.findIndex(x => x.id === editingId); 
         if (i !== -1) {
             orientadores[i] = { ...orientadores[i], ...data };
+            logSystemAction('Edição', 'Colaboradores', `Atualizou: ${data.name}`);
         }
     } else {
         // Modo Novo Cadastro
         orientadores.push({ id: getNextId('orient'), ...data });
+        logSystemAction('Criação', 'Colaboradores', `Novo: ${data.name}`);
     } 
     
     salvarNoArmazenamento('orientadores', orientadores); 
     document.getElementById('orientador-modal').classList.remove('show'); 
     
     renderOrientadores(); 
-    updateGlobalDropdowns(); // Importante para atualizar a lista nos outros formulários
+    updateGlobalDropdowns(); 
     showToast('Colaborador salvo com sucesso!', 'success');
 }
 
@@ -4495,10 +4535,11 @@ function navigateToAudit() {
 
 // Renderização da Tabela
 function renderAuditLogs() {
-    const fAction = document.getElementById('filter-audit-action').value;
-    const fUser = document.getElementById('filter-audit-user').value.toLowerCase();
-    const fTarget = document.getElementById('filter-audit-target').value.toLowerCase();
+    const fAction = document.getElementById('filter-audit-action') ? document.getElementById('filter-audit-action').value : '';
+    const fUser = document.getElementById('filter-audit-user') ? document.getElementById('filter-audit-user').value.toLowerCase() : '';
+    const fTarget = document.getElementById('filter-audit-target') ? document.getElementById('filter-audit-target').value.toLowerCase() : '';
 
+    // 1. Filtra os dados (Igual antes)
     const filtered = auditLogs.filter(log => {
         if (fAction && log.action !== fAction) return false;
         if (fUser && !log.user.toLowerCase().includes(fUser)) return false;
@@ -4514,21 +4555,36 @@ function renderAuditLogs() {
         return;
     }
 
-    // Formatação da data/hora
+    // --- 2. LÓGICA DE PAGINAÇÃO (NOVO) ---
+    // Calcula o índice inicial e final
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    
+    // Fatia os dados (Pega só os 10 da página atual)
+    const paginatedData = filtered.slice(startIndex, endIndex);
+    
+    // Se a página atual ficou vazia (ex: filtrou e reduziu resultados), volta para a 1
+    if (paginatedData.length === 0 && currentPage > 1) {
+        currentPage = 1;
+        renderAuditLogs();
+        return;
+    }
+    // -------------------------------------
+
     const formatDateTime = (isoStr) => {
         const d = new Date(isoStr);
         return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR');
     };
 
-    // Cores para as ações
     const getActionColor = (act) => {
-        if(act === 'Exclusão') return '#C85250'; // Vermelho
-        if(act === 'Criação') return '#005580'; // Azul
-        if(act === 'Edição') return '#E68161'; // Laranja
+        if(act === 'Exclusão') return '#C85250';
+        if(act === 'Criação') return '#005580';
+        if(act === 'Edição') return '#E68161';
         return 'inherit';
     };
 
-    const rows = filtered.map(log => `
+    // Gera as linhas usando APENAS os dados fatiados (paginatedData)
+    const rows = paginatedData.map(log => `
         <tr>
             <td style="font-size:12px; white-space:nowrap;">${formatDateTime(log.timestamp)}</td>
             <td><strong>${log.user}</strong></td>
@@ -4538,7 +4594,16 @@ function renderAuditLogs() {
         </tr>
     `).join('');
 
-    c.innerHTML = `<table><thead><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Módulo</th><th>Detalhes</th></thead><tbody>${rows}</tbody></table>`;
+    // --- 3. INSERE TABELA + PAGINAÇÃO ---
+    const paginationHTML = getPaginationHTML(filtered.length, 'renderAuditLogs');
+    
+    c.innerHTML = `
+        <table>
+            <thead><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Módulo</th><th>Detalhes</th></thead>
+            <tbody>${rows}</tbody>
+        </table>
+        ${paginationHTML}
+    `;
 }
 
 function clearAuditLogs() {
@@ -4645,3 +4710,37 @@ function handlePresentationCSVImport(event) {
         console.log("IDs de produção corrigidos e reordenados com sucesso.");
     }
 })();
+
+// Gera o HTML dos botões de paginação
+function getPaginationHTML(totalItems, renderFunctionName) {
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+    
+    // Se não tiver páginas suficientes, não mostra nada
+    if (totalPages <= 1) return '';
+
+    return `
+    <div class="pagination-controls" style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top:15px;">
+        <button class="btn btn--sm btn--secondary" 
+            onclick="changePage(-1, '${renderFunctionName}')" 
+            ${currentPage === 1 ? 'disabled' : ''}>
+            ⬅️ Anterior
+        </button>
+        
+        <span style="font-size:13px; color:var(--color-text);">
+            Página <strong>${currentPage}</strong> de <strong>${totalPages}</strong>
+        </span>
+        
+        <button class="btn btn--sm btn--secondary" 
+            onclick="changePage(1, '${renderFunctionName}')" 
+            ${currentPage === totalPages ? 'disabled' : ''}>
+            Próximo ➡️
+        </button>
+    </div>`;
+}
+
+// Função que troca a página
+function changePage(delta, renderFunctionName) {
+    currentPage += delta;
+    // Chama a função de renderização passada por nome (Ex: "renderAuditLogs")
+    window[renderFunctionName]();
+}
