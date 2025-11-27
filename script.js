@@ -1864,31 +1864,30 @@ function clearRequestFilters() {
 function handlePresentationStatusChange() {
     const status = document.getElementById('presentation-status').value;
     
-    // Grupos (Divs)
-    const grpDate = document.getElementById('presentation-date-realizacao-group');
-    const grpForms = document.getElementById('presentation-forms-group');
+    // Inputs (para controlar obrigatoriedade)
+    const inpDate = document.getElementById('presentation-date-realizacao');
     
-    // Labels (para adicionar asterisco)
+    // Labels (para adicionar asterisco visual)
     const lblDate = document.getElementById('presentation-date-realizacao-label');
     const lblOrient = document.getElementById('presentation-orientador-label');
     const lblForms = document.getElementById('presentation-forms-label');
     const lblDesc = document.getElementById('presentation-description-label');
 
-    // RESET
+    // 1. RESET: Remove asteriscos e obrigatoriedade inicial
     if(lblDate) lblDate.textContent = 'Data de Realização';
     if(lblOrient) lblOrient.textContent = 'Colaboradores Responsáveis';
     if(lblForms) lblForms.textContent = 'Formas de Apresentação';
     if(lblDesc) lblDesc.textContent = 'Descrição/Detalhes (máx. 200)';
 
-    if(grpDate) grpDate.style.display = 'none';
-    if(grpForms) grpForms.style.display = 'none';
+    if(inpDate) inpDate.required = false;
 
-    // LÓGICA
+    // 2. LÓGICA DE VALIDAÇÃO (Não mexe mais em display:none)
     if (status === 'Realizada') {
-        if(grpDate) grpDate.style.display = 'block';
-        if(grpForms) grpForms.style.display = 'block'; // Mostra Formas na Linha 3
-        
+        // Torna Data Obrigatória
+        if(inpDate) inpDate.required = true;
         if(lblDate) lblDate.textContent += '*';
+        
+        // Adiciona asterisco visual nos outros
         if(lblOrient) lblOrient.textContent += '*';
         if(lblForms) lblForms.textContent += '*';
     } 
