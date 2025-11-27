@@ -1,118 +1,63 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <meta http-equiv="Content-Security-Policy" 
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
     <title>SIGP Saúde v4.3 - Gestão de Setor</title>
-
     <!-- Seu CSS -->
-
     <link rel="stylesheet" href="style.css">
-
     <!-- Chart.js -->
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <!-- jsPDF + html2canvas (para exportar PDF) -->
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
     <!-- CRYPTO-JS ← ESSA LINHA É OBRIGATÓRIA PARA A SEGURANÇA v4.3 -->
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
-
     <!-- Favicon (opcional, mas bonito) -->
-
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
-
 </head>
-
 <body>
 
     <!-- Login Screen -->
-
     <div id="login-screen" class="login-screen active">
-
         <div class="login-wrapper">
-
             <div class="login-left">
-
                 <div class="login-branding">
-
                     <h1 class="login-title">SIGP Saúde</h1>
-
                     <p class="login-tagline">Gestão de Setor de Saúde da HLH</p>
-
                 </div>
-
             </div>
-
             <div class="login-right">
-
                 <div class="login-form-container">
-
                     <h2 class="login-form-title">Acesso ao Sistema</h2>
-
                     <p class="login-form-subtitle">Digite login e Senha para continuar</p>
-
                     <form id="login-form" onsubmit="handleLogin(event)">
-
     <div class="form-group">
-
         <label class="form-label">Login</label>
-
         <input type="text" class="form-control" id="login-username" required placeholder="DIGITE SEU LOGIN" autocomplete="username">
-
     </div>
-
-    
     <div class="form-group">
-
         <label class="form-label">Senha</label>
-
         <input type="password" class="form-control" id="login-password" required placeholder="Digite sua senha" autocomplete="current-password">
-
     </div> 
-
     <div id="login-error" class="login-error"></div>
-
     <button type="submit" class="btn btn--primary btn--full-width login-btn">Entrar no Sistema</button>
-
 </form>
-
                 </div>
-
             </div>
-
             <div class="login-waves">
-
                 <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
-
                     <path d="M0,0 C150,80 350,0 600,40 C850,80 1050,20 1200,60 L1200,120 L0,120 Z" fill="rgba(255,255,255,0.1)"/>
-
                 </svg>
-
             </div>
-
             <div class="login-waves login-waves-2">
-
                 <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
-
                     <path d="M0,0 C200,60 400,0 600,30 C800,60 1000,0 1200,40 L1200,120 L0,120 Z" fill="rgba(255,255,255,0.05)"/>
-
                 </svg>
-
             </div>
-
         </div>
-
     </div>
 
     <!-- Main App (hidden until login) -->
