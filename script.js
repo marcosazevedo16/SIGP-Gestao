@@ -18,7 +18,6 @@ if (typeof CryptoJS === 'undefined') {
 // 2. CONFIGURAÇÕES GERAIS E VARIÁVEIS DE ESTADO
 // ----------------------------------------------------------------------------
 const SALT_LENGTH = 16;
-let pendingBackupData = null; // Variável temporária para o restore
 
 // Carrega logs ou inicia vazio
 let auditLogs = recuperarDoArmazenamento('auditLogs', []);
