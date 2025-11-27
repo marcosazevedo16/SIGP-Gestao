@@ -3710,43 +3710,10 @@ table th {
     text-align: center !important;
 }
 
-/* ==========================================================================
-   SISTEMA DE GRID PARA FORMULÁRIOS MODERNOS
-   Adicione ao final do style.css
+  /* ==========================================================================
+   SISTEMA DE GRID COMPLETO (V25 - FINAL)
    ========================================================================== */
 
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr); /* 12 colunas virtuais */
-    gap: 16px; /* Espaço entre os campos */
-    padding-bottom: 8px;
-}
-
-/* Utilitários de Coluna */
-.col-12 { grid-column: span 12; } /* Ocupa linha inteira */
-.col-8  { grid-column: span 8; }  /* Ocupa 2/3 */
-.col-6  { grid-column: span 6; }  /* Ocupa metade */
-.col-4  { grid-column: span 4; }  /* Ocupa 1/3 */
-.col-3  { grid-column: span 3; }  /* Ocupa 1/4 (bom para datas) */
-
-/* Remove a margem inferior padrão dos form-groups quando dentro do grid,
-   pois o 'gap' do grid já cuida do espaçamento vertical e horizontal */
-.form-grid .form-group {
-    margin-bottom: 0;
-}
-
-/* RESPONSIVIDADE: No celular, tudo vira 1 coluna só */
-@media (max-width: 768px) {
-    .form-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-    .col-12, .col-8, .col-6, .col-4, .col-3 {
-        grid-column: span 1;
-    }
-}
-
-/* --- SISTEMA DE GRID COMPLETO (Cole no style.css) --- */
 .form-grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
@@ -3779,9 +3746,54 @@ table th {
     }
 }
 
-/* Regra específica para o Modal de Solicitações (Mais estreito) */
-#request-modal .modal-content {
-#demand-modal .modal-content {
+/* --- Ajuste dos Checkboxes de Módulos (4 Colunas) --- */
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 10px 12px;
+    margin-top: 8px;
+}
+
+.checkbox-grid label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.checkbox-grid input[type="checkbox"] {
+    margin-right: 6px;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .checkbox-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ==========================================================================
+   LARGURA DOS MODAIS (GRUPOS CORRIGIDOS)
+   ========================================================================== */
+
+/* GRUPO 1: Modais LARGOS (900px)
+   Para formulários com 3 ou 4 colunas e muitos dados */
+#task-modal .modal-content,
+#municipality-modal .modal-content,
+#presentation-modal .modal-content,
+#production-modal .modal-content {
+    max-width: 900px !important;
+}
+
+/* GRUPO 2: Modais MÉDIOS (750px)
+   Para formulários de 2 ou 3 colunas com textos longos */
+#request-modal .modal-content,
+#demand-modal .modal-content,
 #visit-modal .modal-content {
-    max-width: 750px; /* Ideal para 2 colunas */
+    max-width: 750px !important;
 }
