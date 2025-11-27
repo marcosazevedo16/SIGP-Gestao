@@ -2541,60 +2541,74 @@ function clearDemandFilters() {
 // 16. VISITAS (Item 6)
 // ----------------------------------------------------------------------------
 function handleVisitStatusChange() {
-    const status = document.getElementById('visit-status').value;
+    const statusEl = document.getElementById('visit-status');
+    if (!statusEl) return;
+    
+    const status = statusEl.value;
+    
+    // Grupos (Divs)
     const grpReal = document.getElementById('group-visit-date-realization');
     const grpJust = document.getElementById('group-visit-justification');
-    if (grpReal) grpReal.style.display = (status === 'Realizada') ? 'block' : 'none';
-    if (grpJust) grpJust.style.display = (status === 'Cancelada') ? 'block' : 'none';
-}
+    
+    // Inputs (para required)
+    const inpReal = document.getElementById('visit-date-realization');
+    const inpJust = document.getElementById('visit-justification');
 
+    // RESET
+    if(grpReal) grpReal.style.display = 'none';
+    if(grpJust) grpJust.style.display = 'none';
+    
+    if(inpReal) inpReal.required = false;
+    if(inpJust) inpJust.required = false;
+
+    // LÓGICA
+    if (status === 'Realizada') {
+        if(grpReal) grpReal.style.display = 'block';
+        if(inpReal) inpReal.required = true;
+    } else if (status === 'Cancelada') {
+        if(grpJust) grpJust.style.display = 'block';
+        if(inpJust) inpJust.required = true;
+    }
+}
 function showVisitModal(id = null) {
     editingId = id;
     document.getElementById('visit-form').reset();
     
-    // Popula dropdown
+    // 1. Popula dropdown com Nome - UF
     const munSelect = document.getElementById('visit-municipality');
-    populateSelect(munSelect, municipalitiesList, 'name', 'name');
-
-    // Ativa os listeners de status
-    if(typeof handleVisitStatusChange === 'function') {
-        const statusSel = document.getElementById('visit-status');
-        statusSel.onchange = handleVisitStatusChange;
+    if (munSelect) {
+        const sortedList = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
+        munSelect.innerHTML = '<option value="">Selecione o município</option>' + 
+                              sortedList.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
     }
 
+    // 2. Configura listener de status
+    const statusSel = document.getElementById('visit-status');
+    if(statusSel) statusSel.onchange = handleVisitStatusChange;
+
+    // 3. Preenchimento (Edição)
     if (id) {
         const v = visits.find(x => x.id === id);
         if(v) {
-            // --- CORREÇÃO: Cria opção se não existir ---
-            let exists = false;
-            for (let i = 0; i < munSelect.options.length; i++) {
-                if (munSelect.options[i].value === v.municipality) {
-                    exists = true;
-                    break;
-                }
-            }
-            if (!exists) {
-                const opt = document.createElement('option');
-                opt.value = v.municipality;
-                opt.textContent = v.municipality;
-                munSelect.appendChild(opt);
-            }
-            munSelect.value = v.municipality;
-            // -------------------------------------------
-
+            document.getElementById('visit-municipality').value = v.municipality;
             document.getElementById('visit-date').value = v.date;
             document.getElementById('visit-applicant').value = v.applicant;
+            document.getElementById('visit-reason').value = v.reason || '';
             document.getElementById('visit-status').value = v.status;
             
-            if(document.getElementById('visit-reason')) document.getElementById('visit-reason').value = v.reason || '';
-            if(document.getElementById('visit-visit-date')) document.getElementById('visit-visit-date').value = v.dateRealization || '';
-            if(document.getElementById('visit-cancel-justification')) document.getElementById('visit-cancel-justification').value = v.justification || '';
+            // Campos Condicionais
+            if(document.getElementById('visit-date-realization')) 
+                document.getElementById('visit-date-realization').value = v.dateRealization || '';
             
-            if(typeof handleVisitStatusChange === 'function') handleVisitStatusChange();
+            if(document.getElementById('visit-justification')) 
+                document.getElementById('visit-justification').value = v.justification || '';
+            
+            handleVisitStatusChange();
         }
     } else {
-        if(typeof handleVisitStatusChange === 'function') handleVisitStatusChange();
+        handleVisitStatusChange();
     }
+    
     document.getElementById('visit-modal').classList.add('show');
 }
 
