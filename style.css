@@ -3778,21 +3778,21 @@ table th {
 }
 
 /* ==========================================================================
-   LARGURA DOS MODAIS (GRUPOS CORRIGIDOS)
+   LARGURA DOS MODAIS (V27 - Ajuste Fino)
    ========================================================================== */
 
 /* GRUPO 1: Modais LARGOS (900px)
-   Para formulários com 3 ou 4 colunas e muitos dados */
+   Para formulários complexos com muitas colunas */
 #task-modal .modal-content,
 #municipality-modal .modal-content,
 #presentation-modal .modal-content,
-#production-modal .modal-content {
+#production-modal .modal-content,
 #visit-modal .modal-content {
     max-width: 900px !important;
 }
 
 /* GRUPO 2: Modais MÉDIOS (750px)
-   Ideal para formulários de 2 ou 3 colunas */
+   Para formulários de 2 colunas */
 #request-modal .modal-content,
 #demand-modal .modal-content,
 #user-modal .modal-content,
@@ -3800,4 +3800,12 @@ table th {
 #modulo-modal .modal-content,
 #municipality-list-modal .modal-content {
     max-width: 750px !important;
+}
+
+/* GRUPO 3: Modais PEQUENOS (500px) - NOVO!
+   Para formulários simples e rápidos */
+#cargo-modal .modal-content,
+#forma-apresentacao-modal .modal-content,
+#change-password-modal .modal-content {
+    max-width: 500px !important;
 }
