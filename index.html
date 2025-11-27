@@ -2237,22 +2237,32 @@
 </div>
         
     <!-- Modal para Produção -->
-
-    <div id="production-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="production-modal-title">Novo Envio de Produção</h3>
-                <button class="close-btn" onclick="closeProductionModal()">&times;</button>
-            </div>
-            <form id="production-form" onsubmit="saveProduction(event)">
-                <div class="form-group">
+<div id="production-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="production-modal-title">Novo Envio de Produção</h3>
+            <button class="close-btn" onclick="closeProductionModal()">&times;</button>
+        </div>
+        <form id="production-form" onsubmit="saveProduction(event)">
+            <div class="form-grid">
+                
+                <div class="form-group col-4">
                     <label class="form-label">Município*</label>
                     <select class="form-control" id="production-municipality" required>
                         <option value="">Selecione o município</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Frequência de Envio do Município*</label>
+                <div class="form-group col-4">
+                    <label class="form-label">Profissional Informado</label>
+                    <input type="text" class="form-control" id="production-professional">
+                </div>
+                <div class="form-group col-4">
+                    <label class="form-label" id="lbl-prod-contact">Contato*</label>
+                    <input type="tel" class="form-control" id="production-contact" placeholder="(XX) 9XXXX-XXXX" maxlength="15" required>
+                </div>
+
+                <div class="form-group col-3">
+                    <label class="form-label">Frequência*</label>
                     <select class="form-control" id="production-frequency" required onchange="handleProductionFrequencyChange()">
                         <option value="">Selecione</option>
                         <option value="Diário">Diário</option>
@@ -2261,22 +2271,20 @@
                         <option value="Mensal">Mensal</option>
                     </select>
                 </div>
-                
-                <div class="form-group">
-                    <label class="form-label" id="lbl-prod-competence">Competência (mês/ano)*</label>
-                    <input type="text" class="form-control" id="production-competence" placeholder="novembro/2025" required>
+                <div class="form-group col-3">
+                    <label class="form-label" id="lbl-prod-competence">Competência*</label>
+                    <input type="text" class="form-control" id="production-competence" placeholder="MM/AAAA" required>
                 </div>
-                
-                <div class="form-group" id="production-period-group">
-                    <label class="form-label" id="lbl-prod-period">Período (Data Inicial à Data Final)*</label>
-                    <input type="text" class="form-control" id="production-period" placeholder="01/10 à 31/10">
+                <div class="form-group col-3" id="production-period-group">
+                    <label class="form-label" id="lbl-prod-period">Período*</label>
+                    <input type="text" class="form-control" id="production-period" placeholder="DD/MM à DD/MM">
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label" id="lbl-prod-release">Data de Liberação*</label>
+                <div class="form-group col-3">
+                    <label class="form-label" id="lbl-prod-release">Data Liberação*</label>
                     <input type="date" class="form-control" id="production-release-date" required>
                 </div>
-                <div class="form-group">
+
+                <div class="form-group col-3">
                     <label class="form-label" id="lbl-prod-status">Status de Envio*</label>
                     <select class="form-control" id="production-status" required>
                         <option value="Enviada">Enviada</option>
@@ -2284,30 +2292,28 @@
                         <option value="Cancelada">Cancelada</option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group col-3">
                     <label class="form-label">Data de Envio</label>
                     <input type="date" class="form-control" id="production-send-date">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Profissional Informado</label>
-                    <input type="text" class="form-control" id="production-professional">
-                </div>
-                <div class="form-group">
-                    <label class="form-label" id="lbl-prod-contact">Contato*</label>
-                    <input type="tel" class="form-control" id="production-contact" placeholder="(XX) 9XXXX-XXXX" maxlength="15" required>
-                </div>
-                <div class="form-group">
+                <div class="form-group col-6">
                     <label class="form-label">Observações (máx. 150)</label>
-                    <textarea class="form-control" id="production-observations" rows="3" maxlength="150"></textarea>
+                    <textarea class="form-control" id="production-observations" rows="1" maxlength="150"
+                        oninput="document.getElementById('production-char-counter').textContent = this.value.length + ' / 150'"></textarea>
+                    <div class="char-counter" id="production-char-counter">0 / 150</div>
                 </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn--secondary" onclick="closeProductionModal()">Cancelar</button>
-                    <button type="submit" class="btn btn--primary">Salvar</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeProductionModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+        
+    
     <!-- Modal para Forma de Apresentação -->
 
     <div id="forma-apresentacao-modal" class="modal">
