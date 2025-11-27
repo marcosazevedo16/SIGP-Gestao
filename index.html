@@ -350,17 +350,37 @@
 
             </div>
 
-            <div class="chart-card" style="margin-bottom: var(--space-32);">
+            <div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 32px;">
+    
+    <div class="chart-card">
+        <h4>Saúde da Carteira de Clientes</h4>
+        <div style="height: 250px;">
+            <canvas id="chartMunicipalityStatus"></canvas>
+        </div>
+    </div>
 
-                <h4>Evolução de Implantações por Ano</h4>
+    <div class="chart-card">
+        <h4>Produtividade Operacional (6 Meses)</h4>
+        <div style="height: 250px;">
+            <canvas id="chartProductivity"></canvas>
+        </div>
+    </div>
 
-                <div style="height: 400px;">
+    <div class="chart-card">
+        <h4>Top Módulos Utilizados</h4>
+        <div style="height: 250px;">
+            <canvas id="chartTopModules"></canvas>
+        </div>
+    </div>
 
-                    <canvas id="implantationsYearChart"></canvas>
+    <div class="chart-card">
+        <h4>Gargalos de Suporte (Status)</h4>
+        <div style="height: 250px;">
+            <canvas id="chartSupportBacklog"></canvas>
+        </div>
+    </div>
 
-                </div>
-
-            </div>
+</div>
 
         </section>
 
