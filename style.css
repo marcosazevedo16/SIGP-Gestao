@@ -3809,3 +3809,12 @@ table th {
 #change-password-modal .modal-content {
     max-width: 500px !important;
 }
+
+/* ==========================================================================
+   RESPONSIVIDADE DO DASHBOARD (Novos Gráficos)
+   ========================================================================== */
+@media (max-width: 900px) {
+    .charts-grid { 
+        grid-template-columns: 1fr !important; /* Força 1 coluna no celular/tablet */
+    }
+}
