@@ -2231,49 +2231,72 @@ function clearPresentationFilters() {
 // ----------------------------------------------------------------------------
 // Função Visual: Controla campos e obrigatoriedade
 function handleDemandStatusChange() {
-    const status = document.getElementById('demand-status').value;
-    const grpReal = document.getElementById('demand-realization-date-group');
-    const grpJust = document.getElementById('demand-justification-group');
-    const lblReal = document.getElementById('demand-realization-label');
-    const lblJust = document.getElementById('demand-justification-label');
+    const statusEl = document.getElementById('demand-status');
+    if (!statusEl) return;
+    
+    const status = statusEl.value;
+    
+    // Grupos (Divs)
+    const grpReal = document.getElementById('group-demand-realization-date');
+    const grpJust = document.getElementById('group-demand-justification');
+    
+    // Inputs (para required)
+    const inpReal = document.getElementById('demand-realization-date');
+    const inpJust = document.getElementById('demand-justification');
 
-    // Reset
-    grpReal.style.display = 'none';
-    grpJust.style.display = 'none';
-    if(lblReal) lblReal.textContent = 'Data de Realização';
-    if(lblJust) lblJust.textContent = 'Justificativa Inviabilidade';
+    // RESET: Esconde tudo e remove required
+    if(grpReal) grpReal.style.display = 'none';
+    if(grpJust) grpJust.style.display = 'none';
+    if(inpReal) inpReal.required = false;
+    if(inpJust) inpJust.required = false;
 
+    // LÓGICA
     if (status === 'Realizada') {
-        grpReal.style.display = 'block';
-        if(lblReal) lblReal.textContent += '*'; // Obrigatório
+        if(grpReal) grpReal.style.display = 'block';
+        if(inpReal) inpReal.required = true;
     } else if (status === 'Inviável') {
-        grpJust.style.display = 'block';
-        if(lblJust) lblJust.textContent += '*'; // Obrigatório
+        if(grpJust) grpJust.style.display = 'block';
+        if(inpJust) inpJust.required = true;
     }
-    // Pendente não mostra nada extra
 }
-
 function showDemandModal(id = null) {
     editingId = id;
     document.getElementById('demand-form').reset();
-    // Garante que o evento dispare ao abrir
-    if(typeof handleDemandStatusChange === 'function') handleDemandStatusChange();
 
+    // 1. Reseta o contador de caracteres visualmente
+    if(document.getElementById('demand-char-counter')) {
+        document.getElementById('demand-char-counter').textContent = '0 / 250';
+    }
+
+    // 2. Preenchimento em caso de Edição
     if (id) {
-        const d = demands.find(function(x) { return x.id === id; });
-        if(d) {
+        const d = demands.find(x => x.id === id);
+        if (d) {
             document.getElementById('demand-date').value = d.date;
             document.getElementById('demand-description').value = d.description;
             document.getElementById('demand-priority').value = d.priority;
             document.getElementById('demand-status').value = d.status;
-            
-            // Preenche e exibe campos condicionais
-            if(document.getElementById('demand-realization-date')) document.getElementById('demand-realization-date').value = d.dateRealization || '';
-            if(document.getElementById('demand-justification')) document.getElementById('demand-justification').value = d.justification || '';
-            
-            handleDemandStatusChange(); // Atualiza visibilidade
+
+            // Atualiza o contador com o tamanho da descrição atual
+            if(document.getElementById('demand-char-counter')) {
+                const tamanhoAtual = d.description ? d.description.length : 0;
+                document.getElementById('demand-char-counter').textContent = tamanhoAtual + ' / 250';
+            }
+
+            // Campos condicionais (Data Realização e Justificativa)
+            if(document.getElementById('demand-realization-date')) {
+                document.getElementById('demand-realization-date').value = d.dateRealization || '';
+            }
+            if(document.getElementById('demand-justification')) {
+                document.getElementById('demand-justification').value = d.justification || '';
+            }
         }
     }
+
+    // 3. Ajusta a visibilidade dos campos com base no status carregado
+    handleDemandStatusChange();
+    
+    // 4. Abre o modal
     document.getElementById('demand-modal').classList.add('show');
 }
 
