@@ -4347,7 +4347,6 @@ function populateSelect(select, data, valKey, textKey) {
     if (statusFilter) {
         statusFilter.onchange = renderIntegrations;
     }
-}
 
 // ============================================================================
 // FUNÇÕES DE ATUALIZAÇÃO DE DROPDOWNS (FILTROS E FORMULÁRIOS)
