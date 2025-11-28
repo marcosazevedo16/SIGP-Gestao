@@ -547,10 +547,14 @@ let cargos = recuperarDoArmazenamento('cargos', []);
 let orientadores = recuperarDoArmazenamento('orientadores', []);
 let modulos = recuperarDoArmazenamento('modulos', DADOS_PADRAO.modulos);
 let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', []);
+let apiConfig = recuperarDoArmazenamento('apiConfig', []); // Lista de APIs (Configuração)
+let apiIntegrations = recuperarDoArmazenamento('apiIntegrations', []); // Integrações nos Municípios (Aba Principal)
 
 // Contadores de ID (Persistidos)
 let counters = recuperarDoArmazenamento('counters', {
-    mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1
+    mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, 
+    user: 2, cargo: 1, orient: 1, mod: 1, forma: 1,
+    apiConf: 1, apiInt: 1
 });
 
 function getNextId(key) {
