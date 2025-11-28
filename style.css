@@ -3849,3 +3849,39 @@ table th {
     color: var(--color-error);
     font-weight: bold;
 }
+
+/* ==========================================================================
+   CORREÇÕES v26 - APIS E INTEGRAÇÕES (MODAIS E TABELA)
+   ========================================================================== */
+
+/* 1. Diminuir Modais Específicos */
+#api-list-modal .modal-content,
+#integration-modal .modal-content {
+    max-width: 500px !important; /* Bem menor, conforme solicitado */
+}
+
+/* 2. Alinhamento Vertical da Tabela (Centralizar APIs e Ações) */
+#integrations-table td {
+    vertical-align: middle !important; /* Centraliza verticalmente */
+    height: 100%;
+}
+
+/* Ajuste específico da coluna de APIs para não ficar "flutuando" */
+#integrations-table .module-tags-cell {
+    display: flex !important;
+    align-items: center !important; /* Centraliza na vertical */
+    flex-wrap: wrap !important;
+    gap: 4px;
+    min-height: 40px; /* Altura mínima para alinhar com as outras células */
+}
+
+/* 3. Coluna de Ações para a Direita */
+#integrations-table td:last-child {
+    text-align: right !important; /* Empurra botões para direita */
+    padding-right: 20px !important;
+}
+
+/* Corrigir espaçamento do botão de ação */
+#integrations-table .btn--sm {
+    margin-left: 4px;
+}
