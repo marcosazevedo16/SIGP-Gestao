@@ -840,10 +840,15 @@ function checkAuthentication() {
 }
 
 function handleLogout() {
-    if (confirm('Deseja realmente sair do sistema?')) {
-        localStorage.removeItem('currentUser');
-        location.reload();
-    }
+    // Removemos a verificação 'confirm'
+    // O sistema agora limpa o usuário e recarrega a página imediatamente
+    localStorage.removeItem('currentUser');
+    
+    // Se você implementou o módulo de segurança anteriormente, 
+    // pode descomentar a linha abaixo para parar o timer de inatividade:
+    // if (typeof disableInactivityTracking === 'function') disableInactivityTracking();
+
+    location.reload();
 }
 
 // Modal de Troca de Senha
