@@ -4324,7 +4324,6 @@ function populateSelect(select, data, valKey, textKey) {
             if(cur) el.value = cur;
         }
     });
-}
 
 // 5. FILTRO DE API INTEGRADA (Específico da aba)
     const apiFilterEl = document.getElementById('filter-integration-api');
