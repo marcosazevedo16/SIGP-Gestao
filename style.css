@@ -3799,8 +3799,7 @@ table th {
 #user-modal .modal-content,
 #orientador-modal .modal-content,
 #modulo-modal .modal-content,
-#municipality-list-modal .modal-content, 
-#api-integration-modal .modal-content {
+#municipality-list-modal .modal-content {
     max-width: 750px !important;
 }
 
@@ -3808,8 +3807,10 @@ table th {
    Para formulários simples e rápidos */
 #cargo-modal .modal-content,
 #forma-apresentacao-modal .modal-content,
-#change-password-modal .modal-content,
-#api-config-modal .modal-content {
+/* ==========================================================================
+   AJUSTE FINO: Modal de Senha Compacto
+   ========================================================================== */
+#change-password-modal .modal-content {
     max-width: 400px !important; /* Bem estreito para focar na senha */
 }
 
