@@ -4015,24 +4015,21 @@ function updateDashboardStats() {
 }
 
 // Variáveis globais para as instâncias dos gráficos
-let chartInstanceEvo = null; // Evolução
-let chartInstance1 = null;   // Carteira
-let chartInstance2 = null;   // Produtividade
-let chartInstance3 = null;   // Módulos
-let chartInstance4 = null;   // Gargalos
-let chartInstanceUser = null; // Demandas por Usuário
-let chartInstanceColab = null; // Treinamentos por Colaborador
+let chartInstanceEvo = null; 
+let chartInstance1 = null;   
+let chartInstance2 = null;   
+let chartInstance3 = null;   
+let chartInstance4 = null;   
+let chartInstanceUser = null; 
+let chartInstanceColab = null; 
 
 function initializeDashboardCharts() {
     if (!window.Chart) return;
 
-    // ============================================================
-    // 0. EVOLUÇÃO DE IMPLANTAÇÕES (RETORNADO)
-    // ============================================================
+    // --- 0. EVOLUÇÃO (Histórico) ---
     const ctxEvo = document.getElementById('chartEvolution');
     if (ctxEvo) {
         if (chartInstanceEvo) chartInstanceEvo.destroy();
-        
         const dataMap = {};
         municipalities.forEach(m => {
             if (m.implantationDate) {
@@ -4040,9 +4037,7 @@ function initializeDashboardCharts() {
                 dataMap[y] = (dataMap[y] || 0) + 1;
             }
         });
-        
         const years = Object.keys(dataMap).sort();
-        
         chartInstanceEvo = new Chart(ctxEvo, {
             type: 'bar',
             data: {
@@ -4050,21 +4045,15 @@ function initializeDashboardCharts() {
                 datasets: [{
                     label: 'Novas Implantações',
                     data: years.map(y => dataMap[y]),
-                    backgroundColor: '#005580', // Azul Principal
+                    backgroundColor: '#005580',
                     borderRadius: 4
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-            }
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
         });
     }
 
-    // ============================================================
-    // 1. SAÚDE DA CARTEIRA (Rosca)
-    // ============================================================
+    // --- 1. SAÚDE DA CARTEIRA ---
     const ctx1 = document.getElementById('chartMunicipalityStatus');
     if (ctx1) {
         if (chartInstance1) chartInstance1.destroy();
@@ -4085,9 +4074,7 @@ function initializeDashboardCharts() {
         });
     }
 
-    // ============================================================
-    // 2. PRODUTIVIDADE (Linha - 6 Meses)
-    // ============================================================
+    // --- 2. PRODUTIVIDADE (12 MESES - ALTERADO) ---
     const ctx2 = document.getElementById('chartProductivity');
     if (ctx2) {
         if (chartInstance2) chartInstance2.destroy();
@@ -4095,7 +4082,8 @@ function initializeDashboardCharts() {
         const dadosTreinamentos = [];
         const dadosVisitas = [];
         
-        for (let i = 5; i >= 0; i--) {
+        // Loop aumentado para 12 meses (0 a 11)
+        for (let i = 11; i >= 0; i--) {
             const d = new Date();
             d.setMonth(d.getMonth() - i);
             const key = d.toISOString().substring(0, 7);
@@ -4117,9 +4105,7 @@ function initializeDashboardCharts() {
         });
     }
 
-    // ============================================================
-    // 3. TOP MÓDULOS (Barras Horizontais)
-    // ============================================================
+    // --- 3. TODOS OS MÓDULOS (ALTERADO) ---
     const ctx3 = document.getElementById('chartTopModules');
     if (ctx3) {
         if (chartInstance3) chartInstance3.destroy();
@@ -4127,7 +4113,9 @@ function initializeDashboardCharts() {
         municipalities.forEach(m => {
             if (m.modules && Array.isArray(m.modules)) m.modules.forEach(mod => { modMap[mod] = (modMap[mod] || 0) + 1; });
         });
-        const sortedMods = Object.entries(modMap).sort((a,b) => b[1] - a[1]).slice(0, 5);
+        
+        // Ordena mas NÃO corta mais (Mostra todos)
+        const sortedMods = Object.entries(modMap).sort((a,b) => b[1] - a[1]);
         
         chartInstance3 = new Chart(ctx3, {
             type: 'bar',
@@ -4140,9 +4128,7 @@ function initializeDashboardCharts() {
         });
     }
 
-    // ============================================================
-    // 4. GARGALOS DE SUPORTE (Barras Empilhadas)
-    // ============================================================
+    // --- 4. GARGALOS ---
     const ctx4 = document.getElementById('chartSupportBacklog');
     if (ctx4) {
         if (chartInstance4) chartInstance4.destroy();
@@ -4164,85 +4150,45 @@ function initializeDashboardCharts() {
         });
     }
 
-    // ============================================================
-    // 5. DEMANDAS POR USUÁRIO (NOVO)
-    // ============================================================
+    // --- 5. DEMANDAS POR USUÁRIO ---
     const ctxUser = document.getElementById('chartDemandsByUser');
     if (ctxUser) {
         if (chartInstanceUser) chartInstanceUser.destroy();
-        
         const userMap = {};
-        demands.forEach(d => {
-            // Usa o nome do usuário ou 'Desconhecido'
-            const uName = d.user || 'N/D';
-            userMap[uName] = (userMap[uName] || 0) + 1;
-        });
-
-        // Ordena por maior número de demandas
+        demands.forEach(d => { const uName = d.user || 'N/D'; userMap[uName] = (userMap[uName] || 0) + 1; });
         const sortedUsers = Object.entries(userMap).sort((a,b) => b[1] - a[1]);
 
         chartInstanceUser = new Chart(ctxUser, {
             type: 'bar',
             data: {
                 labels: sortedUsers.map(i => i[0]),
-                datasets: [{
-                    label: 'Demandas Cadastradas',
-                    data: sortedUsers.map(i => i[1]),
-                    backgroundColor: CHART_COLORS, // Usa a paleta colorida global
-                    borderRadius: 4
-                }]
+                datasets: [{ label: 'Demandas', data: sortedUsers.map(i => i[1]), backgroundColor: CHART_COLORS, borderRadius: 4 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
         });
     }
 
-    // ============================================================
-    // 6. TREINAMENTOS POR COLABORADOR - 12 MESES (NOVO)
-    // ============================================================
+    // --- 6. TREINAMENTOS POR COLABORADOR ---
     const ctxColab = document.getElementById('chartTrainingByColab');
     if (ctxColab) {
         if (chartInstanceColab) chartInstanceColab.destroy();
-
-        // Data limite: Hoje menos 365 dias
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-
+        const oneYearAgo = new Date(); oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
         const colabMap = {};
         tasks.forEach(t => {
-            // Filtra: Apenas concluídos e dentro do último ano
             if (t.status === 'Concluído' && t.datePerformed) {
                 const dPerf = new Date(t.datePerformed);
-                if (dPerf >= oneYearAgo) {
-                    const colab = t.performedBy || 'N/D';
-                    colabMap[colab] = (colabMap[colab] || 0) + 1;
-                }
+                if (dPerf >= oneYearAgo) { const colab = t.performedBy || 'N/D'; colabMap[colab] = (colabMap[colab] || 0) + 1; }
             }
         });
-
         const sortedColabs = Object.entries(colabMap).sort((a,b) => b[1] - a[1]);
 
         chartInstanceColab = new Chart(ctxColab, {
             type: 'bar',
             data: {
                 labels: sortedColabs.map(i => i[0]),
-                datasets: [{
-                    label: 'Treinamentos (12 Meses)',
-                    data: sortedColabs.map(i => i[1]),
-                    backgroundColor: '#E68161', // Laranja
-                    borderRadius: 4
-                }]
+                datasets: [{ label: 'Treinamentos', data: sortedColabs.map(i => i[1]), backgroundColor: '#E68161', borderRadius: 4 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
         });
     }
 }
