@@ -6,6 +6,11 @@
     <meta http-equiv="Content-Security-Policy" 
       content="default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
     <title>SIGP Saúde v4.3 - Gestão de Setor</title>
+    <meta http-equiv="Content-Security-Policy" 
+      content="default-src 'self'; 
+               style-src 'self' 'unsafe-inline'; 
+               script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+               connect-src 'self';">
     <!-- Seu CSS -->
     <link rel="stylesheet" href="style.css">
     <!-- Chart.js -->
@@ -1659,12 +1664,13 @@
             <h3 id="user-modal-title">Novo Usuário</h3>
             <button class="close-btn" onclick="closeUserModal()">&times;</button>
         </div>
+
         <form id="user-form" onsubmit="saveUser(event)">
             <div class="form-grid">
-                
+
                 <div class="form-group col-4">
                     <label class="form-label">Login*</label>
-                    <input type="text" class="form-control" id="user-login" required autocomplete="off" style="text-transform: uppercase;">
+                    <input type="text" class="form-control" id="user-login" required maxlength="15" style="text-transform: uppercase;">
                 </div>
                 <div class="form-group col-8">
                     <label class="form-label">Nome Completo*</label>
@@ -1672,12 +1678,11 @@
                 </div>
 
                 <div class="form-group col-6">
-                    <label class="form-label">Senha Inicial*</label>
-                    <input type="password" class="form-control" id="user-password" required minlength="4" autocomplete="new-password">
+                    <label class="form-label" id="label-user-password">Senha Inicial*</label>
+                    <input type="password" class="form-control" id="user-password" autocomplete="new-password">
                 </div>
                 <div class="form-group col-6">
-                    <label class="form-label">E-mail Recuperação*</label>
-                    <input type="email" class="form-control" id="user-email" placeholder="exemplo@email.com" required>
+                    <label class="form-label">E-mail para Recuperação</label> <input type="email" class="form-control" id="user-email" placeholder="exemplo@email.com">
                 </div>
 
                 <div class="form-group col-6">
@@ -1694,7 +1699,7 @@
                         <option value="Inativo">Inativo</option>
                     </select>
                 </div>
-
+                
             </div>
             <div id="user-error" class="error-message"></div>
             <div class="modal-actions">
@@ -1751,7 +1756,7 @@
                 </div>
                 <div class="form-group col-6">
                     <label class="form-label">Email</label>
-                    <input type="email" class="form-control" id="orientador-email">
+                    <input type="email" class="form-control" id="orientador-email" placeholder="nome@email.com">
                 </div>
                 <div class="form-group col-6">
                     <label class="form-label">Contato</label>
