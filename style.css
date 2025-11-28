@@ -3828,3 +3828,24 @@ table th {
 #restore-confirm-modal .modal-content {
     max-width: 600px !important;
 }
+
+/* Estilos para Datas de Vencimento na Integração */
+.date-valid {
+    color: #005580; /* Azul do tema */
+    font-weight: bold;
+}
+
+.date-expired {
+    color: var(--color-error); /* Vermelho */
+    font-weight: bold;
+}
+
+.days-remaining-valid {
+    color: var(--color-success);
+    font-weight: 500;
+}
+
+.days-remaining-expired {
+    color: var(--color-error);
+    font-weight: bold;
+}
