@@ -574,29 +574,38 @@ function initializeTheme() {
         btn.innerHTML = currentTheme === 'light' ? '🌙 Tema' : '☀️ Tema';
     }
 
-    // 3. ATUALIZAÇÃO DO CHART.JS (CORREÇÃO DE CORES DOS GRÁFICOS)
+    // 3. ATUALIZAÇÃO DO CHART.JS (CORREÇÃO FINA DE CORES)
     if (window.Chart) {
         if (currentTheme === 'dark') {
-            // Configurações para TEMA ESCURO
-            Chart.defaults.color = '#e0e0e0';         // Cor do texto (legendas, eixos)
-            Chart.defaults.borderColor = '#444444';   // Cor das linhas de grade
+            // --- TEMA ESCURO ---
+            // Texto branco suave
+            Chart.defaults.color = '#e0e0e0';
+            // Linhas de grade BEM TRANSPARENTES (apenas 10% de opacidade)
+            Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)'; 
         } else {
-            // Configurações para TEMA CLARO
-            Chart.defaults.color = '#666666';         // Cor do texto original
-            Chart.defaults.borderColor = '#e5e5e5';   // Cor das linhas de grade original
+            // --- TEMA CLARO ---
+            // Texto cinza escuro
+            Chart.defaults.color = '#666666';
+            // Linhas de grade cinza claro padrão
+            Chart.defaults.borderColor = 'rgba(0, 0, 0, 0.1)';
         }
+        
+        // Força a atualização de todos os gráficos existentes na tela para pegar a nova cor
+        Object.values(Chart.instances).forEach(chart => {
+            chart.options.scales.x && (chart.options.scales.x.grid.color = Chart.defaults.borderColor);
+            chart.options.scales.y && (chart.options.scales.y.grid.color = Chart.defaults.borderColor);
+            chart.update();
+        });
     }
 
-    // 4. Força a atualização da aba atual para redesenhar os gráficos com a nova cor
+    // 4. Força a atualização da aba atual
     const activeTab = document.querySelector('.tab-content.active');
     if (activeTab) {
-        // Pequeno delay para garantir que o CSS trocou antes de redesenhar
         setTimeout(() => {
             refreshCurrentTab(activeTab.id);
         }, 50);
     }
 }
-
 function toggleTheme() {
     if (currentTheme === 'light') {
         currentTheme = 'dark';
@@ -4031,10 +4040,13 @@ let chartInstanceColab = null;
 function initializeDashboardCharts() {
     if (!window.Chart) return;
 
-    // --- 0. EVOLUÇÃO (Histórico) ---
+    // ============================================================
+    // 0. EVOLUÇÃO DE IMPLANTAÇÕES (CORES INTERCALADAS)
+    // ============================================================
     const ctxEvo = document.getElementById('chartEvolution');
     if (ctxEvo) {
         if (chartInstanceEvo) chartInstanceEvo.destroy();
+        
         const dataMap = {};
         municipalities.forEach(m => {
             if (m.implantationDate) {
@@ -4042,7 +4054,14 @@ function initializeDashboardCharts() {
                 dataMap[y] = (dataMap[y] || 0) + 1;
             }
         });
+        
         const years = Object.keys(dataMap).sort();
+        
+        // LÓGICA DE CORES INTERCALADAS (Azul Escuro / Azul Claro)
+        const backgroundColors = years.map((_, index) => {
+            return index % 2 === 0 ? '#005580' : '#4080bf'; // Par = Escuro, Ímpar = Claro
+        });
+        
         chartInstanceEvo = new Chart(ctxEvo, {
             type: 'bar',
             data: {
@@ -4050,15 +4069,21 @@ function initializeDashboardCharts() {
                 datasets: [{
                     label: 'Novas Implantações',
                     data: years.map(y => dataMap[y]),
-                    backgroundColor: '#005580',
+                    backgroundColor: backgroundColors, // Usa a lista de cores criada acima
                     borderRadius: 4
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
         });
     }
 
-    // --- 1. SAÚDE DA CARTEIRA ---
+    // ============================================================
+    // 1. SAÚDE DA CARTEIRA (Rosca)
+    // ============================================================
     const ctx1 = document.getElementById('chartMunicipalityStatus');
     if (ctx1) {
         if (chartInstance1) chartInstance1.destroy();
@@ -4079,7 +4104,9 @@ function initializeDashboardCharts() {
         });
     }
 
-    // --- 2. PRODUTIVIDADE (12 MESES - ALTERADO) ---
+    // ============================================================
+    // 2. PRODUTIVIDADE (12 MESES)
+    // ============================================================
     const ctx2 = document.getElementById('chartProductivity');
     if (ctx2) {
         if (chartInstance2) chartInstance2.destroy();
@@ -4087,7 +4114,6 @@ function initializeDashboardCharts() {
         const dadosTreinamentos = [];
         const dadosVisitas = [];
         
-        // Loop aumentado para 12 meses (0 a 11)
         for (let i = 11; i >= 0; i--) {
             const d = new Date();
             d.setMonth(d.getMonth() - i);
@@ -4110,7 +4136,9 @@ function initializeDashboardCharts() {
         });
     }
 
-    // --- 3. TODOS OS MÓDULOS (ALTERADO) ---
+    // ============================================================
+    // 3. TOP MÓDULOS (COMPLETO)
+    // ============================================================
     const ctx3 = document.getElementById('chartTopModules');
     if (ctx3) {
         if (chartInstance3) chartInstance3.destroy();
@@ -4118,8 +4146,6 @@ function initializeDashboardCharts() {
         municipalities.forEach(m => {
             if (m.modules && Array.isArray(m.modules)) m.modules.forEach(mod => { modMap[mod] = (modMap[mod] || 0) + 1; });
         });
-        
-        // Ordena mas NÃO corta mais (Mostra todos)
         const sortedMods = Object.entries(modMap).sort((a,b) => b[1] - a[1]);
         
         chartInstance3 = new Chart(ctx3, {
@@ -4133,7 +4159,9 @@ function initializeDashboardCharts() {
         });
     }
 
-    // --- 4. GARGALOS ---
+    // ============================================================
+    // 4. GARGALOS DE SUPORTE
+    // ============================================================
     const ctx4 = document.getElementById('chartSupportBacklog');
     if (ctx4) {
         if (chartInstance4) chartInstance4.destroy();
@@ -4155,7 +4183,9 @@ function initializeDashboardCharts() {
         });
     }
 
-    // --- 5. DEMANDAS POR USUÁRIO ---
+    // ============================================================
+    // 5. DEMANDAS POR USUÁRIO
+    // ============================================================
     const ctxUser = document.getElementById('chartDemandsByUser');
     if (ctxUser) {
         if (chartInstanceUser) chartInstanceUser.destroy();
@@ -4173,7 +4203,9 @@ function initializeDashboardCharts() {
         });
     }
 
-    // --- 6. TREINAMENTOS POR COLABORADOR ---
+    // ============================================================
+    // 6. TREINAMENTOS POR COLABORADOR
+    // ============================================================
     const ctxColab = document.getElementById('chartTrainingByColab');
     if (ctxColab) {
         if (chartInstanceColab) chartInstanceColab.destroy();
