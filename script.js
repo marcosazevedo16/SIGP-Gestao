@@ -4333,7 +4333,6 @@ function populateFilterSelects() {
         const el = document.getElementById(id);
         if(el) el.onchange = renderIntegrations;
     });
-}
 
 function updateGlobalDropdowns() {
     // ------------------------------------------------------------------------
