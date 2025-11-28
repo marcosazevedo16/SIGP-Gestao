@@ -255,107 +255,85 @@
 
         <!-- Aba Dashboard -->
 
-        <section id="dashboard-section" class="tab-content active">
+        <div class="section-divider" style="margin-top: 0;"></div>
+<h3 style="text-align: center; text-transform: uppercase; color: var(--color-primary); margin-bottom: 20px;">1. Histórico</h3>
 
-            <div class="section-header">
+<div class="stats-cards" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
+    <div class="stat-card">
+        <h3 id="dashboard-municipalities-in-use">0</h3>
+        <p>Total de Municípios Utilizando SIGP Saúde</p>
+    </div>
+    <div class="stat-card">
+        <h3 id="dashboard-trainings-completed">0</h3>
+        <p>Total de Treinamentos Realizados</p>
+    </div>
+    <div class="stat-card">
+        <h3 id="dashboard-requests-completed">0</h3>
+        <p>Total de Solicitações Atendidas</p>
+    </div>
+    <div class="stat-card">
+        <h3 id="dashboard-presentations-completed">0</h3>
+        <p>Total de Apresentações Realizadas</p>
+    </div>
+</div>
 
-                <h2>Dashboard - Painel de Controle</h2>
-
-            </div>
-
-            <div class="stats-cards" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: var(--space-32);">
-
-                <div class="stat-card">
-
-                    <h3 id="dashboard-municipalities-in-use">0</h3>
-
-                    <p>Total de Municípios Utilizando SIGP Saúde</p>
-
-                </div>
-
-                <div class="stat-card">
-
-                    <h3 id="dashboard-trainings-completed">0</h3>
-
-                    <p>Total de Treinamentos Realizados</p>
-
-                </div>
-
-                <div class="stat-card">
-
-                    <h3 id="dashboard-requests-completed">0</h3>
-
-                    <p>Total de Solicitações Atendidas</p>
-
-                </div>
-
-                <div class="stat-card">
-
-                    <h3 id="dashboard-presentations-completed">0</h3>
-
-                    <p>Total de Apresentações Realizadas</p>
-
-                </div>
-
-            </div>
-
-            <div class="chart-card" style="margin-bottom: 24px;">
-    <h4>Evolução de Implantações por Ano (Histórico)</h4>
+<div class="chart-card" style="margin-bottom: 40px;">
+    <h4>Evolução de Implantações por Ano</h4>
     <div style="height: 300px;">
         <canvas id="chartEvolution"></canvas>
     </div>
 </div>
 
+<div class="section-divider"></div>
+<h3 style="text-align: center; text-transform: uppercase; color: var(--color-primary); margin-bottom: 20px;">2. Dados Operacionais</h3>
+
 <div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 24px;">
-    
     <div class="chart-card">
-        <h4>Saúde da Carteira</h4>
-        <div style="height: 250px;">
+        <h4>Saúde da Carteira de Clientes</h4>
+        <div style="height: 300px;">
             <canvas id="chartMunicipalityStatus"></canvas>
         </div>
     </div>
-
     <div class="chart-card">
-        <h4>Produtividade (6 Meses)</h4>
-        <div style="height: 250px;">
+        <h4>Produtividade Operacional (Últimos 12 Meses)</h4>
+        <div style="height: 300px;">
             <canvas id="chartProductivity"></canvas>
         </div>
     </div>
+</div>
 
+<div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 40px;">
     <div class="chart-card">
-        <h4>Top Módulos</h4>
-        <div style="height: 250px;">
+        <h4>Utilização de Módulos (Ranking Completo)</h4>
+        <div style="height: 400px;">
             <canvas id="chartTopModules"></canvas>
         </div>
     </div>
-
     <div class="chart-card">
         <h4>Gargalos de Suporte</h4>
-        <div style="height: 250px;">
+        <div style="height: 400px;">
             <canvas id="chartSupportBacklog"></canvas>
         </div>
     </div>
-
 </div>
 
+<div class="section-divider"></div>
+<h3 style="text-align: center; text-transform: uppercase; color: var(--color-primary); margin-bottom: 20px;">3. Performance de Equipe</h3>
+
 <div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 32px;">
-    
     <div class="chart-card">
         <h4>Demandas Cadastradas por Usuário</h4>
         <div style="height: 300px;">
             <canvas id="chartDemandsByUser"></canvas>
         </div>
     </div>
-
     <div class="chart-card">
         <h4>Treinamentos por Colaborador (Últimos 12 Meses)</h4>
         <div style="height: 300px;">
             <canvas id="chartTrainingByColab"></canvas>
         </div>
     </div>
-
 </div>
- </section>
 
         <!-- Aba Demandas do Suporte -->
 
