@@ -3819,3 +3819,9 @@ table th {
         grid-template-columns: 1fr !important; /* Força 1 coluna no celular/tablet */
     }
 }
+/* ==========================================================================
+   AJUSTE MODAL DE BACKUP (Fixar largura)
+   ========================================================================== */
+#restore-confirm-modal .modal-content {
+    max-width: 600px !important;
+}
