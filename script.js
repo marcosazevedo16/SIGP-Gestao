@@ -3587,7 +3587,9 @@ function renderCargos() {
     const c = document.getElementById('cargos-table');
     const countDiv = document.getElementById('cargos-total');
     if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`Total de Cargos/Funções cadastrados: <strong>${cargos.length}</strong>`; }
-
+// --- NOVA LINHA: ORDENAÇÃO ALFABÉTICA ---
+    cargos.sort((a, b) => a.name.localeCompare(b.name));
+    // ----------------------------------------
     const r = cargos.map(x => 
         `<tr>
             <td class="text-primary-cell">${x.name}</td>
@@ -3661,7 +3663,9 @@ function renderModulos() {
     const c = document.getElementById('modulos-table');
     const countDiv = document.getElementById('modulos-total');
     if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`Total de Módulos cadastrados: <strong>${modulos.length}</strong>`; }
-
+// --- NOVA LINHA: ORDENAÇÃO ALFABÉTICA ---
+    modulos.sort((a, b) => a.name.localeCompare(b.name));
+    // ----------------------------------------
     const r = modulos.map(m => 
         `<tr>
             <td class="text-primary-cell">${m.name}</td>
@@ -3731,7 +3735,20 @@ function renderFormas() {
     const countDiv = document.getElementById('formas-apresentacao-total');
     if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`<strong>${formasApresentacao.length}</strong> Formas cadastradas`; }
 
-    const r = formasApresentacao.map(f => `<tr><td class="text-primary-cell">${f.name}</td><td><button class="btn btn--sm" onclick="showFormaApresentacaoModal(${f.id})">✏️</button><button class="btn btn--sm" onclick="deleteForma(${f.id})">🗑️</button></td></tr>`).join('');
+    // --- NOVA LINHA: ORDENAÇÃO ALFABÉTICA ---
+    formasApresentacao.sort((a, b) => a.name.localeCompare(b.name));
+    // ----------------------------------------
+
+    const r = formasApresentacao.map(f => 
+        `<tr>
+            <td class="text-primary-cell">${f.name}</td>
+            <td>
+                <button class="btn btn--sm" onclick="showFormaApresentacaoModal(${f.id})">✏️</button>
+                <button class="btn btn--sm" onclick="deleteForma(${f.id})">🗑️</button>
+            </td>
+        </tr>`
+    ).join('');
+    
     c.innerHTML = `<table><thead><th>Forma</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
