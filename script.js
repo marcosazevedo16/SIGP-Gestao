@@ -3899,9 +3899,9 @@ function handleBackupFileSelect(event) {
                     { label: 'Colaboradores', dados: d.orientadores },
                     { label: 'Módulos do Sistema', dados: d.modulos || d.modules },
                     { label: 'Formas de Apresentação', dados: d.formasApresentacao },
-                    { label: 'Usuários do Sistema', dados: d.users }
+                    { label: 'Usuários do Sistema', dados: d.users },
                     { label: 'Integrações', dados: d.integrations },
-                    { label: 'Lista de APIs', dados: d.apisList },
+                    { label: 'Lista de APIs', dados: d.apisList }
                 ];
 
                 // Gera a lista na tela
