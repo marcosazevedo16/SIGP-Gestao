@@ -3807,8 +3807,11 @@ table th {
    Para formulários simples e rápidos */
 #cargo-modal .modal-content,
 #forma-apresentacao-modal .modal-content,
+/* ==========================================================================
+   AJUSTE FINO: Modal de Senha Compacto
+   ========================================================================== */
 #change-password-modal .modal-content {
-    max-width: 500px !important;
+    max-width: 400px !important; /* Bem estreito para focar na senha */
 }
 
 /* ==========================================================================
