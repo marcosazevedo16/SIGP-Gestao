@@ -655,6 +655,7 @@ function updateUserInterface() {
         'modulo-management-menu-btn',
         'municipality-list-management-menu-btn',
         'forma-apresentacao-management-menu-btn',
+        'api-config-menu-btn',
         'backup-menu-btn'
     ];
     
@@ -725,6 +726,8 @@ function refreshCurrentTab(sectionId) {
     if (sectionId === 'producao-section') renderProductions();
     if (sectionId === 'apresentacoes-section') renderPresentations();
     if (sectionId === 'versoes-section') renderVersions();
+    if (sectionId === 'apis-section') renderApiIntegrations();
+    if (sectionId === 'api-config-section') renderApiConfig();
     
     // --- AQUI ESTAVA FALTANDO ESTA LINHA ---
     if (sectionId === 'usuarios-section') renderUsers(); 
@@ -4476,6 +4479,20 @@ const munListSorted = municipalitiesList.slice().sort((a,b) => a.name.localeComp
         if(el) populateSelect(el, users, 'name', 'name');
     });
 
+// Filtros de API (Aba Principal)
+const elFiltroMunApi = document.getElementById('filter-api-int-municipality');
+if(elFiltroMunApi) {
+    elFiltroMunApi.innerHTML = '<option value="">Todos</option>' + 
+        municipalitiesList.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
+}
+
+const elFiltroApiList = document.getElementById('filter-api-int-api');
+if(elFiltroApiList) {
+    populateSelect(elFiltroApiList, apiConfig, 'name', 'name');
+    // Adiciona "Todas" no topo manualmente
+    elFiltroApiList.innerHTML = '<option value="">Todas</option>' + apiConfig.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+}
+
 // ----------------------------------------------------------------------------
 // FUNÇÕES DE COLABORADORES (ORIENTADORES) - ATUALIZADAS
 // ----------------------------------------------------------------------------
@@ -5104,4 +5121,272 @@ function sanitizeInput(input) {
     if (typeof input !== 'string') return input;
     // Remove tags HTML básicas para evitar injeção de código
     return input.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// ============================================================================
+// 25. MÓDULO DE APIs E INTEGRAÇÕES
+// ============================================================================
+
+// --- PARTE A: CONFIGURAÇÃO DE APIs (CRUD) ---
+
+function navigateToApiConfig() { toggleSettingsMenu(); openTab('api-config-section'); renderApiConfig(); }
+
+function showApiConfigModal(id = null) {
+    editingId = id;
+    document.getElementById('api-config-form').reset();
+    if(id) {
+        const a = apiConfig.find(x => x.id === id);
+        document.getElementById('api-config-name').value = a.name;
+        document.getElementById('api-config-description').value = a.description;
+    }
+    document.getElementById('api-config-modal').classList.add('show');
+}
+
+function saveApiConfig(e) {
+    e.preventDefault();
+    const name = sanitizeInput(document.getElementById('api-config-name').value);
+    const desc = sanitizeInput(document.getElementById('api-config-description').value);
+
+    // Validação duplicidade
+    if (!editingId && apiConfig.some(a => a.name.toLowerCase() === name.toLowerCase())) {
+        alert('Já existe uma API cadastrada com este nome.'); return;
+    }
+
+    const data = { name: name, description: desc };
+
+    if(editingId) {
+        const i = apiConfig.findIndex(x => x.id === editingId);
+        apiConfig[i] = { ...apiConfig[i], ...data };
+        logSystemAction('Edição', 'Config APIs', `Editou API: ${name}`);
+    } else {
+        apiConfig.push({ id: getNextId('apiConf'), ...data });
+        logSystemAction('Criação', 'Config APIs', `Nova API: ${name}`);
+    }
+    salvarNoArmazenamento('apiConfig', apiConfig);
+    document.getElementById('api-config-modal').classList.remove('show');
+    renderApiConfig();
+    updateGlobalDropdowns(); // Atualiza filtros da outra tela
+    showToast('API salva!');
+}
+
+function renderApiConfig() {
+    const filterVal = document.getElementById('filter-api-config-name').value.toLowerCase();
+    const filtered = apiConfig.filter(a => a.name.toLowerCase().includes(filterVal)).sort((a,b) => a.name.localeCompare(b.name));
+    
+    const countDiv = document.getElementById('api-config-total');
+    if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`Total de APIs cadastradas: <strong>${filtered.length}</strong>`; }
+
+    const c = document.getElementById('api-config-table');
+    if (filtered.length === 0) { c.innerHTML = '<div class="empty-state">Nenhuma API encontrada.</div>'; return; }
+
+    const rows = filtered.map(a => `
+        <tr>
+            <td class="text-primary-cell">${a.name}</td>
+            <td class="text-secondary-cell">${a.description}</td>
+            <td>
+                <button class="btn btn--sm" onclick="showApiConfigModal(${a.id})">✏️</button>
+                <button class="btn btn--sm" onclick="deleteApiConfig(${a.id})">🗑️</button>
+            </td>
+        </tr>`).join('');
+    c.innerHTML = `<table><thead><th>Nome da API</th><th>Descrição</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+}
+
+function deleteApiConfig(id) {
+    if(confirm('Excluir esta API? Isso não afetará integrações já salvas.')) {
+        apiConfig = apiConfig.filter(x => x.id !== id);
+        salvarNoArmazenamento('apiConfig', apiConfig);
+        renderApiConfig();
+    }
+}
+function closeApiConfigModal() { document.getElementById('api-config-modal').classList.remove('show'); }
+
+
+// --- PARTE B: GERENCIAMENTO DE INTEGRAÇÕES (ABA PRINCIPAL) ---
+
+let chartApiUsageInstance = null; // Variável para o gráfico
+
+function showApiIntegrationModal(id = null) {
+    editingId = id;
+    document.getElementById('api-integration-form').reset();
+    
+    // 1. Popula Municípios (Com UF)
+    const munSelect = document.getElementById('api-int-municipality');
+    if(munSelect) {
+        const sortedList = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
+        munSelect.innerHTML = '<option value="">Selecione...</option>' + 
+                              sortedList.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
+    }
+
+    // 2. Popula Checkboxes de APIs (Vindas da Config)
+    const divChecks = document.getElementById('api-int-checkboxes');
+    if (divChecks) {
+        if (apiConfig.length > 0) {
+            // Ordena alfabeticamente
+            const sortedApis = apiConfig.slice().sort((a,b) => a.name.localeCompare(b.name));
+            divChecks.innerHTML = sortedApis.map(api => 
+                `<label><input type="checkbox" value="${api.name}" class="api-int-check"> ${api.name}</label>`
+            ).join('');
+        } else {
+            divChecks.innerHTML = '<span style="color:red; font-size:12px;">Nenhuma API cadastrada em Configurações.</span>';
+        }
+    }
+
+    // 3. Edição
+    if (id) {
+        const item = apiIntegrations.find(x => x.id === id);
+        if(item) {
+            document.getElementById('api-int-municipality').value = item.municipality;
+            document.getElementById('api-int-expiration').value = item.expirationDate;
+            document.getElementById('api-int-obs').value = item.observation || '';
+            
+            // Marca checkboxes
+            if (item.apis) {
+                document.querySelectorAll('.api-int-check').forEach(cb => {
+                    cb.checked = item.apis.includes(cb.value);
+                });
+            }
+        }
+    }
+    document.getElementById('api-integration-modal').classList.add('show');
+}
+
+function saveApiIntegration(e) {
+    e.preventDefault();
+    const mun = document.getElementById('api-int-municipality').value;
+    const apis = Array.from(document.querySelectorAll('.api-int-check:checked')).map(cb => cb.value);
+    
+    if (apis.length === 0) { alert('Selecione pelo menos uma API.'); return; }
+
+    const data = {
+        municipality: mun,
+        expirationDate: document.getElementById('api-int-expiration').value,
+        apis: apis,
+        observation: sanitizeInput(document.getElementById('api-int-obs').value)
+    };
+
+    if(editingId) {
+        const i = apiIntegrations.findIndex(x => x.id === editingId);
+        apiIntegrations[i] = { ...apiIntegrations[i], ...data };
+        logSystemAction('Edição', 'Integrações', `Atualizou: ${mun}`);
+    } else {
+        apiIntegrations.push({ id: getNextId('apiInt'), ...data });
+        logSystemAction('Criação', 'Integrações', `Nova integração: ${mun}`);
+    }
+    
+    salvarNoArmazenamento('apiIntegrations', apiIntegrations);
+    document.getElementById('api-integration-modal').classList.remove('show');
+    renderApiIntegrations();
+    showToast('Salvo com sucesso!');
+}
+
+function renderApiIntegrations() {
+    const fMun = document.getElementById('filter-api-int-municipality').value;
+    const fApi = document.getElementById('filter-api-int-api').value;
+    const fStart = document.getElementById('filter-api-int-start').value;
+    const fEnd = document.getElementById('filter-api-int-end').value;
+
+    const filtered = apiIntegrations.filter(item => {
+        if (fMun && item.municipality !== fMun) return false;
+        if (fApi && !item.apis.includes(fApi)) return false;
+        if (fStart && item.expirationDate < fStart) return false;
+        if (fEnd && item.expirationDate > fEnd) return false;
+        return true;
+    }).sort((a,b) => new Date(a.expirationDate) - new Date(b.expirationDate)); // Ordena por data vencimento
+
+    const c = document.getElementById('api-int-table');
+    document.getElementById('api-int-results-count').style.display = 'block';
+    document.getElementById('api-int-results-count').innerHTML = `<strong>${filtered.length}</strong> integrações encontradas`;
+
+    if(filtered.length === 0) {
+        c.innerHTML = '<div class="empty-state">Nenhuma integração encontrada.</div>';
+    } else {
+        const rows = filtered.map(item => {
+            // Busca UF
+            const munData = municipalitiesList.find(m => m.name === item.municipality);
+            const munDisplay = munData ? `${item.municipality} - ${munData.uf}` : item.municipality;
+
+            // Tags de API
+            const tags = item.apis.map(api => 
+                `<span class="module-tag" style="background:#e0f2fe; color:#005580; border:1px solid #bae6fd;">${api}</span>`
+            ).join(' ');
+
+            // Cálculo de Dias
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            const venc = new Date(item.expirationDate + 'T00:00:00'); // Garante fuso
+            const diffTime = venc - hoje;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            let diaStyle = 'font-weight:bold; color: #005580;'; // Azul (Padrão)
+            let textoDias = `${diffDays} dias`;
+            let corDias = 'inherit';
+
+            if (diffDays < 0) {
+                diaStyle = 'font-weight:bold; color: #C85250;'; // Vermelho (Vencido)
+                textoDias = `Vencido há ${Math.abs(diffDays)} dias`;
+                corDias = '#C85250';
+            } else if (diffDays === 0) {
+                diaStyle = 'font-weight:bold; color: #E68161;'; // Laranja (Hoje)
+                textoDias = 'Vence Hoje!';
+                corDias = '#E68161';
+            }
+
+            return `<tr>
+                <td class="text-primary-cell">${munDisplay}</td>
+                <td class="module-tags-cell">${tags}</td>
+                <td style="text-align:center; ${diaStyle}">${formatDate(item.expirationDate)}</td>
+                <td style="text-align:center; color:${corDias}; font-weight:500;">${textoDias}</td>
+                <td class="text-secondary-cell">${item.observation || '-'}</td>
+                <td>
+                    <button class="btn btn--sm" onclick="showApiIntegrationModal(${item.id})">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteApiIntegration(${item.id})">🗑️</button>
+                </td>
+            </tr>`;
+        }).join('');
+        c.innerHTML = `<table><thead><th>Município</th><th>APIs Integradas</th><th style="text-align:center;">Vencimento</th><th style="text-align:center;">Situação</th><th>Observações</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+    }
+    updateApiCharts(filtered);
+}
+
+function deleteApiIntegration(id) {
+    if(confirm('Excluir esta integração?')) {
+        apiIntegrations = apiIntegrations.filter(x => x.id !== id);
+        salvarNoArmazenamento('apiIntegrations', apiIntegrations);
+        renderApiIntegrations();
+        logSystemAction('Exclusão', 'Integrações', `Integração ID ${id} excluída`);
+    }
+}
+function closeApiIntegrationModal() { document.getElementById('api-integration-modal').classList.remove('show'); }
+function clearApiIntFilters() {
+    ['filter-api-int-municipality', 'filter-api-int-api', 'filter-api-int-start', 'filter-api-int-end'].forEach(id => document.getElementById(id).value = '');
+    renderApiIntegrations();
+}
+
+// GRÁFICO DE APIS
+function updateApiCharts(data) {
+    const ctx = document.getElementById('chartApiUsage');
+    if (ctx && window.Chart) {
+        if (chartApiUsageInstance) chartApiUsageInstance.destroy();
+        
+        const apiCounts = {};
+        data.forEach(item => {
+            item.apis.forEach(api => { apiCounts[api] = (apiCounts[api] || 0) + 1; });
+        });
+
+        const sorted = Object.entries(apiCounts).sort((a,b) => b[1] - a[1]); // Do maior pro menor
+
+        chartApiUsageInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: sorted.map(i => i[0]),
+                datasets: [{
+                    label: 'Municípios utilizando',
+                    data: sorted.map(i => i[1]),
+                    backgroundColor: '#005580',
+                    borderRadius: 4
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+        });
+    }
 }
