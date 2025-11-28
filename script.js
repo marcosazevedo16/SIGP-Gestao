@@ -4264,7 +4264,7 @@ function populateFilterSelects() {
         'filter-request-municipality',      // Aba Solicitações
         'filter-presentation-municipality', // Aba Apresentações
         'filter-visit-municipality',        // Aba Visitas
-        'filter-production-municipality'
+        'filter-production-municipality',
         'filter-integration-municipality'
     ];
 
