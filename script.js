@@ -4252,27 +4252,34 @@ function populateSelect(select, data, valKey, textKey) {
     select.value = current;
 }
 
-function populateFilterSelects() {
-    // 1. MUNICÍPIOS (Adicionamos o filtro da aba Integração aqui)
-    const allMunFilters = [
+// 1. FILTRO DE MUNICÍPIOS (Geral e Integrações)
+    const munFilterIds = [
         'filter-municipality-name',
         'filter-task-municipality',
         'filter-request-municipality',
         'filter-presentation-municipality',
         'filter-visit-municipality',
         'filter-production-municipality',
-        'filter-integration-municipality' // <--- ADICIONADO AGORA
+        'filter-integration-municipality' // <--- Foco aqui
     ];
 
-    if (typeof municipalitiesList !== 'undefined') {
-        const sortedMaster = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
-        allMunFilters.forEach(id => {
+    if (typeof municipalitiesList !== 'undefined' && municipalitiesList.length > 0) {
+        // Ordena
+        const sortedMun = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
+        
+        munFilterIds.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 const currentVal = el.value;
+                // Recria o HTML mantendo a opção "Todos"
                 el.innerHTML = '<option value="">Todos</option>' + 
-                               sortedMaster.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-                if(currentVal) el.value = currentVal;
+                               sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+                if (currentVal) el.value = currentVal;
+                
+                // Adiciona o evento de refresh se for o filtro da integração
+                if (id === 'filter-integration-municipality') {
+                    el.onchange = renderIntegrations;
+                }
             }
         });
     }
@@ -4319,145 +4326,157 @@ function populateFilterSelects() {
     });
 }
 
-// 5. FILTRO DE API (Aba Integrações) - CORREÇÃO CRÍTICA
+// 5. FILTRO DE API INTEGRADA (Específico da aba)
     const apiFilterEl = document.getElementById('filter-integration-api');
-    if(apiFilterEl && typeof apisList !== 'undefined') {
-        const cur = apiFilterEl.value;
+    
+    // Verifica se o elemento existe E se a lista de APIs tem dados
+    if (apiFilterEl && typeof apisList !== 'undefined') {
+        const curApi = apiFilterEl.value;
         const sortedApis = apisList.slice().sort((a,b) => a.name.localeCompare(b.name));
-        apiFilterEl.innerHTML = '<option value="">Todas</option>' + sortedApis.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
-        if(cur) apiFilterEl.value = cur;
-    }
-    
-    // 6. Atualiza listeners dos filtros da aba Integração
-    ['filter-integration-municipality', 'filter-integration-api', 'filter-integration-status'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.onchange = renderIntegrations;
-    });
-
-function updateGlobalDropdowns() {
-    // ------------------------------------------------------------------------
-    // REGRA ÚNICA: TODOS OS DROPDOWNS DE MUNICÍPIO USAM A LISTA MESTRA
-    // ------------------------------------------------------------------------
-    
-    // 1. Prepara a lista ordenada (Fonte: Configurações > Cadastro de Municípios)
-    const listaMestraOrdenada = municipalitiesList.slice().sort((a,b) => a.name.localeCompare(b.name));
-
-    // 2. Lista de TODOS os IDs de selects de município (Filtros + Formulários)
-    const allMunicipalitySelects = [
-        // Formulários (Modais)
-        'task-municipality',
-        'request-municipality',
-        'visit-municipality',
-        'production-municipality',
-        'presentation-municipality',
-        'municipality-name', // O próprio cadastro de cliente também busca da lista mestra
         
-        // Filtros (Acima das tabelas)
-        'filter-municipality-name', 
-        'filter-task-municipality', 
-        'filter-request-municipality', 
-        'filter-visit-municipality', 
-        'filter-production-municipality',
-        'filter-presentation-municipality'
+        apiFilterEl.innerHTML = '<option value="">Todas</option>' + 
+                                sortedApis.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+        
+        if (curApi) apiFilterEl.value = curApi;
+        
+        // Garante que ao mudar, a tabela atualize
+        apiFilterEl.onchange = renderIntegrations;
+    }
+
+    // 6. Listener para o Filtro de Status
+    const statusFilter = document.getElementById('filter-integration-status');
+    if (statusFilter) {
+        statusFilter.onchange = renderIntegrations;
+    }
+}
+
+// ============================================================================
+// FUNÇÕES DE ATUALIZAÇÃO DE DROPDOWNS (FILTROS E FORMULÁRIOS)
+// ============================================================================
+
+// 1. ATUALIZA DROPDOWNS DOS MODAIS (FORMULÁRIOS DE CADASTRO)
+function updateGlobalDropdowns() {
+    
+    // Lista de IDs dos selects de município dentro dos formulários
+    const formMunSelects = [
+        'task-municipality', 
+        'request-municipality', 
+        'visit-municipality', 
+        'production-municipality', 
+        'presentation-municipality', 
+        'municipality-name',
+        'integration-municipality' // Modal de integração
     ];
 
-    // 3. Aplica a lista em todos os campos
-    allMunicipalitySelects.forEach(id => {
+    // Prepara a lista ordenada (Nome - UF)
+    // Verifica se a lista existe para evitar erros
+    const listaMestra = (typeof municipalitiesList !== 'undefined') ? 
+        municipalitiesList.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
+
+    // Preenche os selects de município nos formulários
+    formMunSelects.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-            const currentVal = el.value; // Tenta manter o que estava selecionado
-            
-            // Se for Filtro, adiciona a opção "Todos". Se for Formulário, adiciona "Selecione..."
-            const isFilter = id.startsWith('filter-');
-            const defaultOption = isFilter ? '<option value="">Todos</option>' : '<option value="">Selecione o município</option>';
-            
-            el.innerHTML = defaultOption + 
-                           // Agora exibe o Nome + UF no texto da opção
-listaMestraOrdenada.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
-            
+            const currentVal = el.value;
+            // Modais de cadastro não tem opção "Todos", apenas "Selecione..."
+            el.innerHTML = '<option value="">Selecione o município</option>' + 
+                           listaMestra.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
             el.value = currentVal;
         }
     });
 
-    // ------------------------------------------------------------------------
-    // OUTROS DROPDOWNS (Cargos, Colaboradores, Usuários)
-    // ------------------------------------------------------------------------
-
-    // Cargos (Modal e Filtro)
-    const cargoSelects = ['task-trained-position', 'filter-task-position'];
-    cargoSelects.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) populateSelect(el, cargos, 'name', 'name');
+    // Preenche Cargos (Modal Treinamento)
+    const cargoSelects = ['task-trained-position'];
+    cargoSelects.forEach(id => { 
+        const el = document.getElementById(id); 
+        if(el) populateSelect(el, cargos, 'name', 'name'); 
     });
 
-    // Colaboradores (Modal e Filtros)
-    // Nota: O modal de apresentação usa checkboxes (tratado no showModal), aqui são só selects
-    const colabSelects = ['task-performed-by', 'filter-task-performer', 'filter-presentation-orientador'];
-    colabSelects.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) populateSelect(el, orientadores, 'name', 'name');
+    // Preenche Colaboradores (Modal Treinamento)
+    const colabSelects = ['task-performed-by'];
+    colabSelects.forEach(id => { 
+        const el = document.getElementById(id); 
+        if(el) populateSelect(el, orientadores, 'name', 'name'); 
     });
-    
-    // Usuários (Filtros)
-    ['filter-request-user', 'filter-demand-user'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) populateSelect(el, users, 'name', 'name');
-    });
+
+    // CHAMA A FUNÇÃO QUE ATUALIZA OS FILTROS DAS TABELAS
+    if (typeof populateFilterSelects === 'function') {
+        populateFilterSelects();
+    }
 }
 
-    // 2. Preencher Selects de Municípios nos FILTROS (Acima das tabelas)
-    const filterSelects = [
+// 2. ATUALIZA OS FILTROS (TOPO DAS TABELAS) - TODAS AS ABAS
+function populateFilterSelects() {
+    
+    // Ordena as listas para usar nos filtros
+    const sortedMun = (typeof municipalitiesList !== 'undefined') ? municipalitiesList.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
+    const sortedApis = (typeof apisList !== 'undefined') ? apisList.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
+    const sortedOrient = (typeof orientadores !== 'undefined') ? orientadores.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
+    const sortedCargos = (typeof cargos !== 'undefined') ? cargos.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
+    const sortedUsers = (typeof users !== 'undefined') ? users.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
+
+    // 1. FILTROS DE MUNICÍPIO (Todas as abas)
+    const munFilterIds = [
         'filter-municipality-name', 
         'filter-task-municipality', 
-        'filter-request-municipality', 
+        'filter-request-municipality',
         'filter-visit-municipality', 
-        'filter-production-municipality',
-        'filter-presentation-municipality'
+        'filter-production-municipality', 
+        'filter-presentation-municipality',
+        'filter-integration-municipality' // Aba Integração
     ];
 
-const munListSorted = municipalitiesList.slice().sort((a,b) => a.name.localeCompare(b.name));
-
-    filterSelects.forEach(id => {
+    munFilterIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-            const currentVal = el.value;
-            // Recria as opções mantendo "Todos" no topo
+            const cur = el.value;
+            // Filtros tem a opção "Todos"
             el.innerHTML = '<option value="">Todos</option>' + 
-                           munListSorted.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-            el.value = currentVal; // Tenta manter o valor selecionado pelo usuário
+                           sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+            if(cur) el.value = cur;
+            
+            // Listener específico para a aba de integração atualizar ao mudar
+            if(id === 'filter-integration-municipality') el.onchange = renderIntegrations;
         }
     });
 
-    // 3. Preencher Select de CARGOS no Modal de Treinamento
-    const elCargo = document.getElementById('task-trained-position');
-    if(elCargo) populateSelect(elCargo, cargos, 'name', 'name');
+    // 2. FILTRO DE API (Aba Integração)
+    const apiFilter = document.getElementById('filter-integration-api');
+    if (apiFilter) {
+        const cur = apiFilter.value;
+        apiFilter.innerHTML = '<option value="">Todas</option>' + 
+                              sortedApis.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+        if(cur) apiFilter.value = cur;
+        apiFilter.onchange = renderIntegrations;
+    }
 
-    // 4. Preencher Select de COLABORADORES no Modal de Treinamento e Apresentação
-    ['task-performed-by', 'presentation-orientador-checkboxes'].forEach(id => {
-        // Apenas para selects simples (task), checkboxes são tratados no showModal
-        const el = document.getElementById('task-performed-by');
-        if(el) populateSelect(el, orientadores, 'name', 'name');
+    // 3. OUTROS FILTROS (Treinamentos e Apresentações)
+    ['filter-task-performer', 'filter-presentation-orientador'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) { 
+            const c=el.value; 
+            el.innerHTML = '<option value="">Todos</option>' + sortedOrient.map(o => `<option value="${o.name}">${o.name}</option>`).join(''); 
+            if(c) el.value=c; 
+        }
     });
-    
-    // 5. Popula Filtros de Colaborador e Cargo
-    const elFiltroColab = document.getElementById('filter-task-performer');
-    if(elFiltroColab) populateSelect(elFiltroColab, orientadores, 'name', 'name');
-    
-    const elFiltroColabPres = document.getElementById('filter-presentation-orientador');
-    if(elFiltroColabPres) populateSelect(elFiltroColabPres, orientadores, 'name', 'name');
 
-    const elFiltroCargo = document.getElementById('filter-task-position');
-    if(elFiltroCargo) populateSelect(elFiltroCargo, cargos, 'name', 'name');
-    
-    // 6. Popula Filtros de Usuário
+    const cargoEl = document.getElementById('filter-task-position');
+    if(cargoEl) { 
+        const c=cargoEl.value; 
+        cargoEl.innerHTML = '<option value="">Todos</option>' + sortedCargos.map(o => `<option value="${o.name}">${o.name}</option>`).join(''); 
+        if(c) cargoEl.value=c; 
+    }
+
+    // 4. FILTROS DE USUÁRIO (Solicitações e Demandas)
     ['filter-request-user', 'filter-demand-user'].forEach(id => {
         const el = document.getElementById(id);
-        if(el) populateSelect(el, users, 'name', 'name');
+        if(el) { 
+            const c=el.value; 
+            el.innerHTML = '<option value="">Todos</option>' + sortedUsers.map(o => `<option value="${o.name}">${o.name}</option>`).join(''); 
+            if(c) el.value=c; 
+        }
     });
-
-// ----------------------------------------------------------------------------
-// FUNÇÕES DE COLABORADORES (ORIENTADORES) - ATUALIZADAS
-// ----------------------------------------------------------------------------
+}
 
 // 5. Salvar Colaborador (Com novos campos: Email e Nascimento)
 function saveOrientador(e){ 
@@ -5236,16 +5255,25 @@ function closeApiListModal() { document.getElementById('api-list-modal').classLi
 let chartInstanceApis = null;
 
 // Helper: Calcula diferença de dias
+// CORREÇÃO: Cálculo de dias preciso (Ignora fuso horário e horas)
 function getDaysDiff(dateString) {
     if (!dateString) return null;
-    const targetDate = new Date(dateString);
+
+    // Data Alvo (Vencimento)
+    const parts = dateString.split('-'); // Quebra "2025-11-29"
+    // Cria data localmente: Ano, Mês (0-indexado), Dia, 12h (Meio dia para evitar bug de verão)
+    const targetDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+
+    // Data Hoje (Sistema)
     const today = new Date();
-    // Zera horas para comparação justa
-    today.setHours(0,0,0,0);
-    targetDate.setHours(0,0,0,0);
+    today.setHours(12, 0, 0, 0); // Também seta para meio dia
+
+    // Diferença em milissegundos
+    const diffTime = targetDate.getTime() - today.getTime();
     
-    const diffTime = targetDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    // Converte para dias e arredonda
+    const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
+
     return diffDays;
 }
 
