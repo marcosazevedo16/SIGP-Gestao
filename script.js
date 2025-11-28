@@ -515,7 +515,7 @@ const DADOS_PADRAO = {
     systemVersions: [],
     cargos: [],
     orientadores: [],
-    formasApresentacao: []
+    formasApresentacao: [],
     integrations: [], // NOVO
     apisList: []      // NOVO
 };
