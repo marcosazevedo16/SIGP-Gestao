@@ -115,18 +115,15 @@
                     </button>
 
                     <div class="settings-menu" id="settings-menu">
-
                         <button class="settings-menu-item" id="user-management-menu-btn" style="display: none;" onclick="navigateToUserManagement()">👥 Gestão de Usuários</button>
-
                         <button class="settings-menu-item" onclick="showChangePasswordModal()">🔒 Alterar Senha</button>
-
                         <div class="settings-divider" id="admin-divider" style="display: none;"></div>
-
                         <button class="settings-menu-item" id="cargo-management-menu-btn" style="display: none;" onclick="navigateToCargoManagement()">💼 Cadastro de Cargo/Função</button>
                         <button class="settings-menu-item" id="orientador-management-menu-btn" style="display: none;" onclick="navigateToOrientadorManagement()">👨‍🏫 Cadastro de Colaborador</button>
                         <button class="settings-menu-item" id="modulo-management-menu-btn" style="display: none;" onclick="navigateToModuloManagement()">📦 Cadastro de Módulos</button>
                         <button class="settings-menu-item" id="municipality-list-management-menu-btn" style="display: none;" onclick="navigateToMunicipalityListManagement()">🏙️ Cadastro de Municípios</button>
                         <button class="settings-menu-item" id="forma-apresentacao-management-menu-btn" style="display: none;" onclick="navigateToFormaApresentacaoManagement()">📋 Formas de Apresentação</button>
+                        <button class="settings-menu-item" id="api-list-management-menu-btn" style="display: none;" onclick="navigateToApiListManagement()">🔗 Cadastro de APIs</button>
                         <button class="settings-menu-item" id="backup-menu-btn" style="display: none;" onclick="navigateToBackupManagement()">💾 Backup e Restauração</button>
                         <button class="settings-menu-item" id="audit-menu-btn" style="display: none;" onclick="navigateToAudit()">🕵️ Auditoria (Logs)</button>
 
@@ -1398,13 +1395,71 @@
 
         </section>
 
-        <section id="apis-section" class="tab-content">
+       <section id="apis-section" class="tab-content">
     <div class="section-header">
-        <h2>APIs de Integração</h2>
+        <h2>Gerenciamento de Integrações</h2>
+        <button class="btn btn--primary" onclick="showIntegrationModal()">+ Nova Integração</button>
     </div>
-    <div class="empty-state">
-        <p>Funcionalidade em desenvolvimento.</p>
+
+    <h3 class="section-subtitle">Filtros</h3>
+    <div class="filters-section">
+        <div class="filters-grid">
+            <div class="form-group">
+                <label class="form-label">Município</label>
+                <select class="form-control" id="filter-integration-municipality">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">API Integrada</label>
+                <select class="form-control" id="filter-integration-api">
+                    <option value="">Todas</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Vencimento (Início)</label>
+                <input type="date" class="form-control" id="filter-integration-start" onchange="validateDateRange('integration')">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Vencimento (Fim)</label>
+                <input type="date" class="form-control" id="filter-integration-end" onchange="validateDateRange('integration')">
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: flex-end;">
+                <button class="btn btn--secondary btn--full-width" onclick="clearIntegrationFilters()">Limpar Filtros</button>
+            </div>
+        </div>
     </div>
+
+    <div id="integrations-results-count" class="results-count" style="display: none;"></div>
+
+    <div class="tasks-table" id="integrations-table"></div>
+
+    <div class="section-divider"></div>
+
+    <div class="charts-section">
+        <h4>Estatísticas de Integração</h4>
+        <div class="charts-grid">
+            <div class="chart-card chart-card--wide">
+                <h4>Utilização por API</h4>
+                <div style="height: 300px;">
+                    <canvas id="chartApisUsage"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="apis-list-section" class="tab-content">
+    <div class="section-header">
+        <h2>Cadastro de APIs</h2>
+        <button class="btn btn--primary" onclick="showApiListModal()">+ Nova API</button>
+    </div>
+    <div id="apis-list-total" class="results-count" style="display: none; margin-bottom: 16px;"></div>
+    <div class="municipalities-table" id="apis-list-table"></div>
 </section>
 
 <section id="info-colaboradores-section" class="tab-content">
@@ -2152,6 +2207,72 @@
 
             <div class="modal-actions">
                 <button type="button" class="btn btn--secondary" onclick="closeProductionModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="api-list-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="api-list-modal-title">Nova API</h3>
+            <button class="close-btn" onclick="closeApiListModal()">&times;</button>
+        </div>
+        <form id="api-list-form" onsubmit="saveApiList(event)">
+            <div class="form-grid">
+                <div class="form-group col-12">
+                    <label class="form-label">Nome da API*</label>
+                    <input type="text" class="form-control" id="api-list-name" required>
+                </div>
+                <div class="form-group col-12">
+                    <label class="form-label">Descrição*</label>
+                    <textarea class="form-control" id="api-list-description" rows="3" required></textarea>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeApiListModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+         <!-- Modal para Cadastro de API -->
+<div id="integration-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="integration-modal-title">Nova Integração</h3>
+            <button class="close-btn" onclick="closeIntegrationModal()">&times;</button>
+        </div>
+        <form id="integration-form" onsubmit="saveIntegration(event)">
+            <div class="form-grid">
+                <div class="form-group col-6">
+                    <label class="form-label">Município*</label>
+                    <select class="form-control" id="integration-municipality" required>
+                        <option value="">Selecione o município</option>
+                    </select>
+                </div>
+                <div class="form-group col-6">
+                    <label class="form-label">Vencimento do Certificado*</label>
+                    <input type="date" class="form-control" id="integration-expiration" required>
+                </div>
+                
+                <div class="form-group col-12">
+                    <label class="form-label">APIs Integradas*</label>
+                    <div class="checkbox-grid" id="integration-api-checkboxes" style="grid-template-columns: repeat(3, 1fr);">
+                        </div>
+                </div>
+
+                <div class="form-group col-12">
+                    <label class="form-label">Observação (máx. 250)</label>
+                    <textarea class="form-control" id="integration-observation" rows="3" maxlength="250"
+                        oninput="document.getElementById('integration-char-counter').textContent = this.value.length + ' / 250'"></textarea>
+                    <div class="char-counter" id="integration-char-counter">0 / 250</div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeIntegrationModal()">Cancelar</button>
                 <button type="submit" class="btn btn--primary">Salvar</button>
             </div>
         </form>
