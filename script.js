@@ -3944,78 +3944,107 @@ function confirmRestore() {
     if (!pendingBackupData) return;
     
     // =================================================================
-    // SEGURANÇA: BACKUP AUTOMÁTICO ANTES DE SOBRESCREVER
+    // 1. SEGURANÇA: BACKUP AUTOMÁTICO ANTES DE SOBRESCREVER
     // =================================================================
-    // Isso garante que, se o usuário restaurar o arquivo errado,
-    // ele terá uma cópia do que existia no sistema até 1 segundo atrás.
     try {
         const agora = new Date();
         const timeTag = String(agora.getHours()).padStart(2,'0') + 'h' + String(agora.getMinutes()).padStart(2,'0');
         const nomeSeguranca = `AUTO-BACKUP_antes_de_restaurar_${timeTag}`;
         
-        // Chama a função de backup forçando esse nome especial
-        createBackup(nomeSeguranca);
-        
-        alert('🛡️ SISTEMA DE SEGURANÇA:\n\nUm backup automático dos seus dados atuais foi baixado para a pasta Downloads ("' + nomeSeguranca + '").\n\nIsso garante que você possa desfazer essa ação se necessário.');
+        createBackup(nomeSeguranca); // Salva o estado ATUAL antes de mudar
         
     } catch (err) {
         console.error("Erro ao criar backup de segurança:", err);
-        if(!confirm("Erro ao gerar backup de segurança automático. Deseja continuar mesmo assim? (Dados atuais serão perdidos)")) {
+        if(!confirm("Erro ao gerar backup de segurança automático. Deseja continuar mesmo assim?")) {
             return;
         }
     }
-    // =================================================================
 
-    const d = pendingBackupData.data; // Atalho para os novos dados
+    const d = pendingBackupData.data; // Dados do arquivo novo
     
-    // 1. Limpa tudo atual
-    localStorage.clear();
+    // =================================================================
+    // 2. ATUALIZAÇÃO DA MEMÓRIA (RAM) - O SEGREDO DO "SEM RELOAD"
+    // =================================================================
+    // Precisamos atualizar as variáveis globais manualmente para o JS "ver" os dados novos
     
-    // 2. Função auxiliar segura
-    const safeSave = (key, value, defaultVal = []) => {
-        localStorage.setItem(key, JSON.stringify(value || defaultVal));
-    };
+    users = d.users || [];
+    municipalities = d.municipalities || [];
+    municipalitiesList = d.municipalitiesList || [];
+    tasks = d.tasks || d.trainings || [];
+    requests = d.requests || [];
+    demands = d.demands || [];
+    visits = d.visits || [];
+    productions = d.productions || [];
+    presentations = d.presentations || [];
+    systemVersions = d.systemVersions || [];
+    cargos = d.cargos || [];
+    orientadores = d.orientadores || [];
+    modulos = d.modules || d.modulos || [];
+    formasApresentacao = d.formasApresentacao || [];
+    auditLogs = d.auditLogs || [];
+    counters = d.counters || {};
+
+    // =================================================================
+    // 3. PERSISTÊNCIA (Salvar no LocalStorage)
+    // =================================================================
+    // Agora salvamos esses dados novos no navegador
+    salvarNoArmazenamento('users', users);
+    salvarNoArmazenamento('municipalities', municipalities);
+    salvarNoArmazenamento('municipalitiesList', municipalitiesList);
+    salvarNoArmazenamento('tasks', tasks);
+    salvarNoArmazenamento('requests', requests);
+    salvarNoArmazenamento('demands', demands);
+    salvarNoArmazenamento('visits', visits);
+    salvarNoArmazenamento('productions', productions);
+    salvarNoArmazenamento('presentations', presentations);
+    salvarNoArmazenamento('systemVersions', systemVersions);
+    salvarNoArmazenamento('cargos', cargos);
+    salvarNoArmazenamento('orientadores', orientadores);
+    salvarNoArmazenamento('modulos', modulos);
+    salvarNoArmazenamento('formasApresentacao', formasApresentacao);
+    salvarNoArmazenamento('auditLogs', auditLogs);
+    salvarNoArmazenamento('counters', counters);
+
+    // =================================================================
+    // 4. VERIFICAÇÃO DE SESSÃO (SEGURANÇA)
+    // =================================================================
+    // Verifica se o usuário que está logado AINDA EXISTE no backup novo.
+    // Se ele foi apagado no backup que subiu, precisamos deslogar.
+    const userStillExists = users.find(u => u.login === currentUser.login);
     
-    // 3. Restaura Item por Item
-    safeSave('users', d.users);
-    safeSave('municipalities', d.municipalities);
-    safeSave('municipalitiesList', d.municipalitiesList);
-    safeSave('tasks', d.tasks || d.trainings); 
-    safeSave('requests', d.requests);
-    safeSave('demands', d.demands);
-    safeSave('visits', d.visits);
-    safeSave('productions', d.productions);
-    safeSave('presentations', d.presentations);
-    safeSave('systemVersions', d.systemVersions);
-    safeSave('cargos', d.cargos);
-    safeSave('orientadores', d.orientadores);
-    safeSave('modulos', d.modules || d.modulos);
-    safeSave('formasApresentacao', d.formasApresentacao);
-    
-    // Restaura auditoria e contadores
-    safeSave('auditLogs', d.auditLogs); // Restaura histórico de logs também
-    if (d.counters) {
-        localStorage.setItem('counters', JSON.stringify(d.counters));
+    if (!userStillExists) {
+        alert('⚠️ Aviso: O usuário logado não existe no backup restaurado.\nVocê será desconectado.');
+        localStorage.removeItem('currentUser');
+        location.reload(); // Aqui o reload é obrigatório para sair
+        return;
+    } else {
+        // Atualiza as permissões do usuário logado caso tenham mudado no backup
+        currentUser = userStillExists;
+        salvarNoArmazenamento('currentUser', currentUser);
     }
 
-    // 4. Auditoria da Ação
-    // (Precisamos salvar manualmente no array e no localStorage agora, pois o reload vem a seguir)
-    // Mas como vamos dar reload, o log se perderia se não salvo no storage novo.
-    // Vamos adicionar um log no novo banco:
-    let newLogs = d.auditLogs || [];
-    newLogs.unshift({
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        user: currentUser ? currentUser.name : 'Admin',
-        action: 'Restauração',
-        target: 'Sistema Completo',
-        details: 'Restaurou backup de: ' + (pendingBackupData.date || 'Data desconhecida')
-    });
-    localStorage.setItem('auditLogs', JSON.stringify(newLogs));
+    // =================================================================
+    // 5. ATUALIZAÇÃO VISUAL (UI) - "HOT RELOAD"
+    // =================================================================
+    
+    // Registra a auditoria no novo banco de dados
+    logSystemAction('Restauração', 'Sistema', 'Backup restaurado manualmente');
 
-    // 5. Feedback e Reload
-    alert('✅ Restauração realizada com sucesso!\nO sistema será reiniciado com os novos dados.');
-    location.reload();
+    // Atualiza dropdowns, menus e nome do usuário
+    updateUserInterface();
+    updateGlobalDropdowns();
+    
+    // Descobre qual aba está aberta e força o render dela
+    const activeSection = document.querySelector('.tab-content.active');
+    if (activeSection) {
+        refreshCurrentTab(activeSection.id);
+    }
+    
+    // Fecha o modal
+    closeRestoreConfirmModal();
+    
+    // Feedback visual elegante
+    showToast('✅ Dados restaurados com sucesso!', 'success');
 }
 
 // ----------------------------------------------------------------------------
