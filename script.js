@@ -776,6 +776,14 @@ function handleLogin(e) {
     const login = document.getElementById('login-username').value.trim().toUpperCase();
     const pass = document.getElementById('login-password').value;
     
+    // 1. Verifica se está bloqueado (Rate Limit)
+    try {
+        checkLoginAttempts(login);
+    } catch (erro) {
+        alert(erro.message);
+        return;
+    }
+
     const user = users.find(function(u) {
         return u.login === login && u.status === 'Ativo';
     });
@@ -783,20 +791,38 @@ function handleLogin(e) {
     if (user) {
         const hashedPassword = hashPassword(pass, user.salt);
         if (hashedPassword === user.passwordHash) {
+            // SUCESSO
             currentUser = user;
             isAuthenticated = true;
-            // AUDITORIA
-logSystemAction('Login', 'Acesso', 'Usuário realizou login no sistema');
+            
+            // Reseta tentativas falhas
+            resetLoginAttempts(login);
+            
+            // Log de Auditoria
+            logSystemAction('Login', 'Acesso', 'Usuário realizou login no sistema');
+            
             salvarNoArmazenamento('currentUser', currentUser);
             
             checkAuthentication();
             initializeApp();
+            
+            // Inicia monitoramento de inatividade
+            initializeInactivityTracking();
+            
             showToast(`Bem-vindo, ${user.name}!`, 'success');
             return;
         }
     }
     
+    // FALHA
+    recordFailedAttempt(login);
     document.getElementById('login-error').textContent = 'Login ou senha incorretos.';
+    
+    // Mostra tentativas restantes se estiver quase bloqueando
+    if (loginAttempts[login] && loginAttempts[login].count > 2) {
+        const restantes = MAX_LOGIN_ATTEMPTS - loginAttempts[login].count;
+        alert(`⚠️ Senha incorreta. Você tem mais ${restantes} tentativas antes do bloqueio.`);
+    }
 }
 
 function checkAuthentication() {
@@ -804,6 +830,9 @@ function checkAuthentication() {
         document.getElementById('login-screen').classList.remove('active');
         document.getElementById('main-app').classList.add('active');
         updateUserInterface();
+        
+        // ATIVA PROTEÇÃO DE INATIVIDADE
+        initializeInactivityTracking();
     } else {
         document.getElementById('login-screen').classList.add('active');
         document.getElementById('main-app').classList.remove('active');
@@ -975,25 +1004,24 @@ munSelect.innerHTML = '<option value="">Selecione o município</option>' +
 
 function saveMunicipality(e) {
     e.preventDefault();
-    const name = document.getElementById('municipality-name').value;
+    // Sanitiza inputs de texto
+    const name = sanitizeInput(document.getElementById('municipality-name').value);
     const status = document.getElementById('municipality-status').value;
-    const mods = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(function(cb) { 
-        return cb.value; 
-    });
+    const mods = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
     
     // Validação Duplicidade
-    if (!editingId && municipalities.some(function(m) { return m.name === name; })) {
+    if (!editingId && municipalities.some(m => m.name === name)) {
         alert('Erro: Este município já está cadastrado na carteira!');
         return;
     }
 
-    // Validação "Em Uso" (PDF)
+    // Validação "Em Uso"
     if (status === 'Em uso' && mods.length === 0) {
         alert('Erro: Para status "Em Uso", selecione pelo menos um módulo.');
         return;
     }
 
-    // Validação "Bloqueado" (PDF)
+    // Validação "Bloqueado"
     const dateBlocked = document.getElementById('municipality-date-blocked') ? document.getElementById('municipality-date-blocked').value : '';
     if (status === 'Bloqueado' && !dateBlocked) {
         alert('Erro: Preencha a "Data em que foi Bloqueado".');
@@ -1003,8 +1031,9 @@ function saveMunicipality(e) {
     const data = {
         name: name,
         status: status,
-        manager: document.getElementById('municipality-manager').value,
-        contact: document.getElementById('municipality-contact').value,
+        // SANITIZAÇÃO AQUI:
+        manager: sanitizeInput(document.getElementById('municipality-manager').value),
+        contact: sanitizeInput(document.getElementById('municipality-contact').value),
         implantationDate: document.getElementById('municipality-implantation-date').value,
         lastVisit: document.getElementById('municipality-last-visit').value,
         modules: mods,
@@ -1013,10 +1042,8 @@ function saveMunicipality(e) {
     };
 
     if (editingId) {
-        const i = municipalities.findIndex(function(x) { return x.id === editingId; });
-        if (i !== -1) {
-            municipalities[i] = { ...municipalities[i], ...data };
-        }
+        const i = municipalities.findIndex(x => x.id === editingId);
+        if (i !== -1) municipalities[i] = { ...municipalities[i], ...data };
     } else {
         municipalities.push({ id: getNextId('mun'), ...data });
     }
@@ -1025,8 +1052,9 @@ function saveMunicipality(e) {
     document.getElementById('municipality-modal').classList.remove('show');
     renderMunicipalities();
     updateGlobalDropdowns();
+    
     // AUDITORIA
-logSystemAction(editingId ? 'Edição' : 'Criação', 'Municípios', `Município: ${data.name} | Status: ${data.status}`);
+    logSystemAction(editingId ? 'Edição' : 'Criação', 'Municípios', `Município: ${data.name} | Status: ${data.status}`);
     showToast('Município salvo com sucesso!', 'success');
 }
 
@@ -1336,7 +1364,7 @@ function saveTask(e) {
         trainedPosition: document.getElementById('task-trained-position').value,
         contact: document.getElementById('task-contact').value,
         status: document.getElementById('task-status').value,
-        observations: document.getElementById('task-observations').value
+        observations: sanitizeInput(document.getElementById('task-observations').value)
     };
 
     if (editingId) {
@@ -1668,7 +1696,6 @@ function saveRequest(e) {
     e.preventDefault();
     const status = document.getElementById('request-status').value;
     
-    // Validação PDF
     if (status === 'Realizado' && !document.getElementById('request-date-realization').value) {
         alert('Data de Realização é obrigatória.'); return;
     }
@@ -1679,17 +1706,19 @@ function saveRequest(e) {
     const data = {
         date: document.getElementById('request-date').value,
         municipality: document.getElementById('request-municipality').value,
-        requester: document.getElementById('request-requester').value,
-        contact: document.getElementById('request-contact').value,
-        description: document.getElementById('request-description').value,
+        // SANITIZAÇÃO AQUI:
+        requester: sanitizeInput(document.getElementById('request-requester').value),
+        contact: sanitizeInput(document.getElementById('request-contact').value),
+        description: sanitizeInput(document.getElementById('request-description').value),
+        justification: sanitizeInput(document.getElementById('request-justification').value),
+        
         status: status,
         dateRealization: document.getElementById('request-date-realization').value,
-        justification: document.getElementById('request-justification').value,
         user: currentUser.name
     };
 
     if (editingId) {
-        const i = requests.findIndex(function(x) { return x.id === editingId; });
+        const i = requests.findIndex(x => x.id === editingId);
         if (i !== -1) requests[i] = { ...requests[i], ...data };
     } else {
         requests.push({ id: getNextId('req'), ...data });
@@ -1697,8 +1726,9 @@ function saveRequest(e) {
     salvarNoArmazenamento('requests', requests);
     document.getElementById('request-modal').classList.remove('show');
     renderRequests();
+    
     // AUDITORIA
-logSystemAction(editingId ? 'Edição' : 'Criação', 'Solicitações', `Para: ${data.municipality} | Solicitante: ${data.requester}`);
+    logSystemAction(editingId ? 'Edição' : 'Criação', 'Solicitações', `Para: ${data.municipality} | Solicitante: ${data.requester}`);
     showToast('Salvo!');
 }
 
@@ -2355,9 +2385,9 @@ function saveDemand(e) {
     e.preventDefault();
     const status = document.getElementById('demand-status').value;
     const dateReal = document.getElementById('demand-realization-date').value;
-    const justif = document.getElementById('demand-justification').value.trim();
+    // Sanitiza justificativa aqui para validar se está vazia depois
+    const justif = sanitizeInput(document.getElementById('demand-justification').value.trim());
 
-    // Validação Específica
     if (status === 'Realizada' && !dateReal) {
         alert('Para status "Realizada", a Data de Realização é obrigatória.'); return;
     }
@@ -2367,16 +2397,18 @@ function saveDemand(e) {
     
     const data = {
         date: document.getElementById('demand-date').value,
-        description: document.getElementById('demand-description').value,
+        // SANITIZAÇÃO AQUI:
+        description: sanitizeInput(document.getElementById('demand-description').value),
+        justification: justif,
+        
         priority: document.getElementById('demand-priority').value,
         status: status,
         dateRealization: dateReal,
-        justification: justif,
-        user: currentUser.name // Usa o usuário logado
+        user: currentUser.name
     };
 
     if (editingId) {
-        const i = demands.findIndex(function(x) { return x.id === editingId; });
+        const i = demands.findIndex(x => x.id === editingId);
         if (i !== -1) demands[i] = { ...demands[i], ...data };
     } else {
         demands.push({ id: getNextId('dem'), ...data });
@@ -2384,8 +2416,9 @@ function saveDemand(e) {
     salvarNoArmazenamento('demands', demands);
     document.getElementById('demand-modal').classList.remove('show');
     clearDemandFilters();
+    
     // AUDITORIA
-logSystemAction(editingId ? 'Edição' : 'Criação', 'Demandas', `Prioridade: ${data.priority} | Desc: ${data.description.substring(0,30)}...`);
+    logSystemAction(editingId ? 'Edição' : 'Criação', 'Demandas', `Prioridade: ${data.priority} | Desc: ${data.description.substring(0,30)}...`);
     showToast('Demanda salva com sucesso!', 'success');
 }
 
@@ -2684,11 +2717,11 @@ function showVisitModal(id = null) {
     
     document.getElementById('visit-modal').classList.add('show');
 }
+
 function saveVisit(e) {
     e.preventDefault();
     const status = document.getElementById('visit-status').value;
     
-    // Validações de campos condicionais
     if (status === 'Realizada' && !document.getElementById('visit-date-realization').value) {
         alert('Data de Realização é obrigatória.'); return;
     }
@@ -2699,17 +2732,17 @@ function saveVisit(e) {
     const data = {
         municipality: document.getElementById('visit-municipality').value,
         date: document.getElementById('visit-date').value,
-        applicant: document.getElementById('visit-applicant').value,
-        // --- CORREÇÃO: Adicionado o campo Motivo que faltava ---
-        reason: document.getElementById('visit-reason').value, 
-        // -------------------------------------------------------
+        // SANITIZAÇÃO AQUI:
+        applicant: sanitizeInput(document.getElementById('visit-applicant').value),
+        reason: sanitizeInput(document.getElementById('visit-reason').value),
+        justification: sanitizeInput(document.getElementById('visit-justification').value),
+        
         status: status,
-        dateRealization: document.getElementById('visit-date-realization').value,
-        justification: document.getElementById('visit-justification').value
+        dateRealization: document.getElementById('visit-date-realization').value
     };
 
     if (editingId) {
-        const i = visits.findIndex(function(x) { return x.id === editingId; });
+        const i = visits.findIndex(x => x.id === editingId);
         visits[i] = { ...visits[i], ...data };
     } else {
         visits.push({ id: getNextId('visit'), ...data });
@@ -2717,13 +2750,13 @@ function saveVisit(e) {
     
     salvarNoArmazenamento('visits', visits);
     document.getElementById('visit-modal').classList.remove('show');
-    
-    // Limpa filtros e recarrega a tabela
     clearVisitFilters(); 
+    
     // AUDITORIA
-logSystemAction(editingId ? 'Edição' : 'Criação', 'Visitas', `Para: ${data.municipality} | Motivo: ${data.reason}`);
+    logSystemAction(editingId ? 'Edição' : 'Criação', 'Visitas', `Para: ${data.municipality} | Motivo: ${data.reason}`);
     showToast('Visita salva com sucesso!', 'success');
 }
+
 function getFilteredVisits() {
     const fMun = document.getElementById('filter-visit-municipality')?.value;
     const fStatus = document.getElementById('filter-visit-status')?.value;
@@ -2993,38 +3026,37 @@ function showProductionModal(id = null) {
 function saveProduction(e) {
     e.preventDefault();
     const freq = document.getElementById('production-frequency').value;
-    
-    // Captura campos de data
     const sendDateVal = document.getElementById('production-send-date').value;
     
-    // --- NOVA VALIDAÇÃO: Bloqueia Data Futura no Envio ---
+    // Validação Data Futura
     if (sendDateVal) {
-        const hoje = new Date().toISOString().split('T')[0]; // Pega data atual YYYY-MM-DD
+        const hoje = new Date().toISOString().split('T')[0];
         if (sendDateVal > hoje) {
             alert('Erro: A Data de Envio não pode ser uma data futura.');
-            return; // Para tudo aqui
+            return;
         }
     }
-    // -----------------------------------------------------
 
-    // Se diário, período é vazio. Senão, pega o valor.
-    const period = (freq === 'Diário') ? '' : document.getElementById('production-period').value;
+    // Se diário, período é vazio. Senão, pega o valor sanitizado.
+    const period = (freq === 'Diário') ? '' : sanitizeInput(document.getElementById('production-period').value);
 
     const data = {
         municipality: document.getElementById('production-municipality').value,
-        contact: document.getElementById('production-contact').value,
         frequency: freq,
-        competence: document.getElementById('production-competence').value,
-        period: period,
+        status: document.getElementById('production-status').value,
         releaseDate: document.getElementById('production-release-date').value,
         sendDate: sendDateVal,
-        status: document.getElementById('production-status').value,
-        professional: document.getElementById('production-professional').value,
-        observations: document.getElementById('production-observations').value
+        
+        // SANITIZAÇÃO AQUI:
+        contact: sanitizeInput(document.getElementById('production-contact').value),
+        competence: sanitizeInput(document.getElementById('production-competence').value),
+        period: period,
+        professional: sanitizeInput(document.getElementById('production-professional').value),
+        observations: sanitizeInput(document.getElementById('production-observations').value)
     };
 
     if (editingId) {
-        const i = productions.findIndex(function(x) { return x.id === editingId; });
+        const i = productions.findIndex(x => x.id === editingId);
         if (i !== -1) productions[i] = { ...productions[i], ...data };
     } else {
         productions.push({ id: getNextId('prod'), ...data });
@@ -3036,7 +3068,6 @@ function saveProduction(e) {
     
     // AUDITORIA
     logSystemAction(editingId ? 'Edição' : 'Criação', 'Produção', `Para: ${data.municipality} | Frequência: ${data.frequency}`);
-    
     showToast('Envio salvo com sucesso!', 'success');
 }
 
@@ -3401,51 +3432,45 @@ function showUserModal(id = null) {
 }
 function saveUser(e) {
     e.preventDefault();
-    const login = document.getElementById('user-login').value.trim().toUpperCase();
+    // Sanitiza Login
+    const login = sanitizeInput(document.getElementById('user-login').value.trim().toUpperCase());
     
-    // --- CORREÇÃO: Validação de Duplicidade Robusta (Criação e Edição) ---
-    // Verifica se existe algum usuário com esse login, EXCLUINDO o próprio (caso seja edição)
+    // Validação Duplicidade
     const loginJaExiste = users.some(u => u.login === login && u.id !== editingId);
-
     if (loginJaExiste) {
         alert('Erro: Este Login já está sendo utilizado por outro usuário.');
         return;
     }
-    // ---------------------------------------------------------------------
 
     const data = {
         login: login,
-        name: document.getElementById('user-name').value,
-        email: document.getElementById('user-email').value,
+        // SANITIZAÇÃO AQUI:
+        name: sanitizeInput(document.getElementById('user-name').value),
+        email: sanitizeInput(document.getElementById('user-email').value),
         permission: document.getElementById('user-permission').value,
         status: document.getElementById('user-status').value
     };
-
+    // ... (restante da função saveUser com a senha e auditoria mantém igual) ...
+    // Vou resumir para não ficar gigante, mantenha o bloco do 'if (!editingId)' igual ao que fizemos antes.
+    
     if (!editingId) {
-        // Novo Usuário
         data.id = getNextId('user');
         data.salt = generateSalt();
         data.passwordHash = hashPassword(document.getElementById('user-password').value, data.salt);
         users.push(data);
-        
-        // AUDITORIA (Criação)
         logSystemAction('Criação', 'Usuários', `Novo usuário: ${data.login} (${data.permission})`);
     } else {
-        // Edição
         const i = users.findIndex(u => u.id === editingId);
         if (i !== -1) {
             const oldUser = users[i];
             data.salt = oldUser.salt;
             data.passwordHash = oldUser.passwordHash;
-
             const newPass = document.getElementById('user-password').value;
             if (newPass) {
                 data.salt = generateSalt();
                 data.passwordHash = hashPassword(newPass, data.salt);
             }
             users[i] = { ...oldUser, ...data };
-            
-            // AUDITORIA (Edição)
             logSystemAction('Edição', 'Usuários', `Editou usuário: ${data.login}`);
         }
     }
@@ -3540,26 +3565,21 @@ function showCargoModal(id = null) {
 // 2. Função para Salvar (Agora gravando a descrição)
 function saveCargo(e) {
     e.preventDefault();
-    
     const data = {
-        name: document.getElementById('cargo-name').value,
-        description: document.getElementById('cargo-description').value
+        name: sanitizeInput(document.getElementById('cargo-name').value),
+        description: sanitizeInput(document.getElementById('cargo-description').value)
     };
-
+    // ... (restante da função mantém igual, apenas com o logSystemAction adicionado se quiser)
     if (editingId) {
-        // CORREÇÃO AQUI: Usamos '==' para funcionar mesmo se o ID vier como texto do backup
         const i = cargos.findIndex(x => x.id == editingId);
-        if (i !== -1) {
-            cargos[i] = { ...cargos[i], ...data };
-        }
+        if (i !== -1) cargos[i] = { ...cargos[i], ...data };
     } else {
         cargos.push({ id: getNextId('cargo'), ...data });
     }
-    
     salvarNoArmazenamento('cargos', cargos);
     document.getElementById('cargo-modal').classList.remove('show');
     renderCargos();
-    updateGlobalDropdowns(); // Atualiza a lista no modal de treinamento
+    updateGlobalDropdowns(); 
     showToast('Cargo salvo com sucesso!', 'success');
 }
 
@@ -3623,8 +3643,20 @@ function closeOrientadorModal(){document.getElementById('orientador-modal').clas
 
 // Módulos
 function showModuloModal(id=null){ editingId=id; document.getElementById('modulo-form').reset(); const form=document.getElementById('modulo-form'); if(!document.getElementById('modulo-description')) { const div=document.createElement('div'); div.className='form-group'; div.innerHTML=`<label class="form-label">Descrição</label><textarea class="form-control" id="modulo-description"></textarea>`; form.insertBefore(div, form.querySelector('.modal-actions')); } if(id){const m=modulos.find(x=>x.id===id); document.getElementById('modulo-name').value=m.name; if(document.getElementById('modulo-abbreviation')) document.getElementById('modulo-abbreviation').value=m.abbreviation; if(document.getElementById('modulo-description')) document.getElementById('modulo-description').value=m.description||'';} document.getElementById('modulo-modal').classList.add('show'); }
-function saveModulo(e){ e.preventDefault(); const data={name:document.getElementById('modulo-name').value, abbreviation:document.getElementById('modulo-abbreviation')?document.getElementById('modulo-abbreviation').value:'', description:document.getElementById('modulo-description')?document.getElementById('modulo-description').value:''}; if(editingId){const i=modulos.findIndex(x=>x.id===editingId); modulos[i]={...modulos[i],...data};}else{modulos.push({id:getNextId('mod'),...data});} salvarNoArmazenamento('modulos',modulos); document.getElementById('modulo-modal').classList.remove('show'); renderModulos(); }
-
+function saveModulo(e){ 
+    e.preventDefault(); 
+    const data={
+        name: sanitizeInput(document.getElementById('modulo-name').value), 
+        abbreviation: sanitizeInput(document.getElementById('modulo-abbreviation').value), 
+        description: sanitizeInput(document.getElementById('modulo-description').value)
+    }; 
+    // ... (restante igual)
+    if(editingId){const i=modulos.findIndex(x=>x.id===editingId); modulos[i]={...modulos[i],...data};}else{modulos.push({id:getNextId('mod'),...data});} 
+    salvarNoArmazenamento('modulos',modulos); 
+    document.getElementById('modulo-modal').classList.remove('show'); 
+    renderModulos(); 
+    showToast('Salvo!');
+}
 function renderModulos() {
     const c = document.getElementById('modulos-table');
     const countDiv = document.getElementById('modulos-total');
@@ -4418,47 +4450,41 @@ const munListSorted = municipalitiesList.slice().sort((a,b) => a.name.localeComp
 // 5. Salvar Colaborador (Com novos campos: Email e Nascimento)
 function saveOrientador(e){ 
     e.preventDefault(); 
-    
-    const name = document.getElementById('orientador-name').value.trim();
+    // Sanitiza Nome
+    const name = sanitizeInput(document.getElementById('orientador-name').value.trim());
 
-    // --- CORREÇÃO: Validação de Duplicidade de Nome ---
-    // Verifica se já existe, ignorando maiúsculas/minúsculas
+    // Validação Duplicidade
     const nomeJaExiste = orientadores.some(o => o.name.toLowerCase() === name.toLowerCase() && o.id !== editingId);
-
     if (nomeJaExiste) {
         alert('Erro: Já existe um colaborador cadastrado com este Nome.');
         return;
     }
-    // --------------------------------------------------
     
     const data = {
         name: name, 
-        contact: document.getElementById('orientador-contact').value,
-        email: document.getElementById('orientador-email').value,
+        // SANITIZAÇÃO:
+        contact: sanitizeInput(document.getElementById('orientador-contact').value),
+        email: sanitizeInput(document.getElementById('orientador-email').value),
         birthDate: document.getElementById('orientador-birthdate').value
     }; 
     
     if(editingId){
-        // Modo Edição
         const i = orientadores.findIndex(x => x.id === editingId); 
         if (i !== -1) {
             orientadores[i] = { ...orientadores[i], ...data };
             logSystemAction('Edição', 'Colaboradores', `Atualizou: ${data.name}`);
         }
     } else {
-        // Modo Novo Cadastro
         orientadores.push({ id: getNextId('orient'), ...data });
         logSystemAction('Criação', 'Colaboradores', `Novo: ${data.name}`);
     } 
     
     salvarNoArmazenamento('orientadores', orientadores); 
     document.getElementById('orientador-modal').classList.remove('show'); 
-    
     renderOrientadores(); 
     updateGlobalDropdowns(); 
     showToast('Colaborador salvo com sucesso!', 'success');
 }
-
 // 6. Listar Colaboradores (Mostrando E-mail e Data de Nascimento)
 function renderOrientadores() {
     const c = document.getElementById('orientadores-table');
@@ -4957,3 +4983,92 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
+// ============================================================================
+// 24. MÓDULO DE SEGURANÇA (NOVO v4.4)
+// ============================================================================
+
+// --- A. RATE LIMITING (Proteção contra Força Bruta) ---
+let loginAttempts = recuperarDoArmazenamento('loginAttempts', {});
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutos
+
+function checkLoginAttempts(login) {
+    const now = Date.now();
+    
+    if (!loginAttempts[login]) {
+        loginAttempts[login] = { count: 0, timestamp: now, locked: false };
+    }
+    
+    const record = loginAttempts[login];
+    
+    // Se passou o tempo de bloqueio, reseta
+    if (record.locked && (now - record.timestamp > LOGIN_LOCKOUT_TIME)) {
+        record.count = 0;
+        record.locked = false;
+        record.timestamp = now;
+        salvarNoArmazenamento('loginAttempts', loginAttempts);
+    }
+    
+    // Se está bloqueado e ainda está no tempo
+    if (record.locked) {
+        const tempoRestante = Math.ceil((LOGIN_LOCKOUT_TIME - (now - record.timestamp)) / 60000);
+        throw new Error(`🔒 Conta bloqueada por segurança.\n\nMuitas tentativas incorretas. Tente novamente em ${tempoRestante} minutos.`);
+    }
+}
+
+function recordFailedAttempt(login) {
+    const now = Date.now();
+    if (!loginAttempts[login]) loginAttempts[login] = { count: 0, timestamp: now, locked: false };
+    
+    loginAttempts[login].count++;
+    loginAttempts[login].timestamp = now;
+    
+    if (loginAttempts[login].count >= MAX_LOGIN_ATTEMPTS) {
+        loginAttempts[login].locked = true;
+    }
+    salvarNoArmazenamento('loginAttempts', loginAttempts);
+}
+
+function resetLoginAttempts(login) {
+    if (loginAttempts[login]) {
+        loginAttempts[login] = { count: 0, timestamp: Date.now(), locked: false };
+        salvarNoArmazenamento('loginAttempts', loginAttempts);
+    }
+}
+
+// --- B. TIMEOUT DE SESSÃO (Logout por Inatividade) ---
+let inactivityTimeout;
+const INACTIVITY_MINUTES = 15;
+
+function resetInactivityTimer() {
+    if (!currentUser) return; // Só roda se estiver logado
+
+    clearTimeout(inactivityTimeout);
+    
+    inactivityTimeout = setTimeout(() => {
+        // Salva trabalho atual se possível (Backup de emergência antes de sair)
+        createBackup('AUTO-SAVE-INATIVIDADE'); 
+        alert('⏱️ Sua sessão expirou por 15 minutos de inatividade.\nPor segurança, você foi desconectado.');
+        
+        // Logout forçado
+        localStorage.removeItem('currentUser');
+        location.reload();
+    }, INACTIVITY_MINUTES * 60 * 1000);
+}
+
+function initializeInactivityTracking() {
+    // Monitora movimento e cliques
+    window.onload = resetInactivityTimer;
+    document.onmousemove = resetInactivityTimer;
+    document.onkeypress = resetInactivityTimer;
+    document.onclick = resetInactivityTimer;
+    document.onscroll = resetInactivityTimer;
+}
+
+// --- C. SANITIZAÇÃO (Limpeza de Texto) ---
+function sanitizeInput(input) {
+    if (typeof input !== 'string') return input;
+    // Remove tags HTML básicas para evitar injeção de código
+    return input.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
