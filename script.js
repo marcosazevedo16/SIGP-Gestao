@@ -1424,10 +1424,9 @@ function validateDateRange(type) {
         startId = `filter-demand-${type.split('-')[1]}-start`; endId = `filter-demand-${type.split('-')[1]}-end`;
     } else if (type.includes('visit')) {
         startId = `filter-${type}-start`; endId = `filter-${type}-end`;
-    } else if (type.includes('production')) { // NOVO: PRODUÇÃO
-        // production-release ou production-send
-        startId = `filter-${type}-start`; 
-        endId = `filter-${type}-end`;
+    } else if (type.includes('production')) { 
+        startId = `filter-${type}-start`; endId = `filter-${type}-end`;
+    } else if (type === 'integration') { startId = 'filter-integration-start'; endId = 'filter-integration-end';
     }
 
     const start = document.getElementById(startId);
@@ -1446,6 +1445,7 @@ function validateDateRange(type) {
     else if (type.includes('request')) renderRequests();
     else if (type.includes('pres')) renderPresentations();
     else if (type.includes('visit')) renderVisits();
+    if (type === 'integration') renderIntegrations();
     else renderTasks();
 }
 
@@ -4253,36 +4253,25 @@ function populateSelect(select, data, valKey, textKey) {
 }
 
 function populateFilterSelects() {
-    // ------------------------------------------------------------------------
-    // 1. REGRA GERAL: MUNICÍPIOS (Todas as Abas)
-    // Fonte: 'municipalitiesList' (Cadastro de Município em Configurações)
-    // ------------------------------------------------------------------------
-    
+    // 1. MUNICÍPIOS (Adicionamos o filtro da aba Integração aqui)
     const allMunFilters = [
-        'filter-municipality-name',         // Aba Municípios Clientes
-        'filter-task-municipality',         // Aba Treinamentos
-        'filter-request-municipality',      // Aba Solicitações
-        'filter-presentation-municipality', // Aba Apresentações
-        'filter-visit-municipality',        // Aba Visitas
+        'filter-municipality-name',
+        'filter-task-municipality',
+        'filter-request-municipality',
+        'filter-presentation-municipality',
+        'filter-visit-municipality',
         'filter-production-municipality',
-        'filter-integration-municipality'
+        'filter-integration-municipality' // <--- ADICIONADO AGORA
     ];
 
-    // Verifica se a lista mestra existe
     if (typeof municipalitiesList !== 'undefined') {
-        // Ordena alfabeticamente
         const sortedMaster = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
-
         allMunFilters.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
-                const currentVal = el.value; // Guarda o valor atual para não perder seleção ao atualizar
-                
-                // Gera o HTML com TODAS as opções da Lista Mestra
+                const currentVal = el.value;
                 el.innerHTML = '<option value="">Todos</option>' + 
                                sortedMaster.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-                
-                // Restaura seleção
                 if(currentVal) el.value = currentVal;
             }
         });
@@ -4330,14 +4319,20 @@ function populateFilterSelects() {
     });
 }
 
-// 5. FILTRO DE API (Aba Integrações)
-const apiFilterEl = document.getElementById('filter-integration-api');
-if(apiFilterEl) {
-    const cur = apiFilterEl.value;
-    // Pega da apisList
-    const sortedApis = apisList.slice().sort((a,b) => a.name.localeCompare(b.name));
-    apiFilterEl.innerHTML = '<option value="">Todas</option>' + sortedApis.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
-    if(cur) apiFilterEl.value = cur;
+// 5. FILTRO DE API (Aba Integrações) - CORREÇÃO CRÍTICA
+    const apiFilterEl = document.getElementById('filter-integration-api');
+    if(apiFilterEl && typeof apisList !== 'undefined') {
+        const cur = apiFilterEl.value;
+        const sortedApis = apisList.slice().sort((a,b) => a.name.localeCompare(b.name));
+        apiFilterEl.innerHTML = '<option value="">Todas</option>' + sortedApis.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+        if(cur) apiFilterEl.value = cur;
+    }
+    
+    // 6. Atualiza listeners dos filtros da aba Integração
+    ['filter-integration-municipality', 'filter-integration-api', 'filter-integration-status'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.onchange = renderIntegrations;
+    });
 }
 
 function updateGlobalDropdowns() {
@@ -5094,12 +5089,14 @@ function sanitizeInput(input) {
 // ----------------------------------------------------------------------------
 // XX. CADASTRO MESTRE DE APIS (Configurações)
 // ----------------------------------------------------------------------------
-function showApiListModal(id=null) {
+function showApiListModal(id = null) {
     editingId = id;
     document.getElementById('api-list-form').reset();
-    if(id) {
-        const a = apisList.find(x => x.id === id);
-        if(a) {
+    
+    if (id) {
+        // Correção: Garante comparação correta (x.id == id)
+        const a = apisList.find(x => x.id == id);
+        if (a) {
             document.getElementById('api-list-name').value = a.name;
             document.getElementById('api-list-description').value = a.description;
         }
@@ -5222,12 +5219,15 @@ function renderApiList() {
 }
 
 function deleteApiList(id) {
-    if(confirm('Excluir esta API?')) {
-        apisList = apisList.filter(x => x.id !== id);
+    if (confirm('Excluir esta API?')) {
+        // Correção: Garante comparação correta na filtragem
+        apisList = apisList.filter(x => x.id != id);
         salvarNoArmazenamento('apisList', apisList);
         renderApiList();
+        updateGlobalDropdowns(); // Atualiza filtros dependentes
     }
 }
+
 function closeApiListModal() { document.getElementById('api-list-modal').classList.remove('show'); }
 // ----------------------------------------------------------------------------
 // XX. GERENCIAMENTO DE INTEGRAÇÕES (Aba Principal)
@@ -5331,20 +5331,36 @@ function saveIntegration(e) {
     showToast('Integração salva com sucesso!', 'success');
 }
 
+// --- GERENCIAMENTO DE INTEGRAÇÕES (ABA PRINCIPAL) CORRIGIDO ---
+
 function renderIntegrations() {
     // Filtros
     const fMun = document.getElementById('filter-integration-municipality')?.value;
     const fApi = document.getElementById('filter-integration-api')?.value;
+    const fStatus = document.getElementById('filter-integration-status')?.value; // Novo filtro
     const fStart = document.getElementById('filter-integration-start')?.value;
     const fEnd = document.getElementById('filter-integration-end')?.value;
 
     let filtered = integrations.filter(i => {
         if (fMun && i.municipality !== fMun) return false;
         if (fApi && (!i.apis || !i.apis.includes(fApi))) return false;
+        
+        // Filtro de Data
         if (fStart && i.expirationDate < fStart) return false;
         if (fEnd && i.expirationDate > fEnd) return false;
+
+        // Lógica do Filtro de Status
+        if (fStatus) {
+            const diff = getDaysDiff(i.expirationDate);
+            if (fStatus === 'Vencido' && diff >= 0) return false;
+            if (fStatus === 'Em dia' && diff < 0) return false;
+        }
+
         return true;
-    }).sort((a,b) => new Date(a.expirationDate) - new Date(b.expirationDate)); // Ordena por data de vencimento
+    });
+
+    // Ordenação Alfabética por Município
+    filtered.sort((a, b) => a.municipality.localeCompare(b.municipality));
 
     const c = document.getElementById('integrations-table');
     const countDiv = document.getElementById('integrations-results-count');
@@ -5361,32 +5377,40 @@ function renderIntegrations() {
             const diff = getDaysDiff(i.expirationDate);
             const isExpired = diff < 0;
             
-            // Estilização da Data
+            // Texto da Data e Cor
             const dateClass = isExpired ? 'date-expired' : 'date-valid';
             const dateText = formatDate(i.expirationDate);
             
-            // Estilização Dias Restantes
+            // Texto de Dias Restantes (Correção Solicitada)
             let daysText = '';
             if (isExpired) {
                 daysText = `<span class="days-remaining-expired">Vencido há ${Math.abs(diff)} dias</span>`;
             } else if (diff === 0) {
                 daysText = `<span class="days-remaining-expired">Vence Hoje!</span>`;
             } else {
-                daysText = `<span class="days-remaining-valid">${diff} dias</span>`;
+                daysText = `<span class="days-remaining-valid">Vence em ${diff} dias</span>`;
             }
 
-            // Lista de APIs
-            const apisDisplay = i.apis.map(api => `<span class="module-tag" style="background:#E1F5FE; color:#0277BD; border:1px solid #81D4FA;">${api}</span>`).join(' ');
+            // Busca UF na lista mestra
+            const munData = municipalitiesList.find(m => m.name === i.municipality);
+            const munDisplay = munData ? `${i.municipality} - ${munData.uf}` : i.municipality;
+
+            // Renderiza APIs (Centralizado via CSS)
+            const apisDisplay = (i.apis || []).map(api => 
+                `<span class="module-tag" style="background:#E1F5FE; color:#0277BD; border:1px solid #81D4FA;">${api}</span>`
+            ).join('');
 
             return `<tr>
-                <td class="text-primary-cell">${i.municipality}</td>
+                <td class="text-primary-cell">${munDisplay}</td>
                 <td class="module-tags-cell">${apisDisplay}</td>
                 <td class="${dateClass}">${dateText}</td>
                 <td>${daysText}</td>
                 <td class="text-secondary-cell">${i.observation || '-'}</td>
                 <td>
-                    <button class="btn btn--sm" onclick="showIntegrationModal(${i.id})">✏️</button>
-                    <button class="btn btn--sm" onclick="deleteIntegration(${i.id})">🗑️</button>
+                    <div style="display:flex; justify-content:flex-end;">
+                        <button class="btn btn--sm" onclick="showIntegrationModal(${i.id})">✏️</button>
+                        <button class="btn btn--sm" onclick="deleteIntegration(${i.id})">🗑️</button>
+                    </div>
                 </td>
             </tr>`;
         }).join('');
@@ -5398,7 +5422,7 @@ function renderIntegrations() {
                 <th>Vencimento Certificado</th>
                 <th>Status Vencimento</th>
                 <th>Observações</th>
-                <th>Ações</th>
+                <th style="text-align:right; padding-right:30px;">Ações</th>
             </thead>
             <tbody>${rows}</tbody>
         </table>`;
@@ -5446,20 +5470,90 @@ function updateIntegrationChart(data) {
     });
 }
 
+// CORREÇÃO: Edição de Integração (Populando Modal)
+function showIntegrationModal(id = null) {
+    editingId = id;
+    document.getElementById('integration-form').reset();
+    
+    // Reseta contador de caracteres
+    if(document.getElementById('integration-char-counter')) {
+        document.getElementById('integration-char-counter').textContent = '0 / 250';
+    }
+
+    // 1. Popula Municípios (Com UF)
+    const munSelect = document.getElementById('integration-municipality');
+    if(munSelect) {
+        const sortedList = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
+        munSelect.innerHTML = '<option value="">Selecione o município</option>' + 
+                              sortedList.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
+    }
+
+    // 2. Popula APIs
+    const divApi = document.getElementById('integration-api-checkboxes');
+    if(divApi) {
+        if(apisList.length > 0) {
+            divApi.innerHTML = apisList.map(a => `<label><input type="checkbox" value="${a.name}" class="api-check"> ${a.name}</label>`).join('');
+        } else {
+            divApi.innerHTML = '<span style="font-size:11px; color:red;">Nenhuma API cadastrada em configurações.</span>';
+        }
+    }
+
+    // 3. Preenche se for Edição
+    if (id) {
+        // Use '==' para evitar erro de string vs number
+        const int = integrations.find(x => x.id == id);
+        if (int) {
+            // Verifica se o município ainda existe no select, senão adiciona temporariamente
+            let exists = false;
+            for(let i=0; i<munSelect.options.length; i++) {
+                if(munSelect.options[i].value === int.municipality) exists = true;
+            }
+            if(!exists) {
+                const opt = document.createElement('option');
+                opt.value = int.municipality;
+                opt.textContent = int.municipality;
+                munSelect.appendChild(opt);
+            }
+
+            document.getElementById('integration-municipality').value = int.municipality;
+            document.getElementById('integration-expiration').value = int.expirationDate;
+            document.getElementById('integration-observation').value = int.observation || '';
+            
+            // Marca checkboxes
+            if(int.apis) {
+                document.querySelectorAll('.api-check').forEach(cb => {
+                    cb.checked = int.apis.includes(cb.value);
+                });
+            }
+            
+            if(document.getElementById('integration-char-counter')) {
+                document.getElementById('integration-char-counter').textContent = (int.observation ? int.observation.length : 0) + ' / 250';
+            }
+        }
+    }
+    document.getElementById('integration-modal').classList.add('show');
+}
+
+// CORREÇÃO: Exclusão de Integração
 function deleteIntegration(id) {
     if(confirm('Excluir esta integração?')) {
-        integrations = integrations.filter(x => x.id !== id);
+        // Correção: Comparação loose ( != ) para pegar number/string
+        integrations = integrations.filter(x => x.id != id);
         salvarNoArmazenamento('integrations', integrations);
         renderIntegrations();
         logSystemAction('Exclusão', 'Integrações', `Integração ID: ${id}`);
     }
 }
 
-function closeIntegrationModal() { document.getElementById('integration-modal').classList.remove('show'); }
+function closeIntegrationModal() {
+    document.getElementById('integration-modal').classList.remove('show');
+}
 
+// Limpeza de Filtros (Atualizada)
 function clearIntegrationFilters() {
     if(document.getElementById('filter-integration-municipality')) document.getElementById('filter-integration-municipality').value = '';
     if(document.getElementById('filter-integration-api')) document.getElementById('filter-integration-api').value = '';
+    if(document.getElementById('filter-integration-status')) document.getElementById('filter-integration-status').value = '';
     if(document.getElementById('filter-integration-start')) document.getElementById('filter-integration-start').value = '';
     if(document.getElementById('filter-integration-end')) document.getElementById('filter-integration-end').value = '';
     renderIntegrations();
