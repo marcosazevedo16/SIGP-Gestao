@@ -1441,7 +1441,7 @@ function validateDateRange(type) {
     else end.removeAttribute('min');
     
     if (end.value && start.value && end.value < start.value) end.value = start.value;
-const start = document.getElementById(startId);
+    const start = document.getElementById(startId);
     const end = document.getElementById(endId);
     
     if (start && end) {
