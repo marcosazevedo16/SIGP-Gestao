@@ -4485,16 +4485,6 @@ input:disabled, select:disabled, textarea:disabled {
     transition: background-color 0.2s !important; 
 }
 
-/* Ícone Porta do Sair */
-.header-actions .btn--secondary.btn--sm.header-text-btn::before {
-    content: "🚪";
-    font-size: 12px;
-    line-height: 1;
-    display: inline-block;
-    opacity: 1 !important;
-    margin-bottom: 1px; /* Micro-ajuste vertical */
-}
-
 /* Hover do Sair */
 .header-actions .btn--secondary.btn--sm.header-text-btn:hover {
     background-color: rgba(255, 255, 255, 0.15) !important;
