@@ -4417,14 +4417,14 @@ input:disabled, select:disabled, textarea:disabled {
     margin: 4px 0;
 }
 /* ==========================================================================
-   CORREÇÃO FINAL V60 - BOTÕES PEQUENOS (30px) E SAIR TRANSPARENTE
+   CORREÇÃO FINAL V61 - ESTABILIDADE TOTAL DO BOTÃO SAIR
    ========================================================================== */
 
 /* 1. Alinhamento Geral */
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 6px; /* Menos espaço entre os botões */
+    gap: 6px; 
     margin-left: auto;
 }
 
@@ -4433,16 +4433,14 @@ input:disabled, select:disabled, textarea:disabled {
 #theme-toggle.header-icon-btn,
 #notif-btn.header-icon-btn,
 .header-actions .settings-dropdown .header-icon-btn {
-    width: 30px !important;       /* Reduzido de 36px */
-    height: 30px !important;      /* Reduzido de 36px */
+    width: 30px !important;
+    height: 30px !important;
     padding: 0 !important;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    font-size: 1rem !important;   /* Ícone um pouco menor */
+    font-size: 1rem !important;
     line-height: 1 !important;
-    
-    /* Estilo Transparente */
     background: transparent !important;
     background-color: transparent !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
@@ -4452,7 +4450,6 @@ input:disabled, select:disabled, textarea:disabled {
     box-shadow: none !important;
 }
 
-/* Hover dos Ícones */
 #home-btn.header-icon-btn:hover,
 #theme-toggle.header-icon-btn:hover,
 #notif-btn.header-icon-btn:hover,
@@ -4461,15 +4458,18 @@ input:disabled, select:disabled, textarea:disabled {
     border-color: #ffffff !important;
 }
 
-/* 3. Botão SAIR (TRANSPARENTE E PEQUENO) */
+/* 3. Botão SAIR (A CORREÇÃO PRINCIPAL) */
 .header-actions .btn--secondary.btn--sm {
-    height: 30px !important;      /* Mesma altura dos ícones */
-    padding: 0 10px !important;   /* Padding lateral para o texto caber */
-    display: flex;
-    align-items: center;
-    font-size: 11px !important;   /* Texto menor */
+    height: 30px !important;
+    padding: 0 12px !important;   /* Espaço lateral para o texto */
+    display: inline-flex !important; /* Mantém alinhamento rígido */
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 11px !important;
+    width: auto !important;       /* Impede que encolha para 30px */
+    min-width: 60px !important;   /* Garante tamanho mínimo */
     
-    /* Forçar transparência igual aos outros */
+    /* Estilo Transparente */
     background: transparent !important;
     background-color: transparent !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
@@ -4477,17 +4477,36 @@ input:disabled, select:disabled, textarea:disabled {
     box-shadow: none !important;
 }
 
+/* Ícone de Porta (Garante que apareça sempre) */
+.header-actions .btn--secondary.btn--sm::before {
+    content: "🚪";
+    margin-right: 6px;
+    font-size: 13px; 
+    line-height: 1;
+    display: inline-block;
+    opacity: 1 !important; /* Força visibilidade */
+}
+
+/* Efeito Hover Estabilizado */
 .header-actions .btn--secondary.btn--sm:hover {
     background-color: rgba(255, 255, 255, 0.1) !important;
     border-color: #ffffff !important;
+    color: #ffffff !important;
+    width: auto !important; /* Garante que não encolha no hover */
 }
 
-/* 4. Menus Suspensos (Ajuste de posição devido ao botão menor) */
+/* Garante que o ícone da porta continue lá no hover */
+.header-actions .btn--secondary.btn--sm:hover::before {
+    content: "🚪" !important;
+    opacity: 1 !important;
+}
+
+/* 4. Menus Suspensos */
 #settings-menu, #notification-menu {
-    top: 40px !important; /* Subiu um pouco (era 45px) */
+    top: 40px !important;
 }
 
-/* 5. Ajuste do Badge (Bolinha vermelha) */
+/* 5. Badge */
 .notification-badge {
     top: -5px !important;
     right: -5px !important;
