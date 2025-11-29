@@ -4611,8 +4611,7 @@ function initializeApp() {
     initializeTabs();
     applyMasks();
     setupDynamicFormFields();
-    updateGlobalDropdowns();
-    
+    updateGlobalDropdowns();    
     renderMunicipalities();
     renderTasks();
     renderRequests();
@@ -4620,10 +4619,10 @@ function initializeApp() {
     renderVisits();
     renderProductions();
     renderPresentations();
-    renderVersions();
-    
+    renderVersions();    
     updateDashboardStats();
     initializeDashboardCharts();
+    checkSystemNotifications();
     
     // Listener do Menu Mobile
     const overlay = document.querySelector('.sidebar-overlay');
@@ -6145,4 +6144,107 @@ function initCrossTabRateLimit() {
             }
         }
     });
+}
+// ============================================================================
+// FASE 3: SISTEMA DE NOTIFICAÇÕES INTELIGENTES
+// ============================================================================
+
+let notifications = [];
+
+function checkSystemNotifications() {
+    notifications = []; // Limpa e recalcula
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    // 1. INTEGRAÇÕES: Certificados Vencendo (Regra: < 30 dias)
+    if (typeof integrations !== 'undefined') {
+        integrations.forEach(i => {
+            if (i.expirationDate) {
+                const diff = getDaysDiff(i.expirationDate);
+                
+                if (diff < 0) {
+                    addNotification('danger', 'Certificado Vencido', 
+                        `O certificado de <strong>${i.municipality}</strong> venceu há ${Math.abs(diff)} dias.`, 'apis-section');
+                } else if (diff <= 15) {
+                    addNotification('danger', 'Vence em Breve', 
+                        `O certificado de <strong>${i.municipality}</strong> vence em ${diff} dias.`, 'apis-section');
+                } else if (diff <= 30) {
+                    addNotification('warning', 'Atenção Preventiva', 
+                        `Renovar certificado de <strong>${i.municipality}</strong> (30 dias).`, 'apis-section');
+                }
+            }
+        });
+    }
+
+    // 2. TREINAMENTOS: Pendentes há muito tempo (Regra: > 7 dias sem data realizada)
+    if (typeof tasks !== 'undefined') {
+        tasks.forEach(t => {
+            if (t.status === 'Pendente' && t.dateRequested) {
+                const reqDate = new Date(t.dateRequested);
+                const diffTime = Math.abs(today - reqDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                
+                if (diffDays > 15) {
+                    addNotification('warning', 'Treinamento Atrasado', 
+                        `Solicitação de <strong>${t.municipality}</strong> pendente há ${diffDays} dias.`, 'tarefas-section');
+                }
+            }
+        });
+    }
+
+    // 3. BACKUP: Lembrar se não fez backup hoje (Opcional)
+    // Pode ser implementado verificando auditLogs
+
+    updateNotificationUI();
+}
+
+function addNotification(type, title, desc, targetTab) {
+    let icon = 'ℹ️';
+    if (type === 'warning') icon = '⚠️';
+    if (type === 'danger') icon = '🚨';
+
+    notifications.push({ type, title, desc, targetTab, icon });
+}
+
+function updateNotificationUI() {
+    const badge = document.getElementById('notif-badge');
+    const list = document.getElementById('notification-list');
+    
+    if (!badge || !list) return;
+
+    // Atualiza o contador (Badge)
+    if (notifications.length > 0) {
+        badge.textContent = notifications.length;
+        badge.style.display = 'inline-block';
+        // Animação visual
+        badge.classList.add('pulse');
+    } else {
+        badge.style.display = 'none';
+    }
+
+    // Renderiza a lista
+    if (notifications.length === 0) {
+        list.innerHTML = '<p style="padding:15px; text-align:center; color:#999; font-size:13px;">Tudo certo! Nenhuma pendência encontrada.</p>';
+    } else {
+        list.innerHTML = notifications.map(n => `
+            <div class="notification-item notif-${n.type}" onclick="openTab('${n.targetTab}'); toggleNotifications();">
+                <div class="notif-icon">${n.icon}</div>
+                <div class="notif-content">
+                    <span class="notif-title">${n.title}</span>
+                    <span class="notif-desc">${n.desc}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+function toggleNotifications() {
+    const menu = document.getElementById('notification-menu');
+    if (menu) {
+        // Fecha o menu de configurações se estiver aberto para não sobrepor
+        const settingsMenu = document.getElementById('settings-menu');
+        if(settingsMenu) settingsMenu.classList.remove('show');
+        
+        menu.classList.toggle('show');
+    }
 }
