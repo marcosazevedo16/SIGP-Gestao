@@ -1419,7 +1419,6 @@
     <div class="section-header">
         <h2>Gerenciamento de Integrações</h2>
         <button class="btn btn--primary" onclick="showIntegrationModal()">+ Nova Integração</button>
-        <button class="btn btn--outline btn--sm" onclick="exportIntegrationsExcel()">📊 Exportar Excel</button>
     </div>
 
     <h3 class="section-subtitle">Filtros</h3>
@@ -1466,6 +1465,9 @@
     <div id="integrations-results-count" class="results-count" style="display: none;"></div>
 
     <div class="tasks-table" id="integrations-table"></div>
+        <div class="actions-bar">
+        <button class="btn btn--outline btn--sm" onclick="exportIntegrationsExcel()">📊 Exportar Excel</button>
+    </div>
 
     <div class="section-divider"></div>
 
@@ -1495,7 +1497,6 @@
     <div class="section-header">
         <h2>Gerenciamento de Colaboradores da Saúde</h2>
         <button class="btn btn--primary" onclick="showColabInfoModal()">+ Nova Ficha de Colaborador</button>
-        <button class="btn btn--outline btn--sm" onclick="exportColabInfoExcel()">📊 Exportar Excel</button>
     </div>
 
     <h3 class="section-subtitle">Filtros</h3>
@@ -1541,6 +1542,9 @@
     <div id="section-colab-terminated" style="display:none;">
         <h3 class="colab-section-title title-terminated">Colaboradores Desligados da Empresa</h3>
         <div class="tasks-table" id="colab-terminated-table"></div>
+    </div>
+    <div class="actions-bar">
+        <button class="btn btn--outline btn--sm" onclick="exportColabInfoExcel()">📊 Exportar Excel</button>
     </div>
 
     <div class="section-divider"></div>
