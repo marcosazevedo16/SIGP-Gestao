@@ -226,27 +226,112 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
-// ----------------------------------------------------------------------------
-// 5. EXPORTAÇÃO (CSV E PDF)
-// ----------------------------------------------------------------------------
+// ============================================================================
+// EXPORTAÇÃO AVANÇADA PARA EXCEL (.xlsx)
+// ============================================================================
 
-function downloadCSV(filename, headers, rows) {
-    // Adiciona BOM para Excel reconhecer acentos
-    const csvContent = [
-        headers.join(';'),
-        ...rows.map(row => row.map(cell => {
-            const cellText = (cell || '').toString();
-            return `"${cellText.replace(/"/g, '""')}"`;
-        }).join(';'))
-    ].join('\n');
+// ============================================================================
+// FASE 3 - EXPORTAÇÃO AVANÇADA PARA EXCEL (.xlsx)
+// ============================================================================
 
-    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+// 1. Função Genérica (A Mágica do Excel)
+function downloadXLSX(filename, headers, rows, sheetName = "Dados") {
+    // Verifica se a biblioteca foi carregada no HTML
+    if (typeof XLSX === 'undefined') {
+        alert('Erro: A biblioteca Excel (SheetJS) não carregou. Verifique se adicionou a linha do CDN no index.html.');
+        return;
+    }
+
+    // Prepara os dados
+    const data = [headers, ...rows];
+
+    // Cria a Planilha
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // Ajuste Automático de Largura das Colunas
+    const colWidths = headers.map((h, i) => {
+        let maxWidth = h.length;
+        rows.forEach(row => {
+            const cellValue = row[i] ? String(row[i]) : "";
+            if (cellValue.length > maxWidth) maxWidth = cellValue.length;
+        });
+        return { wch: maxWidth + 5 }; // +5 de respiro
+    });
+    ws['!cols'] = colWidths;
+
+    // Cria o Arquivo e Salva
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    XLSX.writeFile(wb, filename + ".xlsx");
+}
+
+// 2. Exportar MUNICÍPIOS (Aba Clientes)
+function exportMunicipalitiesCSV() { 
+    // Nota: Mantive o nome "CSV" para não precisar mudar o botão no HTML, mas gera XLSX
+    const data = getFilteredMunicipalities(); // Usa os dados filtrados da tela
+    const headers = ['Nome', 'UF', 'Status', 'Módulos', 'Gestor', 'Contato', 'Implantação', 'Última Visita', 'Tempo de Uso'];
+    
+    const rows = data.map(m => [
+        m.name, 
+        m.uf || '', 
+        m.status, 
+        m.modules.join(', '), 
+        m.manager, 
+        m.contact, 
+        formatDate(m.implantationDate), 
+        formatDate(m.lastVisit),
+        calculateTimeInUse(m.implantationDate)
+    ]);
+    
+    downloadXLSX("Relatorio_Carteira_Clientes", headers, rows, "Clientes");
+}
+
+// 3. Exportar COLABORADORES (Aba RH)
+function exportColabInfoExcel() {
+    // Pega dados filtrados se possível, ou todos
+    // Como a função de renderização filtra na hora, vamos pegar direto do array global por enquanto
+    // Se quiser exportar só o filtrado, precisaria refatorar a função de filtro para retornar array
+    const data = collaboratorInfos; 
+    
+    const headers = ['Nome', 'Status', 'Nascimento', 'Admissão', 'Tempo de Serviço', 'Últimas Férias', 'Data Desligamento', 'Observações'];
+    
+    const rows = data.map(c => {
+        // Busca nascimento no cadastro mestre
+        const master = orientadores.find(o => o.name === c.name);
+        const birth = master ? master.birthDate : '';
+        
+        return [
+            c.name,
+            c.status,
+            formatDate(birth),
+            formatDate(c.admissionDate),
+            calcDateDiffString(c.admissionDate, c.status === 'Desligado da Empresa' ? c.terminationDate : null),
+            formatDate(c.lastVacationEnd),
+            formatDate(c.terminationDate),
+            c.observation
+        ];
+    });
+
+    downloadXLSX("Relatorio_RH_Colaboradores", headers, rows, "Equipe");
+}
+
+// 4. Exportar INTEGRAÇÕES (Aba Integrações)
+function exportIntegrationsExcel() {
+    const data = integrations;
+    const headers = ['Município', 'APIs Integradas', 'Vencimento Certificado', 'Dias Restantes', 'Observação'];
+    
+    const rows = data.map(i => {
+        const diff = getDaysDiff(i.expirationDate);
+        return [
+            i.municipality,
+            i.apis.join(', '),
+            formatDate(i.expirationDate),
+            diff + " dias",
+            i.observation
+        ];
+    });
+
+    downloadXLSX("Relatorio_Integracoes_APIs", headers, rows, "Integrações");
 }
 
 function downloadPDF(title, headers, rows) {
@@ -6245,4 +6330,130 @@ function toggleNotifications() {
         
         menu.classList.toggle('show');
     }
+}
+// ============================================================================
+// ATUALIZAÇÃO FINAL: MIGRAR TODAS AS EXPORTAÇÕES PARA EXCEL (.xlsx)
+// ============================================================================
+
+// 1. TREINAMENTOS (Aba Tarefas)
+function exportTasksCSV() { // Mantive o nome para não quebrar o botão do HTML
+    const data = getFilteredTasks();
+    const headers = ['Município', 'Data Solicitação', 'Data Realização', 'Solicitante', 'Orientador', 'Profissional', 'Cargo', 'Contato', 'Status', 'Obs'];
+    
+    const rows = data.map(t => [
+        t.municipality, 
+        formatDate(t.dateRequested), 
+        formatDate(t.datePerformed), 
+        t.requestedBy, 
+        t.performedBy, 
+        t.trainedName, 
+        t.trainedPosition, 
+        t.contact, 
+        t.status,
+        t.observations
+    ]);
+    downloadXLSX("Relatorio_Treinamentos", headers, rows, "Treinamentos");
+}
+
+// 2. SOLICITAÇÕES (Aba Sugestões)
+function exportRequestsCSV() {
+    const data = getFilteredRequests();
+    const headers = ['Município', 'Data Solicitação', 'Data Realização', 'Solicitante', 'Contato', 'Descrição', 'Status', 'Usuário', 'Justificativa'];
+    
+    const rows = data.map(r => [
+        r.municipality, 
+        formatDate(r.date), 
+        formatDate(r.dateRealization), 
+        r.requester, 
+        r.contact, 
+        r.description, 
+        r.status, 
+        r.user,
+        r.justification
+    ]);
+    downloadXLSX("Relatorio_Solicitacoes_Clientes", headers, rows, "Solicitações");
+}
+
+// 3. DEMANDAS (Aba Suporte)
+function exportDemandsCSV() {
+    const data = getFilteredDemands();
+    const headers = ['Data', 'Prioridade', 'Status', 'Descrição', 'Usuário', 'Realização', 'Justificativa'];
+    
+    const rows = data.map(d => [
+        formatDate(d.date), 
+        d.priority, 
+        d.status, 
+        d.description, 
+        d.user, 
+        formatDate(d.dateRealization),
+        d.justification
+    ]);
+    downloadXLSX("Relatorio_Demandas_Suporte", headers, rows, "Demandas");
+}
+
+// 4. VISITAS (Aba Visitas)
+function exportVisitsCSV() {
+    const data = getFilteredVisits();
+    const headers = ['Município', 'Data Solicitação', 'Data Realização', 'Solicitante', 'Status', 'Motivo', 'Justificativa'];
+    
+    const rows = data.map(v => [
+        v.municipality, 
+        formatDate(v.date), 
+        formatDate(v.dateRealization),
+        v.applicant, 
+        v.status, 
+        v.reason,
+        v.justification
+    ]);
+    downloadXLSX("Relatorio_Visitas_Presenciais", headers, rows, "Visitas");
+}
+
+// 5. PRODUÇÃO (Aba Envio)
+function exportProductionsCSV() {
+    const data = getFilteredProductions();
+    const headers = ['Município', 'Profissional', 'Contato', 'Frequência', 'Competência', 'Período', 'Liberação', 'Envio', 'Status', 'Obs'];
+    
+    const rows = data.map(p => [
+        p.municipality, 
+        p.professional,
+        p.contact,
+        p.frequency,
+        p.competence, 
+        p.period, 
+        formatDate(p.releaseDate),
+        formatDate(p.sendDate),
+        p.status,
+        p.observations
+    ]);
+    downloadXLSX("Relatorio_Envio_Producao", headers, rows, "Produção");
+}
+
+// 6. APRESENTAÇÕES (Aba Apresentações)
+function exportPresentationsCSV() {
+    const data = getFilteredPresentations();
+    const headers = ['Município', 'Data Solicit.', 'Data Realiz.', 'Solicitante', 'Status', 'Orientadores', 'Formas', 'Descrição'];
+    
+    const rows = data.map(p => [
+        p.municipality, 
+        formatDate(p.dateSolicitacao), 
+        formatDate(p.dateRealizacao),
+        p.requester, 
+        p.status, 
+        (p.orientadores || []).join(', '), 
+        (p.forms || []).join(', '), 
+        p.description
+    ]);
+    downloadXLSX("Relatorio_Apresentacoes", headers, rows, "Apresentações");
+}
+
+// 7. AUDITORIA (Configurações)
+function exportAuditCSV() {
+    const headers = ['Data/Hora', 'Usuário', 'Ação', 'Módulo Alvo', 'Detalhes da Ação'];
+    // Formata a data ISO para ficar bonita no Excel
+    const rows = auditLogs.map(l => {
+        const d = new Date(l.timestamp);
+        const dataFormatada = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR');
+        return [dataFormatada, l.user, l.action, l.target, l.details];
+    });
+    downloadXLSX("Relatorio_Auditoria_Sistema", headers, rows, "Logs");
 }
