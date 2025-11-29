@@ -4599,3 +4599,36 @@ input:disabled, select:disabled, textarea:disabled {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
 }
+/* ==========================================================================
+   FUNCIONALIDADE DESFAZER (UNDO)
+   ========================================================================== */
+
+/* Container do Toast para Flexbox (Texto + Botão) */
+.toast-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    width: 100%;
+}
+
+/* Botão Desfazer dentro do Toast */
+.btn-undo {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #ffffff;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-undo:hover {
+    background-color: #ffffff;
+    color: #333;
+    border-color: #ffffff;
+}
