@@ -4518,7 +4518,6 @@ function populateFilterSelects() {
         const el = document.getElementById(id);
         if(el) el.onchange = renderCollaboratorInfos;
     });
-}
 
 // 5. Salvar Colaborador (Com novos campos: Email e Nascimento)
 function saveOrientador(e){ 
