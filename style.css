@@ -4102,3 +4102,88 @@ input:disabled, select:disabled, textarea:disabled {
     color: rgba(255, 255, 255, 0.5) !important; /* Texto cinza claro */
     border-color: rgba(255, 255, 255, 0.1) !important;
 }
+/* ==========================================================================
+   SIDEBAR FULL HEIGHT + EMPURRAR HEADER
+   ========================================================================== */
+
+@media (min-width: 901px) {
+    
+    /* 1. SIDEBAR (Vai até o topo e fica fixa) */
+    .sidebar {
+        top: 0 !important;           /* Cola no teto */
+        height: 100vh !important;    /* Altura total da tela */
+        z-index: 1001 !important;    /* Fica ACIMA do header */
+        padding-top: 20px !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        /* A transição será controlada pela classe do body */
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* 2. HEADER (Deixa de ser 100% e vira vizinho da sidebar) */
+    .app-header {
+        position: fixed !important;
+        top: 0 !important;
+        /* Começa DEPOIS da sidebar recolhida (70px) */
+        left: 70px !important; 
+        /* Largura é o que sobra (100% - 70px) */
+        width: calc(100% - 70px) !important; 
+        z-index: 1000 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        /* Animação suave para acompanhar a sidebar */
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* 3. CONTEÚDO PRINCIPAL (Sincronizado com o header) */
+    .main-content {
+        margin-top: 80px !important; /* Espaço para o header */
+        margin-left: 70px !important; /* Espaço da sidebar recolhida */
+        width: calc(100% - 70px) !important;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        padding-top: 20px !important;
+    }
+
+    /* --- ESTADOS EXPANDIDOS (Ativados via JS) --- */
+    
+    /* Quando o mouse entra, o BODY ganha a classe 'sidebar-is-expanded' */
+    
+    /* Sidebar Cresce */
+    body.sidebar-is-expanded .sidebar {
+        width: 300px !important;
+    }
+
+    /* Header é Empurrado */
+    body.sidebar-is-expanded .app-header {
+        left: 300px !important;
+        width: calc(100% - 300px) !important;
+    }
+
+    /* Conteúdo é Empurrado */
+    body.sidebar-is-expanded .main-content {
+        margin-left: 300px !important;
+        width: calc(100% - 300px) !important;
+    }
+
+    /* --- ESTILO DO ÍCONE DE MENU (GEMINI STYLE) --- */
+    /* Remove o texto antigo e coloca o ícone Hamburger no topo */
+    .sidebar-nav::before {
+        content: "☰"; 
+        font-size: 26px;
+        color: rgba(255,255,255,0.8);
+        display: block;
+        text-align: center;
+        margin-bottom: 30px;
+        cursor: pointer;
+        transition: color 0.3s;
+    }
+    
+    /* Garante que o ícone continue lá no hover */
+    .sidebar:hover .sidebar-nav::before {
+        content: "☰"; 
+        color: #ffffff;
+    }
+    
+    /* Esconde o botão de fechar do mobile se aparecer */
+    .mobile-menu-toggle { display: none !important; }
+}
