@@ -4362,3 +4362,30 @@ input:disabled, select:disabled, textarea:disabled {
     top: -6px !important;
     right: -6px !important;
 }
+/* ==========================================================================
+   CORREÇÃO FINAL V56 - TOOLTIPS E POSIÇÃO DE MENUS
+   ========================================================================== */
+
+/* 1. Remover Tooltips Customizados (Evita duplicidade) */
+.header-actions .btn[title]:hover::after,
+.header-actions .btn[title]:hover::before {
+    display: none !important;
+}
+
+/* 2. Posição do Menu de Configurações (Abaixo da Engrenagem) */
+#settings-menu {
+    right: 0 !important;
+    top: 45px !important; /* Distância do botão */
+    min-width: 220px;
+}
+
+/* 3. Posição do Menu de Notificações (Abaixo do Sino) */
+#notification-menu {
+    right: -40px !important; /* Ajuste fino para não cortar */
+    top: 45px !important;
+}
+
+/* 4. Ajuste do container para menus relativos */
+.settings-dropdown {
+    position: relative !important;
+}
