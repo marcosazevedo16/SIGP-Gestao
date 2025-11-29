@@ -5901,3 +5901,27 @@ function clearColabInfoFilters() {
     ids.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; });
     renderCollaboratorInfos();
 }
+// ============================================================================
+// FORÇAR VALIDAÇÃO DE DATAS (EVENT LISTENERS)
+// Adicione isso no final do arquivo, ou dentro do DOMContentLoaded
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // ... seus outros códigos de inicialização ...
+
+    // FORÇA O MONITORAMENTO DAS DATAS DE COLABORADORES
+    const colabStart = document.getElementById('filter-colab-info-start');
+    const colabEnd = document.getElementById('filter-colab-info-end');
+
+    if (colabStart && colabEnd) {
+        // Quando muda a data inicial
+        colabStart.addEventListener('change', function() {
+            validateDateRange('colab');
+        });
+        
+        // Quando muda a data final
+        colabEnd.addEventListener('change', function() {
+            validateDateRange('colab');
+        });
+    }
+});
