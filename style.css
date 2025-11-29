@@ -4416,3 +4416,77 @@ input:disabled, select:disabled, textarea:disabled {
     background-color: var(--color-border);
     margin: 4px 0;
 }
+/* ==========================================================================
+   CORREÇÃO FINAL V57 - HEADER DE ÍCONES E MENUS
+   ========================================================================== */
+
+/* 1. Alinhamento Geral à Direita */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px; 
+    margin-left: auto; /* Empurra para a direita */
+}
+
+/* 2. Botões Ícone Quadrados */
+.header-icon-btn {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    font-size: 1.2rem !important; /* Tamanho do emoji */
+    line-height: 1 !important;
+}
+
+/* 3. Menu Suspenso (Configurações) */
+#settings-menu {
+    right: 0 !important;
+    top: 45px !important;
+    min-width: 240px;
+    z-index: 2000;
+}
+
+/* 4. Menu Suspenso (Notificações) */
+#notification-menu {
+    right: -40px !important;
+    top: 45px !important;
+    width: 300px;
+    z-index: 2000;
+}
+
+/* 5. Itens do Menu (Lista) */
+.settings-menu-item {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    font-size: 14px;
+    color: var(--color-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.2s;
+    font-family: var(--font-family-base);
+}
+
+.settings-menu-item:hover {
+    background-color: var(--color-bg-1);
+    color: var(--color-primary);
+}
+
+/* 6. Ajuste do botão Sair */
+.header-actions .btn--secondary.btn--sm {
+    height: 36px !important;
+    display: flex;
+    align-items: center;
+}
+
+/* 7. Badge de Notificação */
+.notification-badge {
+    top: -6px !important;
+    right: -6px !important;
+}
