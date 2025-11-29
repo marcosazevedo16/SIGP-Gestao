@@ -4496,7 +4496,7 @@ input:disabled, select:disabled, textarea:disabled {
 #settings-menu {
     right: 0 !important;
     top: 40px !important;
-    min-width: 280px !important; /* Aumentado de 240px para 300px */
+    min-width: 260px !important; /* Aumentado de 240px para 300px */
     z-index: 2000;
 }
 
