@@ -5925,3 +5925,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// ============================================================================
+// LÓGICA DE LAYOUT (DESKTOP)
+// ============================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('.sidebar');
+    const body = document.body;
+
+    if (sidebar) {
+        // Quando o mouse entra na sidebar
+        sidebar.addEventListener('mouseenter', function() {
+            // Só ativa se for desktop (tela maior que 900px)
+            if (window.innerWidth > 900) {
+                body.classList.add('sidebar-is-expanded');
+            }
+        });
+
+        // Quando o mouse sai da sidebar
+        sidebar.addEventListener('mouseleave', function() {
+            if (window.innerWidth > 900) {
+                body.classList.remove('sidebar-is-expanded');
+            }
+        });
+    }
+});
