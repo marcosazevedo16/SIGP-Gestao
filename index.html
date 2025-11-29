@@ -2437,6 +2437,64 @@
     </footer>
     <script src="script.js?v=12"></script>
 
+    <div id="colab-info-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="colab-info-modal-title">Nova Ficha de Colaborador</h3>
+            <button class="close-btn" onclick="closeColabInfoModal()">&times;</button>
+        </div>
+        <form id="colab-info-form" onsubmit="saveColabInfo(event)">
+            <div class="form-grid">
+                <div class="form-group col-12">
+                    <label class="form-label">Colaborador*</label>
+                    <select class="form-control" id="colab-info-name" required onchange="handleCollaboratorSelection()">
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group col-6">
+                    <label class="form-label">Data de Nascimento (Auto)</label>
+                    <input type="date" class="form-control" id="colab-info-birth" disabled style="background-color: #f0f0f0; cursor: not-allowed;">
+                </div>
+                
+                <div class="form-group col-6">
+                    <label class="form-label">Data de Admissão*</label>
+                    <input type="date" class="form-control" id="colab-info-admission" required>
+                </div>
+
+                <div class="form-group col-6">
+                    <label class="form-label">Situação*</label>
+                    <select class="form-control" id="colab-info-status" required onchange="handleColabStatusChange()">
+                        <option value="Ativo na Empresa">Ativo na Empresa</option>
+                        <option value="Desligado da Empresa">Desligado da Empresa</option>
+                    </select>
+                </div>
+
+                <div class="form-group col-6" id="group-colab-termination" style="display:none;">
+                    <label class="form-label">Data de Desligamento*</label>
+                    <input type="date" class="form-control" id="colab-info-termination">
+                </div>
+
+                <div class="form-group col-6">
+                    <label class="form-label">Data Final Últimas Férias</label>
+                    <input type="date" class="form-control" id="colab-info-vacation">
+                </div>
+
+                <div class="form-group col-12">
+                    <label class="form-label">Observações (máx. 250)</label>
+                    <textarea class="form-control" id="colab-info-obs" rows="3" maxlength="250"
+                        oninput="document.getElementById('colab-info-counter').textContent = this.value.length + ' / 250'"></textarea>
+                    <div class="char-counter" id="colab-info-counter">0 / 250</div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeColabInfoModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 </body>
 
 </html>
