@@ -3851,10 +3851,10 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL V41 - APIs EXPANDIDAS & DIREITA COMPACTADA
+   CORREÇÃO FINAL V42 - LARGURAS POR PORCENTAGEM (FORÇAR ESPAÇO)
    ========================================================================== */
 
-/* 1. Modais (Mantendo configuração fixa) */
+/* 1. Modais (Mantidos) */
 #api-list-modal .modal-content,
 #integration-modal .modal-content {
     width: 500px !important;
@@ -3867,7 +3867,7 @@ table th {
     border-collapse: collapse !important;
     width: 100%;
     border-spacing: 0 !important;
-    table-layout: fixed; /* Essencial */
+    table-layout: fixed !important; /* OBRIGATÓRIO */
 }
 
 #integrations-table tr {
@@ -3882,16 +3882,16 @@ table th {
 #integrations-table td {
     border: none !important;
     vertical-align: middle !important;
-    padding: 0 4px !important; /* Padding mínimo para ganhar espaço */
+    padding: 0 4px !important;
     height: 50px !important;
     overflow: hidden;
 }
 
-/* --- DISTRIBUIÇÃO DE LARGURAS (FOCO NO ESPAÇO DAS APIs) --- */
+/* --- DISTRIBUIÇÃO MATEMÁTICA (TOTAL = 100%) --- */
 
-/* Col 1: Município (Reduzido ao essencial para leitura) */
+/* Col 1: Município (18%) */
 #integrations-table td:nth-child(1) {
-    width: 160px; 
+    width: 18% !important;
     white-space: normal;
     line-height: 1.1;
     font-size: 12px;
@@ -3899,31 +3899,29 @@ table th {
     padding-left: 8px !important;
 }
 
-/* Col 2: APIs Integradas (A ESTRELA DA TABELA - OCUPA TUDO) */
+/* Col 2: APIs Integradas (42% - A MAIOR PARTE) */
 #integrations-table td:nth-child(2) {
-    width: auto; 
+    width: 42% !important; /* Força quase metade da tabela para as APIs */
 }
 
-/* --- BLOCO DA DIREITA (COMPACTADO) --- */
-
-/* Col 3: Vencimento (Largura exata da data) */
+/* Col 3: Vencimento (8%) */
 #integrations-table td:nth-child(3) {
-    width: 85px; 
+    width: 8% !important;
     text-align: center;
     font-size: 11px;
 }
 
-/* Col 4: Status (Largura exata do texto) */
+/* Col 4: Status (12%) */
 #integrations-table td:nth-child(4) {
-    width: 110px; 
+    width: 12% !important;
     text-align: center;
     font-size: 11px;
     white-space: nowrap;
 }
 
-/* Col 5: Observações (Pequeno, encostado no Status) */
+/* Col 5: Observações (12%) */
 #integrations-table td:nth-child(5) {
-    width: 90px; 
+    width: 12% !important;
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--color-text-secondary);
@@ -3931,9 +3929,9 @@ table th {
     text-align: left;
 }
 
-/* Col 6: Ações (Colado na direita) */
+/* Col 6: Ações (8%) */
 #integrations-table td:last-child {
-    width: 70px;
+    width: 8% !important;
     text-align: right !important;
     padding-right: 8px !important;
     overflow: visible;
@@ -3944,17 +3942,12 @@ table th {
     display: flex !important;
     align-items: center !important;
     height: 100%;
-    
-    /* Garante que fiquem na mesma linha */
-    flex-wrap: nowrap !important; 
-    
-    /* Se mesmo com espaço sobrar, permite scroll invisível */
-    overflow-x: auto !important; 
-    
-    gap: 3px; /* Gap menor */
+    flex-wrap: nowrap !important; /* Não quebra linha */
+    overflow-x: auto !important;  /* Scroll se necessário */
+    gap: 3px;
     padding: 0 !important;
     margin: 0 !important;
-    scrollbar-width: none; 
+    scrollbar-width: none;
 }
 #integrations-table .module-tags-cell::-webkit-scrollbar { display: none; }
 
@@ -3971,5 +3964,5 @@ table th {
     margin: 0 !important;
     border-width: 1px !important;
     white-space: nowrap !important;
-    flex-shrink: 0; 
+    flex-shrink: 0;
 }
