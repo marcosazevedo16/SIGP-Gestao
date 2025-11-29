@@ -719,6 +719,9 @@ function initializeTabs() {
 }
 
 function refreshCurrentTab(sectionId) {
+    // 1. LIMPEZA DE MEMÓRIA (CRÍTICO)
+    destroyAllCharts(); 
+
     updateGlobalDropdowns();
 
     if (sectionId === 'municipios-section') renderMunicipalities();
@@ -729,21 +732,34 @@ function refreshCurrentTab(sectionId) {
     if (sectionId === 'producao-section') renderProductions();
     if (sectionId === 'apresentacoes-section') renderPresentations();
     if (sectionId === 'versoes-section') renderVersions();
+    
     if (sectionId === 'usuarios-section') renderUsers(); 
+    
+    // Configurações
     if (sectionId === 'cargos-section') renderCargos();
     if (sectionId === 'orientadores-section') renderOrientadores();
     if (sectionId === 'modulos-section') renderModulos();
     if (sectionId === 'municipalities-list-section') renderMunicipalityList();
     if (sectionId === 'formas-apresentacao-section') renderFormas();
-    if (sectionId === 'apis-section') renderIntegrations();
     if (sectionId === 'apis-list-section') renderApiList();
+
+    // Novas Abas
+    if (sectionId === 'apis-section') {
+        populateFilterSelects();
+        renderIntegrations();
+    }
+    
     if (sectionId === 'info-colaboradores-section') renderCollaboratorInfos();
+
     if (sectionId === 'dashboard-section') { 
         updateDashboardStats(); 
         initializeDashboardCharts(); 
     }
+    
+    if (sectionId === 'audit-section') {
+        renderAuditLogs();
+    }
 }
-
 function navigateToHome() {
     const dashBtn = document.querySelector('.sidebar-btn[data-tab="dashboard"]');
     if (dashBtn) {
@@ -3964,7 +3980,24 @@ function closeRestoreConfirmModal() {
 function confirmRestore() {
     if (!pendingBackupData) return;
 
-    const d = pendingBackupData.data; // Atalho para os dados do arquivo
+    // --- VALIDAÇÃO DE SEGURANÇA (NOVO) ---
+    // Verifica se o arquivo tem a estrutura mínima esperada
+    const d = pendingBackupData.data;
+    
+    if (!d || typeof d !== 'object') {
+        alert('❌ Erro Crítico: O arquivo selecionado não é um backup válido ou está corrompido.');
+        return;
+    }
+
+    // Verifica chaves essenciais para garantir integridade
+    const chavesEssenciais = ['users', 'municipalities'];
+    const chavesFaltantes = chavesEssenciais.filter(key => !Array.isArray(d[key]));
+
+    if (chavesFaltantes.length > 0) {
+        alert('❌ Erro Crítico: O backup está incompleto. Faltam os dados: ' + chavesFaltantes.join(', '));
+        return;
+    }
+    // -------------------------------------
 
     // 1. Preserva o Usuário Logado Atual (Para não deslogar)
     const sessionUser = recuperarDoArmazenamento('currentUser');
@@ -3972,59 +4005,27 @@ function confirmRestore() {
     // 2. Limpa o LocalStorage
     localStorage.clear();
 
-    // 3. Atualiza as Variáveis Globais e Salva (INCLUINDO NOVOS DADOS)
+    // 3. Atualiza as Variáveis Globais e Salva
     
-    users = d.users || [];
-    salvarNoArmazenamento('users', users);
-
-    municipalities = d.municipalities || [];
-    salvarNoArmazenamento('municipalities', municipalities);
-
-    municipalitiesList = d.municipalitiesList || [];
-    salvarNoArmazenamento('municipalitiesList', municipalitiesList);
-
-    tasks = d.tasks || d.trainings || []; 
-    salvarNoArmazenamento('tasks', tasks);
-
-    requests = d.requests || [];
-    salvarNoArmazenamento('requests', requests);
-
-    demands = d.demands || [];
-    salvarNoArmazenamento('demands', demands);
-
-    visits = d.visits || [];
-    salvarNoArmazenamento('visits', visits);
-
-    productions = d.productions || [];
-    salvarNoArmazenamento('productions', productions);
-
-    presentations = d.presentations || [];
-    salvarNoArmazenamento('presentations', presentations);
-
-    systemVersions = d.systemVersions || [];
-    salvarNoArmazenamento('systemVersions', systemVersions);
-
-    cargos = d.cargos || [];
-    salvarNoArmazenamento('cargos', cargos);
-
-    orientadores = d.orientadores || [];
-    salvarNoArmazenamento('orientadores', orientadores);
-
-    modulos = d.modules || d.modulos || [];
-    salvarNoArmazenamento('modulos', modulos);
-
-    formasApresentacao = d.formasApresentacao || [];
-    salvarNoArmazenamento('formasApresentacao', formasApresentacao);
-
-    // --- NOVOS DADOS ---
-    integrations = d.integrations || [];
-    salvarNoArmazenamento('integrations', integrations);
-
-    apisList = d.apisList || [];
-    salvarNoArmazenamento('apisList', apisList);
-
-    collaboratorInfos = d.collaboratorInfos || []; // <--- O item da dúvida F
-    salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
+    users = d.users || []; salvarNoArmazenamento('users', users);
+    municipalities = d.municipalities || []; salvarNoArmazenamento('municipalities', municipalities);
+    municipalitiesList = d.municipalitiesList || []; salvarNoArmazenamento('municipalitiesList', municipalitiesList);
+    tasks = d.tasks || d.trainings || []; salvarNoArmazenamento('tasks', tasks);
+    requests = d.requests || []; salvarNoArmazenamento('requests', requests);
+    demands = d.demands || []; salvarNoArmazenamento('demands', demands);
+    visits = d.visits || []; salvarNoArmazenamento('visits', visits);
+    productions = d.productions || []; salvarNoArmazenamento('productions', productions);
+    presentations = d.presentations || []; salvarNoArmazenamento('presentations', presentations);
+    systemVersions = d.systemVersions || []; salvarNoArmazenamento('systemVersions', systemVersions);
+    cargos = d.cargos || []; salvarNoArmazenamento('cargos', cargos);
+    orientadores = d.orientadores || []; salvarNoArmazenamento('orientadores', orientadores);
+    modulos = d.modules || d.modulos || []; salvarNoArmazenamento('modulos', modulos);
+    formasApresentacao = d.formasApresentacao || []; salvarNoArmazenamento('formasApresentacao', formasApresentacao);
+    
+    // Novos Dados
+    integrations = d.integrations || []; salvarNoArmazenamento('integrations', integrations);
+    apisList = d.apisList || []; salvarNoArmazenamento('apisList', apisList);
+    collaboratorInfos = d.collaboratorInfos || []; salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
 
     if (d.counters) {
         counters = d.counters;
@@ -4050,11 +4051,11 @@ function confirmRestore() {
         isAuthenticated = true;
     }
 
-    // 5. Atualiza a Interface Imediatamente
+    // 5. Atualiza a Interface
     initializeApp(); 
     closeRestoreConfirmModal();
     
-    alert('✅ Dados restaurados com sucesso!');
+    alert('✅ Dados restaurados e verificados com sucesso!');
 }
 
 // ----------------------------------------------------------------------------
@@ -4075,6 +4076,53 @@ let chartInstance3 = null;
 let chartInstance4 = null;   
 let chartInstanceUser = null; 
 let chartInstanceColab = null; 
+
+// CORREÇÃO CRÍTICA: Destruição Centralizada de Gráficos (Memory Leak Fix)
+function destroyAllCharts() {
+    // Lista com TODAS as variáveis de gráficos do sistema
+    const allCharts = [
+        // Dashboard
+        chartInstanceEvo, chartInstance1, chartInstance2, chartInstance3, 
+        chartInstance4, chartInstanceUser, chartInstanceColab,
+        // Municípios
+        chartStatusMun, chartModulesMun, chartTimelineMun,
+        // Solicitações
+        chartStatusReq, chartMunReq, chartSolReq,
+        // Demandas
+        chartStatusDem, chartPrioDem, chartUserDem,
+        // Visitas
+        chartStatusVis, chartMunVis, chartSolVis,
+        // Produção
+        chartStatusProd, chartFreqProd,
+        // Apresentações
+        chartStatusPres, chartMunPres, chartOrientPres,
+        // Integrações
+        chartInstanceApis,
+        // Colaboradores
+        chartColabTime, chartColabHires
+    ];
+
+    allCharts.forEach(chartInstance => {
+        if (chartInstance && typeof chartInstance.destroy === 'function') {
+            try {
+                chartInstance.destroy();
+            } catch (e) {
+                console.warn('Erro ao destruir gráfico:', e);
+            }
+        }
+    });
+    
+    // Reseta as variáveis globais para null
+    chartInstanceEvo = null; chartInstance1 = null; chartInstance2 = null;
+    chartInstance3 = null; chartInstance4 = null; chartInstanceUser = null;
+    chartInstanceColab = null; chartStatusMun = null; chartModulesMun = null;
+    chartTimelineMun = null; chartStatusReq = null; chartMunReq = null;
+    chartSolReq = null; chartStatusDem = null; chartPrioDem = null;
+    chartUserDem = null; chartStatusVis = null; chartMunVis = null;
+    chartSolVis = null; chartStatusProd = null; chartFreqProd = null;
+    chartStatusPres = null; chartMunPres = null; chartOrientPres = null;
+    chartInstanceApis = null; chartColabTime = null; chartColabHires = null;
+}
 
 function initializeDashboardCharts() {
     if (!window.Chart) return;
