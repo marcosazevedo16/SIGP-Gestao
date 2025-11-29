@@ -3851,66 +3851,74 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL V34 - LINHAS FIXAS E ALTURA PADRONIZADA
+   CORREÇÃO FINAL V35 - LISTAGEM LIMPA E MODAIS TRAVADOS
    ========================================================================== */
 
-/* 1. Estrutura da Tabela */
+/* 1. Modais TRAVADOS (Pequenos no Desktop) */
+#api-list-modal .modal-content,
+#integration-modal .modal-content {
+    width: 500px !important;     /* Trava a largura fixa */
+    max-width: 90% !important;   /* Segurança para celular */
+    margin: 5% auto !important;
+}
+
+/* 2. Tabela de Integrações (Correção do Fundo Cortado) */
 #integrations-table table {
     border-collapse: collapse !important;
     width: 100%;
+    border-spacing: 0 !important; /* Essencial para não ter buracos */
 }
 
-/* 2. LINHA SEPARADORA (FIXA) */
-/* Aplica uma borda cinza visível em cada célula */
-#integrations-table td {
-    border-bottom: 1px solid #cccccc !important; 
-    
-    /* 3. ALTURA FIXA */
-    height: 50px !important; /* Altura travada para uniformidade */
-    padding: 0 8px !important; /* Remove padding vertical para respeitar a altura fixa */
-    
-    /* Alinhamento */
-    vertical-align: middle !important;
+/* Linha inteira com borda inferior */
+#integrations-table tr {
+    background-color: transparent;
+    border-bottom: 1px solid #cccccc !important;
 }
 
-/* Remove a borda apenas da última linha */
-#integrations-table tr:last-child td {
+#integrations-table tr:last-child {
     border-bottom: none !important;
 }
 
-/* 4. Container das APIs (Tags) */
+/* Células (Sem bordas individuais para não cortar o fundo) */
+#integrations-table td {
+    border: none !important; /* Remove borda da célula, deixa só a da linha */
+    vertical-align: middle !important;
+    padding: 8px 10px !important; /* Padding interno seguro */
+    height: 50px !important;      /* Altura fixa */
+}
+
+/* 3. Coluna de APIs (Tags) - Mais delicadas */
 #integrations-table .module-tags-cell {
     display: flex !important;
-    align-items: center !important; /* Centraliza verticalmente */
-    height: 100%;                   /* Ocupa toda a altura da célula */
+    align-items: center !important;
+    height: 100%;
     flex-wrap: wrap !important;
     gap: 4px;
     padding: 0 !important;
     margin: 0 !important;
 }
 
-/* 5. Estilo dos Quadrinhos (Pequenos e Delicados) */
+/* Estilo da Tag (Reduzido e sem Negrito) */
 #integrations-table .module-tag {
     font-size: 10px !important;
-    padding: 2px 6px !important;
+    font-weight: 500 !important; /* Remove negrito pesado (era 700) */
+    padding: 1px 5px !important; /* Mais fino */
     border-radius: 3px;
     line-height: 1 !important;
     display: inline-flex;
     align-items: center;
-    height: 20px !important; /* Altura fixa do quadrinho */
+    height: 18px !important;     /* Altura reduzida */
     margin: 0 !important;
-    font-weight: 600;
+    border-width: 1px !important;
 }
 
-/* 6. Colunas de Texto (Alinhamento) */
+/* 4. Colunas de Texto (Alinhamento) */
 #integrations-table .text-primary-cell,
 #integrations-table .text-secondary-cell {
     line-height: 1.2 !important;
-    display: table-cell;
-    vertical-align: middle;
 }
 
-/* 7. Coluna de Ações (Direita) */
+/* 5. Ações à Direita */
 #integrations-table td:last-child {
     text-align: right !important;
     padding-right: 15px !important;
