@@ -4563,3 +4563,39 @@ input:disabled, select:disabled, textarea:disabled {
     background-color: var(--color-bg-1);
     color: var(--color-primary);
 }
+/* ==========================================================================
+   CORREÇÃO FINAL V67 - ABRIR MENU AO PASSAR MOUSE (HOVER)
+   ========================================================================== */
+
+/* 1. Exibir menu automaticamente no Hover (Apenas Desktop) */
+@media (min-width: 901px) {
+    .settings-dropdown:hover .settings-menu {
+        display: block !important;
+        animation: fadeIn 0.2s ease-out;
+    }
+}
+
+/* 2. Cria uma "Ponte Invisível" */
+/* Isso preenche o espaço entre o botão e o menu para o mouse não "cair" */
+.settings-dropdown::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 15px; /* Cobre o buraco de 10px entre o botão e o menu */
+    background: transparent;
+    z-index: 1999;
+}
+
+/* 3. Ajuste Fino de Posição (Mais próximo) */
+#settings-menu, #notification-menu {
+    top: 35px !important; /* Subiu um pouco (era 40px) para facilitar o hover */
+    margin-top: 0 !important;
+}
+
+/* Animação Suave */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
