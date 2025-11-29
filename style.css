@@ -4399,7 +4399,7 @@ input:disabled, select:disabled, textarea:disabled {
     margin: 4px 0;
 }
 /* ==========================================================================
-   CORREÇÃO FINAL V64 - REMOÇÃO DE FUNDO BRANCO E BOTÃO SAIR FIXO
+   CORREÇÃO FINAL V66 - ÍCONES REAIS NO HTML (ZERO TREMEDEIRA)
    ========================================================================== */
 
 /* 1. Alinhamento Geral */
@@ -4410,11 +4410,8 @@ input:disabled, select:disabled, textarea:disabled {
     margin-left: auto;
 }
 
-/* 2. Botões Ícone Quadrados (Home, Tema, Notif) */
-#home-btn.header-icon-btn,
-#theme-toggle.header-icon-btn,
-#notif-btn.header-icon-btn,
-.header-actions .settings-dropdown .header-icon-btn {
+/* 2. Botões Quadrados (Só Ícone) */
+.header-icon-btn {
     width: 30px !important;
     height: 30px !important;
     padding: 0 !important;
@@ -4423,29 +4420,16 @@ input:disabled, select:disabled, textarea:disabled {
     align-items: center !important;
     font-size: 1rem !important;
     line-height: 1 !important;
-    
-    /* FORÇA BRUTA NA TRANSPARÊNCIA */
     background: transparent !important;
-    background-color: rgba(0, 0, 0, 0) !important;
-    box-shadow: none !important;
-    
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     color: #ffffff !important;
     border-radius: 4px !important;
-    transition: background-color 0.2s ease-in-out;
+    transition: background-color 0.2s;
+    box-shadow: none !important;
 }
 
-/* Hover Suave */
-#home-btn.header-icon-btn:hover,
-#theme-toggle.header-icon-btn:hover,
-#notif-btn.header-icon-btn:hover,
-.header-actions .settings-dropdown .header-icon-btn:hover {
-    background-color: rgba(255, 255, 255, 0.15) !important;
-    border-color: #ffffff !important;
-}
-
-/* 3. Botão CONFIGURAÇÕES (Texto + Ícone) */
-.header-actions .settings-dropdown .header-text-btn {
+/* 3. Botões Retangulares (Texto + Ícone Reais) */
+.header-text-btn {
     height: 30px !important;
     padding: 0 10px !important;
     display: inline-flex !important;
@@ -4453,7 +4437,9 @@ input:disabled, select:disabled, textarea:disabled {
     justify-content: center !important;
     font-size: 11px !important;
     font-weight: 500 !important;
-    gap: 5px !important;
+    gap: 6px !important; /* Espaço entre o emoji e o texto */
+    
+    /* Largura automática e natural */
     width: auto !important;
     white-space: nowrap !important;
     
@@ -4463,52 +4449,15 @@ input:disabled, select:disabled, textarea:disabled {
     color: #ffffff !important;
     border-radius: 4px !important;
     box-shadow: none !important;
-}
-.header-actions .settings-dropdown .header-text-btn:hover {
-    background-color: rgba(255, 255, 255, 0.15) !important;
+    transition: background-color 0.2s;
 }
 
-/* 4. Botão SAIR (BLINDADO) */
-.header-actions .btn--secondary.btn--sm.header-text-btn {
-    /* Geometria Travada */
-    height: 30px !important;
-    min-width: 60px !important; /* Impede encolhimento */
-    width: auto !important;
-    padding: 0 12px !important;
-    
-    /* Layout Flex Rígido */
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 6px !important;
-    
-    /* Estilo Transparente */
-    background: transparent !important;
-    background-color: transparent !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    color: #ffffff !important;
-    font-size: 11px !important;
-    box-shadow: none !important;
-    
-    /* Desliga animações de tamanho */
-    transition: background-color 0.2s !important; 
-}
-
-/* Ícone Porta do Sair */
-.header-actions .btn--secondary.btn--sm.header-text-btn::before {
-    content: "🚪";
-    font-size: 12px;
-    line-height: 1;
-    display: inline-block;
-    opacity: 1 !important;
-}
-
-/* Hover do Sair (Só muda cor de fundo) */
-.header-actions .btn--secondary.btn--sm.header-text-btn:hover {
+/* 4. Hover Unificado (Apenas Fundo) */
+.header-icon-btn:hover,
+.header-text-btn:hover {
     background-color: rgba(255, 255, 255, 0.15) !important;
     border-color: #ffffff !important;
     color: #ffffff !important;
-    width: auto !important; /* Reforça largura */
 }
 
 /* 5. Menus Suspensos */
