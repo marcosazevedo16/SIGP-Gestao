@@ -516,8 +516,9 @@ const DADOS_PADRAO = {
     cargos: [],
     orientadores: [],
     formasApresentacao: [],
-    integrations: [], // NOVO
-    apisList: []      // NOVO
+    integrations: [],
+    apisList: [],
+    collaboratorInfos: []
 };
 
 // Carrega usuários
@@ -551,11 +552,12 @@ let modulos = recuperarDoArmazenamento('modulos', DADOS_PADRAO.modulos);
 let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', []);
 let integrations = recuperarDoArmazenamento('integrations', []);
 let apisList = recuperarDoArmazenamento('apisList', []);
+let collaboratorInfos = recuperarDoArmazenamento('collaboratorInfos', []);
 
 // Contadores de ID (Persistidos)
 let counters = recuperarDoArmazenamento('counters', {
     mun: 1, munList: 1, task: 1, req: 1, dem: 1, visit: 1, prod: 1, pres: 1, ver: 1, user: 2, cargo: 1, orient: 1, mod: 1, forma: 1,
-    api: 1, integration: 1
+    api: 1, integration: 1, colabInfo: 1
 });
 
 function getNextId(key) {
@@ -735,8 +737,7 @@ function refreshCurrentTab(sectionId) {
     if (sectionId === 'formas-apresentacao-section') renderFormas();
     if (sectionId === 'apis-section') renderIntegrations();
     if (sectionId === 'apis-list-section') renderApiList();
-    if (sectionId === 'info-colaboradores-section') { /* Futura lógica aqui */ }
-
+    if (sectionId === 'info-colaboradores-section') renderCollaboratorInfos();
     if (sectionId === 'dashboard-section') { 
         updateDashboardStats(); 
         initializeDashboardCharts(); 
@@ -1427,6 +1428,9 @@ function validateDateRange(type) {
     } else if (type.includes('production')) { 
         startId = `filter-${type}-start`; endId = `filter-${type}-end`;
     } else if (type === 'integration') { startId = 'filter-integration-start'; endId = 'filter-integration-end';
+    } else if (type === 'colab') { // NOVO BLOCO
+        startId = 'filter-colab-info-start';
+        endId = 'filter-colab-info-end';
     }
 
     const start = document.getElementById(startId);
@@ -1447,6 +1451,7 @@ function validateDateRange(type) {
     else if (type.includes('visit')) renderVisits();
     if (type === 'integration') renderIntegrations();
     else renderTasks();
+    if (type === 'colab') renderCollaboratorInfos();
 }
 
 function getFilteredTasks() {
@@ -3809,9 +3814,9 @@ function updateBackupInfo() {
 }
 
 function createBackup(filenamePersonalizado = null) {
-    // 1. Coleta todos os dados atuais
+    // 1. Coleta todos os dados atuais (INCLUINDO AS NOVIDADES)
     const backupData = { 
-        version: "v25.0", 
+        version: "v4.5", 
         date: new Date().toISOString(), 
         data: { 
             users: users, 
@@ -3828,14 +3833,18 @@ function createBackup(filenamePersonalizado = null) {
             orientadores: orientadores, 
             modulos: modulos, 
             formasApresentacao: formasApresentacao, 
-            counters: counters,
-            auditLogs: auditLogs,
+            
+            // --- NOVOS DADOS (INTEGRAÇÕES E COLABORADORES) ---
             integrations: integrations,
             apisList: apisList,
+            collaboratorInfos: collaboratorInfos, // <--- O item da dúvida F
+            
+            counters: counters,
+            auditLogs: auditLogs
         } 
     };
     
-    // 2. Gera o Timestamp (Data + Hora) para versionamento
+    // 2. Gera o Timestamp
     const now = new Date();
     const timestamp = now.getFullYear() + '-' +
                      String(now.getMonth()+1).padStart(2,'0') + '-' +
@@ -3954,11 +3963,10 @@ function confirmRestore() {
     // 1. Preserva o Usuário Logado Atual (Para não deslogar)
     const sessionUser = recuperarDoArmazenamento('currentUser');
 
-    // 2. Limpa o LocalStorage (mas vamos recolocar o usuário logo em seguida)
+    // 2. Limpa o LocalStorage
     localStorage.clear();
 
-    // 3. Atualiza as Variáveis Globais (Memória do JS) e Salva no LocalStorage
-    // Isso garante que a tela atualize sem precisar de F5
+    // 3. Atualiza as Variáveis Globais e Salva (INCLUINDO NOVOS DADOS)
     
     users = d.users || [];
     salvarNoArmazenamento('users', users);
@@ -3969,7 +3977,6 @@ function confirmRestore() {
     municipalitiesList = d.municipalitiesList || [];
     salvarNoArmazenamento('municipalitiesList', municipalitiesList);
 
-    // Compatibilidade com backups antigos que usavam 'trainings'
     tasks = d.tasks || d.trainings || []; 
     salvarNoArmazenamento('tasks', tasks);
 
@@ -4003,11 +4010,15 @@ function confirmRestore() {
     formasApresentacao = d.formasApresentacao || [];
     salvarNoArmazenamento('formasApresentacao', formasApresentacao);
 
+    // --- NOVOS DADOS ---
     integrations = d.integrations || [];
     salvarNoArmazenamento('integrations', integrations);
 
     apisList = d.apisList || [];
     salvarNoArmazenamento('apisList', apisList);
+
+    collaboratorInfos = d.collaboratorInfos || []; // <--- O item da dúvida F
+    salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
 
     if (d.counters) {
         counters = d.counters;
@@ -4016,7 +4027,6 @@ function confirmRestore() {
 
     // Auditoria
     auditLogs = d.auditLogs || [];
-    // Adiciona log da restauração
     auditLogs.unshift({
         id: Date.now(),
         timestamp: new Date().toISOString(),
@@ -4027,7 +4037,7 @@ function confirmRestore() {
     });
     salvarNoArmazenamento('auditLogs', auditLogs);
 
-    // 4. Restaura a Sessão (O Pulo do Gato)
+    // 4. Restaura a Sessão
     if (sessionUser) {
         currentUser = sessionUser;
         salvarNoArmazenamento('currentUser', currentUser);
@@ -4035,11 +4045,12 @@ function confirmRestore() {
     }
 
     // 5. Atualiza a Interface Imediatamente
-    initializeApp(); // Recarrega tabelas, gráficos e menus com os dados novos
+    initializeApp(); 
     closeRestoreConfirmModal();
     
     alert('✅ Dados restaurados com sucesso!');
 }
+
 // ----------------------------------------------------------------------------
 // 20. DASHBOARD E INICIALIZAÇÃO
 // ----------------------------------------------------------------------------
@@ -4416,7 +4427,11 @@ function updateGlobalDropdowns() {
     if (typeof populateFilterSelects === 'function') {
         populateFilterSelects();
     }
-}
+        // Preenche select do Modal de Ficha de Colaborador
+    const colabInfoSelect = document.getElementById('colab-info-name');
+    if(colabInfoSelect) {
+        populateSelect(colabInfoSelect, orientadores, 'name', 'name');
+    }
 
 // 2. ATUALIZA OS FILTROS (TOPO DAS TABELAS) - TODAS AS ABAS
 function populateFilterSelects() {
@@ -4488,6 +4503,20 @@ function populateFilterSelects() {
             el.innerHTML = '<option value="">Todos</option>' + sortedUsers.map(o => `<option value="${o.name}">${o.name}</option>`).join(''); 
             if(c) el.value=c; 
         }
+
+    // Filtro da aba Colaboradores Info
+    const filterColabInfoName = document.getElementById('filter-colab-info-name');
+    if(filterColabInfoName) {
+        const cur = filterColabInfoName.value;
+        filterColabInfoName.innerHTML = '<option value="">Todos</option>' + sortedOrient.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
+        if(cur) filterColabInfoName.value = cur;
+        filterColabInfoName.onchange = renderCollaboratorInfos;
+    }
+    
+    // Listener para outros filtros da aba
+    ['filter-colab-info-status', 'filter-colab-info-start', 'filter-colab-info-end'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.onchange = renderCollaboratorInfos;
     });
 }
 
@@ -5596,4 +5625,326 @@ function clearIntegrationFilters() {
     if(document.getElementById('filter-integration-start')) document.getElementById('filter-integration-start').value = '';
     if(document.getElementById('filter-integration-end')) document.getElementById('filter-integration-end').value = '';
     renderIntegrations();
+}
+
+    // ----------------------------------------------------------------------------
+// XX. INFORMAÇÕES DE COLABORADORES (ABA RH)
+// ----------------------------------------------------------------------------
+
+// Variáveis de Gráficos
+let chartColabTime = null;
+let chartColabHires = null;
+
+// Função Auxiliar: Calcula diferença exata (Anos, Meses, Dias)
+function calcDateDiffString(startDateStr, endDateStr = null) {
+    if(!startDateStr) return '-';
+    
+    const start = new Date(startDateStr);
+    const end = endDateStr ? new Date(endDateStr) : new Date(); // Se não tiver fim, usa hoje
+    
+    // Zera horas
+    start.setHours(0,0,0,0);
+    end.setHours(0,0,0,0);
+
+    if(end < start) return "Data futura ou inválida";
+
+    let years = end.getFullYear() - start.getFullYear();
+    let months = end.getMonth() - start.getMonth();
+    let days = end.getDate() - start.getDate();
+
+    if (days < 0) {
+        months--;
+        // Dias no mês anterior
+        const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+        days += prevMonth.getDate();
+    }
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+
+    const parts = [];
+    if(years > 0) parts.push(`${years} ano(s)`);
+    if(months > 0) parts.push(`${months} mês(es)`);
+    if(days > 0) parts.push(`${days} dia(s)`);
+    
+    return parts.length > 0 ? parts.join(', ') : '0 dias';
+}
+
+function handleColabStatusChange() {
+    const status = document.getElementById('colab-info-status').value;
+    const groupTerm = document.getElementById('group-colab-termination');
+    const inputTerm = document.getElementById('colab-info-termination');
+
+    if(status === 'Desligado da Empresa') {
+        groupTerm.style.display = 'block';
+        inputTerm.required = true;
+    } else {
+        groupTerm.style.display = 'none';
+        inputTerm.required = false;
+        inputTerm.value = '';
+    }
+}
+
+// Preenchimento Automático de Nascimento
+function handleCollaboratorSelection() {
+    const selectedName = document.getElementById('colab-info-name').value;
+    const birthField = document.getElementById('colab-info-birth');
+    
+    if(!selectedName) {
+        birthField.value = '';
+        return;
+    }
+
+    // Busca no cadastro mestre de orientadores
+    const colabMaster = orientadores.find(o => o.name === selectedName);
+    if(colabMaster && colabMaster.birthDate) {
+        birthField.value = colabMaster.birthDate;
+    } else {
+        birthField.value = ''; // Não tem data cadastrada lá
+    }
+}
+
+function showColabInfoModal(id=null) {
+    editingId = id;
+    document.getElementById('colab-info-form').reset();
+    document.getElementById('colab-info-counter').textContent = '0 / 250';
+    
+    updateGlobalDropdowns(); // Garante lista atualizada
+
+    if(id) {
+        const c = collaboratorInfos.find(x => x.id === id);
+        if(c) {
+            document.getElementById('colab-info-name').value = c.name;
+            document.getElementById('colab-info-admission').value = c.admissionDate;
+            document.getElementById('colab-info-status').value = c.status;
+            document.getElementById('colab-info-vacation').value = c.lastVacationEnd || '';
+            document.getElementById('colab-info-obs').value = c.observation || '';
+            
+            if(c.terminationDate) {
+                document.getElementById('colab-info-termination').value = c.terminationDate;
+            }
+            
+            // Dispara lógica de auto-preenchimento
+            handleCollaboratorSelection();
+            
+            if(c.observation) {
+                document.getElementById('colab-info-counter').textContent = c.observation.length + ' / 250';
+            }
+        }
+    }
+    
+    handleColabStatusChange();
+    document.getElementById('colab-info-modal').classList.add('show');
+}
+
+function saveColabInfo(e) {
+    e.preventDefault();
+    const status = document.getElementById('colab-info-status').value;
+    const termDate = document.getElementById('colab-info-termination').value;
+
+    if(status === 'Desligado da Empresa' && !termDate) {
+        alert('Data de Desligamento é obrigatória.'); return;
+    }
+
+    // Validação de Duplicidade (Só uma ficha por colaborador ativo, talvez?)
+    // Vamos permitir editar, mas avisar se criar novo para o mesmo nome
+    const name = document.getElementById('colab-info-name').value;
+    if(!editingId && collaboratorInfos.some(c => c.name === name)) {
+        if(!confirm(`Já existe uma ficha para "${name}". Deseja criar outra?`)) return;
+    }
+
+    const data = {
+        name: name,
+        admissionDate: document.getElementById('colab-info-admission').value,
+        status: status,
+        terminationDate: termDate,
+        lastVacationEnd: document.getElementById('colab-info-vacation').value,
+        observation: sanitizeInput(document.getElementById('colab-info-obs').value)
+    };
+
+    if(editingId) {
+        const i = collaboratorInfos.findIndex(x => x.id === editingId);
+        if(i !== -1) collaboratorInfos[i] = { ...collaboratorInfos[i], ...data };
+    } else {
+        collaboratorInfos.push({ id: getNextId('colabInfo'), ...data });
+    }
+
+    salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
+    document.getElementById('colab-info-modal').classList.remove('show');
+    renderCollaboratorInfos();
+    showToast('Ficha salva com sucesso!', 'success');
+}
+
+function renderCollaboratorInfos() {
+    // Filtros
+    const fName = document.getElementById('filter-colab-info-name')?.value;
+    const fStatus = document.getElementById('filter-colab-info-status')?.value;
+    const fStart = document.getElementById('filter-colab-info-start')?.value;
+    const fEnd = document.getElementById('filter-colab-info-end')?.value;
+
+    let filtered = collaboratorInfos.filter(c => {
+        if (fName && c.name !== fName) return false;
+        if (fStatus && c.status !== fStatus) return false;
+        if (fStart && c.admissionDate < fStart) return false;
+        if (fEnd && c.admissionDate > fEnd) return false;
+        return true;
+    }).sort((a,b) => a.name.localeCompare(b.name));
+
+    const container = document.getElementById('colab-info-table');
+    const countDiv = document.getElementById('colab-info-results-count');
+    
+    if(countDiv) {
+        countDiv.style.display = 'block';
+        countDiv.innerHTML = `<strong>${filtered.length}</strong> fichas encontradas`;
+    }
+
+    // Atualiza Cards
+    if(document.getElementById('total-colab-active')) 
+        document.getElementById('total-colab-active').textContent = collaboratorInfos.filter(c => c.status === 'Ativo na Empresa').length;
+    if(document.getElementById('total-colab-terminated')) 
+        document.getElementById('total-colab-terminated').textContent = collaboratorInfos.filter(c => c.status === 'Desligado da Empresa').length;
+
+    if(filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state">Nenhuma ficha encontrada.</div>';
+    } else {
+        const rows = filtered.map(c => {
+            // Busca dados do mestre (nascimento)
+            const master = orientadores.find(o => o.name === c.name);
+            const birthDate = master ? master.birthDate : null;
+            const age = calcDateDiffString(birthDate); // Idade
+            
+            // Tempo de Serviço
+            // Se desligado, calcula até data de desligamento. Senão, até hoje.
+            const serviceTime = calcDateDiffString(c.admissionDate, c.status === 'Desligado da Empresa' ? c.terminationDate : null);
+            
+            // Tempo Sem Férias
+            const timeSinceVacation = c.lastVacationEnd ? calcDateDiffString(c.lastVacationEnd) : '-';
+
+            // Status Badge
+            const badgeClass = c.status === 'Ativo na Empresa' ? 'status-badge-active' : 'status-badge-terminated';
+            const statusLabel = c.status === 'Ativo na Empresa' ? 'Ativo' : 'Desligado';
+
+            return `<tr>
+                <td class="text-primary-cell">${c.name}</td>
+                <td style="text-align:center;">${formatDate(birthDate)}</td>
+                <td>${age}</td>
+                <td style="text-align:center;">${formatDate(c.admissionDate)}</td>
+                <td>${serviceTime}</td>
+                <td style="text-align:center;">${formatDate(c.lastVacationEnd)}</td>
+                <td>${timeSinceVacation}</td>
+                <td style="text-align:center;"><span class="${badgeClass}">${statusLabel}</span></td>
+                <td style="text-align:center;">${formatDate(c.terminationDate)}</td>
+                <td class="text-secondary-cell" title="${c.observation||''}">${c.observation ? (c.observation.length > 20 ? c.observation.substr(0,20)+'...' : c.observation) : '-'}</td>
+                <td style="text-align:right;">
+                    <button class="btn btn--sm" onclick="showColabInfoModal(${c.id})">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteColabInfo(${c.id})">🗑️</button>
+                </td>
+            </tr>`;
+        }).join('');
+
+        container.innerHTML = `<table>
+            <thead>
+                <th>Colaborador</th>
+                <th>Data Nasc.</th>
+                <th>Idade</th>
+                <th>Admissão</th>
+                <th>Tempo de Serviço</th>
+                <th>Últimas Férias</th>
+                <th>Tempo s/ Férias</th>
+                <th>Status</th>
+                <th>Desligamento</th>
+                <th>Obs</th>
+                <th style="text-align:right;">Ações</th>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>`;
+    }
+    
+    updateColabCharts(filtered);
+}
+
+function updateColabCharts(data) {
+    if(!window.Chart) return;
+
+    // 1. Gráfico: Tempo de Empresa (Agrupado por faixas)
+    // < 1 ano, 1-3 anos, 3-5 anos, > 5 anos
+    const ctxTime = document.getElementById('chartColabTime');
+    if(ctxTime) {
+        if(chartColabTime) chartColabTime.destroy();
+        
+        const counts = { '< 1 Ano': 0, '1-3 Anos': 0, '3-5 Anos': 0, '> 5 Anos': 0 };
+        
+        data.filter(c => c.status === 'Ativo na Empresa').forEach(c => {
+            const start = new Date(c.admissionDate);
+            const now = new Date();
+            const years = (now - start) / (1000 * 60 * 60 * 24 * 365.25);
+            
+            if(years < 1) counts['< 1 Ano']++;
+            else if(years < 3) counts['1-3 Anos']++;
+            else if(years < 5) counts['3-5 Anos']++;
+            else counts['> 5 Anos']++;
+        });
+
+        chartColabTime = new Chart(ctxTime, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(counts),
+                datasets: [{
+                    label: 'Colaboradores Ativos',
+                    data: Object.values(counts),
+                    backgroundColor: ['#79C2A9', '#E7B85F', '#E68161', '#C85250']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    // 2. Gráfico: Contratações por Ano (Evolução)
+    const ctxHires = document.getElementById('chartColabHires');
+    if(ctxHires) {
+        if(chartColabHires) chartColabHires.destroy();
+        
+        const hiresByYear = {};
+        data.forEach(c => {
+            if(c.admissionDate) {
+                const year = c.admissionDate.split('-')[0];
+                hiresByYear[year] = (hiresByYear[year] || 0) + 1;
+            }
+        });
+        
+        const sortedYears = Object.keys(hiresByYear).sort();
+        
+        chartColabHires = new Chart(ctxHires, {
+            type: 'line',
+            data: {
+                labels: sortedYears,
+                datasets: [{
+                    label: 'Contratações',
+                    data: sortedYears.map(y => hiresByYear[y]),
+                    borderColor: '#005580',
+                    backgroundColor: 'rgba(0, 85, 128, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+}
+
+function deleteColabInfo(id) {
+    if(confirm('Excluir esta ficha?')) {
+        collaboratorInfos = collaboratorInfos.filter(x => x.id !== id);
+        salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
+        renderCollaboratorInfos();
+    }
+}
+
+function closeColabInfoModal() { document.getElementById('colab-info-modal').classList.remove('show'); }
+
+function clearColabInfoFilters() {
+    const ids = ['filter-colab-info-name', 'filter-colab-info-status', 'filter-colab-info-start', 'filter-colab-info-end'];
+    ids.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; });
+    renderCollaboratorInfos();
 }
