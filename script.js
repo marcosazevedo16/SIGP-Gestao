@@ -1415,57 +1415,71 @@ logSystemAction(editingId ? 'Edição' : 'Criação', 'Treinamentos', `Para: ${d
 // CORREÇÃO: Validação de Datas (Incluindo Aba Colaboradores)
 // CORREÇÃO DEFINITIVA: Validação de Datas (Trava Imediata)
 // CORREÇÃO DEFINITIVA: Validação de Datas (Trava Imediata)
+// CORREÇÃO DEFINITIVA: Validação de Datas (Trava de Segurança)
 function validateDateRange(type) {
+    console.log("Validando datas para:", type); // Log para debug
+
     let startId, endId;
 
-    // Mapeamento dos IDs baseado no tipo
-    if (type === 'req' || type === 'perf') {
-        startId = `filter-task-${type}-start`; endId = `filter-task-${type}-end`;
+    // 1. Mapeamento de IDs (Garante que pegamos os inputs certos)
+    if (type === 'colab') {
+        startId = 'filter-colab-info-start';
+        endId = 'filter-colab-info-end';
+    } else if (type === 'integration') {
+        startId = 'filter-integration-start';
+        endId = 'filter-integration-end';
+    } else if (type.includes('production')) {
+        startId = 'filter-production-send-start'; // Ajuste conforme seu filtro principal
+        endId = 'filter-production-send-end';
+        if(document.getElementById('filter-production-release-start').value) {
+             // Se estiver filtrando por liberação, muda os IDs
+             startId = 'filter-production-release-start';
+             endId = 'filter-production-release-end';
+        }
+    } else if (type.includes('dem')) {
+        startId = `filter-demand-${type.split('-')[1]}-start`; endId = `filter-demand-${type.split('-')[1]}-end`;
     } else if (type.includes('request')) {
         startId = `filter-${type}-start`; endId = `filter-${type}-end`;
     } else if (type.includes('pres')) {
         startId = `filter-presentation-${type.split('-')[1]}-start`; endId = `filter-presentation-${type.split('-')[1]}-end`;
-    } else if (type.includes('dem')) {
-        startId = `filter-demand-${type.split('-')[1]}-start`; endId = `filter-demand-${type.split('-')[1]}-end`;
     } else if (type.includes('visit')) {
         startId = `filter-${type}-start`; endId = `filter-${type}-end`;
-    } else if (type.includes('production')) { 
-        startId = `filter-${type}-start`; endId = `filter-${type}-end`;
-    } else if (type === 'integration') {
-        startId = 'filter-integration-start'; endId = 'filter-integration-end';
-    } else if (type === 'colab') { 
-        // IDs da aba Colaboradores (Igual ao seu HTML)
-        startId = 'filter-colab-info-start'; 
-        endId = 'filter-colab-info-end';
+    } else {
+        // Padrão (Tarefas)
+        startId = `filter-task-${type}-start`; endId = `filter-task-${type}-end`;
     }
 
     const startInput = document.getElementById(startId);
     const endInput = document.getElementById(endId);
-    
+
+    // 2. Lógica de Bloqueio
     if (startInput && endInput) {
-        // Se houver uma data de início, define ela como MÍNIMO para a data final
+        
+        // Define o atributo 'min' no campo final para o calendário bloquear visualmente
         if (startInput.value) {
-            endInput.min = startInput.value; // Isso bloqueia dias anteriores no calendário
-            
-            // Se a data final já estiver preenchida e for menor que a inicial, corrige na hora
-            if (endInput.value && endInput.value < startInput.value) {
-                alert('A data final não pode ser anterior à data inicial.');
-                endInput.value = ''; // Limpa o campo errado
-            }
+            endInput.min = startInput.value;
         } else {
-            // Se limpar a data inicial, remove a restrição
             endInput.removeAttribute('min');
+        }
+
+        // Validação Ativa: Se as duas datas existem e Final < Inicial
+        if (startInput.value && endInput.value) {
+            if (endInput.value < startInput.value) {
+                alert('⚠️ Atenção: A Data Final não pode ser anterior à Data Inicial.');
+                endInput.value = ''; // Limpa o campo errado imediatamente
+                // Não retorna aqui para permitir que a lista atualize (mostrando tudo ou filtrado só pelo início)
+            }
         }
     }
 
-    // Refresh da listagem correspondente para aplicar o filtro
-    if (type.includes('production')) renderProductions();
+    // 3. Atualização da Tabela (Refresh)
+    if (type === 'colab') renderCollaboratorInfos();
+    else if (type === 'integration') renderIntegrations();
+    else if (type.includes('production')) renderProductions();
     else if (type.includes('dem')) renderDemands();
     else if (type.includes('request')) renderRequests();
     else if (type.includes('pres')) renderPresentations();
     else if (type.includes('visit')) renderVisits();
-    else if (type === 'integration') renderIntegrations();
-    else if (type === 'colab') renderCollaboratorInfos(); // <--- Atualiza a lista
     else renderTasks();
 }
 
