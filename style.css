@@ -4417,14 +4417,14 @@ input:disabled, select:disabled, textarea:disabled {
     margin: 4px 0;
 }
 /* ==========================================================================
-   CORREÇÃO FINAL V62 - BOTÕES ESTÁVEIS (COM E SEM TEXTO)
+   CORREÇÃO FINAL V63 - TRANSPARÊNCIA TOTAL E BOTÕES FIXOS
    ========================================================================== */
 
 /* 1. Alinhamento Geral */
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 8px; 
+    gap: 6px; 
     margin-left: auto;
 }
 
@@ -4438,64 +4438,61 @@ input:disabled, select:disabled, textarea:disabled {
     align-items: center !important;
     font-size: 1rem !important;
     line-height: 1 !important;
-    background: transparent !important;
+    
+    /* Forçar Transparência Absoluta */
+    background: none !important;
+    background-color: transparent !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     color: #ffffff !important;
     border-radius: 4px !important;
-    transition: background-color 0.2s; /* Apenas cor, não tamanho */
+    transition: background-color 0.2s;
     box-shadow: none !important;
 }
 
-/* 3. CLASSE PARA BOTÕES RETANGULARES (Texto + Ícone) - Configurações e Sair */
+/* 3. CLASSE PARA BOTÕES RETANGULARES (Texto + Ícone) */
 .header-text-btn {
     height: 30px !important;
-    padding: 0 12px !important; /* Espaço lateral fixo */
+    padding: 0 12px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    font-size: 12px !important; /* Tamanho da fonte ajustado */
+    font-size: 11px !important;
     font-weight: 500 !important;
-    gap: 6px !important; /* Espaço entre ícone e texto */
+    gap: 6px !important;
     
-    /* Largura Automática e Estável */
+    /* Largura Estável */
     width: auto !important;
-    min-width: fit-content !important;
-    white-space: nowrap !important; /* Texto nunca quebra */
+    min-width: max-content !important; /* Garante que caiba o texto */
+    flex-shrink: 0 !important;         /* Proíbe encolher */
+    white-space: nowrap !important;
     
-    /* Estilo Transparente */
-    background: transparent !important;
+    /* Forçar Transparência Absoluta */
+    background: none !important;
     background-color: transparent !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     color: #ffffff !important;
     border-radius: 4px !important;
     box-shadow: none !important;
-    transition: background-color 0.2s; /* Removemos transição de width/padding */
+    transition: background-color 0.2s;
 }
 
 /* 4. HOVER UNIFICADO (Para todos) */
 .header-icon-btn:hover,
 .header-text-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important;
+    background-color: rgba(255, 255, 255, 0.1) !important; /* Branco translúcido */
     border-color: #ffffff !important;
-    /* Garantir que padding e width não mudem no hover */
-    padding: 0 12px !important; 
-    width: auto !important;
+    color: #ffffff !important;
 }
 
-/* Correção específica para os botões quadrados no hover (padding deve ser 0) */
-.header-icon-btn:hover {
-    padding: 0 !important;
-    width: 30px !important;
-}
-
-/* 5. Ícone do Botão Sair (Porta) */
-/* Como agora usamos classes compartilhadas, precisamos garantir que o ícone do Sair apareça */
+/* 5. Ícone do Botão Sair (Garantia de Visibilidade) */
 .header-actions button[title="Sair do Sistema"]::before {
     content: "🚪";
     font-size: 13px;
     line-height: 1;
     display: inline-block;
     opacity: 1 !important;
+    visibility: visible !important;
+    margin-right: 4px;
 }
 
 /* 6. Menus Suspensos */
