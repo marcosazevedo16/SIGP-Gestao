@@ -3948,83 +3948,98 @@ function closeRestoreConfirmModal() {
 
 function confirmRestore() {
     if (!pendingBackupData) return;
-    
-    // =================================================================
-    // SEGURANÇA: BACKUP AUTOMÁTICO ANTES DE SOBRESCREVER
-    // =================================================================
-    // Isso garante que, se o usuário restaurar o arquivo errado,
-    // ele terá uma cópia do que existia no sistema até 1 segundo atrás.
-    try {
-        const agora = new Date();
-        const timeTag = String(agora.getHours()).padStart(2,'0') + 'h' + String(agora.getMinutes()).padStart(2,'0');
-        const nomeSeguranca = `AUTO-BACKUP_antes_de_restaurar_${timeTag}`;
-        
-        // Chama a função de backup forçando esse nome especial
-        createBackup(nomeSeguranca);
-        
-        alert('🛡️ SISTEMA DE SEGURANÇA:\n\nUm backup automático dos seus dados atuais foi baixado para a pasta Downloads ("' + nomeSeguranca + '").\n\nIsso garante que você possa desfazer essa ação se necessário.');
-        
-    } catch (err) {
-        console.error("Erro ao criar backup de segurança:", err);
-        if(!confirm("Erro ao gerar backup de segurança automático. Deseja continuar mesmo assim? (Dados atuais serão perdidos)")) {
-            return;
-        }
-    }
-    // =================================================================
 
-    const d = pendingBackupData.data; // Atalho para os novos dados
-    
-    // 1. Limpa tudo atual
+    const d = pendingBackupData.data; // Atalho para os dados do arquivo
+
+    // 1. Preserva o Usuário Logado Atual (Para não deslogar)
+    const sessionUser = recuperarDoArmazenamento('currentUser');
+
+    // 2. Limpa o LocalStorage (mas vamos recolocar o usuário logo em seguida)
     localStorage.clear();
+
+    // 3. Atualiza as Variáveis Globais (Memória do JS) e Salva no LocalStorage
+    // Isso garante que a tela atualize sem precisar de F5
     
-    // 2. Função auxiliar segura
-    const safeSave = (key, value, defaultVal = []) => {
-        localStorage.setItem(key, JSON.stringify(value || defaultVal));
-    };
-    
-    // 3. Restaura Item por Item
-    safeSave('users', d.users);
-    safeSave('municipalities', d.municipalities);
-    safeSave('municipalitiesList', d.municipalitiesList);
-    safeSave('tasks', d.tasks || d.trainings); 
-    safeSave('requests', d.requests);
-    safeSave('demands', d.demands);
-    safeSave('visits', d.visits);
-    safeSave('productions', d.productions);
-    safeSave('presentations', d.presentations);
-    safeSave('systemVersions', d.systemVersions);
-    safeSave('cargos', d.cargos);
-    safeSave('orientadores', d.orientadores);
-    safeSave('modulos', d.modules || d.modulos);
-    safeSave('formasApresentacao', d.formasApresentacao);
-    safeSave('integrations', d.integrations);
-    safeSave('apisList', d.apisList);
-    safeSave('auditLogs', d.auditLogs);
-    
+    users = d.users || [];
+    salvarNoArmazenamento('users', users);
+
+    municipalities = d.municipalities || [];
+    salvarNoArmazenamento('municipalities', municipalities);
+
+    municipalitiesList = d.municipalitiesList || [];
+    salvarNoArmazenamento('municipalitiesList', municipalitiesList);
+
+    // Compatibilidade com backups antigos que usavam 'trainings'
+    tasks = d.tasks || d.trainings || []; 
+    salvarNoArmazenamento('tasks', tasks);
+
+    requests = d.requests || [];
+    salvarNoArmazenamento('requests', requests);
+
+    demands = d.demands || [];
+    salvarNoArmazenamento('demands', demands);
+
+    visits = d.visits || [];
+    salvarNoArmazenamento('visits', visits);
+
+    productions = d.productions || [];
+    salvarNoArmazenamento('productions', productions);
+
+    presentations = d.presentations || [];
+    salvarNoArmazenamento('presentations', presentations);
+
+    systemVersions = d.systemVersions || [];
+    salvarNoArmazenamento('systemVersions', systemVersions);
+
+    cargos = d.cargos || [];
+    salvarNoArmazenamento('cargos', cargos);
+
+    orientadores = d.orientadores || [];
+    salvarNoArmazenamento('orientadores', orientadores);
+
+    modulos = d.modules || d.modulos || [];
+    salvarNoArmazenamento('modulos', modulos);
+
+    formasApresentacao = d.formasApresentacao || [];
+    salvarNoArmazenamento('formasApresentacao', formasApresentacao);
+
+    integrations = d.integrations || [];
+    salvarNoArmazenamento('integrations', integrations);
+
+    apisList = d.apisList || [];
+    salvarNoArmazenamento('apisList', apisList);
+
     if (d.counters) {
-        localStorage.setItem('counters', JSON.stringify(d.counters));
+        counters = d.counters;
+        salvarNoArmazenamento('counters', counters);
     }
 
-    // 4. Auditoria da Ação
-    // (Precisamos salvar manualmente no array e no localStorage agora, pois o reload vem a seguir)
-    // Mas como vamos dar reload, o log se perderia se não salvo no storage novo.
-    // Vamos adicionar um log no novo banco:
-    let newLogs = d.auditLogs || [];
-    newLogs.unshift({
+    // Auditoria
+    auditLogs = d.auditLogs || [];
+    // Adiciona log da restauração
+    auditLogs.unshift({
         id: Date.now(),
         timestamp: new Date().toISOString(),
-        user: currentUser ? currentUser.name : 'Admin',
+        user: sessionUser ? sessionUser.name : 'Admin',
         action: 'Restauração',
         target: 'Sistema Completo',
         details: 'Restaurou backup de: ' + (pendingBackupData.date || 'Data desconhecida')
     });
-    localStorage.setItem('auditLogs', JSON.stringify(newLogs));
+    salvarNoArmazenamento('auditLogs', auditLogs);
 
-    // 5. Feedback e Reload
-    alert('✅ Restauração realizada com sucesso!\nO sistema será reiniciado com os novos dados.');
-    location.reload();
+    // 4. Restaura a Sessão (O Pulo do Gato)
+    if (sessionUser) {
+        currentUser = sessionUser;
+        salvarNoArmazenamento('currentUser', currentUser);
+        isAuthenticated = true;
+    }
+
+    // 5. Atualiza a Interface Imediatamente
+    initializeApp(); // Recarrega tabelas, gráficos e menus com os dados novos
+    closeRestoreConfirmModal();
+    
+    alert('✅ Dados restaurados com sucesso!');
 }
-
 // ----------------------------------------------------------------------------
 // 20. DASHBOARD E INICIALIZAÇÃO
 // ----------------------------------------------------------------------------
