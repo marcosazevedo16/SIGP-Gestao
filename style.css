@@ -4632,3 +4632,18 @@ input:disabled, select:disabled, textarea:disabled {
     color: #333;
     border-color: #ffffff;
 }
+/* ==========================================================================
+   LINK ESQUECI MINHA SENHA
+   ========================================================================== */
+.forgot-password-link {
+    color: var(--color-primary);
+    font-size: 13px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.forgot-password-link:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+}
