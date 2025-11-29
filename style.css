@@ -4049,3 +4049,36 @@ table th {
     border-bottom: 2px solid #C85250;
     margin-top: 40px; /* Espaço entre a tabela de cima e esta */
 }
+/* ==========================================================================
+   CORREÇÃO V49 - ALINHAMENTO TABELAS DE COLABORADORES
+   ========================================================================== */
+
+/* 1. Regra Geral: Centralizar Tudo (Cabeçalho e Dados) */
+#colab-active-table th, 
+#colab-active-table td,
+#colab-terminated-table th, 
+#colab-terminated-table td {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+/* 2. Exceção: Primeira Coluna (Nome) à Esquerda */
+#colab-active-table th:first-child, 
+#colab-active-table td:first-child,
+#colab-terminated-table th:first-child, 
+#colab-terminated-table td:first-child {
+    text-align: left !important;
+    padding-left: 15px !important;
+}
+
+/* 3. Ajuste de largura para evitar quebras feias */
+#colab-active-table table,
+#colab-terminated-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#colab-active-table tr,
+#colab-terminated-table tr {
+    border-bottom: 1px solid #e0e0e0;
+}
