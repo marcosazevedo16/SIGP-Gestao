@@ -880,15 +880,15 @@ function toggleSettings() {
     }
 }
 
-// Funções de Atalho do Menu Configurações
-function navigateToUserManagement() { toggleSettingsMenu(); openTab('usuarios-section'); renderUsers(); }
-function navigateToCargoManagement() { toggleSettingsMenu(); openTab('cargos-section'); renderCargos(); }
-function navigateToOrientadorManagement() { toggleSettingsMenu(); openTab('orientadores-section'); renderOrientadores(); }
-function navigateToModuloManagement() { toggleSettingsMenu(); openTab('modulos-section'); renderModulos(); }
-function navigateToMunicipalityListManagement() { toggleSettingsMenu(); openTab('municipalities-list-section'); renderMunicipalityList(); }
-function navigateToFormaApresentacaoManagement() { toggleSettingsMenu(); openTab('formas-apresentacao-section'); renderFormas(); }
-function navigateToApiListManagement() { toggleSettingsMenu(); openTab('apis-list-section'); renderApiList(); }
-function navigateToBackupManagement() { toggleSettingsMenu(); openTab('backup-section'); updateBackupInfo(); }
+// Funções de Atalho do Menu Configurações (CORRIGIDAS)
+function navigateToUserManagement() { toggleSettings(); openTab('usuarios-section'); renderUsers(); }
+function navigateToCargoManagement() { toggleSettings(); openTab('cargos-section'); renderCargos(); }
+function navigateToOrientadorManagement() { toggleSettings(); openTab('orientadores-section'); renderOrientadores(); }
+function navigateToModuloManagement() { toggleSettings(); openTab('modulos-section'); renderModulos(); }
+function navigateToMunicipalityListManagement() { toggleSettings(); openTab('municipalities-list-section'); renderMunicipalityList(); }
+function navigateToFormaApresentacaoManagement() { toggleSettings(); openTab('formas-apresentacao-section'); renderFormas(); }
+function navigateToApiListManagement() { toggleSettings(); openTab('apis-list-section'); renderApiList(); }
+function navigateToBackupManagement() { toggleSettings(); openTab('backup-section'); updateBackupInfo(); }
 
 function openTab(sectionId) {
     document.querySelectorAll('.tab-content').forEach(function(c) {
