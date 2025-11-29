@@ -4533,3 +4533,33 @@ input:disabled, select:disabled, textarea:disabled {
     font-size: 9px !important;
     padding: 1px 4px !important;
 }
+/* ==========================================================================
+   CORREÇÃO FINAL V66 - MENU DE CONFIGURAÇÕES (TEXTO LEVE)
+   ========================================================================== */
+
+.settings-menu-item {
+    /* Estrutura */
+    white-space: nowrap !important;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-family: var(--font-family-base);
+    
+    /* ESTILO DE TEXTO (A Correção) */
+    font-size: 14px;
+    color: var(--color-text);
+    font-weight: 400 !important; /* Define peso Normal (Tira o Negrito) */
+}
+
+/* Hover (Apenas cor de fundo e texto colorido, sem mudar peso) */
+.settings-menu-item:hover {
+    background-color: var(--color-bg-1);
+    color: var(--color-primary);
+}
