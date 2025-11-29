@@ -2380,24 +2380,6 @@ tbody tr:hover {
   color: #999999 !important;
 }
 
-/* AJUSTE 2: Header control buttons - ALWAYS WHITE BACKGROUND with dark text */
-#theme-toggle,
-#home-btn,
-#settings-btn,
-.header-actions > .btn.btn--secondary {
-  background-color: #ffffff !important;
-  color: #003d5c !important;
-  border: 1px solid rgba(0, 61, 92, 0.3) !important;
-}
-
-#theme-toggle:hover,
-#home-btn:hover,
-#settings-btn:hover,
-.header-actions > .btn.btn--secondary:hover {
-  background-color: #f5f5f5 !important;
-  color: #003d5c !important;
-}
-
 @media (max-width: 768px) {
   .app-layout {
     flex-direction: column;
@@ -4417,7 +4399,7 @@ input:disabled, select:disabled, textarea:disabled {
     margin: 4px 0;
 }
 /* ==========================================================================
-   CORREÇÃO FINAL V63 - TRANSPARÊNCIA TOTAL E BOTÕES FIXOS
+   CORREÇÃO FINAL V64 - REMOÇÃO DE FUNDO BRANCO E BOTÃO SAIR FIXO
    ========================================================================== */
 
 /* 1. Alinhamento Geral */
@@ -4428,8 +4410,11 @@ input:disabled, select:disabled, textarea:disabled {
     margin-left: auto;
 }
 
-/* 2. CLASSE PARA BOTÕES QUADRADOS (Só Ícone) */
-.header-icon-btn {
+/* 2. Botões Ícone Quadrados (Home, Tema, Notif) */
+#home-btn.header-icon-btn,
+#theme-toggle.header-icon-btn,
+#notif-btn.header-icon-btn,
+.header-actions .settings-dropdown .header-icon-btn {
     width: 30px !important;
     height: 30px !important;
     padding: 0 !important;
@@ -4439,68 +4424,99 @@ input:disabled, select:disabled, textarea:disabled {
     font-size: 1rem !important;
     line-height: 1 !important;
     
-    /* Forçar Transparência Absoluta */
-    background: none !important;
-    background-color: transparent !important;
+    /* FORÇA BRUTA NA TRANSPARÊNCIA */
+    background: transparent !important;
+    background-color: rgba(0, 0, 0, 0) !important;
+    box-shadow: none !important;
+    
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     color: #ffffff !important;
     border-radius: 4px !important;
-    transition: background-color 0.2s;
-    box-shadow: none !important;
+    transition: background-color 0.2s ease-in-out;
 }
 
-/* 3. CLASSE PARA BOTÕES RETANGULARES (Texto + Ícone) */
-.header-text-btn {
+/* Hover Suave */
+#home-btn.header-icon-btn:hover,
+#theme-toggle.header-icon-btn:hover,
+#notif-btn.header-icon-btn:hover,
+.header-actions .settings-dropdown .header-icon-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: #ffffff !important;
+}
+
+/* 3. Botão CONFIGURAÇÕES (Texto + Ícone) */
+.header-actions .settings-dropdown .header-text-btn {
     height: 30px !important;
-    padding: 0 12px !important;
+    padding: 0 10px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     font-size: 11px !important;
     font-weight: 500 !important;
-    gap: 6px !important;
-    
-    /* Largura Estável */
+    gap: 5px !important;
     width: auto !important;
-    min-width: max-content !important; /* Garante que caiba o texto */
-    flex-shrink: 0 !important;         /* Proíbe encolher */
     white-space: nowrap !important;
     
-    /* Forçar Transparência Absoluta */
-    background: none !important;
-    background-color: transparent !important;
+    /* Transparência */
+    background: transparent !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     color: #ffffff !important;
     border-radius: 4px !important;
     box-shadow: none !important;
-    transition: background-color 0.2s;
+}
+.header-actions .settings-dropdown .header-text-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
 }
 
-/* 4. HOVER UNIFICADO (Para todos) */
-.header-icon-btn:hover,
-.header-text-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important; /* Branco translúcido */
-    border-color: #ffffff !important;
+/* 4. Botão SAIR (BLINDADO) */
+.header-actions .btn--secondary.btn--sm.header-text-btn {
+    /* Geometria Travada */
+    height: 30px !important;
+    min-width: 60px !important; /* Impede encolhimento */
+    width: auto !important;
+    padding: 0 12px !important;
+    
+    /* Layout Flex Rígido */
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    
+    /* Estilo Transparente */
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
     color: #ffffff !important;
+    font-size: 11px !important;
+    box-shadow: none !important;
+    
+    /* Desliga animações de tamanho */
+    transition: background-color 0.2s !important; 
 }
 
-/* 5. Ícone do Botão Sair (Garantia de Visibilidade) */
-.header-actions button[title="Sair do Sistema"]::before {
+/* Ícone Porta do Sair */
+.header-actions .btn--secondary.btn--sm.header-text-btn::before {
     content: "🚪";
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1;
     display: inline-block;
     opacity: 1 !important;
-    visibility: visible !important;
-    margin-right: 4px;
 }
 
-/* 6. Menus Suspensos */
+/* Hover do Sair (Só muda cor de fundo) */
+.header-actions .btn--secondary.btn--sm.header-text-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: #ffffff !important;
+    color: #ffffff !important;
+    width: auto !important; /* Reforça largura */
+}
+
+/* 5. Menus Suspensos */
 #settings-menu, #notification-menu {
     top: 40px !important;
 }
 
-/* 7. Badge */
+/* 6. Badge */
 .notification-badge {
     top: -5px !important;
     right: -5px !important;
