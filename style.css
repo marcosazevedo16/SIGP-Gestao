@@ -3851,52 +3851,54 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÕES V28 - ALINHAMENTO PERFEITO + MODAIS
+   CORREÇÃO FINAL V31 - REMOÇÃO DE LINHAS DUPLICADAS
    ========================================================================== */
 
-/* 1. Modais Pequenos */
-#api-list-modal .modal-content,
-#integration-modal .modal-content {
-    max-width: 500px !important;
-}
-
-/* 2. Tabela de Integrações - Forçar grade e alinhamento */
 #integrations-table table {
     border-collapse: collapse;
     width: 100%;
 }
 
+/* 1. Remove a borda da LINHA (TR) para não duplicar */
 #integrations-table tr {
-    border-bottom: 1px solid var(--color-border) !important; /* Linha fixa abaixo de cada item */
+    border-bottom: none !important;
 }
 
-/* Alinhamento Vertical Centralizado para TODAS as colunas */
+/* 2. Aplica borda fina (1px) apenas na CÉLULA (TD) */
 #integrations-table td {
+    border-bottom: 1px solid #e0e0e0 !important; /* Linha única e sutil */
     vertical-align: middle !important;
-    padding: 12px 8px !important; /* Espaçamento interno para a linha ficar mais alta */
-    height: 100%;
+    padding: 10px 8px !important;
+    height: 60px; /* Altura mínima para conforto visual */
 }
 
-/* 3. Coluna de APIs (Tags) - Correção de "flutuação" */
+/* 3. Remove a borda da última linha da tabela para fechar limpo */
+#integrations-table tr:last-child td {
+    border-bottom: none !important;
+}
+
+/* Mantém o alinhamento centralizado das APIs */
 #integrations-table .module-tags-cell {
     display: flex !important;
-    align-items: center !important; /* Centraliza verticalmente no Flex */
+    align-items: center !important;
+    align-content: center !important;
     flex-wrap: wrap !important;
-    gap: 6px; /* Espaço entre as etiquetas */
+    gap: 6px;
+    height: 100%;
     min-height: 40px;
-    margin: 0;
+    padding: 0 !important;
 }
 
-/* Garante que a etiqueta não quebre linha dentro dela mesma */
 #integrations-table .module-tag {
     white-space: nowrap !important;
-    line-height: 1.2;
+    line-height: 1;
+    padding: 4px 8px !important;
     display: inline-flex;
     align-items: center;
+    margin: 0 !important;
 }
 
-/* 4. Coluna de Ações à Direita */
 #integrations-table td:last-child {
     text-align: right !important;
-    padding-right: 20px !important;
+    padding-right: 15px !important;
 }
