@@ -155,34 +155,42 @@ function formatDate(dateString) {
     return dateString;
 }
 
-// Cálculo de Tempo de Uso (PDF Item 15)
+[cite_start]// LÓGICA: Cálculo de Tempo Preciso (Dias, Meses, Anos) [cite: 455-470]
 function calculateTimeInUse(dateString) {
-    if (!dateString) {
-        return '-';
-    }
+    if (!dateString) return '-';
     
     const start = new Date(dateString);
     const now = new Date();
     
-    // Diferença em milissegundos
-    const diffTime = Math.abs(now - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    
-    const years = Math.floor(diffDays / 365);
-    const months = Math.floor((diffDays % 365) / 30);
-    
-    let result = "";
-    if (years > 0) {
-        result += `${years} ano(s) `;
+    // Zera horas para cálculo limpo apenas pelas datas
+    start.setHours(0,0,0,0);
+    now.setHours(0,0,0,0);
+
+    let years = now.getFullYear() - start.getFullYear();
+    let months = now.getMonth() - start.getMonth();
+    let days = now.getDate() - start.getDate();
+
+    // Ajuste matemático de datas
+    if (days < 0) {
+        months--;
+        // Pega o último dia do mês anterior para calcular os dias restantes
+        const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+        days += prevMonth.getDate();
     }
-    if (months > 0) {
-        result += `${months} mês(es)`;
+    if (months < 0) {
+        years--;
+        months += 12;
     }
-    if (years === 0 && months === 0) {
-        result = "Menos de 1 mês";
-    }
+
+    // Monta a string de resultado
+    let parts = [];
+    if (years > 0) parts.push(`${years} ano(s)`);
+    if (months > 0) parts.push(`${months} mês(es)`);
+    if (days > 0) parts.push(`${days} dia(s)`);
     
-    return result;
+    if (parts.length === 0) return "Hoje"; // Se for a mesma data
+    
+    return parts.join(' e ');
 }
 
 // Cálculo de Dias desde a última visita (PDF Item 15)
@@ -1051,16 +1059,28 @@ munSelect.innerHTML = '<option value="">Selecione o município</option>' +
     document.getElementById('municipality-modal').classList.add('show');
 }
 
+[cite_start]// LÓGICA: Validação de Municípios (Nome+UF e Data Futura) [cite: 413-440]
 function saveMunicipality(e) {
     e.preventDefault();
-    // Sanitiza inputs de texto
+    // Sanitiza inputs
     const name = sanitizeInput(document.getElementById('municipality-name').value);
     const status = document.getElementById('municipality-status').value;
     const mods = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
     
-    // Validação Duplicidade
-    if (!editingId && municipalities.some(m => m.name === name)) {
-        alert('Erro: Este município já está cadastrado na carteira!');
+    // 1. BUSCA UF NA LISTA MESTRA (Para validar chave composta)
+    const munData = municipalitiesList.find(m => m.name === name);
+    const uf = munData ? munData.uf : '';
+
+    // 2. VALIDAÇÃO DE DUPLICIDADE (Nome + UF)
+    // Só barra se o Nome E a UF forem iguais a um registro existente
+    const isDuplicate = municipalities.some(m => 
+        m.name === name && 
+        (m.uf === uf || !m.uf) && // Compatibilidade com registros antigos sem UF
+        m.id !== editingId
+    );
+
+    if (isDuplicate) {
+        alert(`Erro: O município "${name} - ${uf}" já está cadastrado na carteira!`);
         return;
     }
 
@@ -1070,17 +1090,29 @@ function saveMunicipality(e) {
         return;
     }
 
-    // Validação "Bloqueado"
+    // 3. VALIDAÇÃO DE DATA DE BLOQUEIO (Não pode ser futura)
     const dateBlocked = document.getElementById('municipality-date-blocked') ? document.getElementById('municipality-date-blocked').value : '';
-    if (status === 'Bloqueado' && !dateBlocked) {
-        alert('Erro: Preencha a "Data em que foi Bloqueado".');
-        return;
+    
+    if (status === 'Bloqueado') {
+        if (!dateBlocked) {
+            alert('Erro: Preencha a "Data em que foi Bloqueado".');
+            return;
+        }
+        
+        const dBlock = new Date(dateBlocked);
+        const today = new Date();
+        today.setHours(0,0,0,0); // Zera horas para comparar apenas dia
+
+        if (dBlock > today) {
+            alert('🚫 Erro Lógico: A data de bloqueio não pode ser uma data futura.');
+            return;
+        }
     }
 
     const data = {
         name: name,
+        uf: uf, // Agora salvamos a UF junto com o cliente
         status: status,
-        // SANITIZAÇÃO AQUI:
         manager: sanitizeInput(document.getElementById('municipality-manager').value),
         contact: sanitizeInput(document.getElementById('municipality-contact').value),
         implantationDate: document.getElementById('municipality-implantation-date').value,
@@ -1095,6 +1127,7 @@ function saveMunicipality(e) {
         if (i !== -1) municipalities[i] = { ...municipalities[i], ...data };
     } else {
         municipalities.push({ id: getNextId('mun'), ...data });
+        logSystemAction('Criação', 'Municípios', `Novo cliente: ${data.name} - ${data.uf}`);
     }
     
     salvarNoArmazenamento('municipalities', municipalities);
@@ -1102,8 +1135,6 @@ function saveMunicipality(e) {
     renderMunicipalities();
     updateGlobalDropdowns();
     
-    // AUDITORIA
-    logSystemAction(editingId ? 'Edição' : 'Criação', 'Municípios', `Município: ${data.name} | Status: ${data.status}`);
     showToast('Município salvo com sucesso!', 'success');
 }
 
