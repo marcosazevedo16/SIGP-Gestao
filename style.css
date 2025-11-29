@@ -4417,7 +4417,7 @@ input:disabled, select:disabled, textarea:disabled {
     margin: 4px 0;
 }
 /* ==========================================================================
-   CORREÇÃO FINAL V57 - HEADER DE ÍCONES E MENUS
+   CORREÇÃO FINAL V58 - HEADER DE ÍCONES TRANSPARENTES COM BORDA
    ========================================================================== */
 
 /* 1. Alinhamento Geral à Direita */
@@ -4428,7 +4428,7 @@ input:disabled, select:disabled, textarea:disabled {
     margin-left: auto; /* Empurra para a direita */
 }
 
-/* 2. Botões Ícone Quadrados */
+/* 2. Botões Ícone Quadrados (ESTILO ATUALIZADO) */
 .header-icon-btn {
     width: 36px !important;
     height: 36px !important;
@@ -4438,6 +4438,23 @@ input:disabled, select:disabled, textarea:disabled {
     align-items: center !important;
     font-size: 1.2rem !important; /* Tamanho do emoji */
     line-height: 1 !important;
+    
+    /* --- NOVO: Transparência e Borda --- */
+    background-color: transparent !important;     /* Fundo invisível */
+    border: 1px solid #d0d7de !important;         /* Borda cinza sutil */
+    color: var(--color-text) !important;          /* Cor do ícone */
+    border-radius: 4px !important;                /* Cantos levemente arredondados */
+    transition: all 0.2s ease-in-out;
+}
+
+/* Efeito ao passar o mouse (Hover) - Opcional, para dar feedback */
+.header-icon-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important; /* Fundo cinza bem claro ao passar o mouse */
+    border-color: var(--color-primary) !important;    /* Borda muda para a cor principal */
+}
+/* Ajuste para o tema escuro no hover */
+[data-theme="dark"] .header-icon-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* 3. Menu Suspenso (Configurações) */
@@ -4456,7 +4473,7 @@ input:disabled, select:disabled, textarea:disabled {
     z-index: 2000;
 }
 
-/* 5. Itens do Menu (Lista) */
+/* 5. Itens do Menu (Lista com Nomes Corretos) */
 .settings-menu-item {
     width: 100%;
     text-align: left;
@@ -4478,7 +4495,7 @@ input:disabled, select:disabled, textarea:disabled {
     color: var(--color-primary);
 }
 
-/* 6. Ajuste do botão Sair */
+/* 6. Ajuste do botão Sair (Mantém ele sólido para destaque) */
 .header-actions .btn--secondary.btn--sm {
     height: 36px !important;
     display: flex;
