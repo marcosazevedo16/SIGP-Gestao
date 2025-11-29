@@ -4022,3 +4022,30 @@ table th {
 #colab-info-table td {
     white-space: nowrap;
 }
+/* ==========================================================================
+   CORREÇÃO V48 - TÍTULOS DAS TABELAS DE COLABORADORES
+   ========================================================================== */
+
+.colab-section-title {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    padding: 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+}
+
+.title-active {
+    color: #005580; /* Azul do tema */
+    background-color: rgba(0, 85, 128, 0.05);
+    border-bottom: 2px solid #005580;
+}
+
+.title-terminated {
+    color: #C85250; /* Vermelho do tema */
+    background-color: rgba(200, 82, 80, 0.05);
+    border-bottom: 2px solid #C85250;
+    margin-top: 40px; /* Espaço entre a tabela de cima e esta */
+}
