@@ -3851,10 +3851,10 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL V40 - MUNICÍPIO LEGÍVEL + ESPAÇO PARA APIs
+   CORREÇÃO FINAL V41 - APIs EXPANDIDAS & DIREITA COMPACTADA
    ========================================================================== */
 
-/* 1. Modais TRAVADOS */
+/* 1. Modais (Mantendo configuração fixa) */
 #api-list-modal .modal-content,
 #integration-modal .modal-content {
     width: 500px !important;
@@ -3862,12 +3862,12 @@ table th {
     margin: 5% auto !important;
 }
 
-/* 2. Tabela: Layout Fixo */
+/* 2. Tabela Fixa */
 #integrations-table table {
     border-collapse: collapse !important;
     width: 100%;
     border-spacing: 0 !important;
-    table-layout: fixed; /* Mantém as larguras sob controle */
+    table-layout: fixed; /* Essencial */
 }
 
 #integrations-table tr {
@@ -3882,85 +3882,87 @@ table th {
 #integrations-table td {
     border: none !important;
     vertical-align: middle !important;
-    padding: 0 8px !important;
+    padding: 0 4px !important; /* Padding mínimo para ganhar espaço */
     height: 50px !important;
     overflow: hidden;
 }
 
-/* --- RE-DISTRIBUIÇÃO DAS LARGURAS --- */
+/* --- DISTRIBUIÇÃO DE LARGURAS (FOCO NO ESPAÇO DAS APIs) --- */
 
-/* Col 1: Município (AUMENTADO para leitura confortável) */
+/* Col 1: Município (Reduzido ao essencial para leitura) */
 #integrations-table td:nth-child(1) {
-    width: 220px; /* Largura generosa para nomes grandes */
+    width: 160px; 
     white-space: normal;
-    line-height: 1.2;
-    font-size: 13px;
-    font-weight: 500;
+    line-height: 1.1;
+    font-size: 12px;
+    font-weight: 600;
+    padding-left: 8px !important;
 }
 
-/* Col 2: APIs Integradas (OCUPA TODO O RESTO) */
+/* Col 2: APIs Integradas (A ESTRELA DA TABELA - OCUPA TUDO) */
 #integrations-table td:nth-child(2) {
     width: auto; 
 }
 
-/* Col 3: Vencimento (Apertado à direita) */
+/* --- BLOCO DA DIREITA (COMPACTADO) --- */
+
+/* Col 3: Vencimento (Largura exata da data) */
 #integrations-table td:nth-child(3) {
-    width: 90px; 
+    width: 85px; 
     text-align: center;
-    font-size: 12px;
+    font-size: 11px;
 }
 
-/* Col 4: Status (Apertado à direita) */
+/* Col 4: Status (Largura exata do texto) */
 #integrations-table td:nth-child(4) {
-    width: 115px; 
-    text-align: left;
-    font-size: 12px;
+    width: 110px; 
+    text-align: center;
+    font-size: 11px;
     white-space: nowrap;
 }
 
-/* Col 5: Observações (Bem reduzido à direita) */
+/* Col 5: Observações (Pequeno, encostado no Status) */
 #integrations-table td:nth-child(5) {
-    width: 100px; 
+    width: 90px; 
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--color-text-secondary);
-    font-size: 12px;
+    font-size: 11px;
+    text-align: left;
 }
 
-/* Col 6: Ações (Mínimo possível à direita) */
+/* Col 6: Ações (Colado na direita) */
 #integrations-table td:last-child {
-    width: 80px;
+    width: 70px;
     text-align: right !important;
-    padding-right: 10px !important;
+    padding-right: 8px !important;
     overflow: visible;
 }
 
-/* 3. Coluna de APIs (Configuração Interna) */
+/* 3. Estilo das APIs (Tags) */
 #integrations-table .module-tags-cell {
     display: flex !important;
     align-items: center !important;
     height: 100%;
     
-    /* Garante linha única */
+    /* Garante que fiquem na mesma linha */
     flex-wrap: nowrap !important; 
     
-    /* Rolagem se ainda assim não couber */
+    /* Se mesmo com espaço sobrar, permite scroll invisível */
     overflow-x: auto !important; 
     
-    gap: 4px;
+    gap: 3px; /* Gap menor */
     padding: 0 !important;
     margin: 0 !important;
-    
     scrollbar-width: none; 
-    -ms-overflow-style: none;
 }
 #integrations-table .module-tags-cell::-webkit-scrollbar { display: none; }
 
-/* Estilo da Tag */
+/* Tag Compacta */
 #integrations-table .module-tag {
     font-size: 9px !important;
     font-weight: 600 !important;
-    padding: 2px 5px !important;
+    padding: 1px 4px !important;
     border-radius: 3px;
     line-height: 1 !important;
     display: inline-flex;
