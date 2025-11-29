@@ -3983,3 +3983,42 @@ table th {
     white-space: nowrap !important;
     flex-shrink: 0;
 }
+
+/* ==========================================================================
+   CORREÇÕES V47 - ABA COLABORADORES
+   ========================================================================== */
+
+/* 1. Modal de Colaborador (Pequeno) */
+#colab-info-modal .modal-content {
+    width: 500px !important;
+    max-width: 90% !important;
+    margin: 5% auto !important;
+}
+
+/* 2. Badges de Status do Colaborador */
+.status-badge-active {
+    background-color: rgba(33, 150, 243, 0.15);
+    color: #2196F3; /* Azul */
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-badge-terminated {
+    background-color: rgba(244, 67, 54, 0.15);
+    color: #F44336; /* Vermelho */
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* 3. Ajuste de tabela para cálculos de tempo */
+#colab-info-table td {
+    white-space: nowrap;
+}
