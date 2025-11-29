@@ -3851,7 +3851,7 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL V38 - APIs EM LINHA ÚNICA (FORÇADO)
+   CORREÇÃO FINAL V40 - MUNICÍPIO LEGÍVEL + ESPAÇO PARA APIs
    ========================================================================== */
 
 /* 1. Modais TRAVADOS */
@@ -3867,7 +3867,7 @@ table th {
     border-collapse: collapse !important;
     width: 100%;
     border-spacing: 0 !important;
-    table-layout: fixed; /* Essencial */
+    table-layout: fixed; /* Mantém as larguras sob controle */
 }
 
 #integrations-table tr {
@@ -3884,48 +3884,50 @@ table th {
     vertical-align: middle !important;
     padding: 0 8px !important;
     height: 50px !important;
-    overflow: hidden; /* Corta o excesso */
+    overflow: hidden;
 }
 
-/* --- LARGURAS APERTADAS (Para sobrar espaço para APIs) --- */
+/* --- RE-DISTRIBUIÇÃO DAS LARGURAS --- */
 
-/* Col 1: Município */
+/* Col 1: Município (AUMENTADO para leitura confortável) */
 #integrations-table td:nth-child(1) {
-    width: 160px; /* Reduzi um pouco */
+    width: 220px; /* Largura generosa para nomes grandes */
     white-space: normal;
-    line-height: 1.1;
+    line-height: 1.2;
     font-size: 13px;
+    font-weight: 500;
 }
 
-/* Col 2: APIs Integradas (Ocupa TODO o resto) */
+/* Col 2: APIs Integradas (OCUPA TODO O RESTO) */
 #integrations-table td:nth-child(2) {
     width: auto; 
 }
 
-/* Col 3: Vencimento (Apertado) */
+/* Col 3: Vencimento (Apertado à direita) */
 #integrations-table td:nth-child(3) {
-    width: 90px; /* Reduzi ao máximo para caber a data */
+    width: 90px; 
     text-align: center;
-    font-size: 13px;
+    font-size: 12px;
 }
 
-/* Col 4: Status (Apertado) */
+/* Col 4: Status (Apertado à direita) */
 #integrations-table td:nth-child(4) {
-    width: 120px; /* Reduzi */
+    width: 115px; 
     text-align: left;
-    font-size: 13px;
+    font-size: 12px;
+    white-space: nowrap;
 }
 
-/* Col 5: Observações (Bem reduzido com ...) */
+/* Col 5: Observações (Bem reduzido à direita) */
 #integrations-table td:nth-child(5) {
-    width: 120px; /* Espaço pequeno para priorizar API */
+    width: 100px; 
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--color-text-secondary);
-    font-size: 13px;
+    font-size: 12px;
 }
 
-/* Col 6: Ações */
+/* Col 6: Ações (Mínimo possível à direita) */
 #integrations-table td:last-child {
     width: 80px;
     text-align: right !important;
@@ -3933,33 +3935,30 @@ table th {
     overflow: visible;
 }
 
-/* 3. Coluna de APIs (O SEGREDO DO ALINHAMENTO) */
+/* 3. Coluna de APIs (Configuração Interna) */
 #integrations-table .module-tags-cell {
     display: flex !important;
     align-items: center !important;
     height: 100%;
     
-    /* ISSO GARANTE QUE FIQUEM NA MESMA LINHA */
+    /* Garante linha única */
     flex-wrap: nowrap !important; 
     
-    /* Se tiver MUITAS, permite rolar para o lado suavemente */
+    /* Rolagem se ainda assim não couber */
     overflow-x: auto !important; 
     
     gap: 4px;
     padding: 0 !important;
     margin: 0 !important;
     
-    /* Esconde barra de rolagem para ficar limpo */
     scrollbar-width: none; 
     -ms-overflow-style: none;
 }
-#integrations-table .module-tags-cell::-webkit-scrollbar { 
-    display: none; 
-}
+#integrations-table .module-tags-cell::-webkit-scrollbar { display: none; }
 
-/* Estilo da Tag (Compacto) */
+/* Estilo da Tag */
 #integrations-table .module-tag {
-    font-size: 9px !important; /* Fonte menor para caber mais */
+    font-size: 9px !important;
     font-weight: 600 !important;
     padding: 2px 5px !important;
     border-radius: 3px;
@@ -3970,5 +3969,5 @@ table th {
     margin: 0 !important;
     border-width: 1px !important;
     white-space: nowrap !important;
-    flex-shrink: 0; /* Impede que o navegador esmague a tag */
+    flex-shrink: 0; 
 }
