@@ -3273,16 +3273,6 @@ table td .module-tags {
     white-space: nowrap; /* Texto nunca quebra linha */
 }
 
-/* Ícone de PORTA no botão Sair */
-.header-actions .btn:last-child::before {
-    content: "🚪";
-    margin-right: 6px;
-    font-size: 13px; /* Levemente menor para caber nos 30px */
-    line-height: 1;
-    display: inline-block;
-    margin-top: -1px; /* Ajuste micrométrico para alinhar com texto */
-}
-
 /* 4. REGRAS ESPECÍFICAS PARA COMPUTADOR (> 901px) */
 @media (min-width: 901px) {
     .app-header {
