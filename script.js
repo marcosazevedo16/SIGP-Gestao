@@ -4720,17 +4720,22 @@ function initializeApp() {
 document.addEventListener('DOMContentLoaded', function() {
     checkAuthentication();
     
+    // FECHAR MODAIS E MENUS AO CLICAR FORA
     window.onclick = function(e) { 
+        // 1. Fecha Modais
         if (e.target.classList.contains('modal')) {
             e.target.classList.remove('show');
         }
+
+        // 2. Fecha Menus Suspensos (Configurações e Notificações)
+        // Se o clique NÃO foi dentro de um dropdown, fecha todos
+        if (!e.target.closest('.settings-dropdown')) {
+            const menus = document.querySelectorAll('.settings-menu');
+            menus.forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
     };
-    
-    document.querySelectorAll('.close-btn').forEach(function(b) { 
-        b.onclick = function(){ 
-            this.closest('.modal').classList.remove('show'); 
-        }; 
-    });
     
     document.querySelectorAll('.btn--secondary').forEach(function(b) { 
         if (b.textContent.includes('Cancelar')) {
