@@ -4188,30 +4188,80 @@ input:disabled, select:disabled, textarea:disabled {
     .mobile-menu-toggle { display: none !important; }
 }
 /* ==========================================================================
-   AJUSTE FINO V53 - POSIÇÃO DO MENU E CONTEÚDO
+   CORREÇÃO V54 - HEADER ROBUSTO & CONTEÚDO AJUSTADO
    ========================================================================== */
 
 @media (min-width: 901px) {
     
-    /* 1. SIDEBAR (Baixando o ícone do Menu) */
+    /* 1. SIDEBAR (Botão Menu Mais Baixo) */
     .sidebar {
-        /* Aumentei de 20px para 35px para o ícone descer um pouco */
-        padding-top: 35px !important; 
+        /* Aumentei para 40px para o ícone descer bem */
+        padding-top: 40px !important; 
+        
+        /* Configurações do Layout Gemini */
+        top: 0 !important;
+        height: 100vh !important;
+        z-index: 1001 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* 2. CONTEÚDO (Subindo o texto para perto da barra azul) */
-    .main-content {
-        /* Reduzi de 80px para 60px para colar mais no cabeçalho */
-        margin-top: 60px !important; 
+    /* 2. HEADER (Restaurado para o Original - Mais Alto) */
+    .app-header {
+        position: fixed !important;
+        top: 0 !important;
+        left: 70px !important; 
+        width: calc(100% - 70px) !important; 
+        z-index: 1000 !important;
         
-        /* Reduzi o padding interno para ganhar mais espaço visual */
-        padding-top: 10px !important; 
+        /* VOLTA O PADDING ORIGINAL (Barra grossa) */
+        padding: 24px !important; 
+        
+        /* Garante altura visual */
+        min-height: auto !important; 
+        
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* 3. CONTEÚDO PRINCIPAL (Subindo o texto) */
+    .main-content {
+        /* Ajuste matemático: 
+           Se o Header tem ~90px de altura, colocamos margem de 90px 
+           para o conteúdo começar logo abaixo dele, sem buraco.
+        */
+        margin-top: 95px !important; 
+        
+        /* Remove padding interno superior para o texto subir */
+        padding-top: 5px !important; 
+        
+        margin-left: 70px !important;
+        width: calc(100% - 70px) !important;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Ajuste extra: Remove margem do título H2 para ele colar no topo */
+    .section-header {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
     }
     
-    /* Ajuste extra para garantir que o Header não fique alto demais */
-    .app-header {
-        padding-top: 10px !important;
-        padding-bottom: 10px !important;
-        min-height: 60px !important; /* Altura fixa para combinar com a margem do conteúdo */
+    .section-header h2 {
+        margin-top: 0 !important;
+        line-height: 1.2;
     }
+
+    /* --- REGRAS DE EXPANSÃO (Mantidas) --- */
+    body.sidebar-is-expanded .sidebar { width: 300px !important; }
+    body.sidebar-is-expanded .app-header { left: 300px !important; width: calc(100% - 300px) !important; }
+    body.sidebar-is-expanded .main-content { margin-left: 300px !important; width: calc(100% - 300px) !important; }
+    
+    .sidebar-nav::before {
+        content: "☰"; font-size: 26px; color: rgba(255,255,255,0.8);
+        display: block; text-align: center; margin-bottom: 30px; cursor: pointer;
+    }
+    .sidebar:hover .sidebar-nav::before { color: #ffffff; }
+    .mobile-menu-toggle { display: none !important; }
 }
