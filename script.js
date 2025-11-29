@@ -155,7 +155,6 @@ function formatDate(dateString) {
     return dateString;
 }
 
-[cite_start]// LÓGICA: Cálculo de Tempo Preciso (Dias, Meses, Anos) [cite: 455-470]
 function calculateTimeInUse(dateString) {
     if (!dateString) return '-';
     
