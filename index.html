@@ -113,41 +113,34 @@
                 </div>
 
                 <div class="settings-dropdown" id="settings-dropdown-container">
-                    <button class="btn btn--outline btn--sm header-icon-btn" onclick="toggleSettings()" title="Configurações">
-                        ⚙️
+                    <button class="btn btn--outline btn--sm header-text-btn" onclick="toggleSettings()" title="Configurações">
+                        ⚙️ Configurações
                     </button>
                     
                     <div class="settings-menu" id="settings-menu">
                         <button class="settings-menu-item" id="user-management-menu-btn" style="display: none;" onclick="navigateToUserManagement()">
                             👥 Gestão de Usuários
                         </button>
-
                         <button class="settings-menu-item" onclick="showChangePasswordModal(); toggleSettings();">
                             🔒 Alterar Senha
                         </button>
-
                         <div class="settings-divider" id="admin-divider" style="display: none;"></div>
 
                         <button class="settings-menu-item" id="cargo-management-menu-btn" onclick="navigateToCargoManagement()">
                             💼 Cadastro de Cargo/Função
                         </button>
-                        
                         <button class="settings-menu-item" id="orientador-management-menu-btn" onclick="navigateToOrientadorManagement()">
                             👨‍🏫 Cadastro de Colaborador
                         </button>
-                        
                         <button class="settings-menu-item" id="modulo-management-menu-btn" onclick="navigateToModuloManagement()">
                             📦 Cadastro de Módulos
                         </button>
-                        
                         <button class="settings-menu-item" id="municipality-list-management-menu-btn" onclick="navigateToMunicipalityListManagement()">
                             🏙️ Cadastro de Municípios
                         </button>
-                        
                         <button class="settings-menu-item" id="forma-apresentacao-management-menu-btn" onclick="navigateToFormaApresentacaoManagement()">
-                            📋 Cadastro de Formas de Apresentação
+                            📋 Formas de Apresentação
                         </button>
-                        
                         <button class="settings-menu-item" id="api-list-management-menu-btn" onclick="navigateToApiListManagement()">
                             🖧 Cadastro de APIs
                         </button>
@@ -157,15 +150,14 @@
                         <button class="settings-menu-item" id="backup-menu-btn" onclick="navigateToBackupManagement()">
                             💾 Backup e Restauração
                         </button>
-                        
                         <button class="settings-menu-item" id="audit-menu-btn" onclick="navigateToAudit()">
                             🕵️ Auditoria (Logs)
                         </button>
                     </div>
                 </div>
 
-                <button class="btn btn--secondary btn--sm" onclick="handleLogout()" title="Sair do Sistema">
-                    🚪Sair
+                <button class="btn btn--secondary btn--sm header-text-btn" onclick="handleLogout()" title="Sair do Sistema">
+                    Sair
                 </button>
             </div>
 
