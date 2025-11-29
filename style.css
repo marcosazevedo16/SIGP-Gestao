@@ -4417,98 +4417,80 @@ input:disabled, select:disabled, textarea:disabled {
     margin: 4px 0;
 }
 /* ==========================================================================
-   CORREÇÃO FINAL V59 - FORÇAR TRANSPARÊNCIA DOS ÍCONES
+   CORREÇÃO FINAL V60 - BOTÕES PEQUENOS (30px) E SAIR TRANSPARENTE
    ========================================================================== */
 
 /* 1. Alinhamento Geral */
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 8px; 
+    gap: 6px; /* Menos espaço entre os botões */
     margin-left: auto;
 }
 
-/* 2. Botões Ícone Quadrados (REGRAS FORÇADAS) */
-/* Usamos #ids e classes juntas para aumentar a especificidade e vencer qualquer regra anterior */
+/* 2. Botões Ícone Quadrados (REDUZIDOS) */
 #home-btn.header-icon-btn,
 #theme-toggle.header-icon-btn,
 #notif-btn.header-icon-btn,
 .header-actions .settings-dropdown .header-icon-btn {
-    width: 36px !important;
-    height: 36px !important;
+    width: 30px !important;       /* Reduzido de 36px */
+    height: 30px !important;      /* Reduzido de 36px */
     padding: 0 !important;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    font-size: 1.2rem !important;
+    font-size: 1rem !important;   /* Ícone um pouco menor */
     line-height: 1 !important;
     
-    /* AQUI ESTÁ A CORREÇÃO CRÍTICA: */
-    background: transparent !important;       /* Remove cor */
-    background-color: transparent !important; /* Garante remoção */
-    border: 1px solid rgba(255, 255, 255, 0.3) !important; /* Borda branca suave */
-    color: #ffffff !important;                /* Ícone branco */
+    /* Estilo Transparente */
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
     border-radius: 4px !important;
     transition: all 0.2s ease-in-out;
-    box-shadow: none !important; /* Remove sombras que parecem fundo */
+    box-shadow: none !important;
 }
 
-/* Hover (Passar o mouse) */
+/* Hover dos Ícones */
 #home-btn.header-icon-btn:hover,
 #theme-toggle.header-icon-btn:hover,
 #notif-btn.header-icon-btn:hover,
 .header-actions .settings-dropdown .header-icon-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important; /* Fundo branco translúcido */
+    background-color: rgba(255, 255, 255, 0.1) !important;
     border-color: #ffffff !important;
 }
 
-/* 3. Menu Suspenso (Configurações) */
-#settings-menu {
-    right: 0 !important;
-    top: 45px !important;
-    min-width: 240px;
-    z-index: 2000;
-}
-
-/* 4. Menu Suspenso (Notificações) */
-#notification-menu {
-    right: -40px !important;
-    top: 45px !important;
-    width: 300px;
-    z-index: 2000;
-}
-
-/* 5. Itens do Menu */
-.settings-menu-item {
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
-    padding: 10px 16px;
-    font-size: 14px;
-    color: var(--color-text);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    transition: background-color 0.2s;
-    font-family: var(--font-family-base);
-}
-
-.settings-menu-item:hover {
-    background-color: var(--color-bg-1);
-    color: var(--color-primary);
-}
-
-/* 6. Botão Sair (Mantém Sólido) */
+/* 3. Botão SAIR (TRANSPARENTE E PEQUENO) */
 .header-actions .btn--secondary.btn--sm {
-    height: 36px !important;
+    height: 30px !important;      /* Mesma altura dos ícones */
+    padding: 0 10px !important;   /* Padding lateral para o texto caber */
     display: flex;
     align-items: center;
+    font-size: 11px !important;   /* Texto menor */
+    
+    /* Forçar transparência igual aos outros */
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
 }
 
-/* 7. Badge */
+.header-actions .btn--secondary.btn--sm:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: #ffffff !important;
+}
+
+/* 4. Menus Suspensos (Ajuste de posição devido ao botão menor) */
+#settings-menu, #notification-menu {
+    top: 40px !important; /* Subiu um pouco (era 45px) */
+}
+
+/* 5. Ajuste do Badge (Bolinha vermelha) */
 .notification-badge {
-    top: -6px !important;
-    right: -6px !important;
+    top: -5px !important;
+    right: -5px !important;
+    font-size: 9px !important;
+    padding: 1px 4px !important;
 }
