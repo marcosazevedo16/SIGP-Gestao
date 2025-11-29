@@ -1762,13 +1762,17 @@ function generateTasksPDF() {
     downloadPDF('Relatório Treinamentos', headers, rows);
 }
 
+// 1. TREINAMENTOS
 function deleteTask(id) {
     if (confirm('Excluir este treinamento?')) {
-        tasks = tasks.filter(function(x) { return x.id !== id; });
-        salvarNoArmazenamento('tasks', tasks);
-        renderTasks();
-        const tDel = tasks.find(x => x.id === id);
-if(tDel) logSystemAction('Exclusão', 'Treinamentos', `Treinamento excluído de ${tDel.municipality} (${tDel.requestedBy})`);
+        const item = tasks.find(x => x.id === id);
+        if(item) {
+            registerUndo(item, 'tasks', renderTasks); // Registra Undo
+            tasks = tasks.filter(x => x.id !== id);
+            salvarNoArmazenamento('tasks', tasks);
+            renderTasks();
+            logSystemAction('Exclusão', 'Treinamentos', `Treinamento excluído: ${item.municipality}`);
+        }
     }
 }
 
@@ -2092,13 +2096,17 @@ function generateRequestsPDF() {
     downloadPDF('Relatório Solicitações', headers, rows);
 }
 
+// 2. SOLICITAÇÕES
 function deleteRequest(id) {
     if (confirm('Excluir solicitação?')) {
-        requests = requests.filter(function(x) { return x.id !== id; });
-        salvarNoArmazenamento('requests', requests);
-        renderRequests();
-        const rDel = requests.find(x => x.id === id);
-if(rDel) logSystemAction('Exclusão', 'Solicitações', `Solicitação excluída de ${rDel.municipality}`);
+        const item = requests.find(x => x.id === id);
+        if(item) {
+            registerUndo(item, 'requests', renderRequests); // Registra Undo
+            requests = requests.filter(x => x.id !== id);
+            salvarNoArmazenamento('requests', requests);
+            renderRequests();
+            logSystemAction('Exclusão', 'Solicitações', `Solicitação excluída: ${item.municipality}`);
+        }
     }
 }
 
@@ -2460,11 +2468,17 @@ function generatePresentationsPDF() {
     downloadPDF('Relatório Apresentações', headers, rows);
 }
 
+// 6. APRESENTAÇÕES
 function deletePresentation(id) {
-    if (confirm('Excluir?')) {
-        presentations = presentations.filter(function(x) { return x.id !== id; });
-        salvarNoArmazenamento('presentations', presentations);
-        renderPresentations();
+    if (confirm('Excluir apresentação?')) {
+        const item = presentations.find(x => x.id === id);
+        if(item) {
+            registerUndo(item, 'presentations', renderPresentations); // Registra Undo
+            presentations = presentations.filter(x => x.id !== id);
+            salvarNoArmazenamento('presentations', presentations);
+            renderPresentations();
+            logSystemAction('Exclusão', 'Apresentações', `Apresentação excluída: ${item.municipality}`);
+        }
     }
 }
 
@@ -2777,13 +2791,17 @@ function generateDemandsPDF() {
     downloadPDF('Relatório Demandas', headers, rows);
 }
 
+// 3. DEMANDAS
 function deleteDemand(id) {
-    if (confirm('Excluir?')) {
-        demands = demands.filter(function(x) { return x.id !== id; });
-        salvarNoArmazenamento('demands', demands);
-        renderDemands();
-        const dDel = demands.find(x => x.id === id);
-if(dDel) logSystemAction('Exclusão', 'Demandas', `Demanda excluída (ID ${id})`);
+    if (confirm('Excluir demanda?')) {
+        const item = demands.find(x => x.id === id);
+        if(item) {
+            registerUndo(item, 'demands', renderDemands); // Registra Undo
+            demands = demands.filter(x => x.id !== id);
+            salvarNoArmazenamento('demands', demands);
+            renderDemands();
+            logSystemAction('Exclusão', 'Demandas', `Demanda excluída (ID ${id})`);
+        }
     }
 }
 
@@ -3125,13 +3143,17 @@ function generateVisitsPDF() {
     downloadPDF('Relatório Visitas', headers, rows);
 }
 
+// 4. VISITAS
 function deleteVisit(id) {
-    if (confirm('Excluir?')) {
-        visits = visits.filter(function(x) { return x.id !== id; });
-        salvarNoArmazenamento('visits', visits);
-        renderVisits();
-        const vDel = visits.find(x => x.id === id);
-if(vDel) logSystemAction('Exclusão', 'Visitas', `Visita excluída de ${vDel.municipality}`);
+    if (confirm('Excluir visita?')) {
+        const item = visits.find(x => x.id === id);
+        if(item) {
+            registerUndo(item, 'visits', renderVisits); // Registra Undo
+            visits = visits.filter(x => x.id !== id);
+            salvarNoArmazenamento('visits', visits);
+            renderVisits();
+            logSystemAction('Exclusão', 'Visitas', `Visita excluída: ${item.municipality}`);
+        }
     }
 }
 
@@ -3434,13 +3456,17 @@ function generateProductionsPDF() {
     downloadPDF('Relatório Produção', headers, rows);
 }
 
+// 5. PRODUÇÃO
 function deleteProduction(id) {
-    if (confirm('Excluir?')) {
-        productions = productions.filter(function(x) { return x.id !== id; });
-        salvarNoArmazenamento('productions', productions);
-        renderProductions();
-        const pDel = productions.find(x => x.id === id);
-if(pDel) logSystemAction('Exclusão', 'Produção', `Envio excluído de ${pDel.municipality}`);
+    if (confirm('Excluir envio?')) {
+        const item = productions.find(x => x.id === id);
+        if(item) {
+            registerUndo(item, 'productions', renderProductions); // Registra Undo
+            productions = productions.filter(x => x.id !== id);
+            salvarNoArmazenamento('productions', productions);
+            renderProductions();
+            logSystemAction('Exclusão', 'Produção', `Envio excluído: ${item.municipality}`);
+        }
     }
 }
 
@@ -3720,7 +3746,17 @@ function clearUserFilters() {
     renderUsers();
 }
 
-function deleteUser(id) { const u=users.find(x=>x.id===id); if(u.login==='ADMIN'){alert('Não pode excluir ADMIN');return;} if(confirm('Excluir?')){users=users.filter(x=>x.id!==id); salvarNoArmazenamento('users',users); renderUsers();}}
+// 8. USUÁRIOS (Admin)
+function deleteUser(id) { 
+    const u=users.find(x=>x.id===id); 
+    if(u.login==='ADMIN'){alert('Não pode excluir ADMIN');return;} 
+    if(confirm('Excluir usuário?')){
+        registerUndo(u, 'users', renderUsers);
+        users=users.filter(x=>x.id!==id); 
+        salvarNoArmazenamento('users',users); 
+        renderUsers();
+    }
+}
 function closeUserModal(){document.getElementById('user-modal').classList.remove('show');}
 
 // Cargos
@@ -3781,7 +3817,7 @@ function renderCargos() {
     c.innerHTML = `<table><thead><th>Cargo/Função</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteCargo(id){ if(confirm('Excluir?')){ cargos=cargos.filter(x=>x.id!==id); salvarNoArmazenamento('cargos',cargos); renderCargos(); }}
+function deleteCargo(id){ if(confirm('Excluir?')){ const i=cargos.find(x=>x.id===id); if(i) registerUndo(i,'cargos',renderCargos); cargos=cargos.filter(x=>x.id!==id); salvarNoArmazenamento('cargos',cargos); renderCargos(); }}
 function closeCargoModal(){document.getElementById('cargo-modal').classList.remove('show');}
 
 // Orientadores
@@ -3818,7 +3854,7 @@ function renderOrientadores() {
     c.innerHTML = `<table><thead><th>Nome do Colaborador</th><th>E-mail</th><th style="text-align:center;">Data Nasc.</th><th>Contato</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteOrientador(id){ if(confirm('Excluir?')){ orientadores=orientadores.filter(x=>x.id!==id); salvarNoArmazenamento('orientadores',orientadores); renderOrientadores(); }}
+function deleteOrientador(id){ if(confirm('Excluir?')){ const i=orientadores.find(x=>x.id===id); if(i) registerUndo(i,'orientadores',renderOrientadores); orientadores=orientadores.filter(x=>x.id!==id); salvarNoArmazenamento('orientadores',orientadores); renderOrientadores(); }}
 function closeOrientadorModal(){document.getElementById('orientador-modal').classList.remove('show');}
 
 // Módulos
@@ -3858,7 +3894,7 @@ function renderModulos() {
     c.innerHTML = `<table><thead><th>Módulo</th><th style="text-align:center;">Abrev.</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteModulo(id){ if(confirm('Excluir?')){ modulos=modulos.filter(x=>x.id!==id); salvarNoArmazenamento('modulos',modulos); renderModulos(); }}
+function deleteModulo(id){ if(confirm('Excluir?')){ const i=modulos.find(x=>x.id===id); if(i) registerUndo(i,'modulos',renderModulos); modulos=modulos.filter(x=>x.id!==id); salvarNoArmazenamento('modulos',modulos); renderModulos(); }}
 function closeModuloModal(){document.getElementById('modulo-modal').classList.remove('show');}
 
 // Municípios Lista Mestra
@@ -3901,7 +3937,7 @@ function renderMunicipalityList() {
     c.innerHTML = `<table><thead><th>Nome</th><th>UF</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteMunicipalityList(id){ if(confirm('Excluir?')){ municipalitiesList=municipalitiesList.filter(x=>x.id!==id); salvarNoArmazenamento('municipalitiesList',municipalitiesList); renderMunicipalityList(); updateGlobalDropdowns(); }}
+function deleteMunicipalityList(id){ if(confirm('Excluir?')){ const i=municipalitiesList.find(x=>x.id===id); if(i) registerUndo(i,'municipalitiesList',renderMunicipalityList); municipalitiesList=municipalitiesList.filter(x=>x.id!==id); salvarNoArmazenamento('municipalitiesList',municipalitiesList); renderMunicipalityList(); updateGlobalDropdowns(); }}
 function closeMunicipalityListModal() { document.getElementById('municipality-list-modal').classList.remove('show'); }
 
 // Formas
@@ -3930,7 +3966,7 @@ function renderFormas() {
     c.innerHTML = `<table><thead><th>Forma</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteForma(id){ if(confirm('Excluir?')){ formasApresentacao=formasApresentacao.filter(x=>x.id!==id); salvarNoArmazenamento('formasApresentacao',formasApresentacao); renderFormas(); }}
+function deleteForma(id){ if(confirm('Excluir?')){ const i=formasApresentacao.find(x=>x.id===id); if(i) registerUndo(i,'formasApresentacao',renderFormas); formasApresentacao=formasApresentacao.filter(x=>x.id!==id); salvarNoArmazenamento('formasApresentacao',formasApresentacao); renderFormas(); }}
 function closeFormaApresentacaoModal() { document.getElementById('forma-apresentacao-modal').classList.remove('show'); }
 
 // ----------------------------------------------------------------------------
@@ -5417,15 +5453,7 @@ function renderApiList() {
     c.innerHTML = `<table><thead><th>API</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteApiList(id) {
-    if (confirm('Excluir esta API?')) {
-        // Correção: Garante comparação correta na filtragem
-        apisList = apisList.filter(x => x.id != id);
-        salvarNoArmazenamento('apisList', apisList);
-        renderApiList();
-        updateGlobalDropdowns(); // Atualiza filtros dependentes
-    }
-}
+function deleteApiList(id){ if(confirm('Excluir?')){ const i=apisList.find(x=>x.id===id); if(i) registerUndo(i,'apisList',renderApiList); apisList=apisList.filter(x=>x.id!==id); salvarNoArmazenamento('apisList',apisList); renderApiList(); updateGlobalDropdowns(); }}
 
 function closeApiListModal() { document.getElementById('api-list-modal').classList.remove('show'); }
 // ----------------------------------------------------------------------------
@@ -6530,9 +6558,7 @@ function confirmUndo() {
 
     const { item, listName, renderFunction } = undoState;
 
-    // Lógica para reinserir o item na lista correta
-    // Precisamos identificar qual lista global usar baseada na string 'listName'
-    
+    // REINSERE O ITEM NA LISTA CORRETA (Memória RAM)
     switch(listName) {
         case 'municipalities': municipalities.push(item); break;
         case 'tasks': tasks.push(item); break;
@@ -6541,26 +6567,43 @@ function confirmUndo() {
         case 'visits': visits.push(item); break;
         case 'productions': productions.push(item); break;
         case 'presentations': presentations.push(item); break;
+        
+        // Configurações e Outros
         case 'users': users.push(item); break;
         case 'cargos': cargos.push(item); break;
         case 'orientadores': orientadores.push(item); break;
         case 'modulos': modulos.push(item); break;
+        case 'municipalitiesList': municipalitiesList.push(item); break;
+        case 'formasApresentacao': formasApresentacao.push(item); break;
+        case 'apisList': apisList.push(item); break;
+        
+        // Novas Abas
         case 'integrations': integrations.push(item); break;
         case 'collaboratorInfos': collaboratorInfos.push(item); break;
-        case 'apisList': apisList.push(item); break;
     }
 
-    // Salva no LocalStorage
-    // Nota: Para as listas globais funcionarem aqui, usamos uma função auxiliar genérica
-    // Mas como temos acesso às variáveis globais, podemos salvar direto:
+    // SALVA NO LOCALSTORAGE (Persistência)
     if (listName === 'municipalities') salvarNoArmazenamento('municipalities', municipalities);
     else if (listName === 'tasks') salvarNoArmazenamento('tasks', tasks);
+    else if (listName === 'requests') salvarNoArmazenamento('requests', requests);
+    else if (listName === 'demands') salvarNoArmazenamento('demands', demands);
+    else if (listName === 'visits') salvarNoArmazenamento('visits', visits);
+    else if (listName === 'productions') salvarNoArmazenamento('productions', productions);
+    else if (listName === 'presentations') salvarNoArmazenamento('presentations', presentations);
+    
+    else if (listName === 'users') salvarNoArmazenamento('users', users);
+    else if (listName === 'cargos') salvarNoArmazenamento('cargos', cargos);
+    else if (listName === 'orientadores') salvarNoArmazenamento('orientadores', orientadores);
+    else if (listName === 'modulos') salvarNoArmazenamento('modulos', modulos);
+    else if (listName === 'municipalitiesList') salvarNoArmazenamento('municipalitiesList', municipalitiesList);
+    else if (listName === 'formasApresentacao') salvarNoArmazenamento('formasApresentacao', formasApresentacao);
+    else if (listName === 'apisList') salvarNoArmazenamento('apisList', apisList);
+    
     else if (listName === 'integrations') salvarNoArmazenamento('integrations', integrations);
     else if (listName === 'collaboratorInfos') salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
-    else salvarNoArmazenamento(listName, eval(listName)); // Fallback para outras listas
 
     // Atualiza a Tela
-    renderFunction();
+    if (typeof renderFunction === 'function') renderFunction();
     updateGlobalDropdowns();
 
     // Feedback visual
