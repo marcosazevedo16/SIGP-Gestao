@@ -1428,11 +1428,10 @@ function validateDateRange(type) {
     } else if (type.includes('production')) { 
         startId = `filter-${type}-start`; endId = `filter-${type}-end`;
     } else if (type === 'integration') { startId = 'filter-integration-start'; endId = 'filter-integration-end';
-    } else if (type === 'colab') { // NOVO BLOCO
+ else if (type === 'colab') {
         startId = 'filter-colab-info-start';
         endId = 'filter-colab-info-end';
     }
-
     const start = document.getElementById(startId);
     const end = document.getElementById(endId);
     
@@ -1442,7 +1441,21 @@ function validateDateRange(type) {
     else end.removeAttribute('min');
     
     if (end.value && start.value && end.value < start.value) end.value = start.value;
-
+const start = document.getElementById(startId);
+    const end = document.getElementById(endId);
+    
+    if (start && end) {
+        // Regra: Data Final não pode ser menor que Inicial
+        if (start.value) {
+            end.min = start.value; // Trava o calendário
+            if (end.value && end.value < start.value) {
+                end.value = start.value; // Corrige se já estiver errado
+            }
+        } else {
+            end.removeAttribute('min');
+        }
+    }
+    
     // Refresh
     if (type.includes('production')) renderProductions();
     else if (type.includes('dem')) renderDemands();
@@ -5684,64 +5697,61 @@ function saveColabInfo(e) {
 }
 
 function renderCollaboratorInfos() {
-    // Filtros
+    // 1. Captura Filtros
     const fName = document.getElementById('filter-colab-info-name')?.value;
     const fStatus = document.getElementById('filter-colab-info-status')?.value;
     const fStart = document.getElementById('filter-colab-info-start')?.value;
     const fEnd = document.getElementById('filter-colab-info-end')?.value;
 
+    // 2. Filtragem Geral
     let filtered = collaboratorInfos.filter(c => {
         if (fName && c.name !== fName) return false;
         if (fStatus && c.status !== fStatus) return false;
+        // Filtro por Data de Admissão
         if (fStart && c.admissionDate < fStart) return false;
         if (fEnd && c.admissionDate > fEnd) return false;
         return true;
     }).sort((a,b) => a.name.localeCompare(b.name));
 
-    const container = document.getElementById('colab-info-table');
+    // 3. Atualiza Contador Global
     const countDiv = document.getElementById('colab-info-results-count');
-    
     if(countDiv) {
         countDiv.style.display = 'block';
-        countDiv.innerHTML = `<strong>${filtered.length}</strong> fichas encontradas`;
+        countDiv.innerHTML = `<strong>${filtered.length}</strong> registros encontrados`;
     }
 
-    // Atualiza Cards
-    if(document.getElementById('total-colab-active')) 
-        document.getElementById('total-colab-active').textContent = collaboratorInfos.filter(c => c.status === 'Ativo na Empresa').length;
-    if(document.getElementById('total-colab-terminated')) 
-        document.getElementById('total-colab-terminated').textContent = collaboratorInfos.filter(c => c.status === 'Desligado da Empresa').length;
+    // 4. Separação das Listas
+    const activeList = filtered.filter(c => c.status === 'Ativo na Empresa');
+    const terminatedList = filtered.filter(c => c.status === 'Desligado da Empresa');
 
-    if(filtered.length === 0) {
-        container.innerHTML = '<div class="empty-state">Nenhuma ficha encontrada.</div>';
-    } else {
-        const rows = filtered.map(c => {
-            // Busca dados do mestre (nascimento)
+    // Elementos do DOM
+    const secActive = document.getElementById('section-colab-active');
+    const secTerminated = document.getElementById('section-colab-terminated');
+    const tableActive = document.getElementById('colab-active-table');
+    const tableTerminated = document.getElementById('colab-terminated-table');
+
+    // 5. RENDERIZAÇÃO: TABELA DE ATIVOS
+    if (activeList.length > 0) {
+        secActive.style.display = 'block';
+        const rowsActive = activeList.map(c => {
             const master = orientadores.find(o => o.name === c.name);
             const birthDate = master ? master.birthDate : null;
-            const age = calcDateDiffString(birthDate); // Idade
+            const age = calcDateDiffString(birthDate);
             
-            // Tempo de Serviço
-            // Se desligado, calcula até data de desligamento. Senão, até hoje.
-            const serviceTime = calcDateDiffString(c.admissionDate, c.status === 'Desligado da Empresa' ? c.terminationDate : null);
+            // Tempo de Serviço (Até hoje)
+            const serviceTime = calcDateDiffString(c.admissionDate, null);
             
             // Tempo Sem Férias
             const timeSinceVacation = c.lastVacationEnd ? calcDateDiffString(c.lastVacationEnd) : '-';
 
-            // Status Badge
-            const badgeClass = c.status === 'Ativo na Empresa' ? 'status-badge-active' : 'status-badge-terminated';
-            const statusLabel = c.status === 'Ativo na Empresa' ? 'Ativo' : 'Desligado';
-
             return `<tr>
-                <td class="text-primary-cell">${c.name}</td>
+                <td class="text-primary-cell"><strong>${c.name}</strong></td>
                 <td style="text-align:center;">${formatDate(birthDate)}</td>
                 <td>${age}</td>
                 <td style="text-align:center;">${formatDate(c.admissionDate)}</td>
                 <td>${serviceTime}</td>
                 <td style="text-align:center;">${formatDate(c.lastVacationEnd)}</td>
-                <td>${timeSinceVacation}</td>
-                <td style="text-align:center;"><span class="${badgeClass}">${statusLabel}</span></td>
-                <td style="text-align:center;">${formatDate(c.terminationDate)}</td>
+                <td style="color:#C85250; font-weight:500;">${timeSinceVacation}</td>
                 <td class="text-secondary-cell" title="${c.observation||''}">${c.observation ? (c.observation.length > 20 ? c.observation.substr(0,20)+'...' : c.observation) : '-'}</td>
                 <td style="text-align:right;">
                     <button class="btn btn--sm" onclick="showColabInfoModal(${c.id})">✏️</button>
@@ -5750,7 +5760,7 @@ function renderCollaboratorInfos() {
             </tr>`;
         }).join('');
 
-        container.innerHTML = `<table>
+        tableActive.innerHTML = `<table>
             <thead>
                 <th>Colaborador</th>
                 <th>Data Nasc.</th>
@@ -5759,14 +5769,63 @@ function renderCollaboratorInfos() {
                 <th>Tempo de Serviço</th>
                 <th>Últimas Férias</th>
                 <th>Tempo s/ Férias</th>
-                <th>Status</th>
-                <th>Desligamento</th>
                 <th>Obs</th>
                 <th style="text-align:right;">Ações</th>
             </thead>
-            <tbody>${rows}</tbody>
+            <tbody>${rowsActive}</tbody>
         </table>`;
+    } else {
+        secActive.style.display = 'none';
     }
+
+    // 6. RENDERIZAÇÃO: TABELA DE DESLIGADOS
+    if (terminatedList.length > 0) {
+        secTerminated.style.display = 'block';
+        const rowsTerm = terminatedList.map(c => {
+            const master = orientadores.find(o => o.name === c.name);
+            const birthDate = master ? master.birthDate : null;
+            const age = calcDateDiffString(birthDate); // Idade
+            
+            // Tempo de Serviço (TRAVADO NA DATA DE DESLIGAMENTO)
+            const serviceTime = calcDateDiffString(c.admissionDate, c.terminationDate);
+
+            return `<tr>
+                <td class="text-primary-cell"><strong>${c.name}</strong></td>
+                <td style="text-align:center;">${formatDate(birthDate)}</td>
+                <td>${age}</td>
+                <td style="text-align:center;">${formatDate(c.admissionDate)}</td>
+                <td style="font-weight:bold;">${serviceTime}</td>
+                <td style="text-align:center; color:#C85250; font-weight:bold;">${formatDate(c.terminationDate)}</td>
+                <td class="text-secondary-cell" title="${c.observation||''}">${c.observation ? (c.observation.length > 20 ? c.observation.substr(0,20)+'...' : c.observation) : '-'}</td>
+                <td style="text-align:right;">
+                    <button class="btn btn--sm" onclick="showColabInfoModal(${c.id})">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteColabInfo(${c.id})">🗑️</button>
+                </td>
+            </tr>`;
+        }).join('');
+
+        tableTerminated.innerHTML = `<table>
+            <thead>
+                <th>Colaborador</th>
+                <th>Data Nasc.</th>
+                <th>Idade</th>
+                <th>Admissão</th>
+                <th>Tempo de Serviço Total</th>
+                <th>Data Desligamento</th>
+                <th>Obs</th>
+                <th style="text-align:right;">Ações</th>
+            </thead>
+            <tbody>${rowsTerm}</tbody>
+        </table>`;
+    } else {
+        secTerminated.style.display = 'none';
+    }
+
+    // Atualiza Cards e Gráficos
+    if(document.getElementById('total-colab-active')) 
+        document.getElementById('total-colab-active').textContent = collaboratorInfos.filter(c => c.status === 'Ativo na Empresa').length;
+    if(document.getElementById('total-colab-terminated')) 
+        document.getElementById('total-colab-terminated').textContent = collaboratorInfos.filter(c => c.status === 'Desligado da Empresa').length;
     
     updateColabCharts(filtered);
 }
