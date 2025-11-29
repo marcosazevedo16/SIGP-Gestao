@@ -4263,116 +4263,24 @@ function initializeDashboardCharts() {
     }
 }
 
+// Função utilitária para preencher selects
 function populateSelect(select, data, valKey, textKey) {
     if(!select) return;
     const current = select.value;
     let html = '<option value="">Selecione...</option>';
     
-    data.sort(function(a,b){ 
+    // Ordenação segura
+    const sortedData = data.slice().sort(function(a,b){ 
         return a[textKey].localeCompare(b[textKey]); 
-    }).forEach(function(i) { 
+    });
+
+    sortedData.forEach(function(i) { 
         html += '<option value="' + i[valKey] + '">' + i[textKey] + '</option>'; 
     });
     
     select.innerHTML = html;
     select.value = current;
 }
-
-// 1. FILTRO DE MUNICÍPIOS (Geral e Integrações)
-    const munFilterIds = [
-        'filter-municipality-name',
-        'filter-task-municipality',
-        'filter-request-municipality',
-        'filter-presentation-municipality',
-        'filter-visit-municipality',
-        'filter-production-municipality',
-        'filter-integration-municipality' // <--- Foco aqui
-    ];
-
-    if (typeof municipalitiesList !== 'undefined' && municipalitiesList.length > 0) {
-        // Ordena
-        const sortedMun = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
-        
-        munFilterIds.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                const currentVal = el.value;
-                // Recria o HTML mantendo a opção "Todos"
-                el.innerHTML = '<option value="">Todos</option>' + 
-                               sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-                if (currentVal) el.value = currentVal;
-                
-                // Adiciona o evento de refresh se for o filtro da integração
-                if (id === 'filter-integration-municipality') {
-                    el.onchange = renderIntegrations;
-                }
-            }
-        });
-    }
-
-    // ------------------------------------------------------------------------
-    // 2. FILTROS DE ORIENTADOR
-    // ------------------------------------------------------------------------
-    const orientadorFilters = ['filter-task-performer', 'filter-presentation-orientador'];
-    const sortedOrientadores = orientadores.slice().sort((a,b) => a.name.localeCompare(b.name));
-    
-    orientadorFilters.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            const cur = el.value;
-            el.innerHTML = '<option value="">Todos</option>' + sortedOrientadores.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
-            if(cur) el.value = cur;
-        }
-    });
-
-    // ------------------------------------------------------------------------
-    // 3. FILTRO DE CARGO
-    // ------------------------------------------------------------------------
-    const cargoEl = document.getElementById('filter-task-position');
-    if (cargoEl) {
-        const cur = cargoEl.value;
-        const sortedCargos = cargos.slice().sort((a,b) => a.name.localeCompare(b.name));
-        cargoEl.innerHTML = '<option value="">Todos</option>' + sortedCargos.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-        if(cur) cargoEl.value = cur;
-    }
-
-    // ------------------------------------------------------------------------
-    // 4. FILTRO DE USUÁRIO (Solicitações e Demandas)
-    // ------------------------------------------------------------------------
-    const userFilters = ['filter-request-user', 'filter-demand-user'];
-    const sortedUsers = users.slice().sort((a,b) => a.name.localeCompare(b.name));
-    
-    userFilters.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            const cur = el.value;
-            el.innerHTML = '<option value="">Todos</option>' + sortedUsers.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
-            if(cur) el.value = cur;
-        }
-    });
-
-// 5. FILTRO DE API INTEGRADA (Específico da aba)
-    const apiFilterEl = document.getElementById('filter-integration-api');
-    
-    // Verifica se o elemento existe E se a lista de APIs tem dados
-    if (apiFilterEl && typeof apisList !== 'undefined') {
-        const curApi = apiFilterEl.value;
-        const sortedApis = apisList.slice().sort((a,b) => a.name.localeCompare(b.name));
-        
-        apiFilterEl.innerHTML = '<option value="">Todas</option>' + 
-                                sortedApis.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
-        
-        if (curApi) apiFilterEl.value = curApi;
-        
-        // Garante que ao mudar, a tabela atualize
-        apiFilterEl.onchange = renderIntegrations;
-    }
-
-    // 6. Listener para o Filtro de Status
-    const statusFilter = document.getElementById('filter-integration-status');
-    if (statusFilter) {
-        statusFilter.onchange = renderIntegrations;
-    }
 
 // ============================================================================
 // FUNÇÕES DE ATUALIZAÇÃO DE DROPDOWNS (FILTROS E FORMULÁRIOS)
@@ -4389,11 +4297,10 @@ function updateGlobalDropdowns() {
         'production-municipality', 
         'presentation-municipality', 
         'municipality-name',
-        'integration-municipality' // Modal de integração
+        'integration-municipality'
     ];
 
     // Prepara a lista ordenada (Nome - UF)
-    // Verifica se a lista existe para evitar erros
     const listaMestra = (typeof municipalitiesList !== 'undefined') ? 
         municipalitiesList.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
 
@@ -4402,7 +4309,6 @@ function updateGlobalDropdowns() {
         const el = document.getElementById(id);
         if (el) {
             const currentVal = el.value;
-            // Modais de cadastro não tem opção "Todos", apenas "Selecione..."
             el.innerHTML = '<option value="">Selecione o município</option>' + 
                            listaMestra.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
             el.value = currentVal;
@@ -4423,15 +4329,17 @@ function updateGlobalDropdowns() {
         if(el) populateSelect(el, orientadores, 'name', 'name'); 
     });
 
-    // CHAMA A FUNÇÃO QUE ATUALIZA OS FILTROS DAS TABELAS
-    if (typeof populateFilterSelects === 'function') {
-        populateFilterSelects();
-    }
-        // Preenche select do Modal de Ficha de Colaborador
+    // Preenche select do Modal de Ficha de Colaborador (NOVO)
     const colabInfoSelect = document.getElementById('colab-info-name');
     if(colabInfoSelect) {
         populateSelect(colabInfoSelect, orientadores, 'name', 'name');
     }
+
+    // CHAMA A FUNÇÃO QUE ATUALIZA OS FILTROS DAS TABELAS
+    if (typeof populateFilterSelects === 'function') {
+        populateFilterSelects();
+    }
+}
 
 // 2. ATUALIZA OS FILTROS (TOPO DAS TABELAS) - TODAS AS ABAS
 function populateFilterSelects() {
@@ -4443,7 +4351,7 @@ function populateFilterSelects() {
     const sortedCargos = (typeof cargos !== 'undefined') ? cargos.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
     const sortedUsers = (typeof users !== 'undefined') ? users.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
 
-    // 1. FILTROS DE MUNICÍPIO (Todas as abas)
+    // 1. FILTROS DE MUNICÍPIO
     const munFilterIds = [
         'filter-municipality-name', 
         'filter-task-municipality', 
@@ -4451,24 +4359,22 @@ function populateFilterSelects() {
         'filter-visit-municipality', 
         'filter-production-municipality', 
         'filter-presentation-municipality',
-        'filter-integration-municipality' // Aba Integração
+        'filter-integration-municipality'
     ];
 
     munFilterIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             const cur = el.value;
-            // Filtros tem a opção "Todos"
             el.innerHTML = '<option value="">Todos</option>' + 
                            sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
             if(cur) el.value = cur;
             
-            // Listener específico para a aba de integração atualizar ao mudar
             if(id === 'filter-integration-municipality') el.onchange = renderIntegrations;
         }
     });
 
-    // 2. FILTRO DE API (Aba Integração)
+    // 2. FILTRO DE API
     const apiFilter = document.getElementById('filter-integration-api');
     if (apiFilter) {
         const cur = apiFilter.value;
@@ -4478,7 +4384,7 @@ function populateFilterSelects() {
         apiFilter.onchange = renderIntegrations;
     }
 
-    // 3. OUTROS FILTROS (Treinamentos e Apresentações)
+    // 3. OUTROS FILTROS
     ['filter-task-performer', 'filter-presentation-orientador'].forEach(id => {
         const el = document.getElementById(id);
         if(el) { 
@@ -4495,7 +4401,7 @@ function populateFilterSelects() {
         if(c) cargoEl.value=c; 
     }
 
-    // 4. FILTROS DE USUÁRIO (Solicitações e Demandas)
+    // 4. FILTROS DE USUÁRIO
     ['filter-request-user', 'filter-demand-user'].forEach(id => {
         const el = document.getElementById(id);
         if(el) { 
@@ -4503,8 +4409,9 @@ function populateFilterSelects() {
             el.innerHTML = '<option value="">Todos</option>' + sortedUsers.map(o => `<option value="${o.name}">${o.name}</option>`).join(''); 
             if(c) el.value=c; 
         }
+    });
 
-    // Filtro da aba Colaboradores Info
+    // 5. FILTRO DA ABA COLABORADORES INFO (NOVO)
     const filterColabInfoName = document.getElementById('filter-colab-info-name');
     if(filterColabInfoName) {
         const cur = filterColabInfoName.value;
@@ -4513,11 +4420,12 @@ function populateFilterSelects() {
         filterColabInfoName.onchange = renderCollaboratorInfos;
     }
     
-    // Listener para outros filtros da aba
+    // Listeners para outros filtros da aba Colaboradores
     ['filter-colab-info-status', 'filter-colab-info-start', 'filter-colab-info-end'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.onchange = renderCollaboratorInfos;
     });
+}
 
 // 5. Salvar Colaborador (Com novos campos: Email e Nascimento)
 function saveOrientador(e){ 
