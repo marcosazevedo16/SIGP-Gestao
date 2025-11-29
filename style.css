@@ -3851,10 +3851,10 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL V37 - PRIORIDADE TOTAL PARA APIs (LINHA ÚNICA)
+   CORREÇÃO FINAL V38 - APIs EM LINHA ÚNICA (FORÇADO)
    ========================================================================== */
 
-/* 1. Modais TRAVADOS (Mantendo o ajuste anterior) */
+/* 1. Modais TRAVADOS */
 #api-list-modal .modal-content,
 #integration-modal .modal-content {
     width: 500px !important;
@@ -3862,12 +3862,12 @@ table th {
     margin: 5% auto !important;
 }
 
-/* 2. Tabela de Integrações: Estrutura */
+/* 2. Tabela: Layout Fixo */
 #integrations-table table {
     border-collapse: collapse !important;
     width: 100%;
     border-spacing: 0 !important;
-    table-layout: fixed; /* OBRIGATÓRIO para as larguras funcionarem */
+    table-layout: fixed; /* Essencial */
 }
 
 #integrations-table tr {
@@ -3882,75 +3882,93 @@ table th {
 #integrations-table td {
     border: none !important;
     vertical-align: middle !important;
-    padding: 4px 8px !important; /* Padding reduzido para caber mais */
+    padding: 0 8px !important;
     height: 50px !important;
-    overflow: hidden;
+    overflow: hidden; /* Corta o excesso */
 }
 
-/* --- LARGURAS DAS COLUNAS (A Mágica acontece aqui) --- */
+/* --- LARGURAS APERTADAS (Para sobrar espaço para APIs) --- */
 
-/* Col 1: Município (Fixo, para não espremer o nome) */
+/* Col 1: Município */
 #integrations-table td:nth-child(1) {
-    width: 180px; 
+    width: 160px; /* Reduzi um pouco */
     white-space: normal;
-    line-height: 1.2;
+    line-height: 1.1;
+    font-size: 13px;
 }
 
-/* Col 2: APIs Integradas (SEM LARGURA DEFINIDA = Ocupa tudo que sobrar) */
+/* Col 2: APIs Integradas (Ocupa TODO o resto) */
 #integrations-table td:nth-child(2) {
     width: auto; 
 }
 
-/* Col 3: Vencimento (Fixo e apertado) */
+/* Col 3: Vencimento (Apertado) */
 #integrations-table td:nth-child(3) {
-    width: 110px;
-    text-align: left; /* Alinhado à esquerda para colar na API */
+    width: 90px; /* Reduzi ao máximo para caber a data */
+    text-align: center;
+    font-size: 13px;
 }
 
-/* Col 4: Status (Fixo e apertado) */
+/* Col 4: Status (Apertado) */
 #integrations-table td:nth-child(4) {
-    width: 140px;
+    width: 120px; /* Reduzi */
     text-align: left;
+    font-size: 13px;
 }
 
-/* Col 5: Observações (Fixo e curto) */
+/* Col 5: Observações (Bem reduzido com ...) */
 #integrations-table td:nth-child(5) {
-    width: 150px;          
+    width: 120px; /* Espaço pequeno para priorizar API */
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--color-text-secondary);
+    font-size: 13px;
 }
 
-/* Col 6: Ações (Fixo) */
+/* Col 6: Ações */
 #integrations-table td:last-child {
-    width: 90px;
+    width: 80px;
     text-align: right !important;
     padding-right: 10px !important;
     overflow: visible;
 }
 
-/* 3. Coluna de APIs (Tags) - Forçar Linha Única */
+/* 3. Coluna de APIs (O SEGREDO DO ALINHAMENTO) */
 #integrations-table .module-tags-cell {
     display: flex !important;
     align-items: center !important;
     height: 100%;
-    flex-wrap: wrap; /* Permite quebra se a tela for MUITO pequena */
+    
+    /* ISSO GARANTE QUE FIQUEM NA MESMA LINHA */
+    flex-wrap: nowrap !important; 
+    
+    /* Se tiver MUITAS, permite rolar para o lado suavemente */
+    overflow-x: auto !important; 
+    
     gap: 4px;
     padding: 0 !important;
     margin: 0 !important;
+    
+    /* Esconde barra de rolagem para ficar limpo */
+    scrollbar-width: none; 
+    -ms-overflow-style: none;
+}
+#integrations-table .module-tags-cell::-webkit-scrollbar { 
+    display: none; 
 }
 
-/* Estilo da Tag */
+/* Estilo da Tag (Compacto) */
 #integrations-table .module-tag {
-    font-size: 10px !important;
+    font-size: 9px !important; /* Fonte menor para caber mais */
     font-weight: 600 !important;
-    padding: 2px 6px !important;
+    padding: 2px 5px !important;
     border-radius: 3px;
     line-height: 1 !important;
     display: inline-flex;
     align-items: center;
-    height: 20px !important;
+    height: 18px !important;
     margin: 0 !important;
     border-width: 1px !important;
-    white-space: nowrap !important; /* Impede que o texto da tag quebre */
+    white-space: nowrap !important;
+    flex-shrink: 0; /* Impede que o navegador esmague a tag */
 }
