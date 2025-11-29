@@ -5099,11 +5099,24 @@ function initializeInactivityTracking() {
     document.onscroll = resetInactivityTimer;
 }
 
-// --- C. SANITIZAÇÃO (Limpeza de Texto) ---
+// CORREÇÃO: Sanitização XSS Robusta (Fase 2)
 function sanitizeInput(input) {
-    if (typeof input !== 'string') return input;
-    // Remove tags HTML básicas para evitar injeção de código
-    return input.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    if (typeof input !== 'string') return '';
+    
+    // Usa o próprio navegador para converter HTML em texto seguro
+    const textarea = document.createElement('textarea');
+    textarea.textContent = input;
+    let sanitized = textarea.innerHTML;
+
+    // Remove tags perigosas específicas e event handlers (ex: onclick)
+    sanitized = sanitized
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/on\w+\s*=\s*["']?[^"']*["']?/gi, '') // Remove onmouseover, onclick, etc
+        .replace(/<iframe [^>]*>[\s\S]*?<\/iframe>/gi, '')
+        .replace(/<object[^>]*>[\s\S]*?<\/object>/gi, '')
+        .replace(/<embed [^>]*>/gi, '');
+
+    return sanitized.trim();
 }
 
 // ----------------------------------------------------------------------------
@@ -5997,4 +6010,43 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+});
+
+// OTIMIZAÇÃO: Função Debounce (Espera o usuário parar de digitar)
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+    };
+}
+
+// Inicializa os filtros com Debounce automaticamente
+document.addEventListener('DOMContentLoaded', function() {
+    // Seleciona todos os inputs de texto dentro das áreas de filtro
+    const filterInputs = document.querySelectorAll('.filters-section input[type="text"]');
+    
+    filterInputs.forEach(input => {
+        // Remove o evento oninput original do HTML para não conflitar (opcional, mas recomendado)
+        input.removeAttribute('oninput');
+
+        // Descobre qual função de renderização chamar baseado no ID do input
+        input.addEventListener('input', debounce(function(e) {
+            const id = e.target.id;
+            
+            if (id.includes('municipality')) renderMunicipalities();
+            else if (id.includes('task')) renderTasks();
+            else if (id.includes('request')) renderRequests();
+            else if (id.includes('demand')) renderDemands();
+            else if (id.includes('visit')) renderVisits();
+            else if (id.includes('production')) renderProductions();
+            else if (id.includes('presentation')) renderPresentations();
+            else if (id.includes('integration')) renderIntegrations();
+            else if (id.includes('colab')) renderCollaboratorInfos();
+            else if (id.includes('user')) renderUsers();
+            else if (id.includes('audit')) renderAuditLogs();
+            
+        }, 400)); // Espera 400ms após a última digitação
+    });
 });
