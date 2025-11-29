@@ -94,18 +94,29 @@
             </div>
 
             <div class="header-actions">
-
                 <button class="btn btn--outline btn--sm" id="home-btn" onclick="navigateToHome()" title="Tela Inicial">
-
                     🏠 Tela Inicial
-
                 </button>
-
                 <button class="btn btn--outline btn--sm" id="theme-toggle" onclick="toggleTheme()" title="Alternar Tema">
-
                     🌙 Tema
-
                 </button>
+                
+                <div class="settings-dropdown">
+                    <button class="btn btn--outline btn--sm relative" id="notif-btn" onclick="toggleNotifications()" title="Notificações">
+                        🔔 <span id="notif-badge" class="notification-badge" style="display:none;">0</span>
+                    </button>
+                    <div class="settings-menu notification-menu" id="notification-menu">
+                        <div class="notification-header">Notificações</div>
+                        <div id="notification-list" class="notification-list">
+                            <p style="padding:10px; color:#666;">Nenhuma notificação.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn--secondary btn--sm" onclick="handleLogout()">
+                    Sair
+                </button>
+            </div>
 
                 <div class="settings-dropdown">
 
@@ -127,16 +138,6 @@
                         <button class="settings-menu-item" id="api-list-management-menu-btn" style="display: none;" onclick="navigateToApiListManagement()">🖧 Cadastro de APIs</button>
                         <button class="settings-menu-item" id="backup-menu-btn" style="display: none;" onclick="navigateToBackupManagement()">💾 Backup e Restauração</button>
                         <button class="settings-menu-item" id="audit-menu-btn" style="display: none;" onclick="navigateToAudit()">🕵️ Auditoria (Logs)</button>
-
-                    </div>
-
-                </div>
-
-                <button class="btn btn--secondary btn--sm" onclick="handleLogout()">
-
-                    Sair
-
-                </button>
 
             </div>
 
