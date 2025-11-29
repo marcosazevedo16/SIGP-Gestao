@@ -4187,3 +4187,31 @@ input:disabled, select:disabled, textarea:disabled {
     /* Esconde o botão de fechar do mobile se aparecer */
     .mobile-menu-toggle { display: none !important; }
 }
+/* ==========================================================================
+   AJUSTE FINO V53 - POSIÇÃO DO MENU E CONTEÚDO
+   ========================================================================== */
+
+@media (min-width: 901px) {
+    
+    /* 1. SIDEBAR (Baixando o ícone do Menu) */
+    .sidebar {
+        /* Aumentei de 20px para 35px para o ícone descer um pouco */
+        padding-top: 35px !important; 
+    }
+
+    /* 2. CONTEÚDO (Subindo o texto para perto da barra azul) */
+    .main-content {
+        /* Reduzi de 80px para 60px para colar mais no cabeçalho */
+        margin-top: 60px !important; 
+        
+        /* Reduzi o padding interno para ganhar mais espaço visual */
+        padding-top: 10px !important; 
+    }
+    
+    /* Ajuste extra para garantir que o Header não fique alto demais */
+    .app-header {
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
+        min-height: 60px !important; /* Altura fixa para combinar com a margem do conteúdo */
+    }
+}
