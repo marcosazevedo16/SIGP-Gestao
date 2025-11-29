@@ -1428,7 +1428,7 @@ function validateDateRange(type) {
     } else if (type.includes('production')) { 
         startId = `filter-${type}-start`; endId = `filter-${type}-end`;
     } else if (type === 'integration') { startId = 'filter-integration-start'; endId = 'filter-integration-end';
-      else if (type === 'colab')
+      else if (type === 'colab') 
         startId = 'filter-colab-info-start';
         endId = 'filter-colab-info-end';
     }
