@@ -3851,53 +3851,69 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL V31 - REMOÇÃO DE LINHAS DUPLICADAS
+   CORREÇÃO V32 - MODAIS PEQUENOS E REMOÇÃO TOTAL DE LINHAS DUPLICADAS
    ========================================================================== */
 
+/* 1. Modais Específicos (FORÇAR TAMANHO PEQUENO) */
+/* Usa max-width com !important para vencer qualquer outra regra */
+#api-list-modal .modal-content,
+#integration-modal .modal-content {
+    max-width: 450px !important; /* Tamanho reduzido conforme solicitado */
+    width: 95% !important;       /* Garante que não estoure em telas pequenas */
+    margin: 10% auto !important; /* Centraliza melhor na tela */
+}
+
+/* 2. Tabela de Integrações: Limpeza Geral */
 #integrations-table table {
-    border-collapse: collapse;
+    border-collapse: collapse !important;
     width: 100%;
+    border: none !important;
 }
 
-/* 1. Remove a borda da LINHA (TR) para não duplicar */
+/* Remove bordas das linhas (TR) para evitar duplicação */
 #integrations-table tr {
-    border-bottom: none !important;
+    border: none !important;
+    background: transparent;
 }
 
-/* 2. Aplica borda fina (1px) apenas na CÉLULA (TD) */
+/* Aplica a borda APENAS na célula (TD), bem fina */
 #integrations-table td {
-    border-bottom: 1px solid #e0e0e0 !important; /* Linha única e sutil */
-    vertical-align: middle !important;
-    padding: 10px 8px !important;
-    height: 60px; /* Altura mínima para conforto visual */
+    border-bottom: 1px solid #e0e0e0 !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    vertical-align: middle !important; /* Centraliza o conteúdo na altura */
+    padding: 12px 8px !important;
+    height: auto !important;
 }
 
-/* 3. Remove a borda da última linha da tabela para fechar limpo */
+/* Remove a borda da última linha da tabela */
 #integrations-table tr:last-child td {
     border-bottom: none !important;
 }
 
-/* Mantém o alinhamento centralizado das APIs */
+/* 3. Coluna de APIs (Tags): Correção do "Risco" e Alinhamento */
 #integrations-table .module-tags-cell {
+    border: none !important;         /* Remove a linha estranha que aparecia */
+    text-decoration: none !important;
     display: flex !important;
-    align-items: center !important;
-    align-content: center !important;
+    align-items: center !important;  /* Centraliza verticalmente */
     flex-wrap: wrap !important;
     gap: 6px;
-    height: 100%;
-    min-height: 40px;
     padding: 0 !important;
+    margin: 0 !important;
+    min-height: 30px;
 }
 
+/* Estilo das Tags Individuais */
 #integrations-table .module-tag {
-    white-space: nowrap !important;
-    line-height: 1;
-    padding: 4px 8px !important;
+    margin: 0 !important;
     display: inline-flex;
     align-items: center;
-    margin: 0 !important;
+    height: 24px; /* Altura fixa para ficarem alinhadas */
 }
 
+/* 4. Coluna de Ações (Direita) */
 #integrations-table td:last-child {
     text-align: right !important;
     padding-right: 15px !important;
