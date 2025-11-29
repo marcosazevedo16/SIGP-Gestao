@@ -17,7 +17,7 @@ if (typeof CryptoJS === 'undefined') {
 // ----------------------------------------------------------------------------
 // 2. CONFIGURAÇÕES GERAIS E VARIÁVEIS DE ESTADO
 // ----------------------------------------------------------------------------
-const SALT_LENGTH = 16;
+const SALT_LENGTH = 32; // Aumentado para 32 caracteres (Segurança Máxima)
 // --- PAGINAÇÃO ---
 const ITEMS_PER_PAGE = 10; // Quantos itens por página
 let currentPage = 1;       // Página atual
@@ -108,7 +108,15 @@ function generateSalt() {
 }
 
 function hashPassword(password, salt) {
-    return CryptoJS.SHA256(salt + password).toString();
+    // 1. Primeira passada
+    let hash = CryptoJS.SHA256(salt + password).toString();
+    
+    // 2. Loop de reforço (PBKDF2-like) - 1000 iterações
+    for (let i = 0; i < 1000; i++) {
+        hash = CryptoJS.SHA256(hash + salt).toString();
+    }
+    
+    return hash;
 }
 
 // Função de Salvamento com Tratamento de Erro de Cota
@@ -631,11 +639,18 @@ const DADOS_PADRAO = {
 // Carrega usuários
 let users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
 
-// Garante senha padrão para ADMIN se não existir
-if (users.length > 0 && users[0].login === 'ADMIN' && !users[0].passwordHash) {
+// REGENERAÇÃO DE SEGURANÇA (Fase 3): 
+// Força a atualização da senha do ADMIN para o novo padrão (Salt 32 + 1000 iterações)
+if (users.length > 0 && users[0].login === 'ADMIN') {
+    // Gera um novo salt de 32 caracteres
     users[0].salt = generateSalt();
+    
+    // Aplica o novo hash de 1000 iterações na senha padrão 'saude2025'
     users[0].passwordHash = hashPassword('saude2025', users[0].salt);
+    
+    // Salva a atualização
     salvarNoArmazenamento('users', users);
+    console.log('🔒 Segurança Atualizada: Senha do ADMIN resetada para o novo padrão (saude2025).');
 }
 
 let currentUser = recuperarDoArmazenamento('currentUser');
