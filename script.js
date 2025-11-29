@@ -319,12 +319,10 @@ function formatPeriodo(value) {
 }
 
 function applyMasks() {
+    // 1. Máscaras de Telefone
     const phoneInputs = [
-        'municipality-contact',
-        'task-contact',
-        'orientador-contact',
-        'request-contact',
-        'production-contact'
+        'municipality-contact', 'task-contact', 'orientador-contact', 
+        'request-contact', 'production-contact'
     ];
 
     phoneInputs.forEach(function(id) {
@@ -336,6 +334,7 @@ function applyMasks() {
         }
     });
 
+    // 2. Máscaras de Produção
     const elComp = document.getElementById('production-competence');
     if (elComp) {
         elComp.addEventListener('input', function(e) {
@@ -351,24 +350,40 @@ function applyMasks() {
         });
     }
 
-    // Auto-refresh nos filtros (CORREÇÃO: input para digitar, change para selecionar)
+    // 3. OTIMIZAÇÃO DE PERFORMANCE (DEBOUNCE) NOS FILTROS
+    // Função Debounce: Espera o usuário parar de digitar por 400ms
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait);
+        };
+    }
+
+    // Seleciona todos os filtros
     const filters = document.querySelectorAll('.filters-section select, .filters-section input');
+    
     filters.forEach(function(el) {
-        // Para digitar e filtrar na hora
-        el.addEventListener('input', function() {
-            const activeTab = document.querySelector('.tab-content.active');
-            if (activeTab) refreshCurrentTab(activeTab.id);
-        });
-        // Para dropdowns
-        el.addEventListener('change', function() {
-            const activeTab = document.querySelector('.tab-content.active');
-            if (activeTab) refreshCurrentTab(activeTab.id);
-        });
+        // SE FOR TEXTO: Usa Debounce (Atraso para não travar)
+        if (el.type === 'text' || el.type === 'search') {
+            el.addEventListener('input', debounce(function() {
+                const activeTab = document.querySelector('.tab-content.active');
+                if (activeTab) refreshCurrentTab(activeTab.id);
+            }, 400)); // 400ms de espera
+        }
+        // SE FOR DATA OU SELECT: Atualiza na hora (Change)
+        else {
+            el.addEventListener('change', function() {
+                const activeTab = document.querySelector('.tab-content.active');
+                if (activeTab) refreshCurrentTab(activeTab.id);
+            });
+        }
     });
 }
 
 // ----------------------------------------------------------------------------
-// 7. INJEÇÃO DE CAMPOS DINÂMICOS (REGRAS PDF)
+// 7. INJEÇÃO DE CAMPOS DINÂMICOS
 // ----------------------------------------------------------------------------
 function setupDynamicFormFields() {
     // 0. Injeto do Modal de Confirmação de Restore
@@ -5108,7 +5123,7 @@ function sanitizeInput(input) {
     textarea.textContent = input;
     let sanitized = textarea.innerHTML;
 
-    // Remove tags perigosas específicas e event handlers (ex: onclick)
+    // Remove tags perigosas específicas e event handlers
     sanitized = sanitized
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
         .replace(/on\w+\s*=\s*["']?[^"']*["']?/gi, '') // Remove onmouseover, onclick, etc
