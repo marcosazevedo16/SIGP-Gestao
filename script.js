@@ -683,29 +683,23 @@ function initializeTheme() {
     // 1. Aplica o atributo no HTML para o CSS funcionar
     document.documentElement.setAttribute('data-theme', currentTheme);
     
-    // 2. Atualiza o texto do botão
+    // 2. Atualiza APENAS O ÍCONE do botão, sem texto
     const btn = document.getElementById('theme-toggle');
     if (btn) {
-        btn.innerHTML = currentTheme === 'light' ? '🌙 Tema' : '☀️ Tema';
+        // Mantém apenas o emoji, sem a palavra "Tema"
+        btn.innerHTML = currentTheme === 'light' ? '🌙' : '☀️';
+        btn.title = currentTheme === 'light' ? 'Alternar para Tema Escuro' : 'Alternar para Tema Claro';
     }
 
     // 3. ATUALIZAÇÃO DO CHART.JS (CORREÇÃO FINA DE CORES)
     if (window.Chart) {
         if (currentTheme === 'dark') {
-            // --- TEMA ESCURO ---
-            // Texto branco suave
             Chart.defaults.color = '#e0e0e0';
-            // Linhas de grade BEM TRANSPARENTES (apenas 10% de opacidade)
             Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)'; 
         } else {
-            // --- TEMA CLARO ---
-            // Texto cinza escuro
             Chart.defaults.color = '#666666';
-            // Linhas de grade cinza claro padrão
             Chart.defaults.borderColor = 'rgba(0, 0, 0, 0.1)';
         }
-        
-        // Força a atualização de todos os gráficos existentes na tela para pegar a nova cor
         Object.values(Chart.instances).forEach(chart => {
             chart.options.scales.x && (chart.options.scales.x.grid.color = Chart.defaults.borderColor);
             chart.options.scales.y && (chart.options.scales.y.grid.color = Chart.defaults.borderColor);
@@ -716,11 +710,10 @@ function initializeTheme() {
     // 4. Força a atualização da aba atual
     const activeTab = document.querySelector('.tab-content.active');
     if (activeTab) {
-        setTimeout(() => {
-            refreshCurrentTab(activeTab.id);
-        }, 50);
+        setTimeout(() => { refreshCurrentTab(activeTab.id); }, 50);
     }
 }
+
 function toggleTheme() {
     if (currentTheme === 'light') {
         currentTheme = 'dark';
@@ -875,9 +868,14 @@ function navigateToHome() {
     }
 }
 
-function toggleSettingsMenu() {
+// Função para abrir/fechar o menu de engrenagem (Configurações)
+function toggleSettings() {
     const menu = document.getElementById('settings-menu');
     if (menu) {
+        // Fecha notificações se estiver aberto
+        const notifMenu = document.getElementById('notification-menu');
+        if (notifMenu) notifMenu.classList.remove('show');
+        
         menu.classList.toggle('show');
     }
 }
