@@ -3851,10 +3851,10 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL V42 - LARGURAS POR PORCENTAGEM (FORÇAR ESPAÇO)
+   CORREÇÃO FINAL V43 - ALINHAMENTO CABEÇALHO/DADOS (PERFEITO)
    ========================================================================== */
 
-/* 1. Modais (Mantidos) */
+/* 1. Modais */
 #api-list-modal .modal-content,
 #integration-modal .modal-content {
     width: 500px !important;
@@ -3867,7 +3867,7 @@ table th {
     border-collapse: collapse !important;
     width: 100%;
     border-spacing: 0 !important;
-    table-layout: fixed !important; /* OBRIGATÓRIO */
+    table-layout: fixed !important; 
 }
 
 #integrations-table tr {
@@ -3887,63 +3887,82 @@ table th {
     overflow: hidden;
 }
 
-/* --- DISTRIBUIÇÃO MATEMÁTICA (TOTAL = 100%) --- */
+/* 3. ALINHAMENTO DOS CABEÇALHOS (A CORREÇÃO PRINCIPAL) */
+/* Força o cabeçalho a seguir a mesma largura e alinhamento dos dados */
+#integrations-table th {
+    vertical-align: middle !important;
+    padding: 8px 4px !important;
+    white-space: nowrap !important;
+}
 
-/* Col 1: Município (18%) */
+/* --- DISTRIBUIÇÃO EXATA (TOTAL 100%) --- */
+
+/* COL 1: Município (18%) - Alinhado à Esquerda */
+#integrations-table th:nth-child(1),
 #integrations-table td:nth-child(1) {
     width: 18% !important;
+    text-align: left !important;
+    padding-left: 8px !important;
+}
+#integrations-table td:nth-child(1) {
     white-space: normal;
     line-height: 1.1;
     font-size: 12px;
     font-weight: 600;
-    padding-left: 8px !important;
 }
 
-/* Col 2: APIs Integradas (42% - A MAIOR PARTE) */
+/* COL 2: APIs (42%) - Alinhado à Esquerda (Padrão Flex) */
+#integrations-table th:nth-child(2),
 #integrations-table td:nth-child(2) {
-    width: 42% !important; /* Força quase metade da tabela para as APIs */
+    width: 42% !important;
+    text-align: left !important;
 }
 
-/* Col 3: Vencimento (8%) */
+/* COL 3: Vencimento (10%) - CENTRADO (Cabeçalho e Dado) */
+#integrations-table th:nth-child(3),
 #integrations-table td:nth-child(3) {
-    width: 8% !important;
-    text-align: center;
-    font-size: 11px;
+    width: 10% !important;
+    text-align: center !important; /* <--- CORREÇÃO AQUI */
 }
+#integrations-table td:nth-child(3) { font-size: 11px; }
 
-/* Col 4: Status (12%) */
+/* COL 4: Status (12%) - CENTRADO (Cabeçalho e Dado) */
+#integrations-table th:nth-child(4),
 #integrations-table td:nth-child(4) {
     width: 12% !important;
-    text-align: center;
-    font-size: 11px;
-    white-space: nowrap;
+    text-align: center !important; /* <--- CORREÇÃO AQUI */
 }
+#integrations-table td:nth-child(4) { font-size: 11px; white-space: nowrap; }
 
-/* Col 5: Observações (12%) */
+/* COL 5: Observações (10%) - Esquerda */
+#integrations-table th:nth-child(5),
 #integrations-table td:nth-child(5) {
-    width: 12% !important;
+    width: 10% !important;
+    text-align: left !important;
+}
+#integrations-table td:nth-child(5) {
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--color-text-secondary);
     font-size: 11px;
-    text-align: left;
 }
 
-/* Col 6: Ações (8%) */
-#integrations-table td:last-child {
+/* COL 6: Ações (8%) - Direita */
+#integrations-table th:nth-child(6),
+#integrations-table td:nth-child(6) {
     width: 8% !important;
     text-align: right !important;
     padding-right: 8px !important;
-    overflow: visible;
 }
+#integrations-table td:last-child { overflow: visible; }
 
-/* 3. Estilo das APIs (Tags) */
+/* 4. Estilo das APIs (Tags) */
 #integrations-table .module-tags-cell {
     display: flex !important;
     align-items: center !important;
     height: 100%;
-    flex-wrap: nowrap !important; /* Não quebra linha */
-    overflow-x: auto !important;  /* Scroll se necessário */
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
     gap: 3px;
     padding: 0 !important;
     margin: 0 !important;
@@ -3951,7 +3970,6 @@ table th {
 }
 #integrations-table .module-tags-cell::-webkit-scrollbar { display: none; }
 
-/* Tag Compacta */
 #integrations-table .module-tag {
     font-size: 9px !important;
     font-weight: 600 !important;
