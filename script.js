@@ -1414,6 +1414,7 @@ logSystemAction(editingId ? 'Edição' : 'Criação', 'Treinamentos', `Para: ${d
 // Função Auxiliar para validar datas (Tarefas e Solicitações)
 // CORREÇÃO: Validação de Datas (Incluindo Aba Colaboradores)
 // CORREÇÃO DEFINITIVA: Validação de Datas (Trava Imediata)
+// CORREÇÃO DEFINITIVA: Validação de Datas (Trava Imediata)
 function validateDateRange(type) {
     let startId, endId;
 
@@ -1433,7 +1434,7 @@ function validateDateRange(type) {
     } else if (type === 'integration') {
         startId = 'filter-integration-start'; endId = 'filter-integration-end';
     } else if (type === 'colab') { 
-        // IDs da aba Colaboradores
+        // IDs da aba Colaboradores (Igual ao seu HTML)
         startId = 'filter-colab-info-start'; 
         endId = 'filter-colab-info-end';
     }
@@ -1444,22 +1445,29 @@ function validateDateRange(type) {
     if (startInput && endInput) {
         // Se houver uma data de início, define ela como MÍNIMO para a data final
         if (startInput.value) {
-            endInput.min = startInput.value; 
+            endInput.min = startInput.value; // Isso bloqueia dias anteriores no calendário
             
-            // Se a data final já estiver preenchida e for menor que a inicial, corrige
+            // Se a data final já estiver preenchida e for menor que a inicial, corrige na hora
             if (endInput.value && endInput.value < startInput.value) {
-                // Opção 1: Limpar a data final
-                endInput.value = ''; 
                 alert('A data final não pode ser anterior à data inicial.');
-                
-                // Opção 2 (Alternativa): Forçar a data final ser igual a inicial
-                // endInput.value = startInput.value;
+                endInput.value = ''; // Limpa o campo errado
             }
         } else {
             // Se limpar a data inicial, remove a restrição
             endInput.removeAttribute('min');
         }
     }
+
+    // Refresh da listagem correspondente para aplicar o filtro
+    if (type.includes('production')) renderProductions();
+    else if (type.includes('dem')) renderDemands();
+    else if (type.includes('request')) renderRequests();
+    else if (type.includes('pres')) renderPresentations();
+    else if (type.includes('visit')) renderVisits();
+    else if (type === 'integration') renderIntegrations();
+    else if (type === 'colab') renderCollaboratorInfos(); // <--- Atualiza a lista
+    else renderTasks();
+}
 
     // Refresh da listagem correspondente para aplicar o filtro
     if (type.includes('production')) renderProductions();
