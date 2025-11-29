@@ -27,7 +27,7 @@
 <body>
 
     <!-- Login Screen -->
-    <div id="login-screen" class="login-screen active">
+   <div id="login-screen" class="login-screen active">
         <div class="login-wrapper">
             <div class="login-left">
                 <div class="login-branding">
@@ -39,7 +39,8 @@
                 <div class="login-form-container">
                     <h2 class="login-form-title">Acesso ao Sistema</h2>
                     <p class="login-form-subtitle">Digite login e Senha para continuar</p>
-                        <form id="login-form" onsubmit="handleLogin(event)">
+                    
+                    <form id="login-form" onsubmit="handleLogin(event)">
                         <div class="form-group">
                             <label class="form-label">Login</label>
                             <input type="text" class="form-control" id="login-username" required placeholder="DIGITE SEU LOGIN" autocomplete="username">
@@ -47,15 +48,18 @@
                         <div class="form-group">
                             <label class="form-label">Senha</label>
                             <input type="password" class="form-control" id="login-password" required placeholder="Digite sua senha" autocomplete="current-password">
+                            
                             <div style="text-align: right; margin-top: 8px;">
-                                <a href="#" onclick="showForgotPasswordModal()" class="forgot-password-link">Esqueci minha senha</a>
+                                <a href="#" onclick="showForgotPasswordModal(event)" class="forgot-password-link">Esqueci minha senha</a>
                             </div>
                         </div> 
+                        
                         <div id="login-error" class="login-error"></div>
                         <button type="submit" class="btn btn--primary btn--full-width login-btn">Entrar no Sistema</button>
                     </form>
-     </div>
+                </div>
             </div>
+            
             <div class="login-waves">
                 <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
                     <path d="M0,0 C150,80 350,0 600,40 C850,80 1050,20 1200,60 L1200,120 L0,120 Z" fill="rgba(255,255,255,0.1)"/>
