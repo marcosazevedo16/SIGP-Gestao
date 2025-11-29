@@ -1446,13 +1446,19 @@ function updateMunicipalityCharts(data) {
 
 function deleteMunicipality(id) {
     if (confirm('Excluir este município?')) {
-        municipalities = municipalities.filter(function(x) { return x.id !== id; });
-        salvarNoArmazenamento('municipalities', municipalities);
-        renderMunicipalities();
-        updateGlobalDropdowns();
-        // AUDITORIA
-const munParaDeletar = municipalities.find(x => x.id === id);
-if(munParaDeletar) logSystemAction('Exclusão', 'Municípios', `Município excluído: ${munParaDeletar.name}`);
+        const item = municipalities.find(x => x.id === id);
+        if(item) {
+            // 1. Registra o Undo
+            registerUndo(item, 'municipalities', renderMunicipalities);
+            
+            // 2. Exclui
+            municipalities = municipalities.filter(x => x.id !== id);
+            salvarNoArmazenamento('municipalities', municipalities);
+            renderMunicipalities();
+            updateGlobalDropdowns();
+            
+            logSystemAction('Exclusão', 'Municípios', `Município excluído: ${item.name}`);
+        }
     }
 }
 
@@ -5739,11 +5745,18 @@ function showIntegrationModal(id = null) {
 // CORREÇÃO: Exclusão de Integração
 function deleteIntegration(id) {
     if(confirm('Excluir esta integração?')) {
-        // Correção: Comparação loose ( != ) para pegar number/string
-        integrations = integrations.filter(x => x.id != id);
-        salvarNoArmazenamento('integrations', integrations);
-        renderIntegrations();
-        logSystemAction('Exclusão', 'Integrações', `Integração ID: ${id}`);
+        const item = integrations.find(x => x.id == id);
+        if(item) {
+            // 1. Registra o Undo
+            registerUndo(item, 'integrations', renderIntegrations);
+            
+            // 2. Exclui
+            integrations = integrations.filter(x => x.id != id);
+            salvarNoArmazenamento('integrations', integrations);
+            renderIntegrations();
+            
+            logSystemAction('Exclusão', 'Integrações', `Integração ID: ${id}`);
+        }
     }
 }
 
@@ -6108,10 +6121,16 @@ function updateColabCharts(data) {
 
 function deleteColabInfo(id) {
     if(confirm('Excluir esta ficha?')) {
-        // CORREÇÃO AQUI: Usar '!='
-        collaboratorInfos = collaboratorInfos.filter(x => x.id != id);
-        salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
-        renderCollaboratorInfos();
+        const item = collaboratorInfos.find(x => x.id == id); // Use == por segurança
+        if(item) {
+            // 1. Registra o Undo
+            registerUndo(item, 'collaboratorInfos', renderCollaboratorInfos);
+            
+            // 2. Exclui
+            collaboratorInfos = collaboratorInfos.filter(x => x.id != id);
+            salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
+            renderCollaboratorInfos();
+        }
     }
 }
 
@@ -6459,4 +6478,97 @@ function exportAuditCSV() {
         return [dataFormatada, l.user, l.action, l.target, l.details];
     });
     downloadXLSX("Relatorio_Auditoria_Sistema", headers, rows, "Logs");
+}
+// ============================================================================
+// SISTEMA DE DESFAZER (UNDO) - FASE 3
+// ============================================================================
+
+let undoState = null; // Armazena o item deletado temporariamente
+let undoTimeout = null;
+
+// 1. Função que prepara o Undo (Chamada ANTES de excluir)
+function registerUndo(item, listName, renderFunction) {
+    // Limpa qualquer undo pendente anterior
+    if (undoTimeout) clearTimeout(undoTimeout);
+
+    undoState = {
+        item: JSON.parse(JSON.stringify(item)), // Cópia segura do objeto
+        listName: listName, // Nome da variável no localStorage (ex: 'municipalities')
+        renderFunction: renderFunction // Função para atualizar a tela (ex: renderMunicipalities)
+    };
+
+    // Mostra o Toast com botão de ação
+    showUndoToast(`Item excluído.`, confirmUndo);
+}
+
+// 2. Exibe Toast com Botão Desfazer
+function showUndoToast(message, undoCallback) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+
+    // Monta o HTML interno com o botão
+    toast.innerHTML = `
+        <div class="toast-content">
+            <span>${message}</span>
+            <button class="btn-undo" onclick="confirmUndo()">DESFAZER</button>
+        </div>
+    `;
+    
+    // Estilos e Animação
+    toast.className = 'toast show'; // Usa cor padrão (preto/escuro)
+    
+    // Define tempo para o botão sumir (5 segundos)
+    undoTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+        undoState = null; // Limpa a memória (já era, não dá mais pra desfazer)
+    }, 6000);
+}
+
+// 3. Ação de Restaurar (Quando clica no botão)
+function confirmUndo() {
+    if (!undoState) return;
+
+    const { item, listName, renderFunction } = undoState;
+
+    // Lógica para reinserir o item na lista correta
+    // Precisamos identificar qual lista global usar baseada na string 'listName'
+    
+    switch(listName) {
+        case 'municipalities': municipalities.push(item); break;
+        case 'tasks': tasks.push(item); break;
+        case 'requests': requests.push(item); break;
+        case 'demands': demands.push(item); break;
+        case 'visits': visits.push(item); break;
+        case 'productions': productions.push(item); break;
+        case 'presentations': presentations.push(item); break;
+        case 'users': users.push(item); break;
+        case 'cargos': cargos.push(item); break;
+        case 'orientadores': orientadores.push(item); break;
+        case 'modulos': modulos.push(item); break;
+        case 'integrations': integrations.push(item); break;
+        case 'collaboratorInfos': collaboratorInfos.push(item); break;
+        case 'apisList': apisList.push(item); break;
+    }
+
+    // Salva no LocalStorage
+    // Nota: Para as listas globais funcionarem aqui, usamos uma função auxiliar genérica
+    // Mas como temos acesso às variáveis globais, podemos salvar direto:
+    if (listName === 'municipalities') salvarNoArmazenamento('municipalities', municipalities);
+    else if (listName === 'tasks') salvarNoArmazenamento('tasks', tasks);
+    else if (listName === 'integrations') salvarNoArmazenamento('integrations', integrations);
+    else if (listName === 'collaboratorInfos') salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
+    else salvarNoArmazenamento(listName, eval(listName)); // Fallback para outras listas
+
+    // Atualiza a Tela
+    renderFunction();
+    updateGlobalDropdowns();
+
+    // Feedback visual
+    const toast = document.getElementById('toast');
+    toast.innerHTML = '✅ Ação desfeita com sucesso!';
+    setTimeout(() => toast.classList.remove('show'), 3000);
+    
+    // Limpa estado
+    undoState = null;
+    clearTimeout(undoTimeout);
 }
