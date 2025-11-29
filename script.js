@@ -576,6 +576,7 @@ let formasApresentacao = recuperarDoArmazenamento('formasApresentacao', []);
 let integrations = recuperarDoArmazenamento('integrations', []);
 let apisList = recuperarDoArmazenamento('apisList', []);
 let collaboratorInfos = recuperarDoArmazenamento('collaboratorInfos', []);
+let loginAttempts = recuperarDoArmazenamento('loginAttempts', {});
 
 // Contadores de ID (Persistidos)
 let counters = recuperarDoArmazenamento('counters', {
@@ -5068,7 +5069,6 @@ document.addEventListener('keydown', function(e) {
 // ============================================================================
 
 // --- A. RATE LIMITING (Proteção contra Força Bruta) ---
-let loginAttempts = recuperarDoArmazenamento('loginAttempts', {});
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutos
 
