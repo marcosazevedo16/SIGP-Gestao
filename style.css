@@ -4462,3 +4462,27 @@ input:disabled, select:disabled, textarea:disabled {
     font-size: 9px !important;
     padding: 1px 4px !important;
 }
+/* ==========================================================================
+   MELHORIA DE USABILIDADE - ABRIR NO MOUSE (HOVER)
+   ========================================================================== */
+
+/* 1. Abre o menu automaticamente ao passar o mouse */
+@media (min-width: 901px) {
+    .settings-dropdown:hover .settings-menu {
+        display: block !important;
+        animation: fadeIn 0.2s ease-out;
+    }
+}
+
+/* 2. Ajuste de "Ponte" Invisível */
+/* Cria uma área transparente entre o botão e o menu para o mouse não "escapar" */
+.settings-dropdown {
+    padding-bottom: 10px; /* Cria um buffer invisível abaixo do botão */
+    margin-bottom: -10px; /* Compensa para não empurrar o layout */
+}
+
+/* 3. Ajuste Fino de Posição (Para o mouse deslizar suave pro menu) */
+#settings-menu, #notification-menu {
+    top: 35px !important; /* Subiu um pouco para ficar mais perto do mouse */
+    margin-top: 0 !important;
+}
