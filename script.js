@@ -1412,9 +1412,11 @@ logSystemAction(editingId ? 'Edição' : 'Criação', 'Treinamentos', `Para: ${d
 }
 
 // Função Auxiliar para validar datas (Tarefas e Solicitações)
+// CORREÇÃO: Validação de Datas (Incluindo Aba Colaboradores)
 function validateDateRange(type) {
     let startId, endId;
 
+    // Mapeamento dos IDs baseado no tipo
     if (type === 'req' || type === 'perf') {
         startId = `filter-task-${type}-start`; endId = `filter-task-${type}-end`;
     } else if (type.includes('request')) {
@@ -1429,7 +1431,8 @@ function validateDateRange(type) {
         startId = `filter-${type}-start`; endId = `filter-${type}-end`;
     } else if (type === 'integration') {
         startId = 'filter-integration-start'; endId = 'filter-integration-end';
-    } else if (type === 'colab') { // <--- BLOCO DOS COLABORADORES
+    } else if (type === 'colab') { 
+        // IDs da aba Colaboradores
         startId = 'filter-colab-info-start'; 
         endId = 'filter-colab-info-end';
     }
@@ -1437,26 +1440,28 @@ function validateDateRange(type) {
     const start = document.getElementById(startId);
     const end = document.getElementById(endId);
     
-    if (!start || !end) return;
-
-    // Regra: Data Final não pode ser menor que a Inicial
-    if (start.value) {
-        end.min = start.value;
-        if (end.value && end.value < start.value) {
-            end.value = start.value;
+    if (start && end) {
+        // REGRA DE OURO: Data Final mínima = Data Inicial selecionada
+        if (start.value) {
+            end.min = start.value; 
+            
+            // Se a data final já estiver preenchida e for menor, limpa ou corrige
+            if (end.value && end.value < start.value) {
+                end.value = start.value; 
+            }
+        } else {
+            end.removeAttribute('min');
         }
-    } else {
-        end.removeAttribute('min');
     }
 
-    // Refresh da tela correta
+    // Refresh da listagem correspondente
     if (type.includes('production')) renderProductions();
     else if (type.includes('dem')) renderDemands();
     else if (type.includes('request')) renderRequests();
     else if (type.includes('pres')) renderPresentations();
     else if (type.includes('visit')) renderVisits();
     else if (type === 'integration') renderIntegrations();
-    else if (type === 'colab') renderCollaboratorInfos(); // <--- REFRESH
+    else if (type === 'colab') renderCollaboratorInfos(); // <--- Atualiza Colaboradores
     else renderTasks();
 }
 
