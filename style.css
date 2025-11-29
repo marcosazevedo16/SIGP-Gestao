@@ -4262,3 +4262,67 @@ input:disabled, select:disabled, textarea:disabled {
     .sidebar:hover .sidebar-nav::before { color: #ffffff; }
     .mobile-menu-toggle { display: none !important; }
 }
+/* ==========================================================================
+   FASE 3 - SISTEMA DE NOTIFICAÇÕES
+   ========================================================================== */
+
+/* Badge Vermelho (Contador) */
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #C85250;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 2px solid var(--color-surface); /* Cria uma bordinha para destacar */
+}
+
+/* Menu de Notificações (Mais largo que o de configurações) */
+.notification-menu {
+    width: 320px;
+    right: -50px; /* Ajuste para não sair da tela */
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    font-weight: bold;
+    background-color: var(--color-bg-1);
+    color: var(--color-primary);
+}
+
+.notification-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: start;
+    gap: 10px;
+}
+
+.notification-item:hover {
+    background-color: var(--color-bg-1);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+/* Tipos de Notificação */
+.notif-icon { font-size: 16px; }
+.notif-content { flex: 1; }
+.notif-title { font-weight: 600; display: block; margin-bottom: 2px; }
+.notif-desc { color: var(--color-text-secondary); font-size: 12px; }
+.notif-time { font-size: 11px; color: #999; margin-top: 4px; display: block; }
+
+/* Cores por Urgência */
+.notif-warning .notif-icon { color: #E7B85F; } /* Amarelo */
+.notif-danger .notif-icon { color: #C85250; }  /* Vermelho */
+.notif-info .notif-icon { color: #005580; }    /* Azul */
