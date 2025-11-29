@@ -3851,7 +3851,7 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL V43 - ALINHAMENTO CABEÇALHO/DADOS (PERFEITO)
+   CORREÇÃO FINAL V44 - APIs COM MÁXIMO ESPAÇO POSSÍVEL
    ========================================================================== */
 
 /* 1. Modais */
@@ -3887,54 +3887,55 @@ table th {
     overflow: hidden;
 }
 
-/* 3. ALINHAMENTO DOS CABEÇALHOS (A CORREÇÃO PRINCIPAL) */
-/* Força o cabeçalho a seguir a mesma largura e alinhamento dos dados */
+/* 3. ALINHAMENTO DOS CABEÇALHOS */
 #integrations-table th {
     vertical-align: middle !important;
     padding: 8px 4px !important;
     white-space: nowrap !important;
 }
 
-/* --- DISTRIBUIÇÃO EXATA (TOTAL 100%) --- */
+/* --- DISTRIBUIÇÃO OTIMIZADA (TIRAR DO MUNICÍPIO -> DAR P/ APIs) --- */
 
-/* COL 1: Município (18%) - Alinhado à Esquerda */
+/* COL 1: Município (Reduzido para 14% para sobrar espaço) */
 #integrations-table th:nth-child(1),
 #integrations-table td:nth-child(1) {
-    width: 18% !important;
+    width: 14% !important; /* Reduzi de 18% para 14% */
     text-align: left !important;
     padding-left: 8px !important;
 }
 #integrations-table td:nth-child(1) {
-    white-space: normal;
+    white-space: normal; /* Permite quebrar linha se o nome for grande */
     line-height: 1.1;
-    font-size: 12px;
+    font-size: 11px; /* Fonte ajustada para caber na largura menor */
     font-weight: 600;
 }
 
-/* COL 2: APIs (42%) - Alinhado à Esquerda (Padrão Flex) */
+/* COL 2: APIs (Aumentado para 46% - Quase metade da tabela!) */
 #integrations-table th:nth-child(2),
 #integrations-table td:nth-child(2) {
-    width: 42% !important;
+    width: 46% !important; /* Aumentei de 42% para 46% */
     text-align: left !important;
 }
 
-/* COL 3: Vencimento (10%) - CENTRADO (Cabeçalho e Dado) */
+/* --- BLOCO DA DIREITA (MANTIDO IGUAL - O "ÓTIMO") --- */
+
+/* COL 3: Vencimento (10%) */
 #integrations-table th:nth-child(3),
 #integrations-table td:nth-child(3) {
     width: 10% !important;
-    text-align: center !important; /* <--- CORREÇÃO AQUI */
+    text-align: center !important;
 }
 #integrations-table td:nth-child(3) { font-size: 11px; }
 
-/* COL 4: Status (12%) - CENTRADO (Cabeçalho e Dado) */
+/* COL 4: Status (12%) */
 #integrations-table th:nth-child(4),
 #integrations-table td:nth-child(4) {
     width: 12% !important;
-    text-align: center !important; /* <--- CORREÇÃO AQUI */
+    text-align: center !important;
 }
 #integrations-table td:nth-child(4) { font-size: 11px; white-space: nowrap; }
 
-/* COL 5: Observações (10%) - Esquerda */
+/* COL 5: Observações (10%) */
 #integrations-table th:nth-child(5),
 #integrations-table td:nth-child(5) {
     width: 10% !important;
@@ -3947,7 +3948,7 @@ table th {
     font-size: 11px;
 }
 
-/* COL 6: Ações (8%) - Direita */
+/* COL 6: Ações (8%) */
 #integrations-table th:nth-child(6),
 #integrations-table td:nth-child(6) {
     width: 8% !important;
@@ -3956,14 +3957,14 @@ table th {
 }
 #integrations-table td:last-child { overflow: visible; }
 
-/* 4. Estilo das APIs (Tags) */
+/* 4. Estilo das APIs (Mais Compacto) */
 #integrations-table .module-tags-cell {
     display: flex !important;
     align-items: center !important;
     height: 100%;
     flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    gap: 3px;
+    overflow-x: auto !important; /* Permite scroll se ainda faltar espaço */
+    gap: 2px; /* Reduzi o gap de 3px para 2px (cabe mais) */
     padding: 0 !important;
     margin: 0 !important;
     scrollbar-width: none;
@@ -3973,7 +3974,7 @@ table th {
 #integrations-table .module-tag {
     font-size: 9px !important;
     font-weight: 600 !important;
-    padding: 1px 4px !important;
+    padding: 1px 3px !important; /* Padding lateral reduzido */
     border-radius: 3px;
     line-height: 1 !important;
     display: inline-flex;
