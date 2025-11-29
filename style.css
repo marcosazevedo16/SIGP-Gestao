@@ -3851,10 +3851,10 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL V44 - APIs COM MÁXIMO ESPAÇO POSSÍVEL
+   CORREÇÃO FINAL V45 - PREENCHIMENTO TOTAL DO ESPAÇO VAZIO
    ========================================================================== */
 
-/* 1. Modais */
+/* 1. Modais (Mantidos) */
 #api-list-modal .modal-content,
 #integration-modal .modal-content {
     width: 500px !important;
@@ -3867,7 +3867,7 @@ table th {
     border-collapse: collapse !important;
     width: 100%;
     border-spacing: 0 !important;
-    table-layout: fixed !important; 
+    table-layout: fixed !important; /* Obrigatório */
 }
 
 #integrations-table tr {
@@ -3887,58 +3887,56 @@ table th {
     overflow: hidden;
 }
 
-/* 3. ALINHAMENTO DOS CABEÇALHOS */
+/* 3. ALINHAMENTO CABEÇALHOS */
 #integrations-table th {
     vertical-align: middle !important;
     padding: 8px 4px !important;
     white-space: nowrap !important;
 }
 
-/* --- DISTRIBUIÇÃO OTIMIZADA (TIRAR DO MUNICÍPIO -> DAR P/ APIs) --- */
+/* --- ESTRATÉGIA "MOLA" (FIXAR TUDO, SOLTAR APIs) --- */
 
-/* COL 1: Município (Reduzido para 14% para sobrar espaço) */
+/* COL 1: Município (Fixo em pixels) */
 #integrations-table th:nth-child(1),
 #integrations-table td:nth-child(1) {
-    width: 14% !important; /* Reduzi de 18% para 14% */
+    width: 180px !important; /* Largura fixa segura */
     text-align: left !important;
     padding-left: 8px !important;
 }
 #integrations-table td:nth-child(1) {
-    white-space: normal; /* Permite quebrar linha se o nome for grande */
+    white-space: normal;
     line-height: 1.1;
-    font-size: 11px; /* Fonte ajustada para caber na largura menor */
+    font-size: 12px;
     font-weight: 600;
 }
 
-/* COL 2: APIs (Aumentado para 46% - Quase metade da tabela!) */
+/* COL 2: APIs Integradas (A MÁGICA: SEM LARGURA = OCUPA TUDO) */
 #integrations-table th:nth-child(2),
 #integrations-table td:nth-child(2) {
-    width: 46% !important; /* Aumentei de 42% para 46% */
+    width: auto !important; /* Ocupa todo o espaço vazio (o quadrado vermelho) */
     text-align: left !important;
 }
 
-/* --- BLOCO DA DIREITA (MANTIDO IGUAL - O "ÓTIMO") --- */
-
-/* COL 3: Vencimento (10%) */
+/* COL 3: Vencimento (Fixo e travado à direita) */
 #integrations-table th:nth-child(3),
 #integrations-table td:nth-child(3) {
-    width: 10% !important;
+    width: 90px !important; /* Apenas o necessário para a data */
     text-align: center !important;
 }
 #integrations-table td:nth-child(3) { font-size: 11px; }
 
-/* COL 4: Status (12%) */
+/* COL 4: Status (Fixo e travado à direita) */
 #integrations-table th:nth-child(4),
 #integrations-table td:nth-child(4) {
-    width: 12% !important;
+    width: 120px !important;
     text-align: center !important;
 }
 #integrations-table td:nth-child(4) { font-size: 11px; white-space: nowrap; }
 
-/* COL 5: Observações (10%) */
+/* COL 5: Observações (Fixo e travado à direita) */
 #integrations-table th:nth-child(5),
 #integrations-table td:nth-child(5) {
-    width: 10% !important;
+    width: 100px !important;
     text-align: left !important;
 }
 #integrations-table td:nth-child(5) {
@@ -3948,23 +3946,24 @@ table th {
     font-size: 11px;
 }
 
-/* COL 6: Ações (8%) */
+/* COL 6: Ações (Fixo e travado à direita) */
 #integrations-table th:nth-child(6),
 #integrations-table td:nth-child(6) {
-    width: 8% !important;
+    width: 80px !important;
     text-align: right !important;
     padding-right: 8px !important;
 }
 #integrations-table td:last-child { overflow: visible; }
 
-/* 4. Estilo das APIs (Mais Compacto) */
+/* 4. Estilo das APIs (Preencher 100% da célula) */
 #integrations-table .module-tags-cell {
     display: flex !important;
     align-items: center !important;
     height: 100%;
+    width: 100% !important; /* Força ocupar a largura total disponível */
     flex-wrap: nowrap !important;
-    overflow-x: auto !important; /* Permite scroll se ainda faltar espaço */
-    gap: 2px; /* Reduzi o gap de 3px para 2px (cabe mais) */
+    overflow-x: auto !important;
+    gap: 3px;
     padding: 0 !important;
     margin: 0 !important;
     scrollbar-width: none;
@@ -3974,7 +3973,7 @@ table th {
 #integrations-table .module-tag {
     font-size: 9px !important;
     font-weight: 600 !important;
-    padding: 1px 3px !important; /* Padding lateral reduzido */
+    padding: 1px 4px !important;
     border-radius: 3px;
     line-height: 1 !important;
     display: inline-flex;
