@@ -1469,17 +1469,6 @@ function validateDateRange(type) {
     else renderTasks();
 }
 
-    // Refresh da listagem correspondente para aplicar o filtro
-    if (type.includes('production')) renderProductions();
-    else if (type.includes('dem')) renderDemands();
-    else if (type.includes('request')) renderRequests();
-    else if (type.includes('pres')) renderPresentations();
-    else if (type.includes('visit')) renderVisits();
-    else if (type === 'integration') renderIntegrations();
-    else if (type === 'colab') renderCollaboratorInfos(); 
-    else renderTasks();
-}
-
 function getFilteredTasks() {
     const fMun = document.getElementById('filter-task-municipality')?.value;
     const fStatus = document.getElementById('filter-task-status')?.value;
