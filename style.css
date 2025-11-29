@@ -4417,44 +4417,49 @@ input:disabled, select:disabled, textarea:disabled {
     margin: 4px 0;
 }
 /* ==========================================================================
-   CORREÇÃO FINAL V58 - HEADER DE ÍCONES TRANSPARENTES COM BORDA
+   CORREÇÃO FINAL V59 - FORÇAR TRANSPARÊNCIA DOS ÍCONES
    ========================================================================== */
 
-/* 1. Alinhamento Geral à Direita */
+/* 1. Alinhamento Geral */
 .header-actions {
     display: flex;
     align-items: center;
     gap: 8px; 
-    margin-left: auto; /* Empurra para a direita */
+    margin-left: auto;
 }
 
-/* 2. Botões Ícone Quadrados (ESTILO ATUALIZADO) */
-.header-icon-btn {
+/* 2. Botões Ícone Quadrados (REGRAS FORÇADAS) */
+/* Usamos #ids e classes juntas para aumentar a especificidade e vencer qualquer regra anterior */
+#home-btn.header-icon-btn,
+#theme-toggle.header-icon-btn,
+#notif-btn.header-icon-btn,
+.header-actions .settings-dropdown .header-icon-btn {
     width: 36px !important;
     height: 36px !important;
     padding: 0 !important;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    font-size: 1.2rem !important; /* Tamanho do emoji */
+    font-size: 1.2rem !important;
     line-height: 1 !important;
     
-    /* --- NOVO: Transparência e Borda --- */
-    background-color: transparent !important;     /* Fundo invisível */
-    border: 1px solid #d0d7de !important;         /* Borda cinza sutil */
-    color: var(--color-text) !important;          /* Cor do ícone */
-    border-radius: 4px !important;                /* Cantos levemente arredondados */
+    /* AQUI ESTÁ A CORREÇÃO CRÍTICA: */
+    background: transparent !important;       /* Remove cor */
+    background-color: transparent !important; /* Garante remoção */
+    border: 1px solid rgba(255, 255, 255, 0.3) !important; /* Borda branca suave */
+    color: #ffffff !important;                /* Ícone branco */
+    border-radius: 4px !important;
     transition: all 0.2s ease-in-out;
+    box-shadow: none !important; /* Remove sombras que parecem fundo */
 }
 
-/* Efeito ao passar o mouse (Hover) - Opcional, para dar feedback */
-.header-icon-btn:hover {
-    background-color: rgba(0, 0, 0, 0.05) !important; /* Fundo cinza bem claro ao passar o mouse */
-    border-color: var(--color-primary) !important;    /* Borda muda para a cor principal */
-}
-/* Ajuste para o tema escuro no hover */
-[data-theme="dark"] .header-icon-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important;
+/* Hover (Passar o mouse) */
+#home-btn.header-icon-btn:hover,
+#theme-toggle.header-icon-btn:hover,
+#notif-btn.header-icon-btn:hover,
+.header-actions .settings-dropdown .header-icon-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* Fundo branco translúcido */
+    border-color: #ffffff !important;
 }
 
 /* 3. Menu Suspenso (Configurações) */
@@ -4473,7 +4478,7 @@ input:disabled, select:disabled, textarea:disabled {
     z-index: 2000;
 }
 
-/* 5. Itens do Menu (Lista com Nomes Corretos) */
+/* 5. Itens do Menu */
 .settings-menu-item {
     width: 100%;
     text-align: left;
@@ -4495,14 +4500,14 @@ input:disabled, select:disabled, textarea:disabled {
     color: var(--color-primary);
 }
 
-/* 6. Ajuste do botão Sair (Mantém ele sólido para destaque) */
+/* 6. Botão Sair (Mantém Sólido) */
 .header-actions .btn--secondary.btn--sm {
     height: 36px !important;
     display: flex;
     align-items: center;
 }
 
-/* 7. Badge de Notificação */
+/* 7. Badge */
 .notification-badge {
     top: -6px !important;
     right: -6px !important;
