@@ -5090,28 +5090,57 @@ function resetLoginAttempts(login) {
 let inactivityTimeout;
 const INACTIVITY_MINUTES = 15;
 
+// SEGURANÇA: Timeout de Sessão Sincronizado (Smart Session)
 function resetInactivityTimer() {
-    if (!currentUser) return; // Só roda se estiver logado
+    if (!currentUser) return;
 
+    // 1. Marca no banco que houve atividade AGORA
+    localStorage.setItem('lastActivityTime', Date.now().toString());
+    
+    // 2. Reinicia o contador local
+    startLocalTimer();
+}
+
+function startLocalTimer() {
     clearTimeout(inactivityTimeout);
     
     inactivityTimeout = setTimeout(() => {
-        // Removemos a linha createBackup() daqui.
-        alert('⏱️ Sua sessão expirou por 15 minutos de inatividade.\nPor segurança, você foi desconectado.');
-        
-        // Logout
-        localStorage.removeItem('currentUser');
-        location.reload();
+        // Antes de deslogar, verifica se houve atividade em OUTRA aba recentemente
+        const lastActivity = parseInt(localStorage.getItem('lastActivityTime') || 0);
+        const now = Date.now();
+        const timeSinceLastActivity = now - lastActivity;
+        const timeoutMs = INACTIVITY_MINUTES * 60 * 1000;
+
+        if (timeSinceLastActivity < timeoutMs) {
+            // Se houve atividade recente em outra aba, apenas reinicia este timer
+            // (Sincroniza sem deslogar)
+            startLocalTimer();
+        } else {
+            // Realmente expirou em todas as abas
+            alert('⏱️ Sua sessão expirou por inatividade global.\nPor segurança, você foi desconectado.');
+            localStorage.removeItem('currentUser');
+            location.reload();
+        }
     }, INACTIVITY_MINUTES * 60 * 1000);
 }
 
 function initializeInactivityTracking() {
-    // Monitora movimento e cliques
+    // Eventos locais (Mouse, Teclado)
     window.onload = resetInactivityTimer;
     document.onmousemove = resetInactivityTimer;
     document.onkeypress = resetInactivityTimer;
     document.onclick = resetInactivityTimer;
     document.onscroll = resetInactivityTimer;
+
+    // Evento Remoto: Se outra aba atualizar o 'lastActivityTime', reiniciamos nosso timer
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'lastActivityTime') {
+            startLocalTimer(); // Apenas reseta o relógio, sem escrever no storage (evita loop)
+        }
+    });
+    
+    // Inicia o monitoramento de bloqueio também
+    initCrossTabRateLimit();
 }
 
 // CORREÇÃO: Sanitização XSS Robusta (Fase 2)
@@ -6065,3 +6094,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 400)); // Espera 400ms após a última digitação
     });
 });
+
+// SEGURANÇA: Sincronização de Bloqueio entre Abas (Cross-Tab)
+function initCrossTabRateLimit() {
+    window.addEventListener('storage', (event) => {
+        // Se a lista de tentativas mudar em outra aba
+        if (event.key === 'loginAttempts' && event.newValue) {
+            const allAttempts = JSON.parse(event.newValue);
+            
+            // Verifica se o usuário ATUAL foi bloqueado recentemente
+            if (currentUser && allAttempts[currentUser.login]) {
+                const record = allAttempts[currentUser.login];
+                
+                if (record.locked) {
+                    alert('🔒 SEGURANÇA: Sua conta foi bloqueada por excesso de tentativas em outra aba.');
+                    localStorage.removeItem('currentUser');
+                    location.reload();
+                }
+            }
+        }
+    });
+}
