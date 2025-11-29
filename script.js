@@ -1059,7 +1059,6 @@ munSelect.innerHTML = '<option value="">Selecione o município</option>' +
     document.getElementById('municipality-modal').classList.add('show');
 }
 
-[cite_start]// LÓGICA: Validação de Municípios (Nome+UF e Data Futura) [cite: 413-440]
 function saveMunicipality(e) {
     e.preventDefault();
     // Sanitiza inputs
