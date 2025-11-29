@@ -3851,7 +3851,7 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL V45 - PREENCHIMENTO TOTAL DO ESPAÇO VAZIO
+   CORREÇÃO FINAL V45 - LARGURAS EQUILIBRADAS (SEM ENCAVALAR)
    ========================================================================== */
 
 /* 1. Modais (Mantidos) */
@@ -3867,7 +3867,7 @@ table th {
     border-collapse: collapse !important;
     width: 100%;
     border-spacing: 0 !important;
-    table-layout: fixed !important; /* Obrigatório */
+    table-layout: fixed !important; 
 }
 
 #integrations-table tr {
@@ -3882,88 +3882,87 @@ table th {
 #integrations-table td {
     border: none !important;
     vertical-align: middle !important;
-    padding: 0 4px !important;
+    padding: 0 8px !important; /* Padding restaurado para conforto */
     height: 50px !important;
     overflow: hidden;
 }
 
-/* 3. ALINHAMENTO CABEÇALHOS */
+/* 3. ALINHAMENTO DOS CABEÇALHOS */
 #integrations-table th {
     vertical-align: middle !important;
-    padding: 8px 4px !important;
+    padding: 8px 8px !important;
     white-space: nowrap !important;
-}
-
-/* --- ESTRATÉGIA "MOLA" (FIXAR TUDO, SOLTAR APIs) --- */
-
-/* COL 1: Município (Fixo em pixels) */
-#integrations-table th:nth-child(1),
-#integrations-table td:nth-child(1) {
-    width: 180px !important; /* Largura fixa segura */
-    text-align: left !important;
-    padding-left: 8px !important;
-}
-#integrations-table td:nth-child(1) {
-    white-space: normal;
-    line-height: 1.1;
-    font-size: 12px;
     font-weight: 600;
 }
 
-/* COL 2: APIs Integradas (A MÁGICA: SEM LARGURA = OCUPA TUDO) */
+/* --- DISTRIBUIÇÃO CONFORTÁVEL --- */
+
+/* COL 1: Município (180px - Tamanho padrão seguro) */
+#integrations-table th:nth-child(1),
+#integrations-table td:nth-child(1) {
+    width: 180px !important; 
+    text-align: left !important;
+}
+#integrations-table td:nth-child(1) {
+    white-space: normal; 
+    line-height: 1.2;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* COL 2: APIs (AUTOMÁTICO - Pega o que sobrar) */
 #integrations-table th:nth-child(2),
 #integrations-table td:nth-child(2) {
-    width: auto !important; /* Ocupa todo o espaço vazio (o quadrado vermelho) */
+    width: auto !important; 
     text-align: left !important;
 }
 
-/* COL 3: Vencimento (Fixo e travado à direita) */
+/* COL 3: Vencimento (150px - Espaço para o título não quebrar) */
 #integrations-table th:nth-child(3),
 #integrations-table td:nth-child(3) {
-    width: 90px !important; /* Apenas o necessário para a data */
+    width: 150px !important; /* Aumentado de 90px para 150px */
     text-align: center !important;
 }
-#integrations-table td:nth-child(3) { font-size: 11px; }
+#integrations-table td:nth-child(3) { font-size: 12px; }
 
-/* COL 4: Status (Fixo e travado à direita) */
+/* COL 4: Status (150px - Espaço confortável) */
 #integrations-table th:nth-child(4),
 #integrations-table td:nth-child(4) {
-    width: 120px !important;
+    width: 150px !important; /* Aumentado de 110px para 150px */
     text-align: center !important;
 }
-#integrations-table td:nth-child(4) { font-size: 11px; white-space: nowrap; }
+#integrations-table td:nth-child(4) { font-size: 12px; white-space: nowrap; }
 
-/* COL 5: Observações (Fixo e travado à direita) */
+/* COL 5: Observações (140px - Leitura parcial melhor) */
 #integrations-table th:nth-child(5),
 #integrations-table td:nth-child(5) {
-    width: 100px !important;
+    width: 140px !important; /* Aumentado de 90px para 140px */
     text-align: left !important;
 }
 #integrations-table td:nth-child(5) {
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--color-text-secondary);
-    font-size: 11px;
+    font-size: 12px;
 }
 
-/* COL 6: Ações (Fixo e travado à direita) */
+/* COL 6: Ações (90px - Padrão) */
 #integrations-table th:nth-child(6),
 #integrations-table td:nth-child(6) {
-    width: 80px !important;
+    width: 90px !important;
     text-align: right !important;
-    padding-right: 8px !important;
+    padding-right: 15px !important;
 }
 #integrations-table td:last-child { overflow: visible; }
 
-/* 4. Estilo das APIs (Preencher 100% da célula) */
+/* 4. Estilo das APIs (Tags) */
 #integrations-table .module-tags-cell {
     display: flex !important;
     align-items: center !important;
     height: 100%;
-    width: 100% !important; /* Força ocupar a largura total disponível */
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
-    gap: 3px;
+    gap: 4px;
     padding: 0 !important;
     margin: 0 !important;
     scrollbar-width: none;
@@ -3971,14 +3970,14 @@ table th {
 #integrations-table .module-tags-cell::-webkit-scrollbar { display: none; }
 
 #integrations-table .module-tag {
-    font-size: 9px !important;
+    font-size: 10px !important; /* Fonte legível */
     font-weight: 600 !important;
-    padding: 1px 4px !important;
+    padding: 2px 6px !important;
     border-radius: 3px;
     line-height: 1 !important;
     display: inline-flex;
     align-items: center;
-    height: 18px !important;
+    height: 20px !important;
     margin: 0 !important;
     border-width: 1px !important;
     white-space: nowrap !important;
