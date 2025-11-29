@@ -3851,7 +3851,7 @@ table th {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL V45 - LARGURAS EQUILIBRADAS (SEM ENCAVALAR)
+   CORREÇÃO FINAL V46 - MUNICÍPIO E OBSERVAÇÕES AMPLIADOS
    ========================================================================== */
 
 /* 1. Modais (Mantidos) */
@@ -3882,7 +3882,7 @@ table th {
 #integrations-table td {
     border: none !important;
     vertical-align: middle !important;
-    padding: 0 8px !important; /* Padding restaurado para conforto */
+    padding: 0 8px !important;
     height: 50px !important;
     overflow: hidden;
 }
@@ -3895,12 +3895,12 @@ table th {
     font-weight: 600;
 }
 
-/* --- DISTRIBUIÇÃO CONFORTÁVEL --- */
+/* --- DISTRIBUIÇÃO AMPLIADA --- */
 
-/* COL 1: Município (180px - Tamanho padrão seguro) */
+/* COL 1: Município (Aumentado para 220px) */
 #integrations-table th:nth-child(1),
 #integrations-table td:nth-child(1) {
-    width: 180px !important; 
+    width: 220px !important; 
     text-align: left !important;
 }
 #integrations-table td:nth-child(1) {
@@ -3917,26 +3917,26 @@ table th {
     text-align: left !important;
 }
 
-/* COL 3: Vencimento (150px - Espaço para o título não quebrar) */
+/* COL 3: Vencimento (150px) */
 #integrations-table th:nth-child(3),
 #integrations-table td:nth-child(3) {
-    width: 150px !important; /* Aumentado de 90px para 150px */
+    width: 150px !important; 
     text-align: center !important;
 }
 #integrations-table td:nth-child(3) { font-size: 12px; }
 
-/* COL 4: Status (150px - Espaço confortável) */
+/* COL 4: Status (150px) */
 #integrations-table th:nth-child(4),
 #integrations-table td:nth-child(4) {
-    width: 150px !important; /* Aumentado de 110px para 150px */
+    width: 150px !important;
     text-align: center !important;
 }
 #integrations-table td:nth-child(4) { font-size: 12px; white-space: nowrap; }
 
-/* COL 5: Observações (140px - Leitura parcial melhor) */
+/* COL 5: Observações (Aumentado para 180px) */
 #integrations-table th:nth-child(5),
 #integrations-table td:nth-child(5) {
-    width: 140px !important; /* Aumentado de 90px para 140px */
+    width: 180px !important; 
     text-align: left !important;
 }
 #integrations-table td:nth-child(5) {
@@ -3946,7 +3946,7 @@ table th {
     font-size: 12px;
 }
 
-/* COL 6: Ações (90px - Padrão) */
+/* COL 6: Ações (90px) */
 #integrations-table th:nth-child(6),
 #integrations-table td:nth-child(6) {
     width: 90px !important;
@@ -3970,7 +3970,7 @@ table th {
 #integrations-table .module-tags-cell::-webkit-scrollbar { display: none; }
 
 #integrations-table .module-tag {
-    font-size: 10px !important; /* Fonte legível */
+    font-size: 10px !important;
     font-weight: 600 !important;
     padding: 2px 6px !important;
     border-radius: 3px;
