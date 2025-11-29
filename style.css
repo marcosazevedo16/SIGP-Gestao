@@ -4389,7 +4389,7 @@ input:disabled, select:disabled, textarea:disabled {
     margin: 4px 0;
 }
 /* ==========================================================================
-   CORREÇÃO FINAL V66 - ÍCONES REAIS NO HTML (ZERO TREMEDEIRA)
+   CORREÇÃO FINAL V65 - LARGURA DO MENU E ALINHAMENTO BOTÃO SAIR
    ========================================================================== */
 
 /* 1. Alinhamento Geral */
@@ -4398,10 +4398,14 @@ input:disabled, select:disabled, textarea:disabled {
     align-items: center;
     gap: 6px; 
     margin-left: auto;
+    height: 100%; /* Garante que o container ocupe a altura disponível */
 }
 
-/* 2. Botões Quadrados (Só Ícone) */
-.header-icon-btn {
+/* 2. Botões Ícone Quadrados */
+#home-btn.header-icon-btn,
+#theme-toggle.header-icon-btn,
+#notif-btn.header-icon-btn,
+.header-actions .settings-dropdown .header-icon-btn {
     width: 30px !important;
     height: 30px !important;
     padding: 0 !important;
@@ -4410,16 +4414,27 @@ input:disabled, select:disabled, textarea:disabled {
     align-items: center !important;
     font-size: 1rem !important;
     line-height: 1 !important;
+    margin: 0 !important; /* Remove margens externas */
+    
     background: transparent !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     color: #ffffff !important;
     border-radius: 4px !important;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s ease-in-out;
     box-shadow: none !important;
 }
 
-/* 3. Botões Retangulares (Texto + Ícone Reais) */
-.header-text-btn {
+/* Hover */
+#home-btn.header-icon-btn:hover,
+#theme-toggle.header-icon-btn:hover,
+#notif-btn.header-icon-btn:hover,
+.header-actions .settings-dropdown .header-icon-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: #ffffff !important;
+}
+
+/* 3. Botão CONFIGURAÇÕES (Texto) */
+.header-actions .settings-dropdown .header-text-btn {
     height: 30px !important;
     padding: 0 10px !important;
     display: inline-flex !important;
@@ -4427,62 +4442,104 @@ input:disabled, select:disabled, textarea:disabled {
     justify-content: center !important;
     font-size: 11px !important;
     font-weight: 500 !important;
-    gap: 6px !important; /* Espaço entre o emoji e o texto */
-    
-    /* Largura automática e natural */
+    gap: 5px !important;
     width: auto !important;
     white-space: nowrap !important;
+    margin: 0 !important;
     
-    /* Transparência */
     background: transparent !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     color: #ffffff !important;
     border-radius: 4px !important;
     box-shadow: none !important;
-    transition: background-color 0.2s;
+}
+.header-actions .settings-dropdown .header-text-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
 }
 
-/* 4. Hover Unificado (Apenas Fundo) */
-.header-icon-btn:hover,
-.header-text-btn:hover {
+/* 4. Botão SAIR (CORREÇÃO DE ALTURA E ALINHAMENTO) */
+.header-actions .btn--secondary.btn--sm.header-text-btn {
+    /* Trava a altura exata */
+    height: 30px !important;
+    max-height: 30px !important;
+    min-height: 30px !important;
+    
+    /* Largura */
+    min-width: 60px !important;
+    width: auto !important;
+    padding: 0 12px !important;
+    margin: 0 !important; /* Garante que não suba nem desça */
+    
+    /* Layout */
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    
+    /* Estilo */
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+    font-size: 11px !important;
+    box-shadow: none !important;
+    transition: background-color 0.2s !important; 
+}
+
+/* Ícone Porta do Sair */
+.header-actions .btn--secondary.btn--sm.header-text-btn::before {
+    content: "🚪";
+    font-size: 12px;
+    line-height: 1;
+    display: inline-block;
+    opacity: 1 !important;
+    margin-bottom: 1px; /* Micro-ajuste vertical */
+}
+
+/* Hover do Sair */
+.header-actions .btn--secondary.btn--sm.header-text-btn:hover {
     background-color: rgba(255, 255, 255, 0.15) !important;
     border-color: #ffffff !important;
     color: #ffffff !important;
 }
 
-/* 5. Menus Suspensos */
-#settings-menu, #notification-menu {
+/* 5. MENU DE CONFIGURAÇÕES (MAIS LARGO) */
+#settings-menu {
+    right: 0 !important;
     top: 40px !important;
+    min-width: 300px !important; /* Aumentado de 240px para 300px */
+    z-index: 2000;
 }
 
-/* 6. Badge */
+/* Itens do Menu (Evita quebra de linha) */
+.settings-menu-item {
+    white-space: nowrap !important; /* Força texto em uma linha */
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    font-size: 14px;
+    color: var(--color-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.2s;
+    font-family: var(--font-family-base);
+}
+
+/* 6. Menu de Notificações */
+#notification-menu {
+    right: -40px !important;
+    top: 40px !important;
+    width: 300px;
+    z-index: 2000;
+}
+
+/* 7. Badge */
 .notification-badge {
     top: -5px !important;
     right: -5px !important;
     font-size: 9px !important;
     padding: 1px 4px !important;
-}
-/* ==========================================================================
-   MELHORIA DE USABILIDADE - ABRIR NO MOUSE (HOVER)
-   ========================================================================== */
-
-/* 1. Abre o menu automaticamente ao passar o mouse */
-@media (min-width: 901px) {
-    .settings-dropdown:hover .settings-menu {
-        display: block !important;
-        animation: fadeIn 0.2s ease-out;
-    }
-}
-
-/* 2. Ajuste de "Ponte" Invisível */
-/* Cria uma área transparente entre o botão e o menu para o mouse não "escapar" */
-.settings-dropdown {
-    padding-bottom: 10px; /* Cria um buffer invisível abaixo do botão */
-    margin-bottom: -10px; /* Compensa para não empurrar o layout */
-}
-
-/* 3. Ajuste Fino de Posição (Para o mouse deslizar suave pro menu) */
-#settings-menu, #notification-menu {
-    top: 35px !important; /* Subiu um pouco para ficar mais perto do mouse */
-    margin-top: 0 !important;
 }
