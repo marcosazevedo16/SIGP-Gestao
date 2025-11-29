@@ -4417,22 +4417,19 @@ input:disabled, select:disabled, textarea:disabled {
     margin: 4px 0;
 }
 /* ==========================================================================
-   CORREÇÃO FINAL V61 - ESTABILIDADE TOTAL DO BOTÃO SAIR
+   CORREÇÃO FINAL V62 - BOTÕES ESTÁVEIS (COM E SEM TEXTO)
    ========================================================================== */
 
 /* 1. Alinhamento Geral */
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 6px; 
+    gap: 8px; 
     margin-left: auto;
 }
 
-/* 2. Botões Ícone Quadrados (REDUZIDOS) */
-#home-btn.header-icon-btn,
-#theme-toggle.header-icon-btn,
-#notif-btn.header-icon-btn,
-.header-actions .settings-dropdown .header-icon-btn {
+/* 2. CLASSE PARA BOTÕES QUADRADOS (Só Ícone) */
+.header-icon-btn {
     width: 30px !important;
     height: 30px !important;
     padding: 0 !important;
@@ -4442,71 +4439,71 @@ input:disabled, select:disabled, textarea:disabled {
     font-size: 1rem !important;
     line-height: 1 !important;
     background: transparent !important;
-    background-color: transparent !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     color: #ffffff !important;
     border-radius: 4px !important;
-    transition: all 0.2s ease-in-out;
+    transition: background-color 0.2s; /* Apenas cor, não tamanho */
     box-shadow: none !important;
 }
 
-#home-btn.header-icon-btn:hover,
-#theme-toggle.header-icon-btn:hover,
-#notif-btn.header-icon-btn:hover,
-.header-actions .settings-dropdown .header-icon-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    border-color: #ffffff !important;
-}
-
-/* 3. Botão SAIR (A CORREÇÃO PRINCIPAL) */
-.header-actions .btn--secondary.btn--sm {
+/* 3. CLASSE PARA BOTÕES RETANGULARES (Texto + Ícone) - Configurações e Sair */
+.header-text-btn {
     height: 30px !important;
-    padding: 0 12px !important;   /* Espaço lateral para o texto */
-    display: inline-flex !important; /* Mantém alinhamento rígido */
+    padding: 0 12px !important; /* Espaço lateral fixo */
+    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    font-size: 11px !important;
-    width: auto !important;       /* Impede que encolha para 30px */
-    min-width: 60px !important;   /* Garante tamanho mínimo */
+    font-size: 12px !important; /* Tamanho da fonte ajustado */
+    font-weight: 500 !important;
+    gap: 6px !important; /* Espaço entre ícone e texto */
+    
+    /* Largura Automática e Estável */
+    width: auto !important;
+    min-width: fit-content !important;
+    white-space: nowrap !important; /* Texto nunca quebra */
     
     /* Estilo Transparente */
     background: transparent !important;
     background-color: transparent !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     color: #ffffff !important;
+    border-radius: 4px !important;
     box-shadow: none !important;
+    transition: background-color 0.2s; /* Removemos transição de width/padding */
 }
 
-/* Ícone de Porta (Garante que apareça sempre) */
-.header-actions .btn--secondary.btn--sm::before {
-    content: "🚪";
-    margin-right: 6px;
-    font-size: 13px; 
-    line-height: 1;
-    display: inline-block;
-    opacity: 1 !important; /* Força visibilidade */
-}
-
-/* Efeito Hover Estabilizado */
-.header-actions .btn--secondary.btn--sm:hover {
+/* 4. HOVER UNIFICADO (Para todos) */
+.header-icon-btn:hover,
+.header-text-btn:hover {
     background-color: rgba(255, 255, 255, 0.1) !important;
     border-color: #ffffff !important;
-    color: #ffffff !important;
-    width: auto !important; /* Garante que não encolha no hover */
+    /* Garantir que padding e width não mudem no hover */
+    padding: 0 12px !important; 
+    width: auto !important;
 }
 
-/* Garante que o ícone da porta continue lá no hover */
-.header-actions .btn--secondary.btn--sm:hover::before {
-    content: "🚪" !important;
+/* Correção específica para os botões quadrados no hover (padding deve ser 0) */
+.header-icon-btn:hover {
+    padding: 0 !important;
+    width: 30px !important;
+}
+
+/* 5. Ícone do Botão Sair (Porta) */
+/* Como agora usamos classes compartilhadas, precisamos garantir que o ícone do Sair apareça */
+.header-actions button[title="Sair do Sistema"]::before {
+    content: "🚪";
+    font-size: 13px;
+    line-height: 1;
+    display: inline-block;
     opacity: 1 !important;
 }
 
-/* 4. Menus Suspensos */
+/* 6. Menus Suspensos */
 #settings-menu, #notification-menu {
     top: 40px !important;
 }
 
-/* 5. Badge */
+/* 7. Badge */
 .notification-badge {
     top: -5px !important;
     right: -5px !important;
