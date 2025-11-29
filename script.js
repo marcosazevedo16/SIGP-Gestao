@@ -5091,11 +5091,10 @@ function resetInactivityTimer() {
     clearTimeout(inactivityTimeout);
     
     inactivityTimeout = setTimeout(() => {
-        // Salva trabalho atual se possível (Backup de emergência antes de sair)
-        createBackup('AUTO-SAVE-INATIVIDADE'); 
+        // Removemos a linha createBackup() daqui.
         alert('⏱️ Sua sessão expirou por 15 minutos de inatividade.\nPor segurança, você foi desconectado.');
         
-        // Logout forçado
+        // Logout
         localStorage.removeItem('currentUser');
         location.reload();
     }, INACTIVITY_MINUTES * 60 * 1000);
