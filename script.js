@@ -6680,17 +6680,28 @@ function initOfflineDetection() {
     updateStatus();
 }
 // ============================================================================
-// MÓDULO DE RELATÓRIOS DE GESTÃO (FINAL)
+// MÓDULO DE RELATÓRIOS DE GESTÃO (FINAL - VERSÃO HTML)
+// Substitui todas as versões anteriores de relatório
 // ============================================================================
 
+// 1. Atualiza os filtros na tela quando muda o tipo
+function updateReportFilters() {
+    const type = document.getElementById('filter-report-type').value;
+    // Como mudamos o HTML para filtros fixos (Data Início/Fim), 
+    // essa função pode ser usada futuramente para filtros específicos.
+    // Por enquanto, deixamos o usuário usar as datas gerais.
+    // Se quiser esconder/mostrar filtros específicos, a lógica iria aqui.
+}
+
+// 2. Gera a Visualização na Tela
 function generateReportPreview() {
     try {
-        // 1. Coleta os filtros da tela
-        const reportType = document.getElementById('filter-report-type')?.value;
+        // Coleta filtros
+        const type = document.getElementById('filter-report-type')?.value;
         const dateFrom = document.getElementById('filter-report-date-from')?.value;
         const dateTo = document.getElementById('filter-report-date-to')?.value;
 
-        if (!reportType) {
+        if (!type) {
             alert('Por favor, selecione um tipo de relatório.');
             return;
         }
@@ -6698,67 +6709,67 @@ function generateReportPreview() {
         let reportHTML = '';
         let reportTitle = '';
 
-        // 2. Roteador: Chama a função específica para cada relatório
-        switch(reportType) {
+        // Roteador
+        switch(type) {
             case 'municipios':
-                reportHTML = generateMunicipalitiesReport(dateFrom, dateTo);
+                reportHTML = genRepMunicipios();
                 reportTitle = 'Carteira de Clientes';
                 break;
             case 'treinamentos':
-                reportHTML = generateTrainingsReport(dateFrom, dateTo);
+                reportHTML = genRepTreinamentos(dateFrom, dateTo);
                 reportTitle = 'Controle de Treinamentos';
                 break;
             case 'demandas':
-                reportHTML = generateDemandsReport(dateFrom, dateTo);
+                reportHTML = genRepDemandas(dateFrom, dateTo);
                 reportTitle = 'Demandas de Suporte';
                 break;
             case 'apresentacoes':
-                reportHTML = generatePresentationsReport(dateFrom, dateTo);
+                reportHTML = genRepApresentacoes(dateFrom, dateTo);
                 reportTitle = 'Apresentações do Software';
                 break;
             case 'visitas':
-                reportHTML = generateVisitsReport(dateFrom, dateTo);
+                reportHTML = genRepVisitas(dateFrom, dateTo);
                 reportTitle = 'Visitas Presenciais';
                 break;
             case 'producao':
-                reportHTML = generateProductionReport(dateFrom, dateTo);
+                reportHTML = genRepProducao(dateFrom, dateTo);
                 reportTitle = 'Controle de Produção';
                 break;
             case 'integracoes':
-                reportHTML = generateIntegrationsReport(dateFrom, dateTo);
+                reportHTML = genRepIntegracoes();
                 reportTitle = 'Status de Integrações e APIs';
                 break;
             case 'colaboradores':
-                reportHTML = generateColaboradoresReport(dateFrom, dateTo);
+                reportHTML = genRepColaboradores();
                 reportTitle = 'Quadro de Colaboradores (RH)';
                 break;
             case 'usuarios':
-                reportHTML = generateUsersReport(dateFrom, dateTo);
+                reportHTML = genRepUsuarios();
                 reportTitle = 'Gestão de Usuários';
                 break;
             default:
-                alert('Relatório não implementado ainda.');
+                alert('Relatório não implementado.');
                 return;
         }
 
-        // 3. Injeta o HTML no Modal
+        // Injeta HTML
         document.getElementById('report-title').textContent = reportTitle;
         document.getElementById('report-preview-content').innerHTML = `
-            <div class="report-header-print">
-                <h2 style="text-align:center; color:#003d5c; margin-bottom:5px;">SIGP Saúde - ${reportTitle}</h2>
-                <p style="text-align:center; font-size:12px; color:#666; margin-bottom:20px;">
+            <div class="report-header-print" style="text-align:center; margin-bottom:20px;">
+                <h2 style="color:#003d5c; margin:0;">SIGP Saúde - ${reportTitle}</h2>
+                <p style="font-size:12px; color:#666; margin-top:5px;">
                     Gerado em: ${new Date().toLocaleString()} | Usuário: ${currentUser ? currentUser.name : 'Sistema'}
                 </p>
+                ${(dateFrom || dateTo) ? `<p style="font-size:12px;">Período: ${dateFrom ? formatDate(dateFrom) : 'Início'} até ${dateTo ? formatDate(dateTo) : 'Hoje'}</p>` : ''}
             </div>
             ${reportHTML}
         `;
 
-        // 4. Abre o Modal
         document.getElementById('report-preview-modal').classList.add('show');
 
     } catch (erro) {
-        console.error('Erro ao gerar relatório:', erro);
-        alert('Ocorreu um erro ao gerar o relatório. Verifique o console.');
+        console.error('Erro relatório:', erro);
+        alert('Erro ao gerar relatório. Veja o console.');
     }
 }
 
@@ -6766,32 +6777,28 @@ function closeReportPreview() {
     document.getElementById('report-preview-modal').classList.remove('show');
 }
 
-// Função de Impressão (Abre janela nativa do navegador)
+// 3. Imprimir (Usa o próprio navegador)
 function printReport() {
-    // Pega apenas o conteúdo do relatório
+    // Cria uma janela popup para impressão limpa
     const content = document.getElementById('report-preview-content').innerHTML;
-    
-    // Abre uma janela em branco
     const printWindow = window.open('', '', 'width=900,height=600');
     
-    // Escreve o HTML básico + o conteúdo
     printWindow.document.write(`
         <html>
             <head>
-                <title>Impressão de Relatório</title>
+                <title>Impressão SIGP Saúde</title>
                 <style>
-                    body { font-family: Arial, sans-serif; padding: 20px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-                    th { background-color: #003d5c; color: white; padding: 8px; text-align: left; }
-                    td { border: 1px solid #ddd; padding: 8px; color: #333; }
-                    tr:nth-child(even) { background-color: #f9f9f9; }
+                    body { font-family: sans-serif; padding: 20px; }
+                    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                    th { background-color: #003d5c !important; color: white !important; padding: 6px; text-align: left; -webkit-print-color-adjust: exact; }
+                    td { border: 1px solid #ccc; padding: 6px; }
+                    tr:nth-child(even) { background-color: #f2f2f2; -webkit-print-color-adjust: exact; }
                     h2 { color: #003d5c; }
                 </style>
             </head>
             <body>
                 ${content}
                 <script>
-                    // Espera carregar e abre a caixa de impressão
                     window.onload = function() { window.print(); window.close(); }
                 </script>
             </body>
@@ -6800,64 +6807,72 @@ function printReport() {
     printWindow.document.close();
 }
 
-// --- GERADORES DE HTML (TABELAS) ---
+// --- GERADORES DE TABELAS (Helpers) ---
 
-function generateMunicipalitiesReport(d1, d2) {
-    const data = municipalities; // Usa variável global
-    if (data.length === 0) return '<p>Nenhum registro.</p>';
-    // Filtra se necessário (Ex: Data implantação)
-    const rows = data.map(m => `<tr><td>${m.name}</td><td>${m.uf||''}</td><td>${m.status}</td><td>${m.manager}</td><td>${formatDate(m.implantationDate)}</td></tr>`).join('');
+function genRepMunicipios() {
+    if (!municipalities.length) return '<p>Sem dados.</p>';
+    const rows = municipalities.sort((a,b)=>a.name.localeCompare(b.name)).map(m => 
+        `<tr><td>${m.name}</td><td>${m.uf||''}</td><td>${m.status}</td><td>${m.manager}</td><td>${formatDate(m.implantationDate)}</td></tr>`
+    ).join('');
     return `<table class="report-table"><thead><th>Município</th><th>UF</th><th>Status</th><th>Gestor</th><th>Implantação</th></thead><tbody>${rows}</tbody></table>`;
 }
 
-function generateTrainingsReport(d1, d2) {
+function genRepTreinamentos(d1, d2) {
     let data = tasks;
-    if (d1 && d2) data = data.filter(t => t.dateRequested >= d1 && t.dateRequested <= d2);
-    if (data.length === 0) return '<p>Nenhum registro no período.</p>';
-    const rows = data.map(t => `<tr><td>${t.municipality}</td><td>${formatDate(t.dateRequested)}</td><td>${t.performedBy}</td><td>${t.status}</td></tr>`).join('');
+    if(d1) data = data.filter(t => t.dateRequested >= d1);
+    if(d2) data = data.filter(t => t.dateRequested <= d2);
+    if (!data.length) return '<p>Nenhum registro no período.</p>';
+    
+    const rows = data.map(t => 
+        `<tr><td>${t.municipality}</td><td>${formatDate(t.dateRequested)}</td><td>${t.performedBy}</td><td>${t.status}</td></tr>`
+    ).join('');
     return `<table class="report-table"><thead><th>Município</th><th>Data</th><th>Responsável</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
 }
 
-function generateDemandsReport(d1, d2) {
+function genRepDemandas(d1, d2) {
     let data = demands;
-    if (d1 && d2) data = data.filter(d => d.date >= d1 && d.date <= d2);
-    if (data.length === 0) return '<p>Nenhum registro no período.</p>';
+    if(d1) data = data.filter(d => d.date >= d1);
+    if(d2) data = data.filter(d => d.date <= d2);
     const rows = data.map(d => `<tr><td>${formatDate(d.date)}</td><td>${d.priority}</td><td>${d.status}</td><td>${d.description}</td></tr>`).join('');
     return `<table class="report-table"><thead><th>Data</th><th>Prioridade</th><th>Status</th><th>Descrição</th></thead><tbody>${rows}</tbody></table>`;
 }
 
-function generateVisitsReport(d1, d2) {
+function genRepVisitas(d1, d2) {
     let data = visits;
-    if (d1 && d2) data = data.filter(v => v.date >= d1 && v.date <= d2);
+    if(d1) data = data.filter(v => v.date >= d1);
+    if(d2) data = data.filter(v => v.date <= d2);
     const rows = data.map(v => `<tr><td>${v.municipality}</td><td>${formatDate(v.date)}</td><td>${v.applicant}</td><td>${v.status}</td></tr>`).join('');
     return `<table class="report-table"><thead><th>Município</th><th>Data</th><th>Solicitante</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
 }
 
-function generateProductionReport(d1, d2) {
+function genRepProducao(d1, d2) {
     let data = productions;
-    if (d1 && d2) data = data.filter(p => p.releaseDate >= d1 && p.releaseDate <= d2);
-    const rows = data.map(p => `<tr><td>${p.municipality}</td><td>${p.competence}</td><td>${p.frequency}</td><td>${p.status}</td></tr>`).join('');
-    return `<table class="report-table"><thead><th>Município</th><th>Competência</th><th>Frequência</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
+    // Filtra pela data de Liberação
+    if(d1) data = data.filter(p => p.releaseDate >= d1);
+    if(d2) data = data.filter(p => p.releaseDate <= d2);
+    const rows = data.map(p => `<tr><td>${p.municipality}</td><td>${p.competence}</td><td>${p.period||'-'}</td><td>${p.status}</td></tr>`).join('');
+    return `<table class="report-table"><thead><th>Município</th><th>Competência</th><th>Período</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
 }
 
-function generatePresentationsReport(d1, d2) {
+function genRepApresentacoes(d1, d2) {
     let data = presentations;
-    if (d1 && d2) data = data.filter(p => p.dateSolicitacao >= d1 && p.dateSolicitacao <= d2);
+    if(d1) data = data.filter(p => p.dateSolicitacao >= d1);
+    if(d2) data = data.filter(p => p.dateSolicitacao <= d2);
     const rows = data.map(p => `<tr><td>${p.municipality}</td><td>${formatDate(p.dateSolicitacao)}</td><td>${p.requester}</td><td>${p.status}</td></tr>`).join('');
     return `<table class="report-table"><thead><th>Município</th><th>Data</th><th>Solicitante</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
 }
 
-function generateIntegrationsReport() {
+function genRepIntegracoes() {
     const rows = integrations.map(i => `<tr><td>${i.municipality}</td><td>${i.apis.join(', ')}</td><td>${formatDate(i.expirationDate)}</td></tr>`).join('');
-    return `<table class="report-table"><thead><th>Município</th><th>APIs</th><th>Vencimento Cert.</th></thead><tbody>${rows}</tbody></table>`;
+    return `<table class="report-table"><thead><th>Município</th><th>APIs</th><th>Vencimento</th></thead><tbody>${rows}</tbody></table>`;
 }
 
-function generateColaboradoresReport() {
+function genRepColaboradores() {
     const rows = collaboratorInfos.map(c => `<tr><td>${c.name}</td><td>${c.status}</td><td>${formatDate(c.admissionDate)}</td><td>${formatDate(c.lastVacationEnd)}</td></tr>`).join('');
     return `<table class="report-table"><thead><th>Nome</th><th>Status</th><th>Admissão</th><th>Últimas Férias</th></thead><tbody>${rows}</tbody></table>`;
 }
 
-function generateUsersReport() {
+function genRepUsuarios() {
     const rows = users.map(u => `<tr><td>${u.login}</td><td>${u.name}</td><td>${u.permission}</td><td>${u.status}</td></tr>`).join('');
     return `<table class="report-table"><thead><th>Login</th><th>Nome</th><th>Nível</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
 }
