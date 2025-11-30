@@ -13,7 +13,6 @@ if (typeof CryptoJS === 'undefined') {
 } else {
     console.log('Segurança: CryptoJS carregado com sucesso.');
 }
-
 // ----------------------------------------------------------------------------
 // 2. CONFIGURAÇÕES GERAIS E VARIÁVEIS DE ESTADO
 // ----------------------------------------------------------------------------
