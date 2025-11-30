@@ -2601,20 +2601,25 @@
         <div class="modal-actions">
             <button type="button" class="btn btn--primary btn--full-width" onclick="closeForgotPasswordModal()">Entendi</button>
             
-<div id="report-preview-modal" class="modal">
-    <div class="modal-content report-preview-content">
+<div id="report-preview-modal">
+    <div class="report-preview-content">
+        
         <div class="modal-header">
             <h3 id="report-title">Visualização de Relatório</h3>
             <button class="close-btn" onclick="closeReportPreview()">&times;</button>
         </div>
-        
-        <div id="report-preview-content" style="padding:20px; overflow:auto; height: calc(90vh - 140px);"></div>
-        
+
+        <div id="report-preview-content" 
+             style="padding:20px; overflow:auto; height: calc(90vh - 140px);">
+        </div>
+
         <div class="modal-actions" style="padding:20px; border-top:1px solid #eee;">
             <button class="btn btn--secondary" onclick="closeReportPreview()">Fechar</button>
             <button class="btn btn--primary" onclick="printReport()">🖨️ Imprimir / Salvar PDF</button>
         </div>
+
     </div>
 </div>
+
 </body>
 </html>
