@@ -4707,169 +4707,143 @@ input:disabled, select:disabled, textarea:disabled {
     to { transform: translateY(0); }
 }
 /* ==========================================================================
-   TABELA DE INTEGRAÇÕES - VERSÃO MELHORADA (v4.5) - DEFINITIVA
+   CORREÇÃO FINAL V68 - TABELA HÍBRIDA (RESPONSIVA COM SCROLL)
    ========================================================================== */
 
-/* Container com scroll lateral suave */
+/* 1. Container da Tabela (Permite rolagem lateral no celular) */
 #integrations-table {
     width: 100%;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: auto !important; /* Ativa barra de rolagem se precisar */
+    -webkit-overflow-scrolling: touch; /* Rolagem suave no celular */
     margin-bottom: 20px;
     border-radius: 8px;
     border: 1px solid var(--color-card-border);
-    background: var(--color-surface);
 }
 
-/* Tabela com largura mínima maior para caber tudo */
+/* 2. Estrutura da Tabela */
 #integrations-table table {
     width: 100%;
-    min-width: 1400px !important;  /* Aumentado para dar mais espaço */
-    border-collapse: collapse;
-    table-layout: fixed; /* Importante para controle preciso das colunas */
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    /* Define uma largura mínima total para forçar o scroll em telas pequenas */
+    min-width: 1100px !important; 
+    table-layout: fixed !important; 
 }
 
-/* Cabeçalho */
-#integrations-table th {
-    background: var(--color-secondary) !important;
-    padding: 12px 10px !important;
-    font-weight: 600;
-    white-space: nowrap;
-    text-align: center;
-    font-size: 13px;
+#integrations-table tr {
+    background-color: transparent;
+    border-bottom: 1px solid #cccccc !important;
 }
 
-/* Células gerais */
+#integrations-table tr:last-child {
+    border-bottom: none !important;
+}
+
 #integrations-table td {
-    padding: 12px 10px !important;
-    vertical-align: middle;
-    border-bottom: 1px solid #e0e0e0;
-    font-size: 13px;
+    border: none !important;
+    vertical-align: middle !important;
+    padding: 6px 10px !important;
+    height: 50px !important;
     overflow: hidden;
+    white-space: nowrap; /* Evita quebra de linha indesejada */
 }
 
-/* DISTRIBUIÇÃO DAS COLUNAS - AJUSTADA */
-#integrations-table th:nth-child(1), 
-#integrations-table td:nth-child(1) { 
-    width: 180px !important;     /* Município: mais espaço */
+#integrations-table th {
+    vertical-align: middle !important;
+    padding: 10px !important;
+    white-space: nowrap !important;
+    font-weight: 600;
+    background-color: var(--color-secondary) !important;
+}
+
+/* --- DISTRIBUIÇÃO DE COLUNAS (COM LARGURA MÍNIMA SEGURA) --- */
+
+/* COL 1: Município */
+#integrations-table th:nth-child(1),
+#integrations-table td:nth-child(1) {
+    width: 18%;
+    min-width: 180px !important; /* Garante leitura */
     text-align: left !important;
+}
+#integrations-table td:nth-child(1) {
+    white-space: normal; /* Permite quebrar nome grande */
+    line-height: 1.2;
+    font-size: 13px;
     font-weight: 600;
 }
 
-#integrations-table th:nth-child(2), 
-#integrations-table td:nth-child(2) { 
-    width: 500px !important;     /* APIs Integradas: muito largo e na mesma linha */
+/* COL 2: APIs Integradas (A MAIOR - PRIORIDADE) */
+#integrations-table th:nth-child(2),
+#integrations-table td:nth-child(2) {
+    width: 32%; 
+    min-width: 300px !important; /* Espaço garantido bem grande */
     text-align: left !important;
 }
 
-#integrations-table th:nth-child(3), 
-#integrations-table td:nth-child(3) { 
-    width: 120px !important;     /* Vencimento Certificado */
+/* COL 3: Vencimento */
+#integrations-table th:nth-child(3),
+#integrations-table td:nth-child(3) {
+    width: 10%;
+    min-width: 110px !important; /* Não encavala a data */
     text-align: center !important;
 }
+#integrations-table td:nth-child(3) { font-size: 12px; }
 
-#integrations-table th:nth-child(4), 
-#integrations-table td:nth-child(4) { 
-    width: 130px !important;     /* Status Vencimento */
+/* COL 4: Status */
+#integrations-table th:nth-child(4),
+#integrations-table td:nth-child(4) {
+    width: 12%;
+    min-width: 140px !important; /* Espaço para "Vencido há..." */
     text-align: center !important;
 }
+#integrations-table td:nth-child(4) { font-size: 11px; }
 
-#integrations-table th:nth-child(5), 
-#integrations-table td:nth-child(5) { 
-    width: 250px !important;     /* Observações: muito mais espaço */
+/* COL 5: Observações */
+#integrations-table th:nth-child(5),
+#integrations-table td:nth-child(5) {
+    width: 20%;
+    min-width: 200px !important; /* Mais espaço para ler */
     text-align: left !important;
-    font-size: 12px;
-    color: var(--color-text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
+}
+#integrations-table td:nth-child(5) {
     text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+    font-size: 12px;
 }
 
-#integrations-table th:nth-child(6), 
-#integrations-table td:nth-child(6) { 
-    width: 100px !important;     /* Ações */
+/* COL 6: Ações */
+#integrations-table th:nth-child(6),
+#integrations-table td:nth-child(6) {
+    width: 8%;
+    min-width: 90px !important;
     text-align: right !important;
-    padding-right: 16px !important;
+    padding-right: 10px !important;
 }
+#integrations-table td:last-child { overflow: visible; }
 
-/* FORÇA AS APIs A FICAREM NA MESMA LINHA (SEM QUEBRA) */
+/* 3. Estilo das APIs (Tags) */
 #integrations-table .module-tags-cell {
     display: flex !important;
-    flex-wrap: nowrap !important;     /* ← ESSA LINHA É O SEGREDO */
-    gap: 6px;
-    overflow-x: auto;
-    padding: 4px 0;
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-primary) transparent;
+    align-items: center !important;
+    height: 100%;
+    flex-wrap: wrap !important; /* Volta a quebrar linha se tiver MUITAS */
+    gap: 4px;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 #integrations-table .module-tag {
-    flex-shrink: 0;                   /* Não encolhe nunca */
     font-size: 10px !important;
-    padding: 3px 8px !important;
-    white-space: nowrap !important;
-    min-width: fit-content;
-}
-
-/* ==========================================================================
-   ABA RELATÓRIOS DE GESTÃO
-   ========================================================================== */
-
-.reports-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.report-card {
-    background: var(--color-surface);
-    border: 1px solid var(--color-card-border);
-    border-radius: 12px;
-    padding: 24px;
-    text-align: center;
-    transition: all 0.2s ease;
-    display: flex;
-    flex-direction: column;
+    font-weight: 600 !important;
+    padding: 2px 6px !important;
+    border-radius: 3px;
+    line-height: 1 !important;
+    display: inline-flex;
     align-items: center;
-}
-
-.report-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--color-primary);
-}
-
-.report-icon {
-    font-size: 40px;
-    margin-bottom: 15px;
-    display: block;
-}
-
-.report-card h3 {
-    font-size: 16px;
-    margin-bottom: 8px;
-    color: var(--color-text);
-    font-weight: 600;
-}
-
-.report-card p {
-    font-size: 13px;
-    color: var(--color-text-secondary);
-    margin-bottom: 20px;
-    line-height: 1.4;
-}
-
-.report-actions {
-    display: flex;
-    gap: 10px;
-    width: 100%;
-    justify-content: center;
-    margin-top: auto; /* Empurra botões para o final */
-}
-
-.report-actions .btn {
-    flex: 1;
-    padding: 6px 12px;
-    font-size: 12px;
+    height: 20px !important;
+    margin: 0 !important;
+    border-width: 1px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0;
 }
