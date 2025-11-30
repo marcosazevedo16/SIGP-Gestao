@@ -4827,7 +4827,7 @@ function navigateToAudit() {
         return;
     }
 
-    toggleSettingsMenu();
+    toggleSettings(); // <--- CORREÇÃO AQUI (Antes estava toggleSettingsMenu)
     openTab('audit-section');
     renderAuditLogs();
 }
