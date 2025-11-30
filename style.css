@@ -4677,3 +4677,32 @@ input:disabled, select:disabled, textarea:disabled {
         z-index: 9999 !important; 
     }
 }
+
+/* ==========================================================================
+   MODO OFFLINE (AVISO)
+   ========================================================================== */
+.offline-banner {
+    display: none; /* Escondido por padrão */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #C85250; /* Vermelho do tema */
+    color: white;
+    text-align: center;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 100000; /* Acima de TUDO (Modais, Header, Sidebar) */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    animation: slideDown 0.3s ease-out;
+}
+
+.offline-banner.show {
+    display: block;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
