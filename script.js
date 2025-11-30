@@ -229,10 +229,6 @@ function showToast(message, type = 'info') {
 }
 
 // ============================================================================
-// EXPORTAÇÃO AVANÇADA PARA EXCEL (.xlsx)
-// ============================================================================
-
-// ============================================================================
 // FASE 3 - EXPORTAÇÃO AVANÇADA PARA EXCEL (.xlsx)
 // ============================================================================
 
@@ -4756,6 +4752,7 @@ function initializeApp() {
     updateDashboardStats();
     initializeDashboardCharts();
     checkSystemNotifications();
+    initOfflineDetection();
     
     // Listener do Menu Mobile
     const overlay = document.querySelector('.sidebar-overlay');
@@ -6646,4 +6643,27 @@ function closeForgotPasswordModal() {
     if (modal) {
         modal.classList.remove('show');
     }
+}
+
+// ============================================================================
+// DETECTOR DE CONEXÃO (ONLINE/OFFLINE)
+// ============================================================================
+function initOfflineDetection() {
+    const banner = document.getElementById('offline-banner');
+    if (!banner) return;
+
+    function updateStatus() {
+        if (navigator.onLine) {
+            banner.classList.remove('show');
+        } else {
+            banner.classList.add('show');
+        }
+    }
+
+    // Ouve as mudanças de rede do navegador
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+
+    // Checa assim que carrega
+    updateStatus();
 }
