@@ -72,31 +72,16 @@ const CHART_COLORS = [
 ];
 
 // ----------------------------------------------------------------------------
-// 3. FUNÇÕES DE MENU MOBILE (CORRIGIDO v14)
+// 3. FUNÇÕES DE MENU MOBILE (SIMPLIFICADA)
 // ----------------------------------------------------------------------------
 function toggleMobileMenu() {
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.querySelector('.sidebar-overlay');
     
-    // Cria o overlay se não existir (segurança)
-    if (!overlay) {
-        const newOverlay = document.createElement('div');
-        newOverlay.className = 'sidebar-overlay';
-        document.body.appendChild(newOverlay);
-        
-        // Adiciona evento ao novo overlay
-        newOverlay.onclick = toggleMobileMenu;
-        
-        // Pequeno delay para animação
-        setTimeout(function() {
-            newOverlay.classList.toggle('active');
-            sidebar.classList.toggle('mobile-open');
-        }, 10);
-        return;
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
     }
-
-    sidebar.classList.toggle('mobile-open');
-    overlay.classList.toggle('active');
 }
 
 // ----------------------------------------------------------------------------
