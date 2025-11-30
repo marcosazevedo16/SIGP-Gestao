@@ -1,29 +1,34 @@
+/* ==========================================================================
+   SIGP SAÚDE - ESTILO MESTRE (V70 FINAL)
+   Limpo, Unificado e Otimizado
+   ========================================================================== */
+
 :root {
-  /* --- CORES E VARIÁVEIS (MANTIDAS) --- */
-  --color-white: rgba(255, 255, 255, 1);
-  --color-black: rgba(0, 0, 0, 1);
-  --color-cream-50: rgba(252, 252, 249, 1);
-  --color-cream-100: rgba(255, 255, 253, 1);
-  --color-gray-200: rgba(245, 245, 245, 1);
-  --color-gray-300: rgba(167, 169, 169, 1);
-  --color-slate-500: rgba(98, 108, 113, 1);
-  --color-slate-900: rgba(19, 52, 59, 1);
+  /* --- CORES E VARIÁVEIS --- */
+  --color-white: #ffffff;
+  --color-black: #000000;
   
-  --color-bg-1: rgba(59, 130, 246, 0.08);
-  --color-background: var(--color-cream-50);
-  --color-surface: var(--color-cream-100);
-  --color-text: var(--color-slate-900);
-  --color-text-secondary: var(--color-slate-500);
-  
-  --color-primary: #005580;      /* Azul Principal Forte */
+  /* Cores do Tema (Azul Principal) */
+  --color-primary: #005580;
   --color-primary-hover: #003d5c;
   --color-secondary: rgba(94, 82, 64, 0.12);
-  --color-border: rgba(94, 82, 64, 0.2);
   
+  /* Cores Semânticas */
   --color-success: #79C2A9;
   --color-error: #C85250;
   --color-warning: #E68161;
+  --color-info: #5E8C99;
+
+  /* Fundo e Texto (Modo Claro) */
+  --color-background: #fcfcf9;
+  --color-surface: #ffffff;
+  --color-text: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-card-border: rgba(0, 0, 0, 0.05);
   
+  /* Elementos */
+  --color-bg-1: rgba(59, 130, 246, 0.08); /* Highlight */
   --radius-base: 8px;
   --radius-lg: 12px;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
@@ -32,24 +37,63 @@
   --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* MODO ESCURO */
+/* --- MODO ESCURO --- */
 [data-theme="dark"] {
-  --color-background: #1f2937;
-  --color-surface: #111827;
+  --color-background: #111827;
+  --color-surface: #1f2937;
   --color-text: #f3f4f6;
   --color-text-secondary: #9ca3af;
-  --color-border: rgba(255,255,255,0.1);
-  --color-secondary: rgba(255,255,255,0.05);
-  --color-bg-1: rgba(255,255,255,0.05);
+  --color-primary: #60a5fa; /* Azul mais claro para contraste */
+  --color-primary-hover: #3b82f6;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-card-border: rgba(255, 255, 255, 0.1);
+  --color-bg-1: rgba(255, 255, 255, 0.05);
 }
 
 /* ==========================================================================
    RESET E BASE
    ========================================================================== */
 * { box-sizing: border-box; }
-body { margin: 0; font-family: var(--font-family-base); background: var(--color-background); color: var(--color-text); }
-h1, h2, h3, h4 { margin: 0; font-weight: 600; color: var(--color-text); }
-a { text-decoration: none; color: var(--color-primary); }
+body { margin: 0; padding: 0; font-family: var(--font-family-base); background: var(--color-background); color: var(--color-text); font-size: 14px; }
+h1, h2, h3, h4 { margin: 0; font-weight: 600; color: var(--color-text); line-height: 1.2; }
+p { margin: 0 0 16px 0; }
+a { text-decoration: none; color: var(--color-primary); transition: 0.2s; }
+a:hover { text-decoration: underline; }
+
+/* ==========================================================================
+   TELA DE LOGIN
+   ========================================================================== */
+.login-screen {
+  display: none; min-height: 100vh; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #003d5c 0%, #005580 50%, #00425f 100%);
+  position: fixed; top: 0; left: 0; width: 100%; z-index: 9999;
+}
+.login-screen.active { display: flex; }
+
+.login-wrapper {
+  width: 100%; max-width: 1000px; min-height: 500px; display: flex;
+  background: #fff; border-radius: 16px; overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+}
+
+.login-left {
+  flex: 1; background: linear-gradient(135deg, #003d5c 0%, #005580 100%);
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  color: white; position: relative; padding: 40px; text-align: center;
+}
+.login-title { font-size: 32px; color: white; margin-bottom: 10px; }
+.login-tagline { font-size: 16px; opacity: 0.9; }
+
+.login-right { flex: 1; padding: 40px; display: flex; align-items: center; justify-content: center; background: white; }
+.login-form-container { width: 100%; max-width: 350px; }
+
+#login-username, #login-password { background-color: #fff !important; color: #000 !important; border: 1px solid #ddd; }
+.login-btn { width: 100%; padding: 12px; margin-top: 20px; font-weight: bold; }
+.login-error { color: var(--color-error); font-size: 13px; margin-top: 10px; min-height: 20px; }
+
+/* Ondas decorativas do login */
+.login-waves { position: absolute; bottom: 0; left: 0; width: 100%; height: 100px; pointer-events: none; }
+.login-waves svg { width: 100%; height: 100%; }
 
 /* ==========================================================================
    LAYOUT PRINCIPAL (HEADER & SIDEBAR)
@@ -57,16 +101,16 @@ a { text-decoration: none; color: var(--color-primary); }
 .main-app { display: none; min-height: 100vh; flex-direction: column; }
 .main-app.active { display: flex; }
 
-/* HEADER */
+/* HEADER FIXO */
 .app-header {
     position: fixed !important; top: 0; left: 0; width: 100%; z-index: 1000;
     background-color: #003d5c !important; color: white !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding: 15px 24px; display: flex; justify-content: space-between; align-items: center;
-    height: 80px; /* Altura fixa para garantir espaço */
+    height: 70px;
 }
 .header-content { display: flex; align-items: center; width: 100%; }
-.header-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.header-user-info { display: none; } /* Oculto para limpar visual */
 
 /* SIDEBAR (Desktop) */
 @media (min-width: 901px) {
@@ -81,149 +125,195 @@ a { text-decoration: none; color: var(--color-primary); }
 
     .main-content {
         margin-left: 70px !important; width: calc(100% - 70px) !important;
-        margin-top: 80px; padding: 20px 32px;
+        margin-top: 70px; padding: 20px 32px;
         transition: all 0.3s;
     }
     
-    /* Efeito Empurrar */
+    /* Efeito Empurrar Header e Conteúdo */
     body.sidebar-is-expanded .app-header { left: 300px !important; width: calc(100% - 300px) !important; }
     body.sidebar-is-expanded .main-content { margin-left: 300px !important; width: calc(100% - 300px) !important; }
 
+    /* Botões da Sidebar */
     .sidebar-btn {
         padding: 12px 0; display: flex; align-items: center; justify-content: center;
         height: 50px; color: rgba(255,255,255,0.7); background: transparent; border: none; cursor: pointer; width: 100%;
     }
     .sidebar-icon { min-width: 70px; text-align: center; font-size: 20px; }
     .sidebar-btn span:last-child { opacity: 0; position: absolute; left: 70px; transition: opacity 0.2s; }
+    
+    .sidebar:hover .sidebar-btn { justify-content: flex-start; color: white; }
+    .sidebar:hover .sidebar-btn:hover { background-color: rgba(255,255,255,0.1); }
     .sidebar:hover .sidebar-btn span:last-child { opacity: 1; position: static; }
     
+    /* Ícone do Menu (Topo) */
     .sidebar-nav::before { content: "☰"; display: block; text-align: center; color: white; font-size: 24px; margin-bottom: 20px; }
     .mobile-menu-toggle { display: none !important; }
 }
 
 /* ==========================================================================
-   BOTÕES DO HEADER (Transparência e Tamanho)
+   BOTÕES DO HEADER (TRANSPARENTES E ALINHADOS)
    ========================================================================== */
-/* Botões Quadrados */
+.header-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+
+/* Botões Ícone (Quadrados) */
 .header-icon-btn {
     width: 30px !important; height: 30px !important; padding: 0 !important;
     display: flex; justify-content: center; align-items: center;
-    font-size: 1rem !important; background: transparent !important;
-    border: 1px solid rgba(255,255,255,0.3) !important; color: white !important;
-    border-radius: 4px; transition: background 0.2s;
+    font-size: 1rem !important; line-height: 1 !important;
+    background: transparent !important; border: 1px solid rgba(255,255,255,0.3) !important;
+    color: white !important; border-radius: 4px; transition: background 0.2s;
+    box-shadow: none !important; margin: 0 !important;
 }
 
-/* Botões Texto */
+/* Botões Texto (Config e Sair) */
 .header-text-btn {
     height: 30px !important; padding: 0 10px !important;
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 11px !important; gap: 6px;
+    font-size: 11px !important; gap: 6px; white-space: nowrap;
     background: transparent !important; border: 1px solid rgba(255,255,255,0.3) !important;
-    color: white !important; border-radius: 4px; white-space: nowrap;
+    color: white !important; border-radius: 4px; box-shadow: none !important;
+    transition: background 0.2s; width: auto !important;
 }
 
-/* Botão Sair (Fixo) */
+/* Botão Sair (Fixo e Blindado) */
 .header-actions .btn--secondary.btn--sm.header-text-btn {
     min-width: 60px !important; width: auto !important;
+    flex-shrink: 0 !important;
 }
-.header-actions button:hover { background: rgba(255,255,255,0.15) !important; }
+
+/* Hover Unificado */
+.header-icon-btn:hover, .header-text-btn:hover, .header-actions .btn--secondary.btn--sm:hover {
+    background-color: rgba(255,255,255,0.15) !important;
+    border-color: white !important;
+}
 
 /* MENUS SUSPENSOS */
 .settings-dropdown { position: relative; }
+.settings-dropdown::after { content: ''; position: absolute; top: 100%; left: 0; width: 100%; height: 15px; background: transparent; z-index: 1999; }
+
 .settings-menu, #notification-menu {
     display: none; position: absolute; right: 0; top: 40px;
     background: var(--color-surface); border: 1px solid var(--color-border);
-    border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 2000; min-width: 250px;
+    border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    z-index: 2000; min-width: 280px; overflow: hidden;
 }
 .settings-menu.show, #notification-menu.show { display: block; }
-@media (min-width: 901px) { .settings-dropdown:hover .settings-menu { display: block; } }
+
+/* Hover para abrir menu (Desktop) */
+@media (min-width: 901px) { .settings-dropdown:hover .settings-menu { display: block; animation: fadeIn 0.2s; } }
 
 .settings-menu-item {
     padding: 10px 15px; display: flex; align-items: center; gap: 10px;
-    color: var(--color-text); cursor: pointer; font-size: 14px;
-    border-bottom: 1px solid var(--color-border); transition: background 0.2s;
+    color: var(--color-text); cursor: pointer; font-size: 14px; font-weight: 400;
+    border-bottom: 1px solid var(--color-card-border); transition: background 0.2s;
+    width: 100%; text-align: left; background: none; border: none;
 }
 .settings-menu-item:hover { background: var(--color-bg-1); color: var(--color-primary); }
 
+/* Badge de Notificação */
+.notification-badge {
+    position: absolute; top: -5px; right: -5px; background: #C85250; color: white;
+    font-size: 9px; padding: 1px 4px; border-radius: 10px; border: 2px solid var(--color-surface);
+}
+
 /* ==========================================================================
-   TABELAS, MODAIS E GRÁFICOS (A CORREÇÃO CRÍTICA)
+   TABELAS, MODAIS E GRÁFICOS
    ========================================================================== */
-   
-/* 1. GRÁFICOS (Isso conserta o estouro) */
+
+/* Gráficos (Correção de Altura) */
 .chart-card {
-    background: var(--color-surface); border: 1px solid var(--color-border);
+    background: var(--color-surface); border: 1px solid var(--color-card-border);
     border-radius: 12px; padding: 20px; box-shadow: var(--shadow-sm);
-    height: auto; overflow: hidden; /* Importante */
+    height: auto; overflow: hidden;
 }
-.chart-card canvas {
-    max-height: 300px !important; /* TRAVA A ALTURA MÁXIMA */
-    width: 100% !important;
-}
-.charts-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 24px; margin-bottom: 32px;
-}
+.chart-card canvas { max-height: 300px !important; width: 100% !important; }
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 24px; margin-bottom: 32px; }
 
-/* 2. TABELAS (Com Scroll Lateral) */
-.tasks-table, .municipalities-table, #integrations-table {
-    background: var(--color-surface); border: 1px solid var(--color-border);
+/* Tabelas (Scroll Lateral) */
+.tasks-table, .municipalities-table, #integrations-table, #colab-active-table, #colab-terminated-table {
+    background: var(--color-surface); border: 1px solid var(--color-card-border);
     border-radius: 8px; overflow-x: auto; margin-bottom: 20px; width: 100%;
+    -webkit-overflow-scrolling: touch;
 }
 
-table {
-    width: 100%; border-collapse: collapse; min-width: 1000px; /* Força largura mínima */
-}
-th, td {
-    padding: 10px; text-align: left; border-bottom: 1px solid var(--color-border);
-    font-size: 13px; white-space: nowrap;
-}
-thead { background: var(--color-secondary); }
+table { width: 100%; border-collapse: collapse; min-width: 1100px; table-layout: fixed; }
 
-/* 3. MODAIS */
-.modal {
-    display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); align-items: center; justify-content: center;
-}
+th { padding: 10px; text-align: left; border-bottom: 1px solid var(--color-border); font-size: 13px; background: var(--color-secondary); white-space: nowrap; }
+td { padding: 8px 10px; border-bottom: 1px solid var(--color-card-border); font-size: 13px; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+tbody tr:hover { background-color: var(--color-bg-1); }
+
+/* Estilos de Texto de Tabela */
+.text-primary-cell { font-weight: normal; color: var(--color-text); font-size: 14px; }
+.text-secondary-cell { font-size: 12px; color: var(--color-text-secondary); }
+
+/* Colunas Específicas */
+#municipalities-table td:nth-child(1) { min-width: 180px; white-space: normal; }
+#integrations-table td:nth-child(1) { width: 18%; min-width: 180px; white-space: normal; }
+#integrations-table td:nth-child(2) { width: 32%; min-width: 300px; } /* APIs Grande */
+#colab-active-table td:first-child { text-align: left; padding-left: 15px; width: 20%; }
+
+/* Modais */
+.modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
 .modal.show { display: flex; }
-.modal-content {
-    background: var(--color-surface); padding: 0; border-radius: 12px;
-    width: 90%; max-height: 90vh; overflow-y: auto; margin: auto;
-}
-/* Larguras específicas */
-#task-modal .modal-content, #municipality-modal .modal-content { max-width: 900px; }
-#colab-info-modal .modal-content { max-width: 500px; }
+.modal-content { background: var(--color-surface); padding: 0; border-radius: 12px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3); margin: auto; }
 
-/* Form Grid */
-.form-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; padding: 20px; }
-.col-12 { grid-column: span 12; } .col-6 { grid-column: span 6; } 
-.col-4 { grid-column: span 4; } .col-3 { grid-column: span 3; }
+/* Larguras de Modais */
+#task-modal .modal-content, #municipality-modal .modal-content, #production-modal .modal-content { max-width: 900px; }
+#colab-info-modal .modal-content, #api-list-modal .modal-content, #integration-modal .modal-content { max-width: 500px; }
+#change-password-modal .modal-content, #forgot-password-modal .modal-content { max-width: 400px; }
+
+/* Badges e Tags */
+.module-tags-cell { display: flex; flex-wrap: wrap; gap: 4px; }
+.module-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+[data-theme="dark"] .module-tag { background: rgba(14, 165, 233, 0.2); color: #7dd3fc; border-color: rgba(56, 189, 248, 0.4); }
+
+.status-badge, .task-status { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; border: 1px solid; }
+.completed { color: var(--color-success); background: rgba(0, 255, 0, 0.1); border-color: var(--color-success); }
+.pending { color: var(--color-warning); background: rgba(255, 165, 0, 0.1); border-color: var(--color-warning); }
+.cancelled { color: var(--color-error); background: rgba(255, 0, 0, 0.1); border-color: var(--color-error); }
 
 /* ==========================================================================
-   UTILITÁRIOS
+   UTILITÁRIOS E MOBILE
    ========================================================================== */
-.btn {
-    display: inline-flex; align-items: center; justify-content: center;
-    padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500;
-    cursor: pointer; border: none; transition: all 0.2s;
-}
-.btn--primary { background: var(--color-primary); color: white; }
-.btn--secondary { background: #e5e7eb; color: #374151; }
-.btn--sm { padding: 4px 10px; font-size: 12px; }
+.form-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; padding: 20px; }
+.col-12 { grid-column: span 12; } .col-6 { grid-column: span 6; } .col-4 { grid-column: span 4; } .col-3 { grid-column: span 3; }
 
-.form-control {
-    width: 100%; padding: 8px 12px; border: 1px solid var(--color-border);
-    border-radius: 6px; background: var(--color-surface); color: var(--color-text);
-}
+.checkbox-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+.checkbox-grid label { display: flex; align-items: center; font-size: 13px; cursor: pointer; }
 
-/* Responsividade Mobile */
+/* Modo Offline e Toast */
+.offline-banner { display: none; position: fixed; top: 0; left: 0; width: 100%; background: #C85250; color: white; text-align: center; padding: 8px; font-weight: bold; z-index: 10000; }
+.offline-banner.show { display: block; }
+
+.toast { visibility: hidden; position: fixed; bottom: 30px; right: 30px; background: #333; color: white; padding: 15px; border-radius: 8px; z-index: 5000; min-width: 250px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+.toast.show { visibility: visible; animation: fadeIn 0.5s; }
+.toast-content { display: flex; justify-content: space-between; align-items: center; }
+.btn-undo { background: transparent; border: 1px solid rgba(255,255,255,0.5); color: white; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; margin-left: 10px; }
+.btn-undo:hover { background: white; color: #333; }
+
+/* Mobile Responsividade */
 @media (max-width: 900px) {
     .app-layout { flex-direction: column; }
-    .sidebar { width: 250px !important; left: -280px; z-index: 9999; }
+    .sidebar { width: 250px !important; left: -280px; z-index: 9999; padding-top: 10px; }
     .sidebar.mobile-open { left: 0; }
-    .main-content { margin-left: 0 !important; width: 100% !important; }
-    .app-header { position: sticky; }
-    .mobile-menu-toggle { display: inline-flex !important; }
-    .form-grid { grid-template-columns: 1fr; }
+    .sidebar-nav::before { display: none; }
+    .sidebar-btn { justify-content: flex-start; padding: 15px; }
+    .sidebar-btn span:last-child { opacity: 1; visibility: visible; position: static; }
+    
+    .main-content { margin-left: 0 !important; width: 100% !important; padding: 10px; margin-top: 0 !important; }
+    .app-header { position: sticky; padding: 10px; height: auto; flex-wrap: wrap; justify-content: center; }
+    .header-content { flex-direction: column; gap: 10px; }
+    .header-actions { width: 100%; justify-content: space-between; }
+    .header-actions .btn { flex: 1; }
+    
+    .mobile-menu-toggle { display: inline-flex !important; color: white; border: 1px solid white; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 4px; margin-right: auto; }
+    
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9998; }
+    .sidebar-overlay.active { display: block; }
+    
+    .form-grid, .checkbox-grid, .charts-grid { grid-template-columns: 1fr !important; }
     [class^="col-"] { grid-column: span 1; }
 }
+
+/* Animações */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
