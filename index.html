@@ -693,34 +693,55 @@
 
         <section id="relatorios-section" class="tab-content">
     <div class="section-header">
-        <h2>Central de Relatórios e Impressão</h2>
+        <h2>Relatórios de Gestão</h2>
     </div>
 
     <div class="report-generator-container">
-        
         <div class="report-config-box">
-            <h3>1. Escolha o Relatório</h3>
-            <div class="form-group">
-                <select class="form-control" id="report-type-select" onchange="updateReportFilters()">
-                    <option value="">Selecione o modelo...</option>
-                    <option value="municipios">Carteira de Municípios</option>
-                    <option value="integracoes">APIs e Integrações</option>
-                    <option value="colaboradores">Quadro de Colaboradores (RH)</option>
-                    <option value="treinamentos">Histórico de Treinamentos</option>
-                </select>
+            <h3>Filtros de Relatório</h3>
+            <div class="filters-grid">
+                
+                <div class="form-group">
+                    <label class="form-label">Tipo de Relatório</label>
+                    <select class="form-control" id="filter-report-type">
+                        <option value="">Selecione...</option>
+                        <option value="municipios">Carteira de Clientes</option>
+                        <option value="treinamentos">Treinamentos</option>
+                        <option value="demandas">Demandas de Suporte</option>
+                        <option value="apresentacoes">Apresentações</option>
+                        <option value="visitas">Visitas Presenciais</option>
+                        <option value="producao">Controle de Produção</option>
+                        <option value="integracoes">Integrações e APIs</option>
+                        <option value="colaboradores">Colaboradores (RH)</option>
+                        <option value="usuarios">Gestão de Usuários</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Data Inicial (Opcional)</label>
+                    <input type="date" class="form-control" id="filter-report-date-from">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Data Final (Opcional)</label>
+                    <input type="date" class="form-control" id="filter-report-date-to">
+                </div>
+
+                <div class="form-group" style="display:flex; align-items:flex-end;">
+                    <button class="btn btn--primary btn--full-width" onclick="generateReportPreview()">
+                        📄 Gerar Visualização
+                    </button>
+                </div>
             </div>
         </div>
-
-        <div class="report-config-box" id="report-filters-box" style="display:none;">
-            <h3>2. Filtrar Dados</h3>
-            <div class="filters-grid" id="dynamic-report-filters">
-                </div>
-        </div>
-
-        <div class="report-actions-box" id="report-generate-box" style="display:none;">
-            <button class="btn btn--primary btn--lg" onclick="generateReportPreview()">
-                📄 Gerar Visualização
-            </button>
+        
+        <div class="info-box" style="margin-top:20px;">
+            <h3>ℹ️ Como funciona</h3>
+            <ul>
+                <li>Selecione o tipo de relatório desejado acima.</li>
+                <li>Use as datas para filtrar por período (criação/realização).</li>
+                <li>Clique em <strong>Gerar Visualização</strong> para ver os dados na tela.</li>
+                <li>Na janela que abrir, você poderá <strong>Imprimir</strong> ou <strong>Salvar em PDF</strong>.</li>
+            </ul>
         </div>
     </div>
 </section>
@@ -2579,14 +2600,19 @@
         </div>
         <div class="modal-actions">
             <button type="button" class="btn btn--primary btn--full-width" onclick="closeForgotPasswordModal()">Entendi</button>
+            
 <div id="report-preview-modal" class="modal">
     <div class="modal-content report-preview-content">
         <div class="modal-header">
-            <h3>Visualização de Impressão</h3>
-            <button class="close-btn" onclick="closeReportPreviewModal()">&times;</button>
+            <h3 id="report-title">Visualização de Relatório</h3>
+            <button class="close-btn" onclick="closeReportPreview()">&times;</button>
         </div>
-        <div class="modal-body" style="padding: 0; height: calc(90vh - 60px);">
-            <iframe id="pdf-preview-frame" style="width:100%; height:100%; border:none;"></iframe>
+        
+        <div id="report-preview-content" style="padding:20px; overflow:auto; height: calc(90vh - 140px);"></div>
+        
+        <div class="modal-actions" style="padding:20px; border-top:1px solid #eee;">
+            <button class="btn btn--secondary" onclick="closeReportPreview()">Fechar</button>
+            <button class="btn btn--primary" onclick="printReport()">🖨️ Imprimir / Salvar PDF</button>
         </div>
     </div>
 </div>
