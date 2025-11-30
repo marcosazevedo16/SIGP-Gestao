@@ -4885,3 +4885,52 @@ input:disabled, select:disabled, textarea:disabled {
         font-size: 14px !important;
     }
 }
+/* ==========================================================================
+   CENTRAL DE RELATÓRIOS (FASE 4)
+   ========================================================================== */
+
+.report-generator-container {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.report-config-box {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-card-border);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.report-config-box h3 {
+    margin-bottom: 16px;
+    font-size: 16px;
+    color: var(--color-primary);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 8px;
+}
+
+.report-actions-box {
+    text-align: right;
+    margin-top: 10px;
+}
+
+/* Modal de Preview (Estilo "Tela Cheia") */
+.report-preview-content {
+    width: 95% !important;  /* Quase toda a largura */
+    height: 90vh !important; /* Quase toda a altura */
+    max-width: 1200px !important;
+    max-height: 95vh !important;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ajuste para o iframe ocupar tudo */
+#pdf-preview-frame {
+    display: block;
+    background-color: #525659; /* Cor de fundo padrão de visualizadores PDF */
+}
