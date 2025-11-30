@@ -130,13 +130,26 @@ function salvarNoArmazenamento(chave, dados) {
 function recuperarDoArmazenamento(chave, valorPadrao = null) {
     try {
         const dados = localStorage.getItem(chave);
-        if (dados) {
-            return JSON.parse(dados);
-        } else {
+        
+        // Se não tem nada salvo, retorna o padrão sem erro
+        if (dados === null) {
             return valorPadrao;
         }
+
+        // Tenta converter o texto em dados (JSON)
+        return JSON.parse(dados);
+
     } catch (erro) {
-        console.error('Erro ao recuperar do localStorage:', erro);
+        // SE DER ERRO (JSON CORROMPIDO):
+        console.error(`💥 Erro Crítico ao ler '${chave}':`, erro);
+        
+        // 1. Avisa o usuário (para ele não achar que os dados sumiram do nada)
+        alert(`⚠️ ATENÇÃO: Os dados de "${chave}" estão corrompidos e impediam o sistema de abrir.\n\nEles foram resetados automaticamente para o padrão para recuperar o acesso.`);
+        
+        // 2. Limpa o dado estragado para não travar na próxima vez
+        localStorage.removeItem(chave);
+        
+        // 3. Retorna o valor padrão (vazio) para o sistema continuar rodando
         return valorPadrao;
     }
 }
