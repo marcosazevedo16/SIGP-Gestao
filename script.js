@@ -6776,17 +6776,17 @@ function generateReportPreview() {
         titleEl.textContent = reportTitle;
 
         bodyEl.innerHTML = `
-            <div class="report-header-print" style="text-align:center; margin-bottom:20px;">
-                <h2 style="color:#003d5c; margin:0;">SIGP Saúde - ${reportTitle}</h2>
-                <p style="font-size:12px; color:#666; margin-top:5px;">
-                    Gerado em: ${new Date().toLocaleString()} | Usuário: ${currentUser ? currentUser.name : 'Sistema'}
-                </p>
-                ${(dateFrom || dateTo) 
-                    ? `<p style="font-size:12px;">Período: ${dateFrom ? formatDate(dateFrom) : 'Início'} até ${dateTo ? formatDate(dateTo) : 'Hoje'}</p>` 
-                    : ''}
-            </div>
-            ${reportHTML}
-        `;
+    <div class="report-paper"> <div class="report-header-print" style="text-align:center; margin-bottom:20px;">
+            <h2 style="margin:0;">SIGP Saúde - ${reportTitle}</h2>
+            <p style="font-size:12px; color:#666; margin-top:5px;">
+                Gerado em: ${new Date().toLocaleString()} | Usuário: ${currentUser ? currentUser.name : 'Sistema'}
+            </p>
+            ${(dateFrom || dateTo) 
+                ? `<p style="font-size:12px;">Período: ${dateFrom ? formatDate(dateFrom) : 'Início'} até ${dateTo ? formatDate(dateTo) : 'Hoje'}</p>` 
+                : ''}
+        </div>
+        ${reportHTML}
+    </div> `;
 
         // Mostra o modal (força bruta)
         modalEl.classList.add('show');
