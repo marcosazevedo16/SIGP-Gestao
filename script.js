@@ -71,14 +71,23 @@ const CHART_COLORS = [
     '#A9DFBF'  // Verde Claro
 ];
 
-// ----------------------------------------------------------------------------
-// 3. FUNÇÕES DE MENU MOBILE (SIMPLIFICADA)
-// ----------------------------------------------------------------------------
+// FUNÇÃO MOBILE: ABRE E FECHA MENU + OVERLAY
 function toggleMobileMenu() {
     const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
     
-    if (sidebar && overlay) {
+    // Tenta pegar o overlay. Se não existir, busca ou cria.
+    let overlay = document.querySelector('.sidebar-overlay');
+    
+    // Segurança: Se o overlay não existir no HTML, cria ele agora via JS
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'sidebar-overlay';
+        // Adiciona o evento de clique para fechar
+        overlay.onclick = toggleMobileMenu; 
+        document.body.appendChild(overlay);
+    }
+
+    if (sidebar) {
         sidebar.classList.toggle('mobile-open');
         overlay.classList.toggle('active');
     }
