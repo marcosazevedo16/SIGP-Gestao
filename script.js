@@ -6696,10 +6696,19 @@ function updateReportFilters() {
 // 2. Gera a Visualização na Tela
 function generateReportPreview() {
     try {
-        // Coleta filtros
-        const type = document.getElementById('filter-report-type')?.value;
-        const dateFrom = document.getElementById('filter-report-date-from')?.value;
-        const dateTo = document.getElementById('filter-report-date-to')?.value;
+        // 1. Garante que os elementos de filtro existem
+        const typeEl = document.getElementById('filter-report-type');
+        const dateFromEl = document.getElementById('filter-report-date-from');
+        const dateToEl   = document.getElementById('filter-report-date-to');
+
+        if (!typeEl) {
+            alert('Elemento "Tipo de Relatório" não encontrado (filter-report-type).');
+            return;
+        }
+
+        const type    = typeEl.value;
+        const dateFrom = dateFromEl ? dateFromEl.value : '';
+        const dateTo   = dateToEl   ? dateToEl.value   : '';
 
         if (!type) {
             alert('Por favor, selecione um tipo de relatório.');
@@ -6709,8 +6718,8 @@ function generateReportPreview() {
         let reportHTML = '';
         let reportTitle = '';
 
-        // Roteador
-        switch(type) {
+        // 2. Roteador de relatórios
+        switch (type) {
             case 'municipios':
                 reportHTML = genRepMunicipios();
                 reportTitle = 'Carteira de Clientes';
@@ -6748,30 +6757,56 @@ function generateReportPreview() {
                 reportTitle = 'Gestão de Usuários';
                 break;
             default:
-                alert('Relatório não implementado.');
+                alert('Relatório não implementado para o tipo: ' + type);
                 return;
         }
 
-        // Injeta HTML
-        document.getElementById('report-title').textContent = reportTitle;
-        document.getElementById('report-preview-body').innerHTML = `
+        // 3. Confere se os elementos do modal existem
+        const titleEl = document.getElementById('report-title');
+        const bodyEl  = document.getElementById('report-preview-body');
+        const modalEl = document.getElementById('report-preview-modal');
+
+        if (!modalEl) {
+            alert('Modal de visualização não encontrado (report-preview-modal).');
+            return;
+        }
+        if (!bodyEl) {
+            alert('Container do corpo do relatório não encontrado (report-preview-body).');
+            return;
+        }
+        if (!titleEl) {
+            alert('Elemento de título do relatório não encontrado (report-title).');
+            return;
+        }
+
+        // 4. Injeta título e conteúdo
+        titleEl.textContent = reportTitle;
+
+        bodyEl.innerHTML = `
             <div class="report-header-print" style="text-align:center; margin-bottom:20px;">
                 <h2 style="color:#003d5c; margin:0;">SIGP Saúde - ${reportTitle}</h2>
                 <p style="font-size:12px; color:#666; margin-top:5px;">
                     Gerado em: ${new Date().toLocaleString()} | Usuário: ${currentUser ? currentUser.name : 'Sistema'}
                 </p>
-                ${(dateFrom || dateTo) ? `<p style="font-size:12px;">Período: ${dateFrom ? formatDate(dateFrom) : 'Início'} até ${dateTo ? formatDate(dateTo) : 'Hoje'}</p>` : ''}
+                ${(dateFrom || dateTo) 
+                    ? `<p style="font-size:12px;">Período: ${dateFrom ? formatDate(dateFrom) : 'Início'} até ${dateTo ? formatDate(dateTo) : 'Hoje'}</p>` 
+                    : ''}
             </div>
             ${reportHTML}
         `;
 
-        document.getElementById('report-preview-modal').classList.add('show');
+        // 5. Mostra o modal
+        modalEl.classList.add('show');
+
+        // Log opcional para você ver no console se chegou até aqui
+        console.log('Preview de relatório gerado:', { type, dateFrom, dateTo, reportTitle });
 
     } catch (erro) {
         console.error('Erro relatório:', erro);
         alert('Erro ao gerar relatório. Veja o console.');
     }
 }
+
 
 function closeReportPreview() {
     document.getElementById('report-preview-modal').classList.remove('show');
@@ -6782,7 +6817,6 @@ function printReport() {
     // Captura o conteúdo que está sendo exibido no preview
     const content = document.getElementById('report-preview-body').innerHTML;
 
-    // Cria uma janela popup para impressão limpa
     const printWindow = window.open('', '', 'width=900,height=600');
     
     printWindow.document.write(`
