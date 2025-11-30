@@ -680,20 +680,112 @@
 
         <!-- Aba Relatórios de Gestão -->
 
-        <section id="relatorios-section" class="tab-content">
-
+       <section id="relatorios-section" class="tab-content">
             <div class="section-header">
-
-                <h2>Relatórios de Gestão</h2>
-
+                <h2>Central de Relatórios de Gestão</h2>
             </div>
 
-            <div class="empty-state">
+            <div class="section-divider" style="margin-top:0;"></div>
+            <h3 class="section-subtitle">📂 Operacional & Carteira</h3>
+            
+            <div class="reports-grid">
+                <div class="report-card">
+                    <div class="report-icon">🏛️</div>
+                    <h3>Carteira de Municípios</h3>
+                    <p>Lista completa de clientes, status, gestores e módulos implantados.</p>
+                    <div class="report-actions">
+                        <button class="btn btn--outline" onclick="exportMunicipalitiesCSV()">📊 Excel</button>
+                        <button class="btn btn--primary" onclick="generateMunicipalitiesPDF()">📄 PDF</button>
+                    </div>
+                </div>
 
-                <p>Funcionalidades em desenvolvimento. Detalhes em breve.</p>
+                <div class="report-card">
+                    <div class="report-icon">🎓</div>
+                    <h3>Controle de Treinamentos</h3>
+                    <p>Histórico de capacitações, pendências e profissionais treinados.</p>
+                    <div class="report-actions">
+                        <button class="btn btn--outline" onclick="exportTasksCSV()">📊 Excel</button>
+                        <button class="btn btn--primary" onclick="generateTasksPDF()">📄 PDF</button>
+                    </div>
+                </div>
 
+                <div class="report-card">
+                    <div class="report-icon">📦</div>
+                    <h3>Envio de Produção</h3>
+                    <p>Controle de faturamento, envios BPA/SIA e competências.</p>
+                    <div class="report-actions">
+                        <button class="btn btn--outline" onclick="exportProductionsCSV()">📊 Excel</button>
+                        <button class="btn btn--primary" onclick="generateProductionsPDF()">📄 PDF</button>
+                    </div>
+                </div>
             </div>
 
+            <div class="section-divider"></div>
+            <h3 class="section-subtitle">🛠️ Suporte & Demandas</h3>
+
+            <div class="reports-grid">
+                <div class="report-card">
+                    <div class="report-icon">💬</div>
+                    <h3>Solicitações de Clientes</h3>
+                    <p>Sugestões de melhoria e solicitações registradas pelos usuários.</p>
+                    <div class="report-actions">
+                        <button class="btn btn--outline" onclick="exportRequestsCSV()">📊 Excel</button>
+                        <button class="btn btn--primary" onclick="generateRequestsPDF()">📄 PDF</button>
+                    </div>
+                </div>
+
+                <div class="report-card">
+                    <div class="report-icon">📞</div>
+                    <h3>Demandas do Suporte</h3>
+                    <p>Chamados técnicos, bugs reportados e atendimentos realizados.</p>
+                    <div class="report-actions">
+                        <button class="btn btn--outline" onclick="exportDemandsCSV()">📊 Excel</button>
+                        <button class="btn btn--primary" onclick="generateDemandsPDF()">📄 PDF</button>
+                    </div>
+                </div>
+
+                <div class="report-card">
+                    <div class="report-icon">🚗</div>
+                    <h3>Visitas Presenciais</h3>
+                    <p>Registro de visitas in-loco, motivos e datas de realização.</p>
+                    <div class="report-actions">
+                        <button class="btn btn--outline" onclick="exportVisitsCSV()">📊 Excel</button>
+                        <button class="btn btn--primary" onclick="generateVisitsPDF()">📄 PDF</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+            <h3 class="section-subtitle">👥 RH & Técnico</h3>
+
+            <div class="reports-grid">
+                <div class="report-card">
+                    <div class="report-icon">🪪</div>
+                    <h3>Quadro de Colaboradores</h3>
+                    <p>Ficha completa da equipe, admissões e tempo de casa.</p>
+                    <div class="report-actions">
+                        <button class="btn btn--outline btn--full-width" onclick="exportColabInfoExcel()">📊 Baixar Excel Completo</button>
+                    </div>
+                </div>
+
+                <div class="report-card">
+                    <div class="report-icon">🔗</div>
+                    <h3>Status de Integrações</h3>
+                    <p>Controle de APIs vinculadas e vencimento de certificados digitais.</p>
+                    <div class="report-actions">
+                        <button class="btn btn--outline btn--full-width" onclick="exportIntegrationsExcel()">📊 Baixar Excel Completo</button>
+                    </div>
+                </div>
+                
+                <div class="report-card">
+                    <div class="report-icon">🕵️</div>
+                    <h3>Auditoria do Sistema</h3>
+                    <p>Log de segurança registrando quem fez o que e quando.</p>
+                    <div class="report-actions">
+                        <button class="btn btn--outline btn--full-width" onclick="exportAuditCSV()">📊 Baixar Logs (Excel)</button>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- Aba de Cadastro de Municípios (Lista Mestra) -->
