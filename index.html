@@ -681,20 +681,38 @@
         <!-- Aba Relatórios de Gestão -->
 
         <section id="relatorios-section" class="tab-content">
+    <div class="section-header">
+        <h2>Central de Relatórios e Impressão</h2>
+    </div>
 
-            <div class="section-header">
-
-                <h2>Relatórios de Gestão</h2>
-
+    <div class="report-generator-container">
+        
+        <div class="report-config-box">
+            <h3>1. Escolha o Relatório</h3>
+            <div class="form-group">
+                <select class="form-control" id="report-type-select" onchange="updateReportFilters()">
+                    <option value="">Selecione o modelo...</option>
+                    <option value="municipios">Carteira de Municípios</option>
+                    <option value="integracoes">APIs e Integrações</option>
+                    <option value="colaboradores">Quadro de Colaboradores (RH)</option>
+                    <option value="treinamentos">Histórico de Treinamentos</option>
+                </select>
             </div>
+        </div>
 
-            <div class="empty-state">
+        <div class="report-config-box" id="report-filters-box" style="display:none;">
+            <h3>2. Filtrar Dados</h3>
+            <div class="filters-grid" id="dynamic-report-filters">
+                </div>
+        </div>
 
-                <p>Funcionalidades em desenvolvimento. Detalhes em breve.</p>
-
-            </div>
-
-        </section>
+        <div class="report-actions-box" id="report-generate-box" style="display:none;">
+            <button class="btn btn--primary btn--lg" onclick="generateReportPreview()">
+                📄 Gerar Visualização
+            </button>
+        </div>
+    </div>
+</section>
 
         <!-- Aba de Cadastro de Municípios (Lista Mestra) -->
 
@@ -2550,9 +2568,16 @@
         </div>
         <div class="modal-actions">
             <button type="button" class="btn btn--primary btn--full-width" onclick="closeForgotPasswordModal()">Entendi</button>
+<div id="report-preview-modal" class="modal">
+    <div class="modal-content report-preview-content">
+        <div class="modal-header">
+            <h3>Visualização de Impressão</h3>
+            <button class="close-btn" onclick="closeReportPreviewModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 0; height: calc(90vh - 60px);">
+            <iframe id="pdf-preview-frame" style="width:100%; height:100%; border:none;"></iframe>
         </div>
     </div>
 </div>
-
 </body>
 </html>
