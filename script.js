@@ -6754,7 +6754,7 @@ function generateReportPreview() {
 
         // Injeta HTML
         document.getElementById('report-title').textContent = reportTitle;
-        document.getElementById('report-preview-content').innerHTML = `
+        document.getElementById('report-preview-body').innerHTML = `
             <div class="report-header-print" style="text-align:center; margin-bottom:20px;">
                 <h2 style="color:#003d5c; margin:0;">SIGP Saúde - ${reportTitle}</h2>
                 <p style="font-size:12px; color:#666; margin-top:5px;">
