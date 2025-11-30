@@ -4647,3 +4647,33 @@ input:disabled, select:disabled, textarea:disabled {
     color: var(--color-primary-hover);
     text-decoration: underline;
 }
+
+/* ==========================================================================
+   CORREÇÃO FINAL V68 - OVERLAY MOBILE (CLIQUE FORA)
+   ========================================================================== */
+
+@media (max-width: 900px) {
+    /* 1. Garante que o Overlay cubra TUDO */
+    .sidebar-overlay {
+        display: none; /* Escondido por padrão */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw !important;  /* Largura total da viewport */
+        height: 100vh !important; /* Altura total da viewport */
+        background-color: rgba(0, 0, 0, 0.6) !important; /* Escurece o fundo */
+        z-index: 9990 !important; /* Fica ACIMA de tudo, mas ABAIXO do menu */
+        backdrop-filter: blur(2px); /* Efeito visual (opcional) */
+        cursor: pointer; /* Indica que é clicável */
+    }
+
+    /* 2. Quando ativo, FORÇA aparecer (display block) */
+    .sidebar-overlay.active {
+        display: block !important;
+    }
+
+    /* 3. Menu Lateral deve ficar ACIMA do Overlay */
+    .sidebar {
+        z-index: 9999 !important; 
+    }
+}
