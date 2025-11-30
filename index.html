@@ -680,88 +680,21 @@
 
         <!-- Aba Relatórios de Gestão -->
 
-      <!-- ABA RELATÓRIOS PERSONALIZADOS -->
-<div id="custom-reports-page" class="page hidden">
-    <div class="page-header">
-        <h2>Relatório Personalizado</h2>
-        <p>Monte seu relatório com os filtros desejados e visualize antes de imprimir</p>
-    </div>
+        <section id="relatorios-section" class="tab-content">
 
-    <div class="card">
-        <h3>Filtros do Relatório</h3>
-        <div class="form-grid">
-            <div class="form-group col-6">
-                <label>Data Inicial</label>
-                <input type="date" id="report-start-date" class="form-control">
-            </div>
-            <div class="form-group col-6">
-                <label>Data Final</label>
-                <input type="date" id="report-end-date" class="form-control">
+            <div class="section-header">
+
+                <h2>Relatórios de Gestão</h2>
+
             </div>
 
-            <div class="form-group col-12">
-                <label>Módulo / Tipo de Dados</label>
-                <select id="report-module" class="form-control">
-                    <option value="">Todos os módulos</option>
-                    <option value="municipalities">Carteira de Clientes</option>
-                    <option value="trainings">Treinamentos</option>
-                    <option value="visits">Visitas Presenciais</option>
-                    <option value="productions">Envio de Produção</option>
-                    <option value="presentations">Apresentações</option>
-                    <option value="demands">Demandas/Solicitações</option>
-                    <option value="integrations">Integrações e Certificados</option>
-                    <option value="collaborators">Colaboradores</option>
-                </select>
+            <div class="empty-state">
+
+                <p>Funcionalidades em desenvolvimento. Detalhes em breve.</p>
+
             </div>
 
-            <div class="form-group col-12">
-                <label>Municípios (deixe vazio para todos)</label>
-                <select id="report-municipios" class="form-control" multiple size="5">
-                    <!-- Preenchido via JS -->
-                </select>
-            </div>
-
-            <div class="form-group col-6">
-                <label>Status</label>
-                <select id="report-status" class="form-control">
-                    <option value="">Todos</option>
-                    <option value="active">Ativo</option>
-                    <option value="inactive">Inativo</option>
-                    <option value="pending">Pendente</option>
-                    <option value="completed">Concluído</option>
-                    <option value="expired">Vencido</option>
-                </select>
-            </div>
-
-            <div class="form-group col-6">
-                <label>Colaborador / Orientador</label>
-                <input type="text" id="report-collaborator" class="form-control" placeholder="Digite nome...">
-            </div>
-        </div>
-
-        <div style="margin-top: 20px; text-align: center;">
-            <button class="btn btn--primary btn--lg" onclick="generateCustomReportPreview()">
-                Visualizar Relatório
-            </button>
-            <button class="btn btn--secondary" onclick="clearReportFilters()">Limpar Filtros</button>
-        </div>
-    </div>
-
-    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO DO PDF -->
-    <div id="pdf-preview-container" style="display:none; margin-top: 30px;">
-        <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h3>Pré-visualização do Relatório</h3>
-                <div>
-                    <button class="btn btn--success" onclick="printPDF()">Imprimir</button>
-                    <button class="btn btn--primary" onclick="downloadPDF()">Baixar PDF</button>
-                    <button class="btn btn--secondary" onclick="closePDFPreview()">Fechar</button>
-                </div>
-            </div>
-            <iframe id="pdf-preview-frame" style="width:100%; height:800px; border:1px solid #ddd;"></iframe>
-        </div>
-    </div>
-</div>
+        </section>
 
         <!-- Aba de Cadastro de Municípios (Lista Mestra) -->
 
