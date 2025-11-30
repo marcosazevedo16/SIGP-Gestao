@@ -6779,8 +6779,10 @@ function closeReportPreview() {
 
 // 3. Imprimir (Usa o próprio navegador)
 function printReport() {
+    // Captura o conteúdo que está sendo exibido no preview
+    const content = document.getElementById('report-preview-body').innerHTML;
+
     // Cria uma janela popup para impressão limpa
-    const content = document.getElementById('report-preview-content').innerHTML;
     const printWindow = window.open('', '', 'width=900,height=600');
     
     printWindow.document.write(`
