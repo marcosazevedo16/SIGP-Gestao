@@ -6860,3 +6860,112 @@ function generateReportPreview() {
 function closeReportPreviewModal() {
     document.getElementById('report-preview-modal').classList.remove('show');
 }
+
+// ============================================================================
+// MOTOR DE RELATÓRIOS HTML (Solução Definitiva)
+// ============================================================================
+
+function generateReportPreview() {
+    const type = document.getElementById('filter-report-type').value;
+    const dateFrom = document.getElementById('filter-report-date-from').value;
+    const dateTo = document.getElementById('filter-report-date-to').value;
+
+    if (!type) { alert('Selecione um tipo de relatório.'); return; }
+
+    let html = '';
+    let title = '';
+
+    // Roteador de Relatórios
+    switch (type) {
+        case 'municipios': html = genRepMunicipios(); title = 'Carteira de Clientes'; break;
+        case 'treinamentos': html = genRepTreinamentos(dateFrom, dateTo); title = 'Relatório de Treinamentos'; break;
+        case 'demandas': html = genRepDemandas(dateFrom, dateTo); title = 'Demandas de Suporte'; break;
+        case 'visitas': html = genRepVisitas(dateFrom, dateTo); title = 'Visitas Presenciais'; break;
+        case 'producao': html = genRepProducao(dateFrom, dateTo); title = 'Controle de Produção'; break;
+        case 'apresentacoes': html = genRepApresentacoes(dateFrom, dateTo); title = 'Apresentações'; break;
+        case 'integracoes': html = genRepIntegracoes(); title = 'Status de Integrações'; break;
+        case 'colaboradores': html = genRepColaboradores(); title = 'Quadro de Colaboradores'; break;
+        case 'usuarios': html = genRepUsuarios(); title = 'Gestão de Usuários'; break;
+    }
+
+    // Injeta no Modal
+    document.getElementById('report-title').textContent = title;
+    document.getElementById('report-preview-content').innerHTML = `
+        <div style="text-align:center; margin-bottom:20px;">
+            <h2>${title}</h2>
+            <p>Gerado em: ${new Date().toLocaleString()} | Usuário: ${currentUser ? currentUser.name : 'Sistema'}</p>
+        </div>
+        ${html}
+    `;
+    
+    document.getElementById('report-preview-modal').classList.add('show');
+}
+
+function closeReportPreview() {
+    document.getElementById('report-preview-modal').classList.remove('show');
+}
+
+function printReport() {
+    window.print();
+}
+
+// --- GERADORES INDIVIDUAIS (HTML String Builders) ---
+
+function genRepMunicipios() {
+    if (municipalities.length === 0) return '<p>Sem dados.</p>';
+    const rows = municipalities.sort((a,b)=>a.name.localeCompare(b.name)).map(m => `
+        <tr><td>${m.name}</td><td>${m.uf||''}</td><td>${m.status}</td><td>${m.manager}</td><td>${formatDate(m.implantationDate)}</td></tr>
+    `).join('');
+    return `<table class="report-table"><thead><th>Município</th><th>UF</th><th>Status</th><th>Gestor</th><th>Implantação</th></thead><tbody>${rows}</tbody></table>`;
+}
+
+function genRepTreinamentos(d1, d2) {
+    let data = tasks;
+    if(d1 && d2) data = data.filter(t => t.dateRequested >= d1 && t.dateRequested <= d2);
+    if (data.length === 0) return '<p>Nenhum treinamento no período.</p>';
+    const rows = data.map(t => `<tr><td>${t.municipality}</td><td>${formatDate(t.dateRequested)}</td><td>${t.performedBy}</td><td>${t.status}</td></tr>`).join('');
+    return `<table class="report-table"><thead><th>Município</th><th>Data</th><th>Responsável</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
+}
+
+function genRepDemandas(d1, d2) {
+    let data = demands;
+    if(d1 && d2) data = data.filter(d => d.date >= d1 && d.date <= d2);
+    const rows = data.map(d => `<tr><td>${formatDate(d.date)}</td><td>${d.user}</td><td>${d.priority}</td><td>${d.status}</td><td>${d.description}</td></tr>`).join('');
+    return `<table class="report-table"><thead><th>Data</th><th>Usuário</th><th>Prioridade</th><th>Status</th><th>Descrição</th></thead><tbody>${rows}</tbody></table>`;
+}
+
+function genRepVisitas(d1, d2) {
+    let data = visits;
+    if(d1 && d2) data = data.filter(v => v.date >= d1 && v.date <= d2);
+    const rows = data.map(v => `<tr><td>${v.municipality}</td><td>${formatDate(v.date)}</td><td>${v.applicant}</td><td>${v.status}</td></tr>`).join('');
+    return `<table class="report-table"><thead><th>Município</th><th>Data Solic.</th><th>Solicitante</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
+}
+
+function genRepProducao(d1, d2) {
+    let data = productions;
+    if(d1 && d2) data = data.filter(p => p.releaseDate >= d1 && p.releaseDate <= d2);
+    const rows = data.map(p => `<tr><td>${p.municipality}</td><td>${p.competence}</td><td>${p.period}</td><td>${p.status}</td></tr>`).join('');
+    return `<table class="report-table"><thead><th>Município</th><th>Competência</th><th>Período</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
+}
+
+function genRepApresentacoes(d1, d2) {
+    let data = presentations;
+    if(d1 && d2) data = data.filter(p => p.dateSolicitacao >= d1 && p.dateSolicitacao <= d2);
+    const rows = data.map(p => `<tr><td>${p.municipality}</td><td>${formatDate(p.dateSolicitacao)}</td><td>${p.requester}</td><td>${p.status}</td></tr>`).join('');
+    return `<table class="report-table"><thead><th>Município</th><th>Data</th><th>Solicitante</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
+}
+
+function genRepIntegracoes() {
+    const rows = integrations.map(i => `<tr><td>${i.municipality}</td><td>${i.apis.join(', ')}</td><td>${formatDate(i.expirationDate)}</td></tr>`).join('');
+    return `<table class="report-table"><thead><th>Município</th><th>APIs</th><th>Vencimento Cert.</th></thead><tbody>${rows}</tbody></table>`;
+}
+
+function genRepColaboradores() {
+    const rows = collaboratorInfos.map(c => `<tr><td>${c.name}</td><td>${c.status}</td><td>${formatDate(c.admissionDate)}</td><td>${formatDate(c.lastVacationEnd)}</td></tr>`).join('');
+    return `<table class="report-table"><thead><th>Nome</th><th>Situação</th><th>Admissão</th><th>Últimas Férias</th></thead><tbody>${rows}</tbody></table>`;
+}
+
+function genRepUsuarios() {
+    const rows = users.map(u => `<tr><td>${u.login}</td><td>${u.name}</td><td>${u.permission}</td><td>${u.status}</td></tr>`).join('');
+    return `<table class="report-table"><thead><th>Login</th><th>Nome</th><th>Nível</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
+}
