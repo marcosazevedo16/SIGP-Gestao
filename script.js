@@ -6679,30 +6679,30 @@ function initOfflineDetection() {
     // Checa assim que carrega
     updateStatus();
 }
+
 // ============================================================================
 // MÓDULO DE RELATÓRIOS DE GESTÃO (FINAL - VERSÃO HTML)
-// Substitui todas as versões anteriores de relatório
 // ============================================================================
 
 // 1. Atualiza os filtros na tela quando muda o tipo
 function updateReportFilters() {
-    const type = document.getElementById('filter-report-type').value;
-    // Como mudamos o HTML para filtros fixos (Data Início/Fim), 
-    // essa função pode ser usada futuramente para filtros específicos.
-    // Por enquanto, deixamos o usuário usar as datas gerais.
-    // Se quiser esconder/mostrar filtros específicos, a lógica iria aqui.
+    const typeEl = document.getElementById('filter-report-type');
+    if (!typeEl) return;
+    const type = typeEl.value;
+    // Por enquanto não precisamos esconder/mostrar nada por tipo,
+    // mas essa função fica aqui pra evoluções futuras.
 }
 
 // 2. Gera a Visualização na Tela
 function generateReportPreview() {
     try {
-        // 1. Garante que os elementos de filtro existem
-        const typeEl = document.getElementById('filter-report-type');
+        // Coleta filtros
+        const typeEl     = document.getElementById('filter-report-type');
         const dateFromEl = document.getElementById('filter-report-date-from');
         const dateToEl   = document.getElementById('filter-report-date-to');
 
         if (!typeEl) {
-            alert('Elemento "Tipo de Relatório" não encontrado (filter-report-type).');
+            alert('Erro interno: campo de tipo de relatório não encontrado (filter-report-type).');
             return;
         }
 
@@ -6715,10 +6715,10 @@ function generateReportPreview() {
             return;
         }
 
-        let reportHTML = '';
+        let reportHTML  = '';
         let reportTitle = '';
 
-        // 2. Roteador de relatórios
+        // Roteador
         switch (type) {
             case 'municipios':
                 reportHTML = genRepMunicipios();
@@ -6761,25 +6761,18 @@ function generateReportPreview() {
                 return;
         }
 
-        // 3. Confere se os elementos do modal existem
+        // Elementos do modal
+        const modalEl = document.getElementById('report-preview-modal');
         const titleEl = document.getElementById('report-title');
         const bodyEl  = document.getElementById('report-preview-body');
-        const modalEl = document.getElementById('report-preview-modal');
 
-        if (!modalEl) {
-            alert('Modal de visualização não encontrado (report-preview-modal).');
-            return;
-        }
-        if (!bodyEl) {
-            alert('Container do corpo do relatório não encontrado (report-preview-body).');
-            return;
-        }
-        if (!titleEl) {
-            alert('Elemento de título do relatório não encontrado (report-title).');
+        if (!modalEl || !titleEl || !bodyEl) {
+            console.error('Elementos do modal não encontrados:', { modalEl, titleEl, bodyEl });
+            alert('Erro interno: componentes do preview de relatório não foram encontrados no HTML.');
             return;
         }
 
-        // 4. Injeta título e conteúdo
+        // Injeta título e conteúdo
         titleEl.textContent = reportTitle;
 
         bodyEl.innerHTML = `
@@ -6795,10 +6788,13 @@ function generateReportPreview() {
             ${reportHTML}
         `;
 
-        // 5. Mostra o modal
+        // Mostra o modal (força bruta)
         modalEl.classList.add('show');
+        modalEl.style.display   = 'flex';
+        modalEl.style.opacity   = '1';
+        modalEl.style.visibility = 'visible';
+        modalEl.style.zIndex    = '99999';
 
-        // Log opcional para você ver no console se chegou até aqui
         console.log('Preview de relatório gerado:', { type, dateFrom, dateTo, reportTitle });
 
     } catch (erro) {
@@ -6807,16 +6803,23 @@ function generateReportPreview() {
     }
 }
 
-
 function closeReportPreview() {
-    document.getElementById('report-preview-modal').classList.remove('show');
+    const modal = document.getElementById('report-preview-modal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+    }
 }
 
 // 3. Imprimir (Usa o próprio navegador)
 function printReport() {
-    // Captura o conteúdo que está sendo exibido no preview
-    const content = document.getElementById('report-preview-body').innerHTML;
+    const bodyEl = document.getElementById('report-preview-body');
+    if (!bodyEl) {
+        alert('Nada para imprimir: o preview não foi gerado.');
+        return;
+    }
 
+    const content = bodyEl.innerHTML;
     const printWindow = window.open('', '', 'width=900,height=600');
     
     printWindow.document.write(`
@@ -6836,12 +6839,13 @@ function printReport() {
                 ${content}
                 <script>
                     window.onload = function() { window.print(); window.close(); }
-                </script>
+                <\/script>
             </body>
         </html>
     `);
     printWindow.document.close();
 }
+
 
 // --- GERADORES DE TABELAS (Helpers) ---
 
