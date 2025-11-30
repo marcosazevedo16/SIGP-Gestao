@@ -4934,3 +4934,61 @@ input:disabled, select:disabled, textarea:disabled {
     display: block;
     background-color: #525659; /* Cor de fundo padrão de visualizadores PDF */
 }
+/* ==========================================================================
+   CORREÇÃO FINAL - MODAL DE RELATÓRIOS (PDF)
+   ========================================================================== */
+
+#report-preview-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85); /* Fundo mais escuro para foco no PDF */
+    z-index: 30000 !important;    /* Acima de TUDO */
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+/* Força bruta para aparecer */
+#report-preview-modal.show {
+    display: flex !important;
+    opacity: 1;
+}
+
+/* Estilo da caixa interna (Tela Cheia para o PDF) */
+#report-preview-modal .report-preview-content {
+    width: 95% !important;
+    height: 95vh !important;
+    max-width: 1400px !important;
+    max-height: none !important;
+    background: #525659; /* Cor de fundo de visualizadores PDF */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Cabeçalho do Modal */
+#report-preview-modal .modal-header {
+    background: #ffffff;
+    padding: 15px 20px;
+    flex-shrink: 0; /* Não encolhe */
+}
+
+/* Corpo do Modal (Onde fica o iframe) */
+#report-preview-modal .modal-body {
+    flex-grow: 1; /* Ocupa todo o espaço restante */
+    padding: 0 !important;
+    height: 100%;
+    background: #525659;
+}
+
+/* O Iframe do PDF */
+#pdf-preview-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
