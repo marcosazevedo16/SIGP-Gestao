@@ -4853,3 +4853,35 @@ input:disabled, select:disabled, textarea:disabled {
     white-space: nowrap !important;
     min-width: fit-content;
 }
+
+/* ==========================================================================
+   CORREÇÃO MENU DE NOTIFICAÇÕES NO CELULAR
+   ========================================================================== */
+
+@media (max-width: 900px) {
+    #notification-menu {
+        /* Muda de posição relativa ao botão para fixa na tela */
+        position: fixed !important;
+        
+        /* Posiciona logo abaixo do cabeçalho */
+        top: 60px !important; 
+        
+        /* Estica para ocupar a largura da tela com margens */
+        left: 10px !important;
+        right: 10px !important;
+        width: auto !important;
+        min-width: 0 !important;
+        
+        /* Garante que fique acima de tudo */
+        z-index: 20001 !important; 
+        
+        /* Sombra mais forte para destacar */
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
+    }
+    
+    /* Ajuste no cabeçalho da notificação para ficar bonito no mobile */
+    .notification-header {
+        padding: 15px !important;
+        font-size: 14px !important;
+    }
+}
