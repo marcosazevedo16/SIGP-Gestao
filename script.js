@@ -6679,3 +6679,184 @@ function initOfflineDetection() {
     // Checa assim que carrega
     updateStatus();
 }
+// ============================================================================
+// FASE 4 - MOTOR DE RELATÓRIOS COM PREVIEW
+// ============================================================================
+
+// 1. Configuração dos Filtros por Tipo de Relatório
+function updateReportFilters() {
+    const type = document.getElementById('report-type-select').value;
+    const container = document.getElementById('dynamic-report-filters');
+    const boxFilters = document.getElementById('report-filters-box');
+    const boxBtn = document.getElementById('report-generate-box');
+
+    container.innerHTML = ''; // Limpa filtros anteriores
+
+    if (!type) {
+        boxFilters.style.display = 'none';
+        boxBtn.style.display = 'none';
+        return;
+    }
+
+    // Mostra as caixas
+    boxFilters.style.display = 'block';
+    boxBtn.style.display = 'block';
+
+    // Injeta os inputs baseado na escolha
+    let html = '';
+    
+    if (type === 'municipios') {
+        html += `
+            <div class="form-group"><label class="form-label">Status</label>
+            <select class="form-control" id="rep-mun-status"><option value="">Todos</option><option value="Em uso">Em uso</option><option value="Bloqueado">Bloqueado</option><option value="Parou de usar">Parou de usar</option></select></div>
+            <div class="form-group"><label class="form-label">Módulo</label>
+            <select class="form-control" id="rep-mun-mod"><option value="">Todos</option><option value="Gestor">Gestor</option><option value="TFD">TFD</option></select></div>
+        `;
+    } 
+    else if (type === 'integracoes') {
+        html += `
+            <div class="form-group"><label class="form-label">API</label>
+            <select class="form-control" id="rep-int-api"><option value="">Todas</option>${apisList.map(a=>`<option value="${a.name}">${a.name}</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">Status Vencimento</label>
+            <select class="form-control" id="rep-int-status"><option value="">Todos</option><option value="Vencido">Vencidos</option><option value="Em dia">Em dia</option></select></div>
+        `;
+    }
+    else if (type === 'colaboradores') {
+        html += `
+            <div class="form-group"><label class="form-label">Situação</label>
+            <select class="form-control" id="rep-col-status"><option value="">Todos</option><option value="Ativo na Empresa">Ativos</option><option value="Desligado da Empresa">Desligados</option></select></div>
+        `;
+    }
+    else if (type === 'treinamentos') {
+        html += `
+            <div class="form-group"><label class="form-label">Data Início</label><input type="date" class="form-control" id="rep-task-start"></div>
+            <div class="form-group"><label class="form-label">Data Fim</label><input type="date" class="form-control" id="rep-task-end"></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-control" id="rep-task-status"><option value="">Todos</option><option value="Concluído">Concluído</option><option value="Pendente">Pendente</option></select></div>
+        `;
+    }
+
+    container.innerHTML = html;
+}
+
+// 2. Gerador do PDF (Engine)
+function generateReportPreview() {
+    if (!window.jspdf) { alert('Erro: Biblioteca PDF não carregada.'); return; }
+    
+    const type = document.getElementById('report-type-select').value;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape' }); // Paisagem para caber colunas
+    
+    let title = "Relatório do Sistema";
+    let head = [];
+    let body = [];
+
+    // --- LÓGICA DE DADOS (FILTRAGEM) ---
+    
+    if (type === 'municipios') {
+        title = "Relatório de Carteira de Municípios";
+        const fStatus = document.getElementById('rep-mun-status')?.value;
+        const fMod = document.getElementById('rep-mun-mod')?.value;
+
+        const data = municipalities.filter(m => {
+            if (fStatus && m.status !== fStatus) return false;
+            if (fMod && !m.modules.includes(fMod)) return false;
+            return true;
+        }).sort((a,b) => a.name.localeCompare(b.name));
+
+        head = [['Município', 'UF', 'Status', 'Gestor', 'Contato', 'Implantação', 'Tempo de Uso']];
+        body = data.map(m => [m.name, m.uf, m.status, m.manager, m.contact, formatDate(m.implantationDate), calculateTimeInUse(m.implantationDate)]);
+    }
+    
+    else if (type === 'integracoes') {
+        title = "Relatório de APIs e Integrações";
+        const fApi = document.getElementById('rep-int-api')?.value;
+        const fSt = document.getElementById('rep-int-status')?.value;
+        
+        const data = integrations.filter(i => {
+            if (fApi && (!i.apis || !i.apis.includes(fApi))) return false;
+            if (fSt) {
+                const diff = getDaysDiff(i.expirationDate);
+                if (fSt === 'Vencido' && diff >= 0) return false;
+                if (fSt === 'Em dia' && diff < 0) return false;
+            }
+            return true;
+        }).sort((a,b) => a.municipality.localeCompare(b.municipality));
+
+        head = [['Município', 'APIs Vinculadas', 'Vencimento Cert.', 'Status', 'Observações']];
+        body = data.map(i => {
+            const diff = getDaysDiff(i.expirationDate);
+            const statusTxt = diff < 0 ? `VENCIDO há ${Math.abs(diff)} dias` : `Vence em ${diff} dias`;
+            return [i.municipality, i.apis.join(', '), formatDate(i.expirationDate), statusTxt, i.observation];
+        });
+    }
+
+    else if (type === 'colaboradores') {
+        title = "Relatório de Recursos Humanos";
+        const fSt = document.getElementById('rep-col-status')?.value;
+        
+        const data = collaboratorInfos.filter(c => {
+            if (fSt && c.status !== fSt) return false;
+            return true;
+        }).sort((a,b) => a.name.localeCompare(b.name));
+
+        head = [['Nome', 'Status', 'Admissão', 'Tempo de Casa', 'Últimas Férias', 'Desligamento']];
+        body = data.map(c => [
+            c.name, c.status, formatDate(c.admissionDate), 
+            calcDateDiffString(c.admissionDate, c.status==='Desligado da Empresa'?c.terminationDate:null),
+            formatDate(c.lastVacationEnd), formatDate(c.terminationDate)
+        ]);
+    }
+
+    else if (type === 'treinamentos') {
+        title = "Relatório de Treinamentos";
+        const fStart = document.getElementById('rep-task-start')?.value;
+        const fEnd = document.getElementById('rep-task-end')?.value;
+        const fStat = document.getElementById('rep-task-status')?.value;
+
+        const data = tasks.filter(t => {
+            if (fStat && t.status !== fStat) return false;
+            if (fStart && t.dateRequested < fStart) return false;
+            if (fEnd && t.dateRequested > fEnd) return false;
+            return true;
+        });
+
+        head = [['Município', 'Data Solic.', 'Data Realiz.', 'Colaborador', 'Status', 'Obs']];
+        body = data.map(t => [t.municipality, formatDate(t.dateRequested), formatDate(t.datePerformed), t.performedBy, t.status, t.observations]);
+    }
+
+    // --- GERAÇÃO DO DOCUMENTO ---
+    
+    // Cabeçalho
+    doc.setFillColor(0, 61, 92); // Azul SIGP
+    doc.rect(0, 0, 297, 20, 'F'); // Barra azul no topo
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.text("SIGP Saúde - " + title, 14, 13);
+    
+    // Informações extras
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${new Date().toLocaleString()} por ${currentUser ? currentUser.name : 'Usuário'}`, 14, 28);
+
+    // Tabela
+    doc.autoTable({
+        head: head,
+        body: body,
+        startY: 35,
+        theme: 'grid',
+        headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 9, cellPadding: 3 },
+        alternateRowStyles: { fillColor: [245, 245, 245] }
+    });
+
+    // 3. EXIBIR NO IFRAME (PREVIEW)
+    const pdfBlob = doc.output('bloburl');
+    const iframe = document.getElementById('pdf-preview-frame');
+    iframe.src = pdfBlob;
+    
+    document.getElementById('report-preview-modal').classList.add('show');
+}
+
+function closeReportPreviewModal() {
+    document.getElementById('report-preview-modal').classList.remove('show');
+}
