@@ -6630,3 +6630,26 @@ function confirmUndo() {
     undoState = null;
     clearTimeout(undoTimeout);
 }
+
+// ============================================================================
+// FUNCIONALIDADE: ESQUECI MINHA SENHA (MODAL)
+// ============================================================================
+
+function showForgotPasswordModal(e) {
+    // Previne que o link recarregue a página ou adicione # na URL
+    if (e) e.preventDefault(); 
+    
+    const modal = document.getElementById('forgot-password-modal');
+    if (modal) {
+        modal.classList.add('show');
+    } else {
+        console.error("Erro: O modal 'forgot-password-modal' não foi encontrado no HTML.");
+    }
+}
+
+function closeForgotPasswordModal() {
+    const modal = document.getElementById('forgot-password-modal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
