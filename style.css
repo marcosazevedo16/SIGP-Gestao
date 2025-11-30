@@ -4992,3 +4992,67 @@ input:disabled, select:disabled, textarea:disabled {
     border: none;
     display: block;
 }
+/* ==========================================================================
+   ESTILOS DE RELATÓRIO (HTML PREVIEW)
+   ========================================================================== */
+
+/* Tabela de Relatório */
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+.report-table th {
+    background-color: #003d5c;
+    color: white;
+    padding: 8px;
+    text-align: left;
+    border: 1px solid #ccc;
+}
+
+.report-table td {
+    padding: 8px;
+    border: 1px solid #ccc;
+    color: #333;
+}
+
+.report-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Ajuste do Modal para caber a folha */
+.report-preview-content {
+    width: 95% !important;
+    max-width: 1200px !important;
+    height: 95vh !important;
+    background: white;
+}
+
+/* Regras de Impressão (Esconde o sistema, mostra só o relatório) */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #report-preview-modal, #report-preview-modal * {
+        visibility: visible;
+    }
+    #report-preview-modal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        z-index: 99999;
+    }
+    .modal-header, .modal-actions, .close-btn {
+        display: none !important; /* Esconde botões na hora de imprimir */
+    }
+    .report-preview-content {
+        box-shadow: none;
+        height: auto;
+        overflow: visible;
+    }
+}
