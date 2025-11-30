@@ -6680,289 +6680,196 @@ function initOfflineDetection() {
     updateStatus();
 }
 // ============================================================================
-// FASE 4 - MOTOR DE RELATÓRIOS COM PREVIEW
+// MÓDULO DE RELATÓRIOS DE GESTÃO (FINAL - VERSÃO HTML)
+// Substitui todas as versões anteriores de relatório
 // ============================================================================
 
-// 1. Configuração dos Filtros por Tipo de Relatório
+// 1. Atualiza os filtros na tela quando muda o tipo
 function updateReportFilters() {
-    const type = document.getElementById('report-type-select').value;
-    const container = document.getElementById('dynamic-report-filters');
-    const boxFilters = document.getElementById('report-filters-box');
-    const boxBtn = document.getElementById('report-generate-box');
-
-    container.innerHTML = ''; // Limpa filtros anteriores
-
-    if (!type) {
-        boxFilters.style.display = 'none';
-        boxBtn.style.display = 'none';
-        return;
-    }
-
-    // Mostra as caixas
-    boxFilters.style.display = 'block';
-    boxBtn.style.display = 'block';
-
-    // Injeta os inputs baseado na escolha
-    let html = '';
-    
-    if (type === 'municipios') {
-        html += `
-            <div class="form-group"><label class="form-label">Status</label>
-            <select class="form-control" id="rep-mun-status"><option value="">Todos</option><option value="Em uso">Em uso</option><option value="Bloqueado">Bloqueado</option><option value="Parou de usar">Parou de usar</option></select></div>
-            <div class="form-group"><label class="form-label">Módulo</label>
-            <select class="form-control" id="rep-mun-mod"><option value="">Todos</option><option value="Gestor">Gestor</option><option value="TFD">TFD</option></select></div>
-        `;
-    } 
-    else if (type === 'integracoes') {
-        html += `
-            <div class="form-group"><label class="form-label">API</label>
-            <select class="form-control" id="rep-int-api"><option value="">Todas</option>${apisList.map(a=>`<option value="${a.name}">${a.name}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">Status Vencimento</label>
-            <select class="form-control" id="rep-int-status"><option value="">Todos</option><option value="Vencido">Vencidos</option><option value="Em dia">Em dia</option></select></div>
-        `;
-    }
-    else if (type === 'colaboradores') {
-        html += `
-            <div class="form-group"><label class="form-label">Situação</label>
-            <select class="form-control" id="rep-col-status"><option value="">Todos</option><option value="Ativo na Empresa">Ativos</option><option value="Desligado da Empresa">Desligados</option></select></div>
-        `;
-    }
-    else if (type === 'treinamentos') {
-        html += `
-            <div class="form-group"><label class="form-label">Data Início</label><input type="date" class="form-control" id="rep-task-start"></div>
-            <div class="form-group"><label class="form-label">Data Fim</label><input type="date" class="form-control" id="rep-task-end"></div>
-            <div class="form-group"><label class="form-label">Status</label><select class="form-control" id="rep-task-status"><option value="">Todos</option><option value="Concluído">Concluído</option><option value="Pendente">Pendente</option></select></div>
-        `;
-    }
-
-    container.innerHTML = html;
-}
-
-// 2. Gerador do PDF (Engine)
-function generateReportPreview() {
-    if (!window.jspdf) { alert('Erro: Biblioteca PDF não carregada.'); return; }
-    
-    const type = document.getElementById('report-type-select').value;
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'landscape' }); // Paisagem para caber colunas
-    
-    let title = "Relatório do Sistema";
-    let head = [];
-    let body = [];
-
-    // --- LÓGICA DE DADOS (FILTRAGEM) ---
-    
-    if (type === 'municipios') {
-        title = "Relatório de Carteira de Municípios";
-        const fStatus = document.getElementById('rep-mun-status')?.value;
-        const fMod = document.getElementById('rep-mun-mod')?.value;
-
-        const data = municipalities.filter(m => {
-            if (fStatus && m.status !== fStatus) return false;
-            if (fMod && !m.modules.includes(fMod)) return false;
-            return true;
-        }).sort((a,b) => a.name.localeCompare(b.name));
-
-        head = [['Município', 'UF', 'Status', 'Gestor', 'Contato', 'Implantação', 'Tempo de Uso']];
-        body = data.map(m => [m.name, m.uf, m.status, m.manager, m.contact, formatDate(m.implantationDate), calculateTimeInUse(m.implantationDate)]);
-    }
-    
-    else if (type === 'integracoes') {
-        title = "Relatório de APIs e Integrações";
-        const fApi = document.getElementById('rep-int-api')?.value;
-        const fSt = document.getElementById('rep-int-status')?.value;
-        
-        const data = integrations.filter(i => {
-            if (fApi && (!i.apis || !i.apis.includes(fApi))) return false;
-            if (fSt) {
-                const diff = getDaysDiff(i.expirationDate);
-                if (fSt === 'Vencido' && diff >= 0) return false;
-                if (fSt === 'Em dia' && diff < 0) return false;
-            }
-            return true;
-        }).sort((a,b) => a.municipality.localeCompare(b.municipality));
-
-        head = [['Município', 'APIs Vinculadas', 'Vencimento Cert.', 'Status', 'Observações']];
-        body = data.map(i => {
-            const diff = getDaysDiff(i.expirationDate);
-            const statusTxt = diff < 0 ? `VENCIDO há ${Math.abs(diff)} dias` : `Vence em ${diff} dias`;
-            return [i.municipality, i.apis.join(', '), formatDate(i.expirationDate), statusTxt, i.observation];
-        });
-    }
-
-    else if (type === 'colaboradores') {
-        title = "Relatório de Recursos Humanos";
-        const fSt = document.getElementById('rep-col-status')?.value;
-        
-        const data = collaboratorInfos.filter(c => {
-            if (fSt && c.status !== fSt) return false;
-            return true;
-        }).sort((a,b) => a.name.localeCompare(b.name));
-
-        head = [['Nome', 'Status', 'Admissão', 'Tempo de Casa', 'Últimas Férias', 'Desligamento']];
-        body = data.map(c => [
-            c.name, c.status, formatDate(c.admissionDate), 
-            calcDateDiffString(c.admissionDate, c.status==='Desligado da Empresa'?c.terminationDate:null),
-            formatDate(c.lastVacationEnd), formatDate(c.terminationDate)
-        ]);
-    }
-
-    else if (type === 'treinamentos') {
-        title = "Relatório de Treinamentos";
-        const fStart = document.getElementById('rep-task-start')?.value;
-        const fEnd = document.getElementById('rep-task-end')?.value;
-        const fStat = document.getElementById('rep-task-status')?.value;
-
-        const data = tasks.filter(t => {
-            if (fStat && t.status !== fStat) return false;
-            if (fStart && t.dateRequested < fStart) return false;
-            if (fEnd && t.dateRequested > fEnd) return false;
-            return true;
-        });
-
-        head = [['Município', 'Data Solic.', 'Data Realiz.', 'Colaborador', 'Status', 'Obs']];
-        body = data.map(t => [t.municipality, formatDate(t.dateRequested), formatDate(t.datePerformed), t.performedBy, t.status, t.observations]);
-    }
-
-    // --- GERAÇÃO DO DOCUMENTO ---
-    
-    // Cabeçalho
-    doc.setFillColor(0, 61, 92); // Azul SIGP
-    doc.rect(0, 0, 297, 20, 'F'); // Barra azul no topo
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.text("SIGP Saúde - " + title, 14, 13);
-    
-    // Informações extras
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);
-    doc.text(`Gerado em: ${new Date().toLocaleString()} por ${currentUser ? currentUser.name : 'Usuário'}`, 14, 28);
-
-    // Tabela
-    doc.autoTable({
-        head: head,
-        body: body,
-        startY: 35,
-        theme: 'grid',
-        headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 9, cellPadding: 3 },
-        alternateRowStyles: { fillColor: [245, 245, 245] }
-    });
-
-    // 3. EXIBIR NO IFRAME (PREVIEW)
-    const pdfBlob = doc.output('bloburl');
-    const iframe = document.getElementById('pdf-preview-frame');
-    iframe.src = pdfBlob;
-    
-    document.getElementById('report-preview-modal').classList.add('show');
-}
-
-function closeReportPreviewModal() {
-    document.getElementById('report-preview-modal').classList.remove('show');
-}
-
-// ============================================================================
-// MOTOR DE RELATÓRIOS HTML (Solução Definitiva)
-// ============================================================================
-
-function generateReportPreview() {
     const type = document.getElementById('filter-report-type').value;
-    const dateFrom = document.getElementById('filter-report-date-from').value;
-    const dateTo = document.getElementById('filter-report-date-to').value;
+    // Como mudamos o HTML para filtros fixos (Data Início/Fim), 
+    // essa função pode ser usada futuramente para filtros específicos.
+    // Por enquanto, deixamos o usuário usar as datas gerais.
+    // Se quiser esconder/mostrar filtros específicos, a lógica iria aqui.
+}
 
-    if (!type) { alert('Selecione um tipo de relatório.'); return; }
+// 2. Gera a Visualização na Tela
+function generateReportPreview() {
+    try {
+        // Coleta filtros
+        const type = document.getElementById('filter-report-type')?.value;
+        const dateFrom = document.getElementById('filter-report-date-from')?.value;
+        const dateTo = document.getElementById('filter-report-date-to')?.value;
 
-    let html = '';
-    let title = '';
+        if (!type) {
+            alert('Por favor, selecione um tipo de relatório.');
+            return;
+        }
 
-    // Roteador de Relatórios
-    switch (type) {
-        case 'municipios': html = genRepMunicipios(); title = 'Carteira de Clientes'; break;
-        case 'treinamentos': html = genRepTreinamentos(dateFrom, dateTo); title = 'Relatório de Treinamentos'; break;
-        case 'demandas': html = genRepDemandas(dateFrom, dateTo); title = 'Demandas de Suporte'; break;
-        case 'visitas': html = genRepVisitas(dateFrom, dateTo); title = 'Visitas Presenciais'; break;
-        case 'producao': html = genRepProducao(dateFrom, dateTo); title = 'Controle de Produção'; break;
-        case 'apresentacoes': html = genRepApresentacoes(dateFrom, dateTo); title = 'Apresentações'; break;
-        case 'integracoes': html = genRepIntegracoes(); title = 'Status de Integrações'; break;
-        case 'colaboradores': html = genRepColaboradores(); title = 'Quadro de Colaboradores'; break;
-        case 'usuarios': html = genRepUsuarios(); title = 'Gestão de Usuários'; break;
+        let reportHTML = '';
+        let reportTitle = '';
+
+        // Roteador
+        switch(type) {
+            case 'municipios':
+                reportHTML = genRepMunicipios();
+                reportTitle = 'Carteira de Clientes';
+                break;
+            case 'treinamentos':
+                reportHTML = genRepTreinamentos(dateFrom, dateTo);
+                reportTitle = 'Controle de Treinamentos';
+                break;
+            case 'demandas':
+                reportHTML = genRepDemandas(dateFrom, dateTo);
+                reportTitle = 'Demandas de Suporte';
+                break;
+            case 'apresentacoes':
+                reportHTML = genRepApresentacoes(dateFrom, dateTo);
+                reportTitle = 'Apresentações do Software';
+                break;
+            case 'visitas':
+                reportHTML = genRepVisitas(dateFrom, dateTo);
+                reportTitle = 'Visitas Presenciais';
+                break;
+            case 'producao':
+                reportHTML = genRepProducao(dateFrom, dateTo);
+                reportTitle = 'Controle de Produção';
+                break;
+            case 'integracoes':
+                reportHTML = genRepIntegracoes();
+                reportTitle = 'Status de Integrações e APIs';
+                break;
+            case 'colaboradores':
+                reportHTML = genRepColaboradores();
+                reportTitle = 'Quadro de Colaboradores (RH)';
+                break;
+            case 'usuarios':
+                reportHTML = genRepUsuarios();
+                reportTitle = 'Gestão de Usuários';
+                break;
+            default:
+                alert('Relatório não implementado.');
+                return;
+        }
+
+        // Injeta HTML
+        document.getElementById('report-title').textContent = reportTitle;
+        document.getElementById('report-preview-content').innerHTML = `
+            <div class="report-header-print" style="text-align:center; margin-bottom:20px;">
+                <h2 style="color:#003d5c; margin:0;">SIGP Saúde - ${reportTitle}</h2>
+                <p style="font-size:12px; color:#666; margin-top:5px;">
+                    Gerado em: ${new Date().toLocaleString()} | Usuário: ${currentUser ? currentUser.name : 'Sistema'}
+                </p>
+                ${(dateFrom || dateTo) ? `<p style="font-size:12px;">Período: ${dateFrom ? formatDate(dateFrom) : 'Início'} até ${dateTo ? formatDate(dateTo) : 'Hoje'}</p>` : ''}
+            </div>
+            ${reportHTML}
+        `;
+
+        document.getElementById('report-preview-modal').classList.add('show');
+
+    } catch (erro) {
+        console.error('Erro relatório:', erro);
+        alert('Erro ao gerar relatório. Veja o console.');
     }
-
-    // Injeta no Modal
-    document.getElementById('report-title').textContent = title;
-    document.getElementById('report-preview-content').innerHTML = `
-        <div style="text-align:center; margin-bottom:20px;">
-            <h2>${title}</h2>
-            <p>Gerado em: ${new Date().toLocaleString()} | Usuário: ${currentUser ? currentUser.name : 'Sistema'}</p>
-        </div>
-        ${html}
-    `;
-    
-    document.getElementById('report-preview-modal').classList.add('show');
 }
 
 function closeReportPreview() {
     document.getElementById('report-preview-modal').classList.remove('show');
 }
 
+// 3. Imprimir (Usa o próprio navegador)
 function printReport() {
-    window.print();
+    // Cria uma janela popup para impressão limpa
+    const content = document.getElementById('report-preview-content').innerHTML;
+    const printWindow = window.open('', '', 'width=900,height=600');
+    
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Impressão SIGP Saúde</title>
+                <style>
+                    body { font-family: sans-serif; padding: 20px; }
+                    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                    th { background-color: #003d5c !important; color: white !important; padding: 6px; text-align: left; -webkit-print-color-adjust: exact; }
+                    td { border: 1px solid #ccc; padding: 6px; }
+                    tr:nth-child(even) { background-color: #f2f2f2; -webkit-print-color-adjust: exact; }
+                    h2 { color: #003d5c; }
+                </style>
+            </head>
+            <body>
+                ${content}
+                <script>
+                    window.onload = function() { window.print(); window.close(); }
+                </script>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
 }
 
-// --- GERADORES INDIVIDUAIS (HTML String Builders) ---
+// --- GERADORES DE TABELAS (Helpers) ---
 
 function genRepMunicipios() {
-    if (municipalities.length === 0) return '<p>Sem dados.</p>';
-    const rows = municipalities.sort((a,b)=>a.name.localeCompare(b.name)).map(m => `
-        <tr><td>${m.name}</td><td>${m.uf||''}</td><td>${m.status}</td><td>${m.manager}</td><td>${formatDate(m.implantationDate)}</td></tr>
-    `).join('');
+    if (!municipalities.length) return '<p>Sem dados.</p>';
+    const rows = municipalities.sort((a,b)=>a.name.localeCompare(b.name)).map(m => 
+        `<tr><td>${m.name}</td><td>${m.uf||''}</td><td>${m.status}</td><td>${m.manager}</td><td>${formatDate(m.implantationDate)}</td></tr>`
+    ).join('');
     return `<table class="report-table"><thead><th>Município</th><th>UF</th><th>Status</th><th>Gestor</th><th>Implantação</th></thead><tbody>${rows}</tbody></table>`;
 }
 
 function genRepTreinamentos(d1, d2) {
     let data = tasks;
-    if(d1 && d2) data = data.filter(t => t.dateRequested >= d1 && t.dateRequested <= d2);
-    if (data.length === 0) return '<p>Nenhum treinamento no período.</p>';
-    const rows = data.map(t => `<tr><td>${t.municipality}</td><td>${formatDate(t.dateRequested)}</td><td>${t.performedBy}</td><td>${t.status}</td></tr>`).join('');
+    if(d1) data = data.filter(t => t.dateRequested >= d1);
+    if(d2) data = data.filter(t => t.dateRequested <= d2);
+    if (!data.length) return '<p>Nenhum registro no período.</p>';
+    
+    const rows = data.map(t => 
+        `<tr><td>${t.municipality}</td><td>${formatDate(t.dateRequested)}</td><td>${t.performedBy}</td><td>${t.status}</td></tr>`
+    ).join('');
     return `<table class="report-table"><thead><th>Município</th><th>Data</th><th>Responsável</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
 }
 
 function genRepDemandas(d1, d2) {
     let data = demands;
-    if(d1 && d2) data = data.filter(d => d.date >= d1 && d.date <= d2);
-    const rows = data.map(d => `<tr><td>${formatDate(d.date)}</td><td>${d.user}</td><td>${d.priority}</td><td>${d.status}</td><td>${d.description}</td></tr>`).join('');
-    return `<table class="report-table"><thead><th>Data</th><th>Usuário</th><th>Prioridade</th><th>Status</th><th>Descrição</th></thead><tbody>${rows}</tbody></table>`;
+    if(d1) data = data.filter(d => d.date >= d1);
+    if(d2) data = data.filter(d => d.date <= d2);
+    const rows = data.map(d => `<tr><td>${formatDate(d.date)}</td><td>${d.priority}</td><td>${d.status}</td><td>${d.description}</td></tr>`).join('');
+    return `<table class="report-table"><thead><th>Data</th><th>Prioridade</th><th>Status</th><th>Descrição</th></thead><tbody>${rows}</tbody></table>`;
 }
 
 function genRepVisitas(d1, d2) {
     let data = visits;
-    if(d1 && d2) data = data.filter(v => v.date >= d1 && v.date <= d2);
+    if(d1) data = data.filter(v => v.date >= d1);
+    if(d2) data = data.filter(v => v.date <= d2);
     const rows = data.map(v => `<tr><td>${v.municipality}</td><td>${formatDate(v.date)}</td><td>${v.applicant}</td><td>${v.status}</td></tr>`).join('');
-    return `<table class="report-table"><thead><th>Município</th><th>Data Solic.</th><th>Solicitante</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
+    return `<table class="report-table"><thead><th>Município</th><th>Data</th><th>Solicitante</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
 }
 
 function genRepProducao(d1, d2) {
     let data = productions;
-    if(d1 && d2) data = data.filter(p => p.releaseDate >= d1 && p.releaseDate <= d2);
-    const rows = data.map(p => `<tr><td>${p.municipality}</td><td>${p.competence}</td><td>${p.period}</td><td>${p.status}</td></tr>`).join('');
+    // Filtra pela data de Liberação
+    if(d1) data = data.filter(p => p.releaseDate >= d1);
+    if(d2) data = data.filter(p => p.releaseDate <= d2);
+    const rows = data.map(p => `<tr><td>${p.municipality}</td><td>${p.competence}</td><td>${p.period||'-'}</td><td>${p.status}</td></tr>`).join('');
     return `<table class="report-table"><thead><th>Município</th><th>Competência</th><th>Período</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
 }
 
 function genRepApresentacoes(d1, d2) {
     let data = presentations;
-    if(d1 && d2) data = data.filter(p => p.dateSolicitacao >= d1 && p.dateSolicitacao <= d2);
+    if(d1) data = data.filter(p => p.dateSolicitacao >= d1);
+    if(d2) data = data.filter(p => p.dateSolicitacao <= d2);
     const rows = data.map(p => `<tr><td>${p.municipality}</td><td>${formatDate(p.dateSolicitacao)}</td><td>${p.requester}</td><td>${p.status}</td></tr>`).join('');
     return `<table class="report-table"><thead><th>Município</th><th>Data</th><th>Solicitante</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
 }
 
 function genRepIntegracoes() {
     const rows = integrations.map(i => `<tr><td>${i.municipality}</td><td>${i.apis.join(', ')}</td><td>${formatDate(i.expirationDate)}</td></tr>`).join('');
-    return `<table class="report-table"><thead><th>Município</th><th>APIs</th><th>Vencimento Cert.</th></thead><tbody>${rows}</tbody></table>`;
+    return `<table class="report-table"><thead><th>Município</th><th>APIs</th><th>Vencimento</th></thead><tbody>${rows}</tbody></table>`;
 }
 
 function genRepColaboradores() {
     const rows = collaboratorInfos.map(c => `<tr><td>${c.name}</td><td>${c.status}</td><td>${formatDate(c.admissionDate)}</td><td>${formatDate(c.lastVacationEnd)}</td></tr>`).join('');
-    return `<table class="report-table"><thead><th>Nome</th><th>Situação</th><th>Admissão</th><th>Últimas Férias</th></thead><tbody>${rows}</tbody></table>`;
+    return `<table class="report-table"><thead><th>Nome</th><th>Status</th><th>Admissão</th><th>Últimas Férias</th></thead><tbody>${rows}</tbody></table>`;
 }
 
 function genRepUsuarios() {
