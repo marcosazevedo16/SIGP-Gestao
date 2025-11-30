@@ -6916,3 +6916,17 @@ function genRepUsuarios() {
     const rows = users.map(u => `<tr><td>${u.login}</td><td>${u.name}</td><td>${u.permission}</td><td>${u.status}</td></tr>`).join('');
     return `<table class="report-table"><thead><th>Login</th><th>Nome</th><th>Nível</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
 }
+// ============================================================================
+// CORREÇÃO DE EMERGÊNCIA: MOVER MODAL PARA A RAIZ
+// ============================================================================
+document.addEventListener("DOMContentLoaded", function() {
+    // Localiza o modal de relatório
+    const reportModal = document.getElementById('report-preview-modal');
+    
+    // Se ele existir, move ele para ser filho direto do BODY
+    // Isso resolve qualquer problema de </div> faltando no HTML anterior
+    if (reportModal) {
+        document.body.appendChild(reportModal);
+        console.log("🔧 FIX: Modal de relatório movido para a raiz do documento.");
+    }
+});
