@@ -4986,25 +4986,36 @@ input:disabled, select:disabled, textarea:disabled {
     font-weight: 600;
 }
 
-/* Corpo do Relatório (A "Folha de Papel") */
+/* Corpo do Relatório (A "Mesa" onde fica o papel) */
 #report-preview-body {
     flex-grow: 1;
     overflow-y: auto;
-    padding: 30px;
-    background-color: #f3f4f6; /* Mantém o fundo da área de scroll */
+    /* Importante: Padding maior embaixo para o papel não colar no fim do scroll */
+    padding: 30px 30px 60px 30px; 
+    background-color: #f3f4f6;
     display: flex;
-    justify-content: center; /* Centraliza a folha */
+    justify-content: center;
+    align-items: flex-start; /* Mudança de center para flex-start para permitir scroll correto */
 }
 
 /* A Folha A4 Simulada */
 .report-paper {
     background: #ffffff;
     width: 100%;
-    max-width: 210mm; /* Largura A4 */
-    min-height: 297mm; /* Altura A4 */
-    padding: 40px; /* Margens da folha */
+    max-width: 210mm;
+    min-height: 297mm;
+    /* Removemos altura fixa para ele crescer o quanto precisar */
+    height: auto; 
+    padding: 40px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    /* Removemos margin-bottom daqui e passamos para o padding do pai */
+    margin-bottom: 0; 
+    position: relative; /* Para garantir z-index correto */
+}
+/* Garante que a tabela não "vaze" para fora do papel */
+.report-paper table {
     margin-bottom: 20px;
+    width: 100%;
 }
 
 /* Rodapé do Modal (Botões) */
@@ -5016,6 +5027,7 @@ input:disabled, select:disabled, textarea:disabled {
     justify-content: flex-end;
     gap: 10px;
     flex-shrink: 0;
+    z-index: 10; /* Garante que fique sobre o conteúdo se algo vazar */
 }
 
 /* --- ESTILIZAÇÃO DA TABELA DENTRO DO RELATÓRIO --- */
