@@ -698,41 +698,75 @@
 
     <div class="report-generator-container">
         <div class="report-config-box">
-            <h3>Filtros de Relatório</h3>
-            <div class="filters-grid">
-                
-                <div class="form-group">
-                    <label class="form-label">Tipo de Relatório</label>
-                    <select class="form-control" id="filter-report-type">
-                        <option value="">Selecione...</option>
-                        <option value="municipios">Carteira de Clientes</option>
-                        <option value="treinamentos">Treinamentos</option>
-                        <option value="demandas">Demandas de Suporte</option>
-                        <option value="apresentacoes">Apresentações</option>
-                        <option value="visitas">Visitas Presenciais</option>
-                        <option value="producao">Controle de Produção</option>
-                        <option value="integracoes">Integrações e APIs</option>
-                        <option value="colaboradores">Colaboradores (RH)</option>
-                        <option value="usuarios">Gestão de Usuários</option>
-                    </select>
-                </div>
+    <h3>Filtros de Relatório</h3>
+    <div class="filters-grid">
+        
+        <div class="form-group col-12">
+            <label class="form-label">Selecione o Relatório</label>
+            <select class="form-control" id="filter-report-type" onchange="updateReportFiltersUI()">
+                <option value="">Selecione...</option>
+                <option value="municipios">Carteira de Clientes</option>
+                <option value="treinamentos">Treinamentos</option>
+                <option value="demandas">Demandas de Suporte</option>
+                <option value="apresentacoes">Apresentações</option>
+                <option value="visitas">Visitas Presenciais</option>
+                <option value="producao">Controle de Produção</option>
+                <option value="integracoes">Integrações e APIs</option>
+                <option value="colaboradores">Colaboradores (RH)</option>
+                <option value="usuarios">Gestão de Usuários</option>
+            </select>
+        </div>
 
-                <div class="form-group">
-                    <label class="form-label">Data Inicial (Opcional)</label>
-                    <input type="date" class="form-control" id="filter-report-date-from">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Data Final (Opcional)</label>
-                    <input type="date" class="form-control" id="filter-report-date-to">
-                </div>
+        <div id="filters-municipios" class="report-filter-group" style="display:none; width:100%; grid-column: span 3; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+            
+            <div class="form-group">
+                <label class="form-label">Considerar Data de:</label>
+                <select class="form-control" id="rep-mun-date-type">
+                    <option value="implantacao">Data de Implantação</option>
+                    <option value="visita">Data da Última Visita</option>
+                </select>
+            </div>
 
-                <div class="form-group" style="display:flex; align-items:flex-end;">
-                    <button class="btn btn--primary btn--full-width" onclick="generateReportPreview()">
-                        📄 Gerar Visualização
-                    </button>
-                </div>
+            <div class="form-group">
+                <label class="form-label">Data Inicial</label>
+                <input type="date" class="form-control" id="rep-mun-start">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Data Final</label>
+                <input type="date" class="form-control" id="rep-mun-end">
+            </div>
+
+            <div class="form-group" style="grid-column: span 3;">
+                <label class="form-label">Filtrar por Status</label>
+                <select class="form-control" id="rep-mun-status">
+                    <option value="">Todos</option>
+                    <option value="Em uso">Em uso</option>
+                    <option value="Bloqueado">Bloqueado</option>
+                    <option value="Parou de usar">Parou de usar</option>
+                    <option value="Não Implantado">Não Implantado</option>
+                </select>
             </div>
         </div>
+
+        <div id="filters-generic" class="report-filter-group" style="display:none; width:100%; grid-column: span 3; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+            <div class="form-group">
+                <label class="form-label">Data Inicial (Opcional)</label>
+                <input type="date" class="form-control" id="filter-report-date-from">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Data Final (Opcional)</label>
+                <input type="date" class="form-control" id="filter-report-date-to">
+            </div>
+        </div>
+
+        <div class="form-group" style="grid-column: span 3; display:flex; align-items:flex-end; margin-top: 10px;">
+            <button class="btn btn--primary btn--full-width" onclick="generateReportPreview()">
+                📄 Gerar Visualização
+            </button>
+        </div>
+    </div>
+</div>
         
         <div class="info-box" style="margin-top:20px;">
             <h3>ℹ️ Como funciona</h3>
