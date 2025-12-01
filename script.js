@@ -6945,56 +6945,122 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 // ============================================================================
-// FUNÇÃO NOVA: BAIXAR PDF (FOTO DO RELATÓRIO)
+// FUNÇÃO NOVA: GERAR PDF INTELIGENTE (PAISAGEM + PAGINAÇÃO A4)
 // ============================================================================
 function savePDFFromPreview() {
-    const element = document.querySelector('.report-paper');
-    
-    // Feedback visual no botão
+    // 1. Verificação de segurança das bibliotecas
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert('Erro: Biblioteca jsPDF não carregada.');
+        return;
+    }
+
     const btn = event.target;
     const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ Gerando...';
+    btn.innerHTML = '⏳ Gerando PDF...';
     btn.disabled = true;
 
-    // Usa html2canvas para tirar "print" da folha
-    html2canvas(element, {
-        scale: 2, // Aumenta qualidade
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff' // Garante fundo branco
-    }).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
+    try {
+        const { jsPDF } = window.jspdf;
         
-        // Cria PDF Paisagem (Landscape)
-        const pdf = new window.jspdf.jsPDF('l', 'mm', 'a4'); 
-        
-        const imgWidth = 297; // Largura A4 landscape
-        const pageHeight = 210; // Altura A4 landscape
-        const imgHeight = canvas.height * imgWidth / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 0;
+        // 2. Cria o PDF em formato PAISAGEM ('l' = landscape) e tamanho A4
+        const doc = new jsPDF('l', 'mm', 'a4'); 
 
-        // Adiciona a imagem ao PDF
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+        // 3. Captura os textos do Cabeçalho (que já estão na tela de preview)
+        const headerContainer = document.querySelector('.report-header-print');
+        let title = "Relatório de Gestão - SIGP Saúde";
+        let subtitle = "";
+        let period = "";
 
-        // Se o relatório for longo, cria novas páginas
-        while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
+        if (headerContainer) {
+            const h2 = headerContainer.querySelector('h2');
+            const ps = headerContainer.querySelectorAll('p');
+            if (h2) title = h2.innerText;
+            if (ps.length > 0) subtitle = ps[0].innerText; // Usuário/Data
+            if (ps.length > 1) period = ps[1].innerText;   // Período
         }
 
-        pdf.save('Relatorio_SIGP.pdf');
+        // 4. Gera a Tabela Automática (AutoTable)
+        // Isso lê a tabela HTML (.report-table) e converte para PDF nativo
+        doc.autoTable({
+            html: '.report-table', // Seletor da tabela no HTML
+            startY: 40, // Começa 40mm abaixo do topo (espaço para o cabeçalho)
+            theme: 'grid', // Estilo com linhas de grade (ideal para relatórios)
+            
+            // Estilos Gerais
+            styles: { 
+                fontSize: 9, 
+                cellPadding: 3,
+                font: 'helvetica',
+                valign: 'middle',
+                overflow: 'linebreak' // Quebra texto longo automaticamente
+            },
+            
+            // Estilo do Cabeçalho da Tabela (Azul do SIGP)
+            headStyles: { 
+                fillColor: [0, 61, 92], 
+                textColor: 255,
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            
+            // Estilo Zebrado (Alternar cores das linhas)
+            alternateRowStyles: {
+                fillColor: [245, 245, 245]
+            },
 
-        // Restaura botão
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }).catch(err => {
+            // --- A MÁGICA DO CABEÇALHO REPETIDO ---
+            // Esta função roda no topo de CADA página gerada
+            didDrawPage: function (data) {
+                // Fundo do Cabeçalho (Barra cinza bem clara opcional, ou apenas branco)
+                // doc.setFillColor(250, 250, 250);
+                // doc.rect(0, 0, 297, 35, 'F');
+
+                // Título Principal
+                doc.setFontSize(18);
+                doc.setTextColor(0, 61, 92); // Azul SIGP
+                doc.text(title, 14, 15);
+
+                // Linha divisória
+                doc.setLineWidth(0.5);
+                doc.setDrawColor(0, 61, 92);
+                doc.line(14, 18, 283, 18); // Linha de ponta a ponta (A4 paisagem tem ~297mm)
+
+                // Subtítulos (Usuário, Data, Período)
+                doc.setFontSize(10);
+                doc.setTextColor(80, 80, 80); // Cinza escuro
+                doc.text(subtitle, 14, 24);
+                
+                if (period) {
+                    doc.text(period, 14, 29);
+                }
+
+                // Rodapé: Número da Página
+                const pageSize = doc.internal.pageSize;
+                const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
+                const pageWidth = pageSize.width ? pageSize.width : pageSize.getWidth();
+                
+                const str = 'Página ' + doc.internal.getNumberOfPages();
+                doc.setFontSize(8);
+                doc.text(str, pageWidth - 14, pageHeight - 10, { align: 'right' });
+                
+                // Marca d'água discreta (Opcional)
+                doc.setTextColor(200);
+                doc.text('SIGP Saúde', 14, pageHeight - 10);
+            },
+            
+            // Margens para não cortar conteúdo
+            margin: { top: 40, bottom: 15, left: 14, right: 14 } 
+        });
+
+        // 5. Salvar arquivo
+        const fileName = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.pdf';
+        doc.save(fileName);
+
+    } catch (err) {
         console.error("Erro ao gerar PDF:", err);
-        alert('Erro ao gerar PDF. Tente a opção "Imprimir" > "Salvar como PDF".');
+        alert('Ocorreu um erro ao processar o PDF. Tente reduzir o intervalo de datas.');
+    } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
-    });
+    }
 }
