@@ -4935,20 +4935,21 @@ input:disabled, select:disabled, textarea:disabled {
     background-color: #525659; /* Cor de fundo padrão de visualizadores PDF */
 }
 /* ==========================================================================
-   VISUAL DO RELATÓRIO - ESTILO "DOCUMENTO LIMPO"
+   VISUAL DO RELATÓRIO - AJUSTE PAISAGEM (LANDSCAPE)
+   Substitua o bloco correspondente no final do style.css
    ========================================================================== */
 
 #report-preview-modal {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6); /* Fundo semi-transparente suave */
+    background: rgba(0,0,0,0.6);
     z-index: 30000 !important;
     align-items: center;
     justify-content: center;
     opacity: 0;
     transition: opacity 0.25s ease;
-    backdrop-filter: blur(2px); /* Desfoque leve no fundo */
+    backdrop-filter: blur(2px);
 }
 
 #report-preview-modal.show {
@@ -4956,17 +4957,17 @@ input:disabled, select:disabled, textarea:disabled {
     opacity: 1;
 }
 
-/* A Janela do Relatório */
+/* 1. Janela do Modal (Aumentada para caber a folha larga) */
 #report-preview-modal .report-preview-content {
-    width: 90% !important;
+    width: 95% !important;        /* Ocupa quase toda a largura da tela */
+    max-width: 1350px !important; /* Limite máximo maior */
     height: 90vh !important;
-    max-width: 1100px !important;
-    background: #f3f4f6; /* Cinza bem clarinho (fundo da janela) */
+    background: #e5e7eb;          /* Fundo cinza para destacar o papel */
     border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.25);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.25);
 }
 
 /* Cabeçalho do Modal */
@@ -4986,33 +4987,35 @@ input:disabled, select:disabled, textarea:disabled {
     font-weight: 600;
 }
 
-/* Corpo do Relatório (A "Mesa" onde fica o papel) */
+/* 2. Corpo do Modal (A "Mesa") */
 #report-preview-body {
     flex-grow: 1;
-    overflow-y: auto;
-    /* Importante: Padding maior embaixo para o papel não colar no fim do scroll */
-    padding: 30px 30px 60px 30px; 
-    background-color: #f3f4f6;
+    overflow-y: auto;  /* Rolagem vertical */
+    overflow-x: auto;  /* Rolagem horizontal se a tela for pequena */
+    padding: 40px;     /* Espaço ao redor do papel */
     display: flex;
-    justify-content: center;
-    align-items: flex-start; /* Mudança de center para flex-start para permitir scroll correto */
+    justify-content: center; /* Centraliza o papel */
+    align-items: flex-start;
+    background-color: #f3f4f6;
 }
 
-/* A Folha A4 Simulada */
+/* 3. A Folha de Papel (Agora em Formato A4 Paisagem) */
 .report-paper {
     background: #ffffff;
-    width: 100%;
-    max-width: 210mm;
-    min-height: 297mm;
-    /* Removemos altura fixa para ele crescer o quanto precisar */
-    height: auto; 
-    padding: 40px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    /* Removemos margin-bottom daqui e passamos para o padding do pai */
-    margin-bottom: 0; 
-    position: relative; /* Para garantir z-index correto */
+    
+    /* DIMENSÕES EXATAS A4 PAISAGEM */
+    width: 297mm;      /* Largura Paisagem */
+    min-height: 210mm; /* Altura mínima Paisagem */
+    height: auto;
+    
+    padding: 15mm;     /* Margens internas */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15); /* Sombra realista */
+    margin-bottom: 20px;
+    position: relative;
+    box-sizing: border-box;
 }
-/* Garante que a tabela não "vaze" para fora do papel */
+
+/* Garante que a tabela não "vaze" */
 .report-paper table {
     margin-bottom: 20px;
     width: 100%;
@@ -5027,7 +5030,7 @@ input:disabled, select:disabled, textarea:disabled {
     justify-content: flex-end;
     gap: 10px;
     flex-shrink: 0;
-    z-index: 10; /* Garante que fique sobre o conteúdo se algo vazar */
+    z-index: 10;
 }
 
 /* --- ESTILIZAÇÃO DA TABELA DENTRO DO RELATÓRIO --- */
@@ -5040,12 +5043,22 @@ input:disabled, select:disabled, textarea:disabled {
     font-size: 22px;
 }
 
+/* 4. Tabela Ajustada */
 .report-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
     margin-top: 20px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    table-layout: auto;
+}
+
+/* 5. Cabeçalho Fixo na Rolagem (Efeito solicitado) */
+.report-table thead th {
+    position: sticky;
+    top: -1px; /* Cola no topo do papel ao rolar */
+    z-index: 5;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .report-table th {
@@ -5057,23 +5070,25 @@ input:disabled, select:disabled, textarea:disabled {
     border: 1px solid #003d5c;
     text-transform: uppercase;
     font-size: 11px;
+    white-space: nowrap;
 }
 
 .report-table td {
     padding: 8px;
     border: 1px solid #e5e7eb;
     color: #374151;
+    vertical-align: middle;
 }
 
 .report-table tr:nth-child(even) {
-    background-color: #f9fafb; /* Zebrado bem suave */
+    background-color: #f9fafb;
 }
 
 .report-table tr:hover {
-    background-color: #f0f9ff; /* Destaque azulzinho ao passar mouse */
+    background-color: #f0f9ff;
 }
 
-/* Modo Escuro do Sistema não deve afetar a "Folha de Papel" */
+/* Modo Escuro (Mantém o papel branco para simular impressão) */
 [data-theme="dark"] .report-paper {
     background: #ffffff !important;
     color: #000000 !important;
