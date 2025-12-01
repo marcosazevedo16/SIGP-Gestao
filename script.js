@@ -6688,16 +6688,16 @@ function initOfflineDetection() {
 function updateReportFiltersUI() {
     const type = document.getElementById('filter-report-type').value;
     
-    // Esconde todos primeiro
+    // 1. Esconde TODOS os grupos de filtros primeiro
     document.querySelectorAll('.report-filter-group').forEach(el => el.style.display = 'none');
 
-    // Mostra o específico
+    // 2. Mostra apenas o grupo relevante usando CSS Grid
     if (type === 'municipios') {
         const div = document.getElementById('filters-municipios');
-        if(div) div.style.display = 'grid'; // Usa grid para manter o layout
+        if(div) div.style.display = 'grid'; 
     } 
-    // Para os outros, mostra o genérico (provisório, até fazermos os outros)
     else if (type !== '') {
+        // Se selecionou outro relatório (ex: Treinamentos), mostra o genérico
         const div = document.getElementById('filters-generic');
         if(div) div.style.display = 'grid';
     }
