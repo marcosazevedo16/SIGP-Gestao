@@ -6695,118 +6695,105 @@ function updateReportFilters() {
 // ============================================================================
 // GERAÇÃO DE PREVIEW NA TELA (ESTRUTURA PARA O NOVO CSS)
 // ============================================================================
+// ============================================================================
+// GERAÇÃO DE PREVIEW REAL (PDF NO MODAL)
+// ============================================================================
 function generateReportPreview() {
+    // 1. Verificações Iniciais
+    if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca jsPDF faltando.'); return; }
+    
+    const typeEl = document.getElementById('filter-report-type');
+    const dateFromEl = document.getElementById('filter-report-date-from');
+    const dateToEl = document.getElementById('filter-report-date-to');
+    
+    if (!typeEl || !typeEl.value) { alert('Selecione um tipo de relatório.'); return; }
+
+    const type = typeEl.value;
+    const dateFrom = dateFromEl ? dateFromEl.value : '';
+    const dateTo = dateToEl ? dateToEl.value : '';
+
+    // Feedback visual
+    const btnGerar = event.target; // Captura o botão que foi clicado
+    const textoOriginal = btnGerar ? btnGerar.innerHTML : 'Gerar';
+    if(btnGerar) { btnGerar.innerHTML = '⏳ Gerando...'; btnGerar.disabled = true; }
+
     try {
-        // 1. Coleta filtros
-        const typeEl     = document.getElementById('filter-report-type');
-        const dateFromEl = document.getElementById('filter-report-date-from');
-        const dateToEl   = document.getElementById('filter-report-date-to');
-
-        if (!typeEl) {
-            alert('Erro interno: campo de tipo de relatório não encontrado.');
-            return;
-        }
-
-        const type     = typeEl.value;
-        const dateFrom = dateFromEl ? dateFromEl.value : '';
-        const dateTo   = dateToEl   ? dateToEl.value   : '';
-
-        if (!type) {
-            alert('Por favor, selecione um tipo de relatório.');
-            return;
-        }
-
-        let reportHTML  = '';
+        // 2. Gera o HTML da tabela (usando suas funções existentes)
+        let reportHTML = '';
         let reportTitle = '';
 
-        // 2. Roteador de Conteúdo (Gera as linhas da tabela)
         switch (type) {
-            case 'municipios':
-                reportHTML = genRepMunicipios();
-                reportTitle = 'Carteira de Clientes';
-                break;
-            case 'treinamentos':
-                reportHTML = genRepTreinamentos(dateFrom, dateTo);
-                reportTitle = 'Controle de Treinamentos';
-                break;
-            case 'demandas':
-                reportHTML = genRepDemandas(dateFrom, dateTo);
-                reportTitle = 'Demandas de Suporte';
-                break;
-            case 'apresentacoes':
-                reportHTML = genRepApresentacoes(dateFrom, dateTo);
-                reportTitle = 'Apresentações do Software';
-                break;
-            case 'visitas':
-                reportHTML = genRepVisitas(dateFrom, dateTo);
-                reportTitle = 'Visitas Presenciais';
-                break;
-            case 'producao':
-                reportHTML = genRepProducao(dateFrom, dateTo);
-                reportTitle = 'Controle de Produção';
-                break;
-            case 'integracoes':
-                reportHTML = genRepIntegracoes();
-                reportTitle = 'Status de Integrações e APIs';
-                break;
-            case 'colaboradores':
-                reportHTML = genRepColaboradores();
-                reportTitle = 'Quadro de Colaboradores (RH)';
-                break;
-            case 'usuarios':
-                reportHTML = genRepUsuarios();
-                reportTitle = 'Gestão de Usuários';
-                break;
-            default:
-                alert('Relatório não implementado: ' + type);
-                return;
+            case 'municipios': reportHTML = genRepMunicipios(); reportTitle = 'Carteira de Clientes'; break;
+            case 'treinamentos': reportHTML = genRepTreinamentos(dateFrom, dateTo); reportTitle = 'Controle de Treinamentos'; break;
+            case 'demandas': reportHTML = genRepDemandas(dateFrom, dateTo); reportTitle = 'Demandas de Suporte'; break;
+            case 'apresentacoes': reportHTML = genRepApresentacoes(dateFrom, dateTo); reportTitle = 'Apresentações do Software'; break;
+            case 'visitas': reportHTML = genRepVisitas(dateFrom, dateTo); reportTitle = 'Visitas Presenciais'; break;
+            case 'producao': reportHTML = genRepProducao(dateFrom, dateTo); reportTitle = 'Controle de Produção'; break;
+            case 'integracoes': reportHTML = genRepIntegracoes(); reportTitle = 'Status de Integrações'; break;
+            case 'colaboradores': reportHTML = genRepColaboradores(); reportTitle = 'Quadro de Colaboradores'; break;
+            case 'usuarios': reportHTML = genRepUsuarios(); reportTitle = 'Gestão de Usuários'; break;
         }
 
-        // 3. Prepara o Modal
+        // 3. Cria um elemento temporário invisível para o AutoTable ler
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = reportHTML;
+        // Pega a tabela de dentro do HTML gerado
+        const tableEl = tempDiv.querySelector('table');
+
+        if (!tableEl) { throw new Error("Nenhum dado encontrado para gerar o relatório."); }
+
+        // 4. GERA O PDF EM MEMÓRIA
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4'); // Paisagem
+
+        // Configuração do Cabeçalho e Rodapé
+        const subtitle = `Gerado em: ${new Date().toLocaleString()} | Usuário: ${currentUser ? currentUser.name : 'Sistema'}`;
+        const periodText = (dateFrom || dateTo) ? `Período: ${dateFrom ? formatDate(dateFrom) : 'Início'} até ${dateTo ? formatDate(dateTo) : 'Hoje'}` : '';
+
+        doc.autoTable({
+            html: tableEl,
+            startY: 35,
+            theme: 'grid',
+            styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
+            headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold', halign: 'center' },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
+            
+            // Desenha o cabeçalho em CADA página
+            didDrawPage: function (data) {
+                doc.setFontSize(16); doc.setTextColor(0, 61, 92);
+                doc.text(`SIGP Saúde - ${reportTitle}`, 14, 15);
+                
+                doc.setFontSize(9); doc.setTextColor(100);
+                doc.text(subtitle, 14, 22);
+                if(periodText) doc.text(periodText, 14, 27);
+
+                doc.setDrawColor(0, 61, 92); doc.setLineWidth(0.5);
+                doc.line(14, 30, 283, 30);
+
+                // Rodapé
+                const str = 'Página ' + doc.internal.getNumberOfPages();
+                doc.setFontSize(8);
+                doc.text(str, 283, 200, { align: 'right' });
+            },
+            margin: { top: 35, bottom: 15, left: 14, right: 14 }
+        });
+
+        // 5. GERA O BLOB URL (Visualização)
+        const blob = doc.output('bloburl');
+
+        // 6. Exibe no Iframe dentro do Modal
+        const bodyEl = document.getElementById('report-preview-body');
+        bodyEl.innerHTML = `<iframe id="pdf-preview-frame" src="${blob}#zoom=100" width="100%" height="100%"></iframe>`;
+
+        // Mostra o modal
         const modalEl = document.getElementById('report-preview-modal');
-        const bodyEl  = document.getElementById('report-preview-body');
-
-        if (!modalEl || !bodyEl) return;
-
-        // 4. INJEÇÃO DO CONTEÚDO (AQUI ESTÁ A MÁGICA DO CSS)
-        // Envolvemos tudo na div 'report-paper' para pegar o estilo A4 Paisagem
-        bodyEl.innerHTML = `
-            <div class="report-paper"> 
-                <div class="report-header-print">
-                    <h2 style="margin:0; font-size: 24px; color: #003d5c; border-bottom: 2px solid #003d5c; padding-bottom: 10px; margin-bottom: 20px;">SIGP Saúde - ${reportTitle}</h2>
-                    <div style="display:flex; justify-content:space-between; font-size:12px; color:#555; margin-bottom: 20px;">
-                        <p style="margin:0;"><strong>Gerado em:</strong> ${new Date().toLocaleString()}</p>
-                        <p style="margin:0;"><strong>Usuário:</strong> ${currentUser ? currentUser.name : 'Sistema'}</p>
-                    </div>
-                    ${(dateFrom || dateTo) 
-                        ? `<p style="font-size:12px; margin-bottom:20px;"><strong>Período:</strong> ${dateFrom ? formatDate(dateFrom) : 'Início'} até ${dateTo ? formatDate(dateTo) : 'Hoje'}</p>` 
-                        : ''}
-                </div>
-                
-                ${reportHTML}
-                
-                <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 10px; text-align: center; font-size: 10px; color: #999;">
-                    Fim do Relatório
-                </div>
-            </div> 
-        `;
-
-        // 5. Configura os Botões do Rodapé (Para garantir que chamam as funções certas)
-        const footerEl = modalEl.querySelector('.modal-actions');
-        if (footerEl) {
-            footerEl.innerHTML = `
-                <button class="btn btn--secondary" onclick="closeReportPreview()">Fechar</button>
-                <button class="btn btn--outline" onclick="savePDFFromPreview()">📥 Baixar PDF</button>
-                <button class="btn btn--primary" onclick="printReport()">🖨️ Imprimir</button>
-            `;
-        }
-
-        // 6. Exibe o Modal
         modalEl.classList.add('show');
 
-    } catch (erro) {
-        console.error('Erro relatório:', erro);
-        alert('Erro ao gerar visualização.');
+    } catch (err) {
+        console.error(err);
+        alert('Erro: ' + err.message);
+    } finally {
+        if(btnGerar) { btnGerar.innerHTML = textoOriginal; btnGerar.disabled = false; }
     }
 }
 
