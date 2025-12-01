@@ -699,9 +699,10 @@
     <div class="report-generator-container">
         <div class="report-config-box">
     <h3>Filtros de Relatório</h3>
-    <div class="filters-grid">
+    
+    <div style="display: flex; flex-direction: column; gap: 20px;">
         
-        <div class="form-group col-12">
+        <div class="form-group" style="margin-bottom:0;">
             <label class="form-label">Selecione o Relatório</label>
             <select class="form-control" id="filter-report-type" onchange="updateReportFiltersUI()">
                 <option value="">Selecione...</option>
@@ -717,7 +718,7 @@
             </select>
         </div>
 
-        <div id="filters-municipios" class="report-filter-group" style="display:none; width:100%; grid-column: span 3; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+        <div id="filters-municipios" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
             
             <div class="form-group">
                 <label class="form-label">Considerar Data de:</label>
@@ -737,7 +738,7 @@
                 <input type="date" class="form-control" id="rep-mun-end">
             </div>
 
-            <div class="form-group" style="grid-column: span 3;">
+            <div class="form-group">
                 <label class="form-label">Filtrar por Status</label>
                 <select class="form-control" id="rep-mun-status">
                     <option value="">Todos</option>
@@ -749,7 +750,7 @@
             </div>
         </div>
 
-        <div id="filters-generic" class="report-filter-group" style="display:none; width:100%; grid-column: span 3; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+        <div id="filters-generic" class="report-filter-group" style="display:none; grid-template-columns: 1fr 1fr; gap: 16px;">
             <div class="form-group">
                 <label class="form-label">Data Inicial (Opcional)</label>
                 <input type="date" class="form-control" id="filter-report-date-from">
@@ -760,11 +761,12 @@
             </div>
         </div>
 
-        <div class="form-group" style="grid-column: span 3; display:flex; align-items:flex-end; margin-top: 10px;">
+        <div class="form-group" style="margin-top: 10px; margin-bottom: 0;">
             <button class="btn btn--primary btn--full-width" onclick="generateReportPreview()">
                 📄 Gerar Visualização
             </button>
         </div>
+
     </div>
 </div>
         
