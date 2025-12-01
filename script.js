@@ -5320,7 +5320,7 @@ function startLocalTimer() {
             startLocalTimer();
         } else {
             // Realmente expirou em todas as abas
-            alert('⏱️ Sua sessão expirou por inatividade global.\nPor segurança, você foi desconectado.');
+            alert('⏱️ Sua sessão expirou por tempo de inatividade.\nPor segurança, você foi desconectado.');
             localStorage.removeItem('currentUser');
             location.reload();
         }
