@@ -4615,6 +4615,33 @@ function populateFilterSelects() {
         }
     });
 
+    // --- FILTROS DO RELATÓRIO DE TREINAMENTOS ---
+    
+    // 1. Município
+    const repTrainMun = document.getElementById('rep-train-mun');
+    if (repTrainMun) {
+        const cur = repTrainMun.value;
+        repTrainMun.innerHTML = '<option value="">Todos</option>' + sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+        if(cur) repTrainMun.value = cur;
+    }
+
+    // 2. Colaborador
+    const repTrainColab = document.getElementById('rep-train-colab');
+    if (repTrainColab) {
+        const cur = repTrainColab.value;
+        repTrainColab.innerHTML = '<option value="">Todos</option>' + sortedOrient.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
+        if(cur) repTrainColab.value = cur;
+    }
+
+    // 3. Cargo
+    const repTrainCargo = document.getElementById('rep-train-cargo');
+    if (repTrainCargo) {
+        const cur = repTrainCargo.value;
+        // 'sortedCargos' deve estar declarado no início da função populateFilterSelects
+        repTrainCargo.innerHTML = '<option value="">Todos</option>' + sortedCargos.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        if(cur) repTrainCargo.value = cur;
+    }
+
     // 2. FILTRO DE API
     const apiFilter = document.getElementById('filter-integration-api');
     if (apiFilter) {
@@ -6688,16 +6715,21 @@ function initOfflineDetection() {
 function updateReportFiltersUI() {
     const type = document.getElementById('filter-report-type').value;
     
-    // 1. Esconde TODOS os grupos de filtros primeiro
+    // 1. Esconde TODOS os grupos primeiro
     document.querySelectorAll('.report-filter-group').forEach(el => el.style.display = 'none');
 
-    // 2. Mostra apenas o grupo relevante usando CSS Grid
+    // 2. Mostra o específico conforme a seleção
     if (type === 'municipios') {
         const div = document.getElementById('filters-municipios');
         if(div) div.style.display = 'grid'; 
     } 
+    else if (type === 'treinamentos') {
+        const div = document.getElementById('filters-treinamentos');
+        if(div) div.style.display = 'grid'; 
+    }
+    // Adicione outros 'else if' aqui no futuro...
     else if (type !== '') {
-        // Se selecionou outro relatório (ex: Treinamentos), mostra o genérico
+        // Fallback para os que ainda não tem filtro específico
         const div = document.getElementById('filters-generic');
         if(div) div.style.display = 'grid';
     }
@@ -6744,6 +6776,7 @@ function exportReportToExcel() {
             break;
         case 'treinamentos':
             exportTasksCSV(); // Reutiliza a função existente da aba Tarefas
+            exportReportTreinamentosExcel();
             break;
         case 'demandas':
             exportDemandsCSV();
@@ -7034,16 +7067,77 @@ function genRepMunicipios() {
     </table>`;
 }
 
-function genRepTreinamentos(d1, d2) {
-    let data = tasks;
-    if(d1) data = data.filter(t => t.dateRequested >= d1);
-    if(d2) data = data.filter(t => t.dateRequested <= d2);
-    if (!data.length) return '<p>Nenhum registro no período.</p>';
-    
-    const rows = data.map(t => 
-        `<tr><td>${t.municipality}</td><td>${formatDate(t.dateRequested)}</td><td>${t.performedBy}</td><td>${t.status}</td></tr>`
-    ).join('');
-    return `<table class="report-table"><thead><th>Município</th><th>Data</th><th>Responsável</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
+function genRepTreinamentos() {
+    // 1. Captura valores dos filtros específicos
+    const dateType = document.getElementById('rep-train-date-type').value; // 'solicitacao' ou 'realizacao'
+    const dateStart = document.getElementById('rep-train-start').value;
+    const dateEnd = document.getElementById('rep-train-end').value;
+    const statusFilter = document.getElementById('rep-train-status').value;
+    const munFilter = document.getElementById('rep-train-mun').value;
+    const colabFilter = document.getElementById('rep-train-colab').value;
+    const cargoFilter = document.getElementById('rep-train-cargo').value;
+    const profFilter = document.getElementById('rep-train-prof').value.toLowerCase();
+
+    // 2. Filtragem
+    let data = tasks.filter(t => {
+        // Filtros de seleção exata
+        if (statusFilter && t.status !== statusFilter) return false;
+        if (munFilter && t.municipality !== munFilter) return false;
+        if (colabFilter && t.performedBy !== colabFilter) return false;
+        if (cargoFilter && t.trainedPosition !== cargoFilter) return false;
+
+        // Filtro de texto (Nome do Profissional)
+        if (profFilter && (!t.trainedName || !t.trainedName.toLowerCase().includes(profFilter))) return false;
+
+        // Filtro de Data (Dinâmico: Solicitação ou Realização)
+        let dateToCheck = (dateType === 'realizacao') ? t.datePerformed : t.dateRequested;
+        
+        // Se filtro de data estiver ativo, ignora registros sem data
+        if ((dateStart || dateEnd) && !dateToCheck) return false;
+        if (dateStart && dateToCheck < dateStart) return false;
+        if (dateEnd && dateToCheck > dateEnd) return false;
+
+        return true;
+    });
+
+    // Ordenação por data de solicitação
+    data.sort((a,b) => new Date(a.dateRequested) - new Date(b.dateRequested));
+
+    if (!data.length) return '<p style="text-align:center; padding:20px;">Nenhum treinamento encontrado com esses filtros.</p>';
+
+    // 3. Gerar HTML da tabela
+    const rows = data.map(t => `
+        <tr>
+            <td>${t.municipality}</td>
+            <td style="text-align:center;">${formatDate(t.dateRequested)}</td>
+            <td style="text-align:center;">${formatDate(t.datePerformed)}</td>
+            <td>${t.performedBy}</td>
+            <td>${t.trainedName || '-'}</td>
+            <td>${t.trainedPosition || '-'}</td>
+            <td>${t.status}</td>
+        </tr>
+    `).join('');
+
+    return `
+    <div style="margin-bottom:10px; font-size:11px; color:#666;">
+        <strong>Filtros Aplicados:</strong> 
+        Ref: ${dateType === 'realizacao' ? 'Realização' : 'Solicitação'} |
+        Status: ${statusFilter || 'Todos'} | 
+        Município: ${munFilter || 'Todos'} |
+        Colaborador: ${colabFilter || 'Todos'}
+    </div>
+    <table class="report-table">
+        <thead>
+            <th>Município</th>
+            <th style="text-align:center;">Data Solicit.</th>
+            <th style="text-align:center;">Data Realiz.</th>
+            <th>Colaborador</th>
+            <th>Profissional</th>
+            <th>Cargo</th>
+            <th>Status</th>
+        </thead>
+        <tbody>${rows}</tbody>
+    </table>`;
 }
 
 function genRepDemandas(d1, d2) {
@@ -7227,4 +7321,48 @@ function savePDFFromPreview() {
         btn.innerHTML = originalText;
         btn.disabled = false;
     }
+}
+
+function exportReportTreinamentosExcel() {
+    // 1. Recaptura os mesmos filtros
+    const dateType = document.getElementById('rep-train-date-type').value;
+    const dateStart = document.getElementById('rep-train-start').value;
+    const dateEnd = document.getElementById('rep-train-end').value;
+    const statusFilter = document.getElementById('rep-train-status').value;
+    const munFilter = document.getElementById('rep-train-mun').value;
+    const colabFilter = document.getElementById('rep-train-colab').value;
+    const cargoFilter = document.getElementById('rep-train-cargo').value;
+    const profFilter = document.getElementById('rep-train-prof').value.toLowerCase();
+
+    // 2. Filtra os dados (Mesma lógica da visualização)
+    let data = tasks.filter(t => {
+        if (statusFilter && t.status !== statusFilter) return false;
+        if (munFilter && t.municipality !== munFilter) return false;
+        if (colabFilter && t.performedBy !== colabFilter) return false;
+        if (cargoFilter && t.trainedPosition !== cargoFilter) return false;
+        if (profFilter && (!t.trainedName || !t.trainedName.toLowerCase().includes(profFilter))) return false;
+        
+        let dateToCheck = (dateType === 'realizacao') ? t.datePerformed : t.dateRequested;
+        if ((dateStart || dateEnd) && !dateToCheck) return false;
+        if (dateStart && dateToCheck < dateStart) return false;
+        if (dateEnd && dateToCheck > dateEnd) return false;
+        return true;
+    });
+
+    if (data.length === 0) { alert('Nada para exportar.'); return; }
+
+    // 3. Gera o Excel
+    const headers = ['Município', 'Data Solicitação', 'Data Realização', 'Colaborador', 'Profissional Treinado', 'Cargo', 'Status', 'Obs'];
+    const rows = data.map(t => [
+        t.municipality,
+        formatDate(t.dateRequested),
+        formatDate(t.datePerformed),
+        t.performedBy,
+        t.trainedName,
+        t.trainedPosition,
+        t.status,
+        t.observations
+    ]);
+
+    downloadXLSX("Relatorio_Treinamentos_Filtrado", headers, rows);
 }
