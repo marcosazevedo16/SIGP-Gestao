@@ -6681,20 +6681,27 @@ function initOfflineDetection() {
 }
 
 // ============================================================================
-// MÓDULO DE RELATÓRIOS DE GESTÃO (FINAL - VERSÃO HTML)
+// LÓGICA DE FILTROS DINÂMICOS DE RELATÓRIO
 // ============================================================================
 
-// 1. Atualiza os filtros na tela quando muda o tipo
-function updateReportFilters() {
-    const typeEl = document.getElementById('filter-report-type');
-    if (!typeEl) return;
-    const type = typeEl.value;
-    // Por enquanto não precisamos esconder/mostrar nada por tipo,
-    // mas essa função fica aqui pra evoluções futuras.
+// 1. Função que troca os campos na tela (Chamada no onchange do HTML)
+function updateReportFiltersUI() {
+    const type = document.getElementById('filter-report-type').value;
+    
+    // Esconde todos primeiro
+    document.querySelectorAll('.report-filter-group').forEach(el => el.style.display = 'none');
+
+    // Mostra o específico
+    if (type === 'municipios') {
+        const div = document.getElementById('filters-municipios');
+        if(div) div.style.display = 'grid'; // Usa grid para manter o layout
+    } 
+    // Para os outros, mostra o genérico (provisório, até fazermos os outros)
+    else if (type !== '') {
+        const div = document.getElementById('filters-generic');
+        if(div) div.style.display = 'grid';
+    }
 }
-// ============================================================================
-// GERAÇÃO DE PREVIEW NA TELA (ESTRUTURA PARA O NOVO CSS)
-// ============================================================================
 // ============================================================================
 // GERAÇÃO DE PREVIEW REAL (PDF NO MODAL)
 // ============================================================================
@@ -6843,12 +6850,73 @@ function printReport() {
 
 // --- GERADORES DE TABELAS (Helpers) ---
 
+// 2. Atualizar a função genRepMunicipios para usar os novos filtros
 function genRepMunicipios() {
-    if (!municipalities.length) return '<p>Sem dados.</p>';
-    const rows = municipalities.sort((a,b)=>a.name.localeCompare(b.name)).map(m => 
-        `<tr><td>${m.name}</td><td>${m.uf||''}</td><td>${m.status}</td><td>${m.manager}</td><td>${formatDate(m.implantationDate)}</td></tr>`
-    ).join('');
-    return `<table class="report-table"><thead><th>Município</th><th>UF</th><th>Status</th><th>Gestor</th><th>Implantação</th></thead><tbody>${rows}</tbody></table>`;
+    // Captura os valores dos filtros ESPECÍFICOS
+    const dateType = document.getElementById('rep-mun-date-type').value; // 'implantacao' ou 'visita'
+    const dateStart = document.getElementById('rep-mun-start').value;
+    const dateEnd = document.getElementById('rep-mun-end').value;
+    const statusFilter = document.getElementById('rep-mun-status').value;
+
+    // Filtra a lista global 'municipalities'
+    let data = municipalities.filter(m => {
+        // 1. Filtro de Status
+        if (statusFilter && m.status !== statusFilter) return false;
+
+        // 2. Filtro de Data
+        // Decide qual campo de data olhar
+        let dateToCheck = (dateType === 'visita') ? m.lastVisit : m.implantationDate;
+
+        // Se não tiver data cadastrada, e o filtro de data estiver ativo, ignora ou inclui?
+        // Regra: Se tem filtro de data, e o registro não tem data, ele sai.
+        if ((dateStart || dateEnd) && !dateToCheck) return false;
+
+        if (dateStart && dateToCheck < dateStart) return false;
+        if (dateEnd && dateToCheck > dateToCheck) return false; // Bug lógico corrigido abaixo
+        if (dateEnd && dateToCheck > dateEnd) return false;
+
+        return true;
+    });
+
+    // Ordenação
+    data.sort((a,b) => a.name.localeCompare(b.name));
+
+    if (!data.length) return '<p style="text-align:center; padding:20px;">Nenhum cliente encontrado com esses filtros.</p>';
+
+    // Gera o HTML da tabela
+    const rows = data.map(m => {
+        // Formata as datas para exibição
+        const dtImp = m.implantationDate ? formatDate(m.implantationDate) : '-';
+        const dtVis = m.lastVisit ? formatDate(m.lastVisit) : '-';
+        
+        return `<tr>
+            <td>${m.name}</td>
+            <td>${m.uf || '-'}</td>
+            <td>${m.status}</td>
+            <td>${m.manager || '-'}</td>
+            <td style="text-align:center;">${dtImp}</td>
+            <td style="text-align:center;">${dtVis}</td>
+        </tr>`;
+    }).join('');
+
+    return `
+    <div style="margin-bottom:10px; font-size:11px; color:#666;">
+        <strong>Filtros aplicados:</strong> 
+        Status: ${statusFilter || 'Todos'} | 
+        Data Ref.: ${dateType === 'visita' ? 'Última Visita' : 'Implantação'} 
+        (${dateStart ? formatDate(dateStart) : 'Início'} até ${dateEnd ? formatDate(dateEnd) : 'Hoje'})
+    </div>
+    <table class="report-table">
+        <thead>
+            <th>Município</th>
+            <th>UF</th>
+            <th>Status</th>
+            <th>Gestor</th>
+            <th style="text-align:center;">Data Implantação</th>
+            <th style="text-align:center;">Última Visita</th>
+        </thead>
+        <tbody>${rows}</tbody>
+    </table>`;
 }
 
 function genRepTreinamentos(d1, d2) {
