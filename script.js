@@ -6692,7 +6692,6 @@ function updateReportFilters() {
     // Por enquanto não precisamos esconder/mostrar nada por tipo,
     // mas essa função fica aqui pra evoluções futuras.
 }
-
 // 2. Gera a Visualização na Tela
 function generateReportPreview() {
     try {
@@ -6775,25 +6774,39 @@ function generateReportPreview() {
         // Injeta título e conteúdo
         titleEl.textContent = reportTitle;
 
+        // Adiciona a div report-paper para o estilo de folha A4
         bodyEl.innerHTML = `
-    <div class="report-paper"> <div class="report-header-print" style="text-align:center; margin-bottom:20px;">
-            <h2 style="margin:0;">SIGP Saúde - ${reportTitle}</h2>
-            <p style="font-size:12px; color:#666; margin-top:5px;">
-                Gerado em: ${new Date().toLocaleString()} | Usuário: ${currentUser ? currentUser.name : 'Sistema'}
-            </p>
-            ${(dateFrom || dateTo) 
-                ? `<p style="font-size:12px;">Período: ${dateFrom ? formatDate(dateFrom) : 'Início'} até ${dateTo ? formatDate(dateTo) : 'Hoje'}</p>` 
-                : ''}
-        </div>
-        ${reportHTML}
-    </div> `;
+            <div class="report-paper"> 
+                <div class="report-header-print" style="text-align:center; margin-bottom:20px;">
+                    <h2 style="margin:0;">SIGP Saúde - ${reportTitle}</h2>
+                    <p style="font-size:12px; color:#666; margin-top:5px;">
+                        Gerado em: ${new Date().toLocaleString()} | Usuário: ${currentUser ? currentUser.name : 'Sistema'}
+                    </p>
+                    ${(dateFrom || dateTo) 
+                        ? `<p style="font-size:12px;">Período: ${dateFrom ? formatDate(dateFrom) : 'Início'} até ${dateTo ? formatDate(dateTo) : 'Hoje'}</p>` 
+                        : ''}
+                </div>
+                ${reportHTML}
+            </div> 
+        `;
 
-        // Mostra o modal (força bruta)
+        // --- NOVO: INJEÇÃO DOS BOTÕES (SUBSTITUI O RODAPÉ PADRÃO) ---
+        const footerEl = modalEl.querySelector('.modal-actions');
+        if (footerEl) {
+            footerEl.innerHTML = `
+                <button class="btn btn--secondary" onclick="closeReportPreview()">Fechar</button>
+                <button class="btn btn--outline" onclick="savePDFFromPreview()">📥 Baixar PDF</button>
+                <button class="btn btn--primary" onclick="printReport()">🖨️ Imprimir</button>
+            `;
+        }
+        // -----------------------------------------------------------
+
+        // Mostra o modal (força bruta para garantir visibilidade)
         modalEl.classList.add('show');
-        modalEl.style.display   = 'flex';
-        modalEl.style.opacity   = '1';
+        modalEl.style.display    = 'flex';
+        modalEl.style.opacity    = '1';
         modalEl.style.visibility = 'visible';
-        modalEl.style.zIndex    = '99999';
+        modalEl.style.zIndex     = '99999';
 
         console.log('Preview de relatório gerado:', { type, dateFrom, dateTo, reportTitle });
 
@@ -6930,3 +6943,57 @@ document.addEventListener("DOMContentLoaded", function() {
         console.log("🔧 FIX: Modal de relatório movido para a raiz do documento.");
     }
 });
+// ============================================================================
+// FUNÇÃO NOVA: BAIXAR PDF (FOTO DO RELATÓRIO)
+// ============================================================================
+function savePDFFromPreview() {
+    const element = document.querySelector('.report-paper');
+    
+    // Feedback visual no botão
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Gerando...';
+    btn.disabled = true;
+
+    // Usa html2canvas para tirar "print" da folha
+    html2canvas(element, {
+        scale: 2, // Aumenta qualidade
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff' // Garante fundo branco
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Cria PDF Paisagem (Landscape)
+        const pdf = new window.jspdf.jsPDF('l', 'mm', 'a4'); 
+        
+        const imgWidth = 297; // Largura A4 landscape
+        const pageHeight = 210; // Altura A4 landscape
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        // Adiciona a imagem ao PDF
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        // Se o relatório for longo, cria novas páginas
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+
+        pdf.save('Relatorio_SIGP.pdf');
+
+        // Restaura botão
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }).catch(err => {
+        console.error("Erro ao gerar PDF:", err);
+        alert('Erro ao gerar PDF. Tente a opção "Imprimir" > "Salvar como PDF".');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
