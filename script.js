@@ -6702,6 +6702,121 @@ function updateReportFiltersUI() {
         if(div) div.style.display = 'grid';
     }
 }
+
+// ============================================================================
+// NOVAS AÇÕES DE RELATÓRIO: LIMPAR E EXCEL
+// ============================================================================
+
+// 1. Limpar Filtros (Reseta todos os inputs da tela de relatórios)
+function clearReportFilters() {
+    // Mantém o tipo de relatório selecionado, limpa apenas os filtros
+    const type = document.getElementById('filter-report-type').value;
+    
+    // Seleciona todos os inputs e selects DENTRO da caixa de filtros
+    const inputs = document.querySelectorAll('.report-filter-group input, .report-filter-group select');
+    
+    inputs.forEach(input => {
+        input.value = ''; // Reseta o valor
+    });
+
+    showToast('Filtros de relatório limpos.');
+}
+
+// 2. Exportar Excel (Direto, sem abrir visualização)
+function exportReportToExcel() {
+    const type = document.getElementById('filter-report-type').value;
+    
+    if (!type) {
+        alert('Por favor, selecione um tipo de relatório para exportar.');
+        return;
+    }
+
+    // A lógica é similar à visualização: verifica qual tipo e chama a função de exportação correspondente
+    // Nota: Como já criamos funções específicas de exportação nas outras abas (ex: exportMunicipalitiesCSV),
+    // podemos reutilizá-las ou criar novas específicas para este painel se os filtros forem diferentes.
+    
+    // Para simplificar e usar os filtros novos que criamos aqui, o ideal é criar um switch
+    // que chama a função de exportação passando os dados filtrados.
+    
+    switch (type) {
+        case 'municipios':
+            exportReportMunicipiosExcel();
+            break;
+        case 'treinamentos':
+            exportTasksCSV(); // Reutiliza a função existente da aba Tarefas
+            break;
+        case 'demandas':
+            exportDemandsCSV();
+            break;
+        case 'visitas':
+            exportVisitsCSV();
+            break;
+        case 'producao':
+            exportProductionsCSV();
+            break;
+        case 'apresentacoes':
+            exportPresentationsCSV();
+            break;
+        case 'integracoes':
+            exportIntegrationsExcel();
+            break;
+        case 'colaboradores':
+            exportColabInfoExcel();
+            break;
+        case 'usuarios':
+            // Criação rápida se não existir
+            const headers = ['Login', 'Nome', 'Permissão', 'Status'];
+            const rows = users.map(u => [u.login, u.name, u.permission, u.status]);
+            downloadXLSX("Relatorio_Usuarios", headers, rows);
+            break;
+        default:
+            alert('Exportação Excel não configurada para este tipo ainda.');
+    }
+}
+
+// Função específica para Exportar MUNICÍPIOS usando os FILTROS NOVOS da tela de relatórios
+function exportReportMunicipiosExcel() {
+    // 1. Captura os filtros DA TELA DE RELATÓRIOS (não da aba principal)
+    const dateType = document.getElementById('rep-mun-date-type').value;
+    const dateStart = document.getElementById('rep-mun-start').value;
+    const dateEnd = document.getElementById('rep-mun-end').value;
+    const statusFilter = document.getElementById('rep-mun-status').value;
+
+    // 2. Filtra os dados
+    let data = municipalities.filter(m => {
+        if (statusFilter && m.status !== statusFilter) return false;
+        
+        let dateToCheck = (dateType === 'visita') ? m.lastVisit : m.implantationDate;
+        
+        if ((dateStart || dateEnd) && !dateToCheck) return false;
+        if (dateStart && dateToCheck < dateStart) return false;
+        if (dateEnd && dateToCheck > dateEnd) return false;
+
+        return true;
+    });
+
+    data.sort((a,b) => a.name.localeCompare(b.name));
+
+    if (data.length === 0) {
+        alert('Nenhum dado encontrado para exportar com esses filtros.');
+        return;
+    }
+
+    // 3. Gera o Excel
+    const headers = ['Município', 'UF', 'Status', 'Gestor', 'Contato', 'Implantação', 'Última Visita'];
+    const rows = data.map(m => [
+        m.name,
+        m.uf || '',
+        m.status,
+        m.manager,
+        m.contact,
+        formatDate(m.implantationDate),
+        formatDate(m.lastVisit)
+    ]);
+
+    downloadXLSX("Relatorio_Carteira_Clientes_Filtrado", headers, rows);
+}
+
 // ============================================================================
 // GERAÇÃO DE PREVIEW REAL (PDF NO MODAL)
 // ============================================================================
