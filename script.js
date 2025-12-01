@@ -6692,20 +6692,22 @@ function updateReportFilters() {
     // Por enquanto não precisamos esconder/mostrar nada por tipo,
     // mas essa função fica aqui pra evoluções futuras.
 }
-// 2. Gera a Visualização na Tela
+// ============================================================================
+// GERAÇÃO DE PREVIEW NA TELA (ESTRUTURA PARA O NOVO CSS)
+// ============================================================================
 function generateReportPreview() {
     try {
-        // Coleta filtros
+        // 1. Coleta filtros
         const typeEl     = document.getElementById('filter-report-type');
         const dateFromEl = document.getElementById('filter-report-date-from');
         const dateToEl   = document.getElementById('filter-report-date-to');
 
         if (!typeEl) {
-            alert('Erro interno: campo de tipo de relatório não encontrado (filter-report-type).');
+            alert('Erro interno: campo de tipo de relatório não encontrado.');
             return;
         }
 
-        const type    = typeEl.value;
+        const type     = typeEl.value;
         const dateFrom = dateFromEl ? dateFromEl.value : '';
         const dateTo   = dateToEl   ? dateToEl.value   : '';
 
@@ -6717,7 +6719,7 @@ function generateReportPreview() {
         let reportHTML  = '';
         let reportTitle = '';
 
-        // Roteador
+        // 2. Roteador de Conteúdo (Gera as linhas da tabela)
         switch (type) {
             case 'municipios':
                 reportHTML = genRepMunicipios();
@@ -6756,41 +6758,40 @@ function generateReportPreview() {
                 reportTitle = 'Gestão de Usuários';
                 break;
             default:
-                alert('Relatório não implementado para o tipo: ' + type);
+                alert('Relatório não implementado: ' + type);
                 return;
         }
 
-        // Elementos do modal
+        // 3. Prepara o Modal
         const modalEl = document.getElementById('report-preview-modal');
-        const titleEl = document.getElementById('report-title');
         const bodyEl  = document.getElementById('report-preview-body');
 
-        if (!modalEl || !titleEl || !bodyEl) {
-            console.error('Elementos do modal não encontrados:', { modalEl, titleEl, bodyEl });
-            alert('Erro interno: componentes do preview de relatório não foram encontrados no HTML.');
-            return;
-        }
+        if (!modalEl || !bodyEl) return;
 
-        // Injeta título e conteúdo
-        titleEl.textContent = reportTitle;
-
-        // Adiciona a div report-paper para o estilo de folha A4
+        // 4. INJEÇÃO DO CONTEÚDO (AQUI ESTÁ A MÁGICA DO CSS)
+        // Envolvemos tudo na div 'report-paper' para pegar o estilo A4 Paisagem
         bodyEl.innerHTML = `
             <div class="report-paper"> 
-                <div class="report-header-print" style="text-align:center; margin-bottom:20px;">
-                    <h2 style="margin:0;">SIGP Saúde - ${reportTitle}</h2>
-                    <p style="font-size:12px; color:#666; margin-top:5px;">
-                        Gerado em: ${new Date().toLocaleString()} | Usuário: ${currentUser ? currentUser.name : 'Sistema'}
-                    </p>
+                <div class="report-header-print">
+                    <h2 style="margin:0; font-size: 24px; color: #003d5c; border-bottom: 2px solid #003d5c; padding-bottom: 10px; margin-bottom: 20px;">SIGP Saúde - ${reportTitle}</h2>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; color:#555; margin-bottom: 20px;">
+                        <p style="margin:0;"><strong>Gerado em:</strong> ${new Date().toLocaleString()}</p>
+                        <p style="margin:0;"><strong>Usuário:</strong> ${currentUser ? currentUser.name : 'Sistema'}</p>
+                    </div>
                     ${(dateFrom || dateTo) 
-                        ? `<p style="font-size:12px;">Período: ${dateFrom ? formatDate(dateFrom) : 'Início'} até ${dateTo ? formatDate(dateTo) : 'Hoje'}</p>` 
+                        ? `<p style="font-size:12px; margin-bottom:20px;"><strong>Período:</strong> ${dateFrom ? formatDate(dateFrom) : 'Início'} até ${dateTo ? formatDate(dateTo) : 'Hoje'}</p>` 
                         : ''}
                 </div>
+                
                 ${reportHTML}
+                
+                <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 10px; text-align: center; font-size: 10px; color: #999;">
+                    Fim do Relatório
+                </div>
             </div> 
         `;
 
-        // --- NOVO: INJEÇÃO DOS BOTÕES (SUBSTITUI O RODAPÉ PADRÃO) ---
+        // 5. Configura os Botões do Rodapé (Para garantir que chamam as funções certas)
         const footerEl = modalEl.querySelector('.modal-actions');
         if (footerEl) {
             footerEl.innerHTML = `
@@ -6799,20 +6800,13 @@ function generateReportPreview() {
                 <button class="btn btn--primary" onclick="printReport()">🖨️ Imprimir</button>
             `;
         }
-        // -----------------------------------------------------------
 
-        // Mostra o modal (força bruta para garantir visibilidade)
+        // 6. Exibe o Modal
         modalEl.classList.add('show');
-        modalEl.style.display    = 'flex';
-        modalEl.style.opacity    = '1';
-        modalEl.style.visibility = 'visible';
-        modalEl.style.zIndex     = '99999';
-
-        console.log('Preview de relatório gerado:', { type, dateFrom, dateTo, reportTitle });
 
     } catch (erro) {
         console.error('Erro relatório:', erro);
-        alert('Erro ao gerar relatório. Veja o console.');
+        alert('Erro ao gerar visualização.');
     }
 }
 
