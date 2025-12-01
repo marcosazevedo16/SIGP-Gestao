@@ -6930,18 +6930,19 @@ function genRepUsuarios() {
     return `<table class="report-table"><thead><th>Login</th><th>Nome</th><th>Nível</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
 }
 // ============================================================================
-// CORREÇÃO DE EMERGÊNCIA: MOVER MODAL PARA A RAIZ
+// CORREÇÃO DE EMERGÊNCIA: MOVER MODAIS PARA A RAIZ
 // ============================================================================
 document.addEventListener("DOMContentLoaded", function() {
-    // Localiza o modal de relatório
-    const reportModal = document.getElementById('report-preview-modal');
+    // Lista de modais que precisam funcionar fora da estrutura principal
+    const modaisCriticos = ['report-preview-modal', 'forgot-password-modal'];
     
-    // Se ele existir, move ele para ser filho direto do BODY
-    // Isso resolve qualquer problema de </div> faltando no HTML anterior
-    if (reportModal) {
-        document.body.appendChild(reportModal);
-        console.log("🔧 FIX: Modal de relatório movido para a raiz do documento.");
-    }
+    modaisCriticos.forEach(id => {
+        const modal = document.getElementById(id);
+        if (modal) {
+            document.body.appendChild(modal);
+            console.log(`🔧 FIX: Modal '${id}' movido para a raiz do documento.`);
+        }
+    });
 });
 // ============================================================================
 // FUNÇÃO NOVA: BAIXAR PDF (FOTO DO RELATÓRIO)
