@@ -717,7 +717,6 @@
         </div>
 
         <div id="filters-municipios" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-            
             <div class="form-group">
                 <label class="form-label">Considerar Data de:</label>
                 <select class="form-control" id="rep-mun-date-type">
@@ -725,17 +724,14 @@
                     <option value="visita">Data da Última Visita</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label class="form-label">Data Inicial</label>
                 <input type="date" class="form-control" id="rep-mun-start">
             </div>
-
             <div class="form-group">
                 <label class="form-label">Data Final</label>
                 <input type="date" class="form-control" id="rep-mun-end">
             </div>
-
             <div class="form-group">
                 <label class="form-label">Filtrar por Status</label>
                 <select class="form-control" id="rep-mun-status">
@@ -748,18 +744,7 @@
             </div>
         </div>
 
-        <div id="filters-generic" class="report-filter-group" style="display:none; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div class="form-group">
-                <label class="form-label">Data Inicial (Opcional)</label>
-                <input type="date" class="form-control" id="filter-report-date-from">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Data Final (Opcional)</label>
-                <input type="date" class="form-control" id="filter-report-date-to">
-            </div>
-        </div>
-    <div id="filters-treinamentos" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-            
+        <div id="filters-treinamentos" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
             <div class="form-group">
                 <label class="form-label">Considerar Data de:</label>
                 <select class="form-control" id="rep-train-date-type">
@@ -767,17 +752,14 @@
                     <option value="realizacao">Data da Realização</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label class="form-label">Data Inicial</label>
                 <input type="date" class="form-control" id="rep-train-start">
             </div>
-
             <div class="form-group">
                 <label class="form-label">Data Final</label>
                 <input type="date" class="form-control" id="rep-train-end">
             </div>
-
             <div class="form-group">
                 <label class="form-label">Status</label>
                 <select class="form-control" id="rep-train-status">
@@ -787,52 +769,25 @@
                     <option value="Cancelado">Cancelado</option>
                 </select>
             </div>
-
-            <div class="form-group">
-                <label class="form-label">Município</label>
-                <select class="form-control" id="rep-train-mun">
-                    <option value="">Todos</option>
-                    </select>
-            </div>
-
             <div class="form-group">
                 <label class="form-label">Colaborador (Instrutor)</label>
-                <select class="form-control" id="rep-train-colab">
-                    <option value="">Todos</option>
-                    </select>
+                <select class="form-control" id="rep-train-colab"><option value="">Todos</option></select>
             </div>
-
             <div class="form-group">
                 <label class="form-label">Cargo/Função</label>
-                <select class="form-control" id="rep-train-cargo">
-                    <option value="">Todos</option>
-                    </select>
+                <select class="form-control" id="rep-train-cargo"><option value="">Todos</option></select>
             </div>
-
+            <div class="form-group">
+                <label class="form-label">Município</label>
+                <select class="form-control" id="rep-train-mun"><option value="">Todos</option></select>
+            </div>
             <div class="form-group">
                 <label class="form-label">Profissional (Treinado)</label>
-                <input type="text" class="form-control" id="rep-train-prof" placeholder="Nome do profissional...">
+                <input type="text" class="form-control" id="rep-train-prof" placeholder="Nome...">
             </div>
-        </div> 
-        
-      <div class="form-group" style="margin-top: 20px; margin-bottom: 0; display: flex; gap: 10px;">
-            
-            <button class="btn btn--secondary" onclick="clearReportFilters()" style="flex: 1;" title="Limpar todos os campos">
-                🧹 Limpar Filtros
-            </button>
-
-            <button class="btn" onclick="exportReportToExcel()" style="flex: 1; background-color: #1D6F42; color: white;" title="Baixar planilha .xlsx">
-                📊 Exportar Excel
-            </button>
-
-            <button class="btn btn--primary" onclick="generateReportPreview()" style="flex: 1;" title="Ver na tela e gerar PDF">
-                📄 Gerar Visualização
-            </button>
-            
         </div>
 
         <div id="filters-apresentacoes" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-            
             <div class="form-group">
                 <label class="form-label">Considerar Data de:</label>
                 <select class="form-control" id="rep-pres-date-type">
@@ -840,17 +795,14 @@
                     <option value="realizacao">Data da Realização</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label class="form-label">Data Inicial</label>
                 <input type="date" class="form-control" id="rep-pres-start">
             </div>
-
             <div class="form-group">
                 <label class="form-label">Data Final</label>
                 <input type="date" class="form-control" id="rep-pres-end">
             </div>
-
             <div class="form-group">
                 <label class="form-label">Status</label>
                 <select class="form-control" id="rep-pres-status">
@@ -860,28 +812,45 @@
                     <option value="Cancelada">Cancelada</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label class="form-label">Município</label>
-                <select class="form-control" id="rep-pres-mun">
-                    <option value="">Todos</option>
-                    </select>
+                <select class="form-control" id="rep-pres-mun"><option value="">Todos</option></select>
             </div>
-
             <div class="form-group">
                 <label class="form-label">Colaborador Responsável</label>
-                <select class="form-control" id="rep-pres-colab">
-                    <option value="">Todos</option>
-                    </select>
+                <select class="form-control" id="rep-pres-colab"><option value="">Todos</option></select>
             </div>
-
             <div class="form-group">
                 <label class="form-label">Forma de Apresentação</label>
-                <select class="form-control" id="rep-pres-form">
-                    <option value="">Todas</option>
-                    </select>
+                <select class="form-control" id="rep-pres-form"><option value="">Todas</option></select>
             </div>
         </div>
+
+        <div id="filters-generic" class="report-filter-group" style="display:none; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+                <label class="form-label">Data Inicial</label>
+                <input type="date" class="form-control" id="filter-report-date-from">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Data Final</label>
+                <input type="date" class="form-control" id="filter-report-date-to">
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 20px; margin-bottom: 0; display: flex; gap: 10px;">
+            <button class="btn btn--secondary" onclick="clearReportFilters()" style="flex: 1;" title="Limpar todos os campos">
+                🧹 Limpar
+            </button>
+            <button class="btn" onclick="exportReportToExcel()" style="flex: 1; background-color: #1D6F42; color: white;" title="Baixar planilha .xlsx">
+                📊 Excel
+            </button>
+            <button class="btn btn--primary" onclick="generateReportPreview()" style="flex: 1;" title="Ver na tela e gerar PDF">
+                📄 Visualizar
+            </button>
+        </div>
+
+    </div>
+</div>
         
         <div class="info-box" style="margin-top:20px;">
             <h3>ℹ️ Como funciona</h3>
