@@ -4685,6 +4685,21 @@ function populateFilterSelects() {
         repProdMun.innerHTML = '<option value="">Todos</option>' + sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
         if(cur) repProdMun.value = cur;
     }
+    // --- FILTROS DO RELATÓRIO DE INTEGRAÇÕES ---
+    const repIntMun = document.getElementById('rep-int-mun');
+    if (repIntMun) {
+        const cur = repIntMun.value;
+        repIntMun.innerHTML = '<option value="">Todos</option>' + sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+        if(cur) repIntMun.value = cur;
+    }
+
+    const repIntApi = document.getElementById('rep-int-api');
+    if (repIntApi && typeof apisList !== 'undefined') {
+        const cur = repIntApi.value;
+        // sortedApis deve vir da sua lista global de apis cadastradas
+        repIntApi.innerHTML = '<option value="">Todas</option>' + sortedApis.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+        if(cur) repIntApi.value = cur;
+    }
 
     // 2. FILTRO DE API
     const apiFilter = document.getElementById('filter-integration-api');
@@ -7723,4 +7738,108 @@ function exportReportProducaoExcel() {
     ]);
 
     downloadXLSX("Relatorio_Producao_Filtrado", headers, rows);
+}
+
+function genRepIntegracoes() {
+    // 1. Filtros
+    const dateStart = document.getElementById('rep-int-start').value;
+    const dateEnd = document.getElementById('rep-int-end').value;
+    const statusFilter = document.getElementById('rep-int-status').value;
+    const munFilter = document.getElementById('rep-int-mun').value;
+    const apiFilter = document.getElementById('rep-int-api').value;
+
+    // 2. Filtragem
+    let data = integrations.filter(i => {
+        if (munFilter && i.municipality !== munFilter) return false;
+        
+        // Filtro de API (Array includes)
+        if (apiFilter && (!i.apis || !i.apis.includes(apiFilter))) return false;
+
+        // Filtro de Data (Vencimento)
+        if (dateStart && i.expirationDate < dateStart) return false;
+        if (dateEnd && i.expirationDate > dateEnd) return false;
+
+        // Lógica de Status (Calculado)
+        if (statusFilter) {
+            const diff = getDaysDiff(i.expirationDate); // Sua função helper existente
+            if (statusFilter === 'Vencido' && diff >= 0) return false;
+            if (statusFilter === 'Alerta' && (diff < 0 || diff > 30)) return false;
+            if (statusFilter === 'Em dia' && diff <= 30) return false;
+        }
+
+        return true;
+    });
+
+    data.sort((a,b) => a.municipality.localeCompare(b.municipality));
+
+    if (!data.length) return '<p style="text-align:center; padding:20px;">Nenhuma integração encontrada.</p>';
+
+    const rows = data.map(i => {
+        const diff = getDaysDiff(i.expirationDate);
+        let statusTexto = `<span style="color:green; font-weight:bold;">Em dia (${diff} dias)</span>`;
+        
+        if (diff < 0) statusTexto = `<span style="color:#C85250; font-weight:bold;">Vencido há ${Math.abs(diff)} dias</span>`;
+        else if (diff <= 30) statusTexto = `<span style="color:#E68161; font-weight:bold;">Vence em ${diff} dias</span>`;
+
+        return `
+        <tr>
+            <td>${i.municipality}</td>
+            <td>${(i.apis || []).join(', ')}</td>
+            <td style="text-align:center;">${formatDate(i.expirationDate)}</td>
+            <td style="text-align:center;">${statusTexto}</td>
+            <td>${i.observation || '-'}</td>
+        </tr>`;
+    }).join('');
+
+    return `
+    <div style="margin-bottom:10px; font-size:11px; color:#666;">
+        <strong>Filtros:</strong> 
+        Vencimento: ${dateStart ? formatDate(dateStart) : 'Início'} a ${dateEnd ? formatDate(dateEnd) : 'Fim'} |
+        Status: ${statusFilter || 'Todos'} | API: ${apiFilter || 'Todas'}
+    </div>
+    <table class="report-table">
+        <thead>
+            <th>Município</th>
+            <th>APIs Integradas</th>
+            <th style="text-align:center;">Vencimento</th>
+            <th style="text-align:center;">Status</th>
+            <th>Observação</th>
+        </thead>
+        <tbody>${rows}</tbody>
+    </table>`;
+}
+function exportReportIntegracoesExcel() {
+    const dateStart = document.getElementById('rep-int-start').value;
+    const dateEnd = document.getElementById('rep-int-end').value;
+    const statusFilter = document.getElementById('rep-int-status').value;
+    const munFilter = document.getElementById('rep-int-mun').value;
+    const apiFilter = document.getElementById('rep-int-api').value;
+
+    let data = integrations.filter(i => {
+        if (munFilter && i.municipality !== munFilter) return false;
+        if (apiFilter && (!i.apis || !i.apis.includes(apiFilter))) return false;
+        if (dateStart && i.expirationDate < dateStart) return false;
+        if (dateEnd && i.expirationDate > dateEnd) return false;
+
+        if (statusFilter) {
+            const diff = getDaysDiff(i.expirationDate);
+            if (statusFilter === 'Vencido' && diff >= 0) return false;
+            if (statusFilter === 'Alerta' && (diff < 0 || diff > 30)) return false;
+            if (statusFilter === 'Em dia' && diff <= 30) return false;
+        }
+        return true;
+    });
+
+    if (data.length === 0) { alert('Nada para exportar.'); return; }
+
+    const headers = ['Município', 'APIs', 'Data Vencimento', 'Dias Restantes', 'Observação'];
+    const rows = data.map(i => [
+        i.municipality,
+        (i.apis || []).join(', '),
+        formatDate(i.expirationDate),
+        getDaysDiff(i.expirationDate),
+        i.observation
+    ]);
+
+    downloadXLSX("Relatorio_Integracoes_Filtrado", headers, rows);
 }
