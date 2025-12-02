@@ -6805,7 +6805,6 @@ function updateReportFiltersUI() {
     else if (type !== '') { 
         document.getElementById('filters-generic').style.display = 'grid'; }
     }
-}
 // ============================================================================
 // NOVAS AÇÕES DE RELATÓRIO: LIMPAR E EXCEL
 // ============================================================================
