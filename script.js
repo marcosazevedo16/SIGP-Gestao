@@ -4642,6 +4642,34 @@ function populateFilterSelects() {
         if(cur) repTrainCargo.value = cur;
     }
 
+    // --- FILTROS DO RELATÓRIO DE APRESENTAÇÕES ---
+    
+    // 1. Município
+    const repPresMun = document.getElementById('rep-pres-mun');
+    if (repPresMun) {
+        const cur = repPresMun.value;
+        repPresMun.innerHTML = '<option value="">Todos</option>' + sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+        if(cur) repPresMun.value = cur;
+    }
+
+    // 2. Colaborador
+    const repPresColab = document.getElementById('rep-pres-colab');
+    if (repPresColab) {
+        const cur = repPresColab.value;
+        repPresColab.innerHTML = '<option value="">Todos</option>' + sortedOrient.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
+        if(cur) repPresColab.value = cur;
+    }
+
+    // 3. Formas de Apresentação
+    const repPresForm = document.getElementById('rep-pres-form');
+    if (repPresForm && typeof formasApresentacao !== 'undefined') {
+        const cur = repPresForm.value;
+        // Ordena as formas antes de exibir
+        const sortedFormas = formasApresentacao.slice().sort((a,b) => a.name.localeCompare(b.name));
+        repPresForm.innerHTML = '<option value="">Todas</option>' + sortedFormas.map(f => `<option value="${f.name}">${f.name}</option>`).join('');
+        if(cur) repPresForm.value = cur;
+    }
+
     // 2. FILTRO DE API
     const apiFilter = document.getElementById('filter-integration-api');
     if (apiFilter) {
@@ -6727,6 +6755,9 @@ function updateReportFiltersUI() {
         const div = document.getElementById('filters-treinamentos');
         if(div) div.style.display = 'grid'; 
     }
+    else if (type === 'apresentacoes') {
+        document.getElementById('filters-apresentacoes').style.display = 'grid'; 
+    }
     // Adicione outros 'else if' aqui no futuro...
     else if (type !== '') {
         // Fallback para os que ainda não tem filtro específico
@@ -6795,6 +6826,9 @@ function exportReportToExcel() {
             break;
         case 'colaboradores':
             exportColabInfoExcel();
+            break;
+        case 'apresentacoes':
+            exportReportApresentacoesExcel();
             break;
         case 'usuarios':
             // Criação rápida se não existir
@@ -7165,14 +7199,6 @@ function genRepProducao(d1, d2) {
     return `<table class="report-table"><thead><th>Município</th><th>Competência</th><th>Período</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
 }
 
-function genRepApresentacoes(d1, d2) {
-    let data = presentations;
-    if(d1) data = data.filter(p => p.dateSolicitacao >= d1);
-    if(d2) data = data.filter(p => p.dateSolicitacao <= d2);
-    const rows = data.map(p => `<tr><td>${p.municipality}</td><td>${formatDate(p.dateSolicitacao)}</td><td>${p.requester}</td><td>${p.status}</td></tr>`).join('');
-    return `<table class="report-table"><thead><th>Município</th><th>Data</th><th>Solicitante</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
-}
-
 function genRepIntegracoes() {
     const rows = integrations.map(i => `<tr><td>${i.municipality}</td><td>${i.apis.join(', ')}</td><td>${formatDate(i.expirationDate)}</td></tr>`).join('');
     return `<table class="report-table"><thead><th>Município</th><th>APIs</th><th>Vencimento</th></thead><tbody>${rows}</tbody></table>`;
@@ -7365,4 +7391,111 @@ function exportReportTreinamentosExcel() {
     ]);
 
     downloadXLSX("Relatorio_Treinamentos_Filtrado", headers, rows);
+}
+
+function genRepApresentacoes() {
+    // 1. Captura Filtros
+    const dateType = document.getElementById('rep-pres-date-type').value;
+    const dateStart = document.getElementById('rep-pres-start').value;
+    const dateEnd = document.getElementById('rep-pres-end').value;
+    const statusFilter = document.getElementById('rep-pres-status').value;
+    const munFilter = document.getElementById('rep-pres-mun').value;
+    const colabFilter = document.getElementById('rep-pres-colab').value;
+    const formFilter = document.getElementById('rep-pres-form').value;
+
+    // 2. Filtragem
+    let data = presentations.filter(p => {
+        // Status e Município (Igualdade exata)
+        if (statusFilter && p.status !== statusFilter) return false;
+        if (munFilter && p.municipality !== munFilter) return false;
+
+        // Colaborador (É uma lista, verificamos se INCLUI o selecionado)
+        if (colabFilter && (!p.orientadores || !p.orientadores.includes(colabFilter))) return false;
+
+        // Forma (É uma lista, verificamos se INCLUI a selecionada)
+        if (formFilter && (!p.forms || !p.forms.includes(formFilter))) return false;
+
+        // Data
+        let dateToCheck = (dateType === 'realizacao') ? p.dateRealizacao : p.dateSolicitacao;
+        
+        if ((dateStart || dateEnd) && !dateToCheck) return false;
+        if (dateStart && dateToCheck < dateStart) return false;
+        if (dateEnd && dateToCheck > dateEnd) return false;
+
+        return true;
+    });
+
+    data.sort((a,b) => new Date(a.dateSolicitacao) - new Date(b.dateSolicitacao));
+
+    if (!data.length) return '<p style="text-align:center; padding:20px;">Nenhuma apresentação encontrada.</p>';
+
+    const rows = data.map(p => `
+        <tr>
+            <td>${p.municipality}</td>
+            <td style="text-align:center;">${formatDate(p.dateSolicitacao)}</td>
+            <td style="text-align:center;">${formatDate(p.dateRealizacao)}</td>
+            <td>${(p.orientadores || []).join(', ')}</td>
+            <td>${(p.forms || []).join(', ')}</td>
+            <td>${p.status}</td>
+        </tr>
+    `).join('');
+
+    return `
+    <div style="margin-bottom:10px; font-size:11px; color:#666;">
+        <strong>Filtros:</strong> 
+        Ref: ${dateType === 'realizacao' ? 'Realização' : 'Solicitação'} (${dateStart ? formatDate(dateStart) : 'Início'} à ${dateEnd ? formatDate(dateEnd) : 'Fim'}) |
+        Status: ${statusFilter || 'Todos'} | Colab: ${colabFilter || 'Todos'}
+    </div>
+    <table class="report-table">
+        <thead>
+            <th>Município</th>
+            <th style="text-align:center;">Solicitação</th>
+            <th style="text-align:center;">Realização</th>
+            <th>Colaboradores</th>
+            <th>Formas</th>
+            <th>Status</th>
+        </thead>
+        <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function exportReportApresentacoesExcel() {
+    // 1. Filtros
+    const dateType = document.getElementById('rep-pres-date-type').value;
+    const dateStart = document.getElementById('rep-pres-start').value;
+    const dateEnd = document.getElementById('rep-pres-end').value;
+    const statusFilter = document.getElementById('rep-pres-status').value;
+    const munFilter = document.getElementById('rep-pres-mun').value;
+    const colabFilter = document.getElementById('rep-pres-colab').value;
+    const formFilter = document.getElementById('rep-pres-form').value;
+
+    // 2. Filtra
+    let data = presentations.filter(p => {
+        if (statusFilter && p.status !== statusFilter) return false;
+        if (munFilter && p.municipality !== munFilter) return false;
+        if (colabFilter && (!p.orientadores || !p.orientadores.includes(colabFilter))) return false;
+        if (formFilter && (!p.forms || !p.forms.includes(formFilter))) return false;
+        
+        let dateToCheck = (dateType === 'realizacao') ? p.dateRealizacao : p.dateSolicitacao;
+        if ((dateStart || dateEnd) && !dateToCheck) return false;
+        if (dateStart && dateToCheck < dateStart) return false;
+        if (dateEnd && dateToCheck > dateEnd) return false;
+        return true;
+    });
+
+    if (data.length === 0) { alert('Nada para exportar.'); return; }
+
+    const headers = ['Município', 'Data Solicitação', 'Data Realização', 'Solicitante', 'Status', 'Colaboradores', 'Formas', 'Descrição'];
+    const rows = data.map(p => [
+        p.municipality,
+        formatDate(p.dateSolicitacao),
+        formatDate(p.dateRealizacao),
+        p.requester,
+        p.status,
+        (p.orientadores || []).join(', '),
+        (p.forms || []).join(', '),
+        p.description
+    ]);
+
+    downloadXLSX("Relatorio_Apresentacoes_Filtrado", headers, rows);
 }
