@@ -4830,6 +4830,11 @@ function initializeApp() {
     if(!document.querySelector('.sidebar-btn.active')) {
         navigateToHome();
     }
+    // --- NOVA VERIFICAÇÃO DE SEGURANÇA (Adicione isto aqui) ---
+    if (currentUser && currentUser.mustChangePassword) {
+        alert('⚠️ Aviso de Segurança:\n\nVocê está usando uma credencial provisória ou padrão.\nPor favor, redefina sua senha agora.');
+        showChangePasswordModal();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
