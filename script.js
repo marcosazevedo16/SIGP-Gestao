@@ -6803,8 +6803,7 @@ function updateReportFiltersUI() {
     
     else if (type !== '') { document.getElementById('filters-generic').style.display = 'grid'; }
     }
-    else if (type !== '') {
-        document.getElementById('filters-generic').style.display = 'grid';
+    else if (type !== '') { document.getElementById('filters-generic').style.display = 'grid';
     }
 }
 // ============================================================================
