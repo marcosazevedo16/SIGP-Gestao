@@ -824,7 +824,43 @@
                 <select class="form-control" id="rep-pres-form"><option value="">Todas</option></select>
             </div>
         </div>
+        
+<div id="filters-integracoes" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            
+            <div class="form-group">
+                <label class="form-label">Vencimento (Início)</label>
+                <input type="date" class="form-control" id="rep-int-start">
+            </div>
 
+            <div class="form-group">
+                <label class="form-label">Vencimento (Fim)</label>
+                <input type="date" class="form-control" id="rep-int-end">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Status do Certificado</label>
+                <select class="form-control" id="rep-int-status">
+                    <option value="">Todos</option>
+                    <option value="Vencido">Vencido</option>
+                    <option value="Alerta">Vence em 30 dias</option>
+                    <option value="Em dia">Em dia</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Município</label>
+                <select class="form-control" id="rep-int-mun">
+                    <option value="">Todos</option>
+                    </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Possui API</label>
+                <select class="form-control" id="rep-int-api">
+                    <option value="">Todas</option>
+                    </select>
+            </div>
+        </div>
         <div id="filters-generic" class="report-filter-group" style="display:none; grid-template-columns: 1fr 1fr; gap: 16px;">
             <div class="form-group">
                 <label class="form-label">Data Inicial</label>
