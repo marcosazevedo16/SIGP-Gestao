@@ -1,186 +1,124 @@
-🏥 SIGP Saúde - Sistema de Gestão de Setor (v4.4)
-Status: Em produção (Versão 4.4 - Segurança Aprimorada)
-Foco: Gestão Interna, CRM e Controle Operacional de Setor + Segurança
-Site live: https://marcosazevedo16.github.io/SIGP-Gestao
+🏥 SIGP Saúde - Sistema de Gestão de Setor (v5.0)
+Status: Em produção (Versão 5.0 - Relatórios Avançados & UX Refinada)
+
+Link de Acesso: https://marcosazevedo16.github.io/SIGP-Gestao
 
 🎯 Sobre o Projeto
-O SIGP Saúde é uma solução de Back-Office e Inteligência de Negócio desenvolvida para gerenciar a operação do setor de saúde de uma empresa que atende atualmente 37 municípios na área da saúde.
+O SIGP Saúde é uma solução completa de Back-Office e Business Intelligence (BI) desenvolvida para gerenciar a operação estratégica de um setor de saúde que atende dezenas de municípios.
 
-O objetivo do sistema é centralizar indicadores, históricos e demandas, permitindo o controle total sobre a carteira de clientes, treinamentos realizados, suporte técnico e evolução do produto (software de saúde municipal).
+O sistema centraliza a gestão da carteira de clientes, treinamentos, suporte técnico, integrações de API e gestão de equipe, substituindo planilhas dispersas por uma aplicação web robusta, segura e Local-First (todos os dados ficam no dispositivo do usuário).
 
-A aplicação foi construída com a filosofia Local-First, rodando inteiramente no navegador do cliente para garantir máxima performance e independência de servidores complexos para a operação diária.
+✨ O QUE HÁ DE NOVO NA v5.0 (Atualização Major)
+Esta versão traz uma reformulação completa do módulo de relatórios e melhorias significativas de interface.
 
-✨ O QUE MUDOU NA v4.4
-🔒 Segurança Aprimorada
-✅ Rate Limiting - Proteção contra força bruta (5 tentativas = 15 min bloqueado)
-✅ Timeout de Sessão - Logout automático após 15 min de inatividade
-✅ Sanitização XSS - Proteção contra injeção de scripts maliciosos
-✅ Sincronização entre Abas - Alterações em uma aba refletem na outra
-✅ Backup Automático - Salva automaticamente a cada 1 hora
+📄 Relatórios Inteligentes & PDF
+PDFs Profissionais (Vetoriais): Migração de print de tela para geração nativa com jsPDF-AutoTable. Textos selecionáveis e alta qualidade de impressão.
 
-📊 Otimizações
-✅ Paginação - Reduz lag com 100+ registros
-✅ Destruição de Gráficos - Sem vazamento de memória
-✅ UF nos Dropdowns - Melhor seleção de municípios
-✅ Validações Rigorosas - Duplicidade, dados obrigatórios verificados
+Formato Paisagem A4: Relatórios otimizados para folhas largas, ideais para tabelas extensas.
+
+Paginação Automática: O sistema detecta o fim da folha A4 e cria novas páginas automaticamente.
+
+Cabeçalho Recorrente: Títulos e filtros aplicados se repetem no topo de todas as páginas do PDF.
+
+📊 Filtros Dinâmicos & Excel
+Filtros Contextuais: A tela de relatórios adapta os campos de filtro conforme o tipo selecionado (Ex: Treinamentos mostram filtros de Cargo/Instrutor; Clientes mostram Status/Implantação).
+
+Exportação Excel (.xlsx): Botão dedicado para baixar planilhas formatadas e filtradas de qualquer módulo.
+
+Botões de Ação: Nova barra de ferramentas unificada (Limpar, Excel, Visualizar).
+
+🎨 UX & Layout
+Menu Responsivo Inteligente: Sidebar retrátil no Desktop (expande ao passar o mouse) e Menu Gaveta no Mobile.
+
+Undo (Desfazer): Possibilidade de desfazer exclusões acidentais em qualquer módulo.
+
+Modo Offline: Detecção automática de queda de internet com aviso visual.
+
+Visualização Limpa: Pré-visualização de relatórios em modal "Tela Cheia" simulando papel.
 
 🚀 Funcionalidades Principais
-📊 Gestão e Inteligência (Business Intelligence)
-Dashboard Interativo: Visão geral em tempo real de municípios ativos, treinamentos e demandas.
+🏢 Gestão de Carteira (CRM)
+Municípios: Controle detalhado (Status, Gestor, Contato, Módulos Ativos).
 
-Carteira de Clientes: Controle de 37+ municípios (Status, Data de Implantação, Módulos em uso).
+Histórico: Datas de implantação, última visita e tempo de contrato.
 
-Indicadores de Uso: Monitoramento de tempo de contrato e frequência de utilização.
+Integrações (Novo!): Monitoramento de vencimento de certificados digitais e APIs ativas por cliente.
 
-🛠️ Operação e Suporte (CRM)
-Controle de Treinamentos: Registro detalhado de capacitações (Quem foi treinado, Cargo, Data).
+🎓 Operação e Treinamentos
+Controle de Capacitação: Registro de treinamentos (Solicitante, Instrutor, Cargo do treinado, Status).
 
-Gestão de Demandas: Acompanhamento de tickets de suporte e solicitações de melhoria.
+Apresentações: Gestão de demonstrações do software (Comercial/Técnico).
 
-Controle de Visitas: Agendamento e histórico de visitas presenciais aos municípios.
+Visitas: Histórico e agendamento de visitas presenciais.
 
-Envio de Produção: Monitoramento do fluxo de dados e faturamento dos clientes.
+🛠️ Suporte e Produção
+Demandas: Backlog de solicitações de melhoria e tickets de suporte.
 
-💻 Produto e Desenvolvimento
-Changelog (Novo!): Registro histórico de versões, correções e novas funcionalidades liberadas no software de saúde.
+Envio de Produção: Controle de faturamento e envio de arquivos XML/BPA.
 
-Solicitações de Clientes: Backlog de sugestões e necessidades reportadas pelos usuários.
+Solicitações: Registro de sugestões de clientes.
 
-⚙️ Recursos Técnicos
-Persistência Local: Todos os dados são salvos no localStorage do navegador.
+👥 RH e Administrativo
+Colaboradores (Novo!): Ficha completa da equipe (Admissão, Férias, Tempo de Casa).
 
-Backup & Restore: Sistema robusto de exportação (JSON) com versionamento para segurança dos dados.
+Gestão de Usuários: Controle de acesso (Admin/User) com log de auditoria.
 
-Backup Automático: Salva automaticamente a cada 1 hora (últimos 7 backups retidos).
+⚙️ Recursos Técnicos & Segurança
+A aplicação segue a filosofia Local-First, garantindo privacidade e performance instantânea.
 
-Exportação de Relatórios: Geração de CSV e PDF para auditorias e reuniões.
+🔒 Segurança Avançada
+✅ Criptografia: Senhas armazenadas com Hash SHA-256 + Salt dinâmico.
 
-Segurança:
+✅ Rate Limiting: Bloqueio temporário (15 min) após 5 tentativas falhas de login.
 
-✅ Criptografia de senhas (Hash + Salt SHA256)
+✅ Sessão Inteligente: Logout automático após 15 minutos de inatividade.
 
-✅ Níveis de acesso (Admin/Usuário)
+✅ Sanitização XSS: Proteção contra injeção de códigos maliciosos nos inputs.
 
-✅ Rate Limiting contra força bruta
+✅ Auditoria: Log completo de ações (Quem fez, O que fez, Quando fez).
 
-✅ Timeout automático de sessão
+💾 Persistência e Backup
+Storage Local: Dados salvos no navegador (IndexedDB/LocalStorage).
 
-✅ Sanitização XSS de inputs
+Sincronização entre Abas: Alterações em uma janela atualizam as outras em tempo real.
 
-Interface: Design responsivo com Tema Claro/Escuro.
+Backup JSON: Sistema robusto de backup e restauração manual.
 
-Sincronização: Alterações refletem automaticamente entre abas do navegador.
+Validação de Restore: Verifica a integridade do arquivo de backup antes de restaurar.
 
 🛠️ Tecnologias Utilizadas
-O projeto utiliza uma abordagem Vanilla JS (Sem Frameworks) para garantir leveza, facilidade de manutenção e zero dependência de build tools.
+Projeto desenvolvido em Vanilla JavaScript (Sem Frameworks) para máxima leveza e longevidade.
 
-Core: HTML5, CSS3 (CSS Variables), JavaScript (ES6+).
+Core: HTML5, CSS3 (CSS Variables, Grid, Flexbox), JavaScript ES6+.
 
-Bibliotecas Auxiliares:
+Relatórios PDF: jsPDF + jspdf-autotable (Geração vetorial).
 
-Chart.js: Gráficos e Dashboards.
+Relatórios Excel: SheetJS (xlsx) (Geração de planilhas).
 
-CryptoJS: Segurança e Hashing SHA256.
+Gráficos: Chart.js (Dashboards interativos).
 
-jsPDF & html2canvas: Geração de relatórios em PDF.
+Segurança: CryptoJS (Hashing).
 
-🚀 Como Usar (Instalação)
-Não é necessária instalação de dependências (npm/node). O projeto é estático.
+🚀 Como Rodar o Projeto
+Não é necessário instalação de dependências (npm/node). O projeto é estático.
 
 Clone o repositório:
 
-bash
+Bash
+
 git clone https://github.com/marcosazevedo16/SIGP-Gestao.git
-Abra o sistema:
+Abra o sistema: Navegue até a pasta e abra o arquivo index.html em qualquer navegador moderno.
 
-Navegue até a pasta e abra o arquivo index.html no seu navegador preferido.
+🔑 Acesso Inicial (Primeira Execução)
+Ao abrir o sistema pela primeira vez:
 
-🔑 Acesso Padrão (Demo)
-Para o primeiro acesso, você será solicitado a criar um usuário administrador com uma senha aleatória.
+Crie o usuário Administrador.
 
-⚠️ IMPORTANTE: Altere a senha padrão imediatamente no primeiro login!
+Defina uma senha forte.
 
-Segurança: O sistema solicitará a troca de senha no primeiro login e terá timeout de 15 minutos de inatividade.
-
-⚠️ Avisos Importantes (Local-First)
-Como este sistema roda no navegador (Client-Side):
-
-Seus dados ficam no seu navegador: Se você limpar o cache do navegador, os dados serão perdidos.
-
-Faça Backups: Utilize a função "Backup e Restauração" no menu de Configurações regularmente (também faz backup automático a cada 1 hora).
-
-Segurança:
-
-Embora as senhas sejam criptografadas com SHA256+Salt, recomenda-se o uso em computadores corporativos seguros.
-
-O sistema faz logout automático após 15 minutos de inatividade.
-
-Proteção contra força bruta: 5 tentativas bloqueiam por 15 minutos.
-
-📋 Changelog
-v4.4 (28 de Novembro de 2025)
-✅ Rate Limiting - Proteção contra força bruta
-✅ Timeout de Sessão - Logout automático
-✅ Sanitização XSS - Proteção contra injeção
-✅ Sincronização entre Abas - Real-time sync
-✅ Backup Automático - A cada 1 hora
-
-v4.3 (Anterior)
-✅ Paginação para tabelas
-✅ Destruição correta de gráficos
-✅ UF nos dropdowns
-✅ Validações de duplicidade
-✅ Contadores atualizados em tempo real
-
-📞 Suporte e Contribuições
-Para reportar bugs ou sugerir melhorias:
-
-Abra uma issue no GitHub
-
-Forneça detalhes do problema
-
-Inclua screenshots se possível
+Dica: O sistema pedirá troca de senha se detectar credenciais padrão antigas.
 
 📄 Licença
-Desenvolvido para uso interno de gestão.
+Desenvolvido para uso interno de gestão estratégica.
+
 © 2025 Marcos Azevedo.
-
-🎓 Documentação de Segurança
-Rate Limiting
-Limite: 5 tentativas erradas de login
-
-Bloqueio: 15 minutos automático
-
-Reset: Automático após período de bloqueio
-
-Timeout de Sessão
-Inatividade: 15 minutos
-
-Ação: Logout automático com aviso
-
-Rastreamento: Click, Keypress, Mousemove, Scroll
-
-Sanitização XSS
-Proteção: Contra injeção de scripts
-
-Aplicação: Todos os campos de texto
-
-Método: HTML entity encoding
-
-Sincronização entre Abas
-Evento: Storage (localStorage)
-
-Delay: Automático em tempo real
-
-Cobertura: Todos os datasets
-
-Backup Automático
-Frequência: A cada 1 hora
-
-Retenção: Últimos 7 backups
-
-Restauração: Manual via interface
-
-Conteúdo: Todos os dados do sistema
-
-Aproveite o SIGP Saúde! 🚀
