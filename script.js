@@ -642,8 +642,8 @@ const DADOS_PADRAO = {
 let users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
 
 // REGENERAÇÃO DE SEGURANÇA (Fase 3): 
-// Força a atualização da senha do ADMIN para o novo padrão (Salt 32 + 1000 iterações)
-if (users.length > 0 && users[0].login === 'ADMIN') {
+// Força a atualização da senha do ADMIN para o novo padrão APENAS SE AINDA NÃO FOI TROCADA
+if (users.length > 0 && users[0].login === 'ADMIN' && users[0].mustChangePassword) {
     // Gera um novo salt de 32 caracteres
     users[0].salt = generateSalt();
     
@@ -652,7 +652,7 @@ if (users.length > 0 && users[0].login === 'ADMIN') {
     
     // Salva a atualização
     salvarNoArmazenamento('users', users);
-    console.log('🔒 Segurança Atualizada: Senha do ADMIN resetada para o novo padrão (saude2025).');
+    console.log('🔒 Segurança Atualizada: Senha do ADMIN resetada para o padrão (saude2025).');
 }
 
 let currentUser = recuperarDoArmazenamento('currentUser');
