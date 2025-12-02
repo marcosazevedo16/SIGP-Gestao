@@ -4669,7 +4669,6 @@ function populateFilterSelects() {
         repPresForm.innerHTML = '<option value="">Todas</option>' + sortedFormas.map(f => `<option value="${f.name}">${f.name}</option>`).join('');
         if(cur) repPresForm.value = cur;
     }
-    // ... (código existente) ...
 
     // --- FILTROS DO RELATÓRIO DE VISITAS ---
     const repVisMun = document.getElementById('rep-vis-mun');
@@ -4677,6 +4676,14 @@ function populateFilterSelects() {
         const cur = repVisMun.value;
         repVisMun.innerHTML = '<option value="">Todos</option>' + sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
         if(cur) repVisMun.value = cur;
+    }
+
+    // --- FILTROS DO RELATÓRIO DE PRODUÇÃO ---
+    const repProdMun = document.getElementById('rep-prod-mun');
+    if (repProdMun) {
+        const cur = repProdMun.value;
+        repProdMun.innerHTML = '<option value="">Todos</option>' + sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+        if(cur) repProdMun.value = cur;
     }
 
     // 2. FILTRO DE API
@@ -6848,6 +6855,9 @@ function exportReportToExcel() {
             const rows = users.map(u => [u.login, u.name, u.permission, u.status]);
             downloadXLSX("Relatorio_Usuarios", headers, rows);
             break;
+        case 'producao':
+            exportReportProducaoExcel();
+            break;
         default:
             alert('Exportação Excel não configurada para este tipo ainda.');
     }
@@ -7602,4 +7612,108 @@ function exportReportVisitasExcel() {
     ]);
 
     downloadXLSX("Relatorio_Visitas_Filtrado", headers, rows);
+}
+function genRepProducao() {
+    // 1. Filtros
+    const dateType = document.getElementById('rep-prod-date-type').value;
+    const dateStart = document.getElementById('rep-prod-start').value;
+    const dateEnd = document.getElementById('rep-prod-end').value;
+    const statusFilter = document.getElementById('rep-prod-status').value;
+    const freqFilter = document.getElementById('rep-prod-freq').value;
+    const munFilter = document.getElementById('rep-prod-mun').value;
+    const profFilter = document.getElementById('rep-prod-prof').value.toLowerCase();
+
+    // 2. Filtragem
+    let data = productions.filter(p => {
+        if (statusFilter && p.status !== statusFilter) return false;
+        if (freqFilter && p.frequency !== freqFilter) return false;
+        if (munFilter && p.municipality !== munFilter) return false;
+        if (profFilter && (!p.professional || !p.professional.toLowerCase().includes(profFilter))) return false;
+
+        let dateToCheck = (dateType === 'envio') ? p.sendDate : p.releaseDate;
+        
+        if ((dateStart || dateEnd) && !dateToCheck) return false;
+        if (dateStart && dateToCheck < dateStart) return false;
+        if (dateEnd && dateToCheck > dateEnd) return false;
+
+        return true;
+    });
+
+    // Ordenação (Data Liberação)
+    data.sort((a,b) => new Date(a.releaseDate) - new Date(b.releaseDate));
+
+    if (!data.length) return '<p style="text-align:center; padding:20px;">Nenhum envio encontrado.</p>';
+
+    const rows = data.map(p => `
+        <tr>
+            <td>${p.municipality}</td>
+            <td>${p.professional || '-'}</td>
+            <td>${p.frequency}</td>
+            <td>${p.competence}</td>
+            <td>${p.period || '-'}</td>
+            <td style="text-align:center;">${formatDate(p.releaseDate)}</td>
+            <td style="text-align:center;">${formatDate(p.sendDate)}</td>
+            <td>${p.status}</td>
+        </tr>
+    `).join('');
+
+    return `
+    <div style="margin-bottom:10px; font-size:11px; color:#666;">
+        <strong>Filtros:</strong> 
+        Ref: ${dateType === 'envio' ? 'Data Envio' : 'Data Liberação'} (${dateStart ? formatDate(dateStart) : 'Início'} à ${dateEnd ? formatDate(dateEnd) : 'Fim'}) |
+        Status: ${statusFilter || 'Todos'} | Freq: ${freqFilter || 'Todas'}
+    </div>
+    <table class="report-table">
+        <thead>
+            <th>Município</th>
+            <th>Profissional</th>
+            <th>Frequência</th>
+            <th>Competência</th>
+            <th>Período</th>
+            <th style="text-align:center;">Liberação</th>
+            <th style="text-align:center;">Envio</th>
+            <th>Status</th>
+        </thead>
+        <tbody>${rows}</tbody>
+    </table>`;
+}
+function exportReportProducaoExcel() {
+    const dateType = document.getElementById('rep-prod-date-type').value;
+    const dateStart = document.getElementById('rep-prod-start').value;
+    const dateEnd = document.getElementById('rep-prod-end').value;
+    const statusFilter = document.getElementById('rep-prod-status').value;
+    const freqFilter = document.getElementById('rep-prod-freq').value;
+    const munFilter = document.getElementById('rep-prod-mun').value;
+    const profFilter = document.getElementById('rep-prod-prof').value.toLowerCase();
+
+    let data = productions.filter(p => {
+        if (statusFilter && p.status !== statusFilter) return false;
+        if (freqFilter && p.frequency !== freqFilter) return false;
+        if (munFilter && p.municipality !== munFilter) return false;
+        if (profFilter && (!p.professional || !p.professional.toLowerCase().includes(profFilter))) return false;
+        
+        let dateToCheck = (dateType === 'envio') ? p.sendDate : p.releaseDate;
+        if ((dateStart || dateEnd) && !dateToCheck) return false;
+        if (dateStart && dateToCheck < dateStart) return false;
+        if (dateEnd && dateToCheck > dateEnd) return false;
+        return true;
+    });
+
+    if (data.length === 0) { alert('Nada para exportar.'); return; }
+
+    const headers = ['Município', 'Profissional', 'Contato', 'Frequência', 'Competência', 'Período', 'Data Liberação', 'Data Envio', 'Status', 'Obs'];
+    const rows = data.map(p => [
+        p.municipality,
+        p.professional,
+        p.contact,
+        p.frequency,
+        p.competence,
+        p.period,
+        formatDate(p.releaseDate),
+        formatDate(p.sendDate),
+        p.status,
+        p.observations
+    ]);
+
+    downloadXLSX("Relatorio_Producao_Filtrado", headers, rows);
 }
