@@ -835,6 +835,48 @@
                 <input type="date" class="form-control" id="filter-report-date-to">
             </div>
         </div>
+        <div id="filters-visitas" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            
+            <div class="form-group">
+                <label class="form-label">Considerar Data de:</label>
+                <select class="form-control" id="rep-vis-date-type">
+                    <option value="solicitacao">Data da Solicitação</option>
+                    <option value="realizacao">Data da Realização</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Data Inicial</label>
+                <input type="date" class="form-control" id="rep-vis-start">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Data Final</label>
+                <input type="date" class="form-control" id="rep-vis-end">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-control" id="rep-vis-status">
+                    <option value="">Todos</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="Realizada">Realizada</option>
+                    <option value="Cancelada">Cancelada</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Município</label>
+                <select class="form-control" id="rep-vis-mun">
+                    <option value="">Todos</option>
+                    </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Solicitante</label>
+                <input type="text" class="form-control" id="rep-vis-applicant" placeholder="Nome do solicitante...">
+            </div>
+        </div>
 
         <div class="form-group" style="margin-top: 20px; margin-bottom: 0; display: flex; gap: 10px;">
             <button class="btn btn--secondary" onclick="clearReportFilters()" style="flex: 1;" title="Limpar todos os campos">
