@@ -4669,6 +4669,15 @@ function populateFilterSelects() {
         repPresForm.innerHTML = '<option value="">Todas</option>' + sortedFormas.map(f => `<option value="${f.name}">${f.name}</option>`).join('');
         if(cur) repPresForm.value = cur;
     }
+    // ... (código existente) ...
+
+    // --- FILTROS DO RELATÓRIO DE VISITAS ---
+    const repVisMun = document.getElementById('rep-vis-mun');
+    if (repVisMun) {
+        const cur = repVisMun.value;
+        repVisMun.innerHTML = '<option value="">Todos</option>' + sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+        if(cur) repVisMun.value = cur;
+    }
 
     // 2. FILTRO DE API
     const apiFilter = document.getElementById('filter-integration-api');
@@ -5239,6 +5248,9 @@ document.addEventListener('keydown', function(e) {
                       'Alt + V: Visitas\n' +
                       'Alt + P: Produção');
                 break;
+                case 'visitas':
+            exportReportVisitasExcel();
+            break;
         }
     }
 
@@ -6748,29 +6760,24 @@ function initOfflineDetection() {
 function updateReportFiltersUI() {
     const type = document.getElementById('filter-report-type').value;
     
-    // 1. Esconde TODOS os grupos primeiro
     document.querySelectorAll('.report-filter-group').forEach(el => el.style.display = 'none');
 
-    // 2. Mostra o específico conforme a seleção
     if (type === 'municipios') {
-        const div = document.getElementById('filters-municipios');
-        if(div) div.style.display = 'grid'; 
+        document.getElementById('filters-municipios').style.display = 'grid'; 
     } 
     else if (type === 'treinamentos') {
-        const div = document.getElementById('filters-treinamentos');
-        if(div) div.style.display = 'grid'; 
+        document.getElementById('filters-treinamentos').style.display = 'grid'; 
     }
     else if (type === 'apresentacoes') {
         document.getElementById('filters-apresentacoes').style.display = 'grid'; 
     }
-    // Adicione outros 'else if' aqui no futuro...
+    else if (type === 'visitas') {
+        document.getElementById('filters-visitas').style.display = 'grid'; 
+    }
     else if (type !== '') {
-        // Fallback para os que ainda não tem filtro específico
-        const div = document.getElementById('filters-generic');
-        if(div) div.style.display = 'grid';
+        document.getElementById('filters-generic').style.display = 'grid';
     }
 }
-
 // ============================================================================
 // NOVAS AÇÕES DE RELATÓRIO: LIMPAR E EXCEL
 // ============================================================================
@@ -7503,4 +7510,96 @@ function exportReportApresentacoesExcel() {
     ]);
 
     downloadXLSX("Relatorio_Apresentacoes_Filtrado", headers, rows);
+}
+function genRepVisitas() {
+    // 1. Filtros
+    const dateType = document.getElementById('rep-vis-date-type').value;
+    const dateStart = document.getElementById('rep-vis-start').value;
+    const dateEnd = document.getElementById('rep-vis-end').value;
+    const statusFilter = document.getElementById('rep-vis-status').value;
+    const munFilter = document.getElementById('rep-vis-mun').value;
+    const appFilter = document.getElementById('rep-vis-applicant').value.toLowerCase();
+
+    // 2. Filtragem
+    let data = visits.filter(v => {
+        if (statusFilter && v.status !== statusFilter) return false;
+        if (munFilter && v.municipality !== munFilter) return false;
+        if (appFilter && (!v.applicant || !v.applicant.toLowerCase().includes(appFilter))) return false;
+
+        let dateToCheck = (dateType === 'realizacao') ? v.dateRealization : v.date;
+        
+        if ((dateStart || dateEnd) && !dateToCheck) return false;
+        if (dateStart && dateToCheck < dateStart) return false;
+        if (dateEnd && dateToCheck > dateEnd) return false;
+
+        return true;
+    });
+
+    data.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+    if (!data.length) return '<p style="text-align:center; padding:20px;">Nenhuma visita encontrada.</p>';
+
+    const rows = data.map(v => `
+        <tr>
+            <td>${v.municipality}</td>
+            <td style="text-align:center;">${formatDate(v.date)}</td>
+            <td style="text-align:center;">${formatDate(v.dateRealization)}</td>
+            <td>${v.applicant}</td>
+            <td>${v.status}</td>
+            <td>${v.reason || '-'}</td>
+        </tr>
+    `).join('');
+
+    return `
+    <div style="margin-bottom:10px; font-size:11px; color:#666;">
+        <strong>Filtros:</strong> 
+        Ref: ${dateType === 'realizacao' ? 'Realização' : 'Solicitação'} (${dateStart ? formatDate(dateStart) : 'Início'} à ${dateEnd ? formatDate(dateEnd) : 'Fim'}) |
+        Status: ${statusFilter || 'Todos'} | Solicitante: ${appFilter ? document.getElementById('rep-vis-applicant').value : 'Todos'}
+    </div>
+    <table class="report-table">
+        <thead>
+            <th>Município</th>
+            <th style="text-align:center;">Solicitação</th>
+            <th style="text-align:center;">Realização</th>
+            <th>Solicitante</th>
+            <th>Status</th>
+            <th>Motivo</th>
+        </thead>
+        <tbody>${rows}</tbody>
+    </table>`;
+}
+function exportReportVisitasExcel() {
+    const dateType = document.getElementById('rep-vis-date-type').value;
+    const dateStart = document.getElementById('rep-vis-start').value;
+    const dateEnd = document.getElementById('rep-vis-end').value;
+    const statusFilter = document.getElementById('rep-vis-status').value;
+    const munFilter = document.getElementById('rep-vis-mun').value;
+    const appFilter = document.getElementById('rep-vis-applicant').value.toLowerCase();
+
+    let data = visits.filter(v => {
+        if (statusFilter && v.status !== statusFilter) return false;
+        if (munFilter && v.municipality !== munFilter) return false;
+        if (appFilter && (!v.applicant || !v.applicant.toLowerCase().includes(appFilter))) return false;
+        
+        let dateToCheck = (dateType === 'realizacao') ? v.dateRealization : v.date;
+        if ((dateStart || dateEnd) && !dateToCheck) return false;
+        if (dateStart && dateToCheck < dateStart) return false;
+        if (dateEnd && dateToCheck > dateEnd) return false;
+        return true;
+    });
+
+    if (data.length === 0) { alert('Nada para exportar.'); return; }
+
+    const headers = ['Município', 'Data Solicitação', 'Data Realização', 'Solicitante', 'Status', 'Motivo', 'Justificativa'];
+    const rows = data.map(v => [
+        v.municipality,
+        formatDate(v.date),
+        formatDate(v.dateRealization),
+        v.applicant,
+        v.status,
+        v.reason,
+        v.justification
+    ]);
+
+    downloadXLSX("Relatorio_Visitas_Filtrado", headers, rows);
 }
