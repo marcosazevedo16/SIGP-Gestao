@@ -6781,6 +6781,9 @@ function updateReportFiltersUI() {
     else if (type === 'visitas') {
         document.getElementById('filters-visitas').style.display = 'grid'; 
     }
+    else if (type === 'producao') {
+        document.getElementById('filters-producao').style.display = 'grid'; 
+    }
     else if (type !== '') {
         document.getElementById('filters-generic').style.display = 'grid';
     }
