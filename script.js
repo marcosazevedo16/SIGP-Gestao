@@ -6784,6 +6784,10 @@ function updateReportFiltersUI() {
     else if (type === 'producao') {
         document.getElementById('filters-producao').style.display = 'grid'; 
     }
+    else if (type === 'integracoes') { document.getElementById('filters-integracoes').style.display = 'grid'; }
+    
+    else if (type !== '') { document.getElementById('filters-generic').style.display = 'grid'; }
+    }
     else if (type !== '') {
         document.getElementById('filters-generic').style.display = 'grid';
     }
