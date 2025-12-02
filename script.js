@@ -6880,6 +6880,9 @@ function exportReportToExcel() {
         case 'producao':
             exportReportProducaoExcel();
             break;
+        case 'integracoes':
+            exportReportIntegracoesExcel();
+            break;
         default:
             alert('Exportação Excel não configurada para este tipo ainda.');
     }
