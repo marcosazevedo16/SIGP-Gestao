@@ -708,13 +708,11 @@
                 <option value="">Selecione...</option>
                 <option value="municipios">Carteira de Clientes</option>
                 <option value="treinamentos">Treinamentos</option>
-                <option value="demandas">Demandas de Suporte</option>
                 <option value="apresentacoes">Apresentações</option>
                 <option value="visitas">Visitas Presenciais</option>
                 <option value="producao">Controle de Produção</option>
                 <option value="integracoes">Integrações e APIs</option>
                 <option value="colaboradores">Colaboradores (RH)</option>
-                <option value="usuarios">Gestão de Usuários</option>
             </select>
         </div>
 
@@ -831,6 +829,58 @@
                 📄 Gerar Visualização
             </button>
             
+        </div>
+
+        <div id="filters-apresentacoes" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            
+            <div class="form-group">
+                <label class="form-label">Considerar Data de:</label>
+                <select class="form-control" id="rep-pres-date-type">
+                    <option value="solicitacao">Data da Solicitação</option>
+                    <option value="realizacao">Data da Realização</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Data Inicial</label>
+                <input type="date" class="form-control" id="rep-pres-start">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Data Final</label>
+                <input type="date" class="form-control" id="rep-pres-end">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-control" id="rep-pres-status">
+                    <option value="">Todos</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="Realizada">Realizada</option>
+                    <option value="Cancelada">Cancelada</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Município</label>
+                <select class="form-control" id="rep-pres-mun">
+                    <option value="">Todos</option>
+                    </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Colaborador Responsável</label>
+                <select class="form-control" id="rep-pres-colab">
+                    <option value="">Todos</option>
+                    </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Forma de Apresentação</label>
+                <select class="form-control" id="rep-pres-form">
+                    <option value="">Todas</option>
+                    </select>
+            </div>
         </div>
         
         <div class="info-box" style="margin-top:20px;">
