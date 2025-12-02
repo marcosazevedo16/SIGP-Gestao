@@ -877,6 +877,59 @@
                 <input type="text" class="form-control" id="rep-vis-applicant" placeholder="Nome do solicitante...">
             </div>
         </div>
+        <div id="filters-producao" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            
+            <div class="form-group">
+                <label class="form-label">Considerar Data de:</label>
+                <select class="form-control" id="rep-prod-date-type">
+                    <option value="liberacao">Data de Liberação</option>
+                    <option value="envio">Data de Envio</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Data Inicial</label>
+                <input type="date" class="form-control" id="rep-prod-start">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Data Final</label>
+                <input type="date" class="form-control" id="rep-prod-end">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-control" id="rep-prod-status">
+                    <option value="">Todos</option>
+                    <option value="Enviada">Enviada</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="Cancelada">Cancelada</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Frequência</label>
+                <select class="form-control" id="rep-prod-freq">
+                    <option value="">Todas</option>
+                    <option value="Diário">Diário</option>
+                    <option value="Semanal">Semanal</option>
+                    <option value="Quinzenal">Quinzenal</option>
+                    <option value="Mensal">Mensal</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Município</label>
+                <select class="form-control" id="rep-prod-mun">
+                    <option value="">Todos</option>
+                    </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Profissional</label>
+                <input type="text" class="form-control" id="rep-prod-prof" placeholder="Nome do profissional...">
+            </div>
+        </div>
 
         <div class="form-group" style="margin-top: 20px; margin-bottom: 0; display: flex; gap: 10px;">
             <button class="btn btn--secondary" onclick="clearReportFilters()" style="flex: 1;" title="Limpar todos os campos">
