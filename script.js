@@ -7918,9 +7918,8 @@ function getFilterData(type) {
 
     return filters;
 }
-
 // ============================================================================
-// 2. FUNÇÃO PRINCIPAL: GERAR PDF (COM NEGRITO, RODAPÉ E TOTAIS)
+// 2. FUNÇÃO PRINCIPAL: GERAR PDF (COM ESPAÇAMENTO CORRIGIDO)
 // ============================================================================
 function savePDFFromPreview() {
     if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca jsPDF faltando.'); return; }
@@ -7942,7 +7941,7 @@ function savePDFFromPreview() {
             if (h2) title = h2.innerText;
         }
 
-        // 2. Captura Filtros (Array de Objetos) - CHAMA A FUNÇÃO CORRETA AGORA
+        // 2. Captura Filtros
         const type = document.getElementById('filter-report-type').value;
         const filters = getFilterData(type); 
 
@@ -7951,11 +7950,17 @@ function savePDFFromPreview() {
         if (!sourceTable) throw new Error("Tabela não encontrada.");
         const totalRows = sourceTable.querySelectorAll('tbody tr').length;
 
-        // 4. Configuração do Espaço dos Filtros
-        let startY = 40; 
+        // 4. CÁLCULO PRECISO DO INÍCIO DA TABELA (startY)
+        // Os filtros começam na altura Y=24.
+        // Se não tiver filtros, a tabela começa no Y=30.
+        let startY = 30; 
+        
         if (filters.length > 0) {
+            // Calcula quantas linhas visuais os filtros ocupam (3 por linha)
             const lines = Math.ceil(filters.length / 3); 
-            startY += (lines * 6) + 5; 
+            
+            // Y inicial dos filtros (24) + Altura total deles (lines * 6) + Margem de respiro (8)
+            startY = 24 + (lines * 6) + 8;
         }
 
         doc.autoTable({
@@ -7979,10 +7984,10 @@ function savePDFFromPreview() {
                 doc.setDrawColor(0, 61, 92); doc.setLineWidth(0.5);
                 doc.line(14, 18, pageWidth - 14, 18);
 
-                // --- DESENHO DOS FILTROS (NEGRITO + NORMAL) ---
+                // --- DESENHO DOS FILTROS ---
                 let x = 14;
-                let y = 24;
-                const itemWidth = (pageWidth - 28) / 3; // 3 colunas de filtros
+                let y = 24; // Ponto de partida dos filtros
+                const itemWidth = (pageWidth - 28) / 3;
 
                 doc.setFontSize(9);
                 doc.setTextColor(50, 50, 50);
@@ -8004,7 +8009,7 @@ function savePDFFromPreview() {
                         // Pula para próxima coluna ou linha
                         if ((index + 1) % 3 === 0) {
                             x = 14; 
-                            y += 6; 
+                            y += 6; // Altura da linha de filtro
                         } else {
                             x += itemWidth; 
                         }
@@ -8022,15 +8027,13 @@ function savePDFFromPreview() {
                 const str = 'Página ' + doc.internal.getNumberOfPages();
                 doc.text(str, pageWidth - 14, pageHeight - 10, { align: 'right' });
             },
-            margin: { top: 40, bottom: 15, left: 14, right: 14 } 
+            margin: { top: startY, bottom: 15, left: 14, right: 14 } // Margem dinâmica baseada no startY
         });
 
-        // 5. Totalizador (Lado Direito)
+        // 5. Totalizador
         const finalY = doc.lastAutoTable.finalY || 40;
         const pageWidth = doc.internal.pageSize.width;
-        doc.setFontSize(10); 
-        doc.setFont(undefined, 'bold'); 
-        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(0, 0, 0);
         doc.text(`Total de registros encontrados: ${totalRows}`, pageWidth - 14, finalY + 10, { align: 'right' });
 
         // 6. Exibir
