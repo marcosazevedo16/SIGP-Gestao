@@ -4700,6 +4700,14 @@ function populateFilterSelects() {
         repIntApi.innerHTML = '<option value="">Todas</option>' + sortedApis.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
         if(cur) repIntApi.value = cur;
     }
+    // --- FILTROS DO RELATÓRIO DE COLABORADORES ---
+    const repColabName = document.getElementById('rep-colab-name');
+    if (repColabName) {
+        const cur = repColabName.value;
+        // sortedOrient vem da lista global de orientadores
+        repColabName.innerHTML = '<option value="">Todos</option>' + sortedOrient.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
+        if(cur) repColabName.value = cur;
+    }
 
     // 2. FILTRO DE API
     const apiFilter = document.getElementById('filter-integration-api');
@@ -6805,6 +6813,12 @@ function updateReportFiltersUI() {
     else if (type !== '') { 
         document.getElementById('filters-generic').style.display = 'grid'; }
     }
+    else if (type === 'colaboradores') { 
+        document.getElementById('filters-colaboradores').style.display = 'grid'; }
+    
+    else if (type !== '') { 
+        document.getElementById('filters-generic').style.display = 'grid'; }
+}
 // ============================================================================
 // NOVAS AÇÕES DE RELATÓRIO: LIMPAR E EXCEL
 // ============================================================================
@@ -6880,6 +6894,9 @@ function exportReportToExcel() {
             break;
         case 'integracoes':
             exportReportIntegracoesExcel();
+            break;
+        case 'colaboradores':
+            exportReportColaboradoresExcel();
             break;
         default:
             alert('Exportação Excel não configurada para este tipo ainda.');
@@ -7843,4 +7860,113 @@ function exportReportIntegracoesExcel() {
     ]);
 
     downloadXLSX("Relatorio_Integracoes_Filtrado", headers, rows);
+}
+function genRepColaboradores() {
+    // 1. Filtros
+    const statusFilter = document.getElementById('rep-colab-status').value;
+    const nameFilter = document.getElementById('rep-colab-name').value;
+    const admStart = document.getElementById('rep-colab-adm-start').value;
+    const admEnd = document.getElementById('rep-colab-adm-end').value;
+    const termStart = document.getElementById('rep-colab-term-start').value;
+    const termEnd = document.getElementById('rep-colab-term-end').value;
+
+    // 2. Filtragem
+    let data = collaboratorInfos.filter(c => {
+        if (statusFilter && c.status !== statusFilter) return false;
+        if (nameFilter && c.name !== nameFilter) return false;
+
+        // Filtro Data Admissão
+        if (admStart && c.admissionDate < admStart) return false;
+        if (admEnd && c.admissionDate > admEnd) return false;
+
+        // Filtro Data Desligamento
+        if (termStart && (!c.terminationDate || c.terminationDate < termStart)) return false;
+        if (termEnd && (!c.terminationDate || c.terminationDate > termEnd)) return false;
+
+        return true;
+    });
+
+    data.sort((a,b) => a.name.localeCompare(b.name));
+
+    if (!data.length) return '<p style="text-align:center; padding:20px;">Nenhum colaborador encontrado.</p>';
+
+    const rows = data.map(c => {
+        // Busca nascimento no cadastro mestre para calcular idade
+        const master = orientadores.find(o => o.name === c.name);
+        const birthDate = master ? master.birthDate : null;
+        
+        const tempoCasa = calcDateDiffString(c.admissionDate, c.status === 'Desligado da Empresa' ? c.terminationDate : null);
+        const corStatus = c.status === 'Ativo na Empresa' ? 'green' : '#C85250';
+
+        return `
+        <tr>
+            <td>${c.name}</td>
+            <td style="color:${corStatus}; font-weight:bold;">${c.status}</td>
+            <td style="text-align:center;">${formatDate(birthDate)}</td>
+            <td style="text-align:center;">${formatDate(c.admissionDate)}</td>
+            <td style="text-align:center;">${c.terminationDate ? formatDate(c.terminationDate) : '-'}</td>
+            <td>${tempoCasa}</td>
+            <td>${formatDate(c.lastVacationEnd)}</td>
+        </tr>`;
+    }).join('');
+
+    return `
+    <div style="margin-bottom:10px; font-size:11px; color:#666;">
+        <strong>Filtros:</strong> 
+        Status: ${statusFilter || 'Todas'} | 
+        Admissão: ${admStart ? formatDate(admStart) : 'Início'} a ${admEnd ? formatDate(admEnd) : 'Fim'}
+    </div>
+    <table class="report-table">
+        <thead>
+            <th>Nome</th>
+            <th>Situação</th>
+            <th style="text-align:center;">Nascimento</th>
+            <th style="text-align:center;">Admissão</th>
+            <th style="text-align:center;">Desligamento</th>
+            <th>Tempo de Casa</th>
+            <th>Últimas Férias</th>
+        </thead>
+        <tbody>${rows}</tbody>
+    </table>`;
+}
+function exportReportColaboradoresExcel() {
+    const statusFilter = document.getElementById('rep-colab-status').value;
+    const nameFilter = document.getElementById('rep-colab-name').value;
+    const admStart = document.getElementById('rep-colab-adm-start').value;
+    const admEnd = document.getElementById('rep-colab-adm-end').value;
+    const termStart = document.getElementById('rep-colab-term-start').value;
+    const termEnd = document.getElementById('rep-colab-term-end').value;
+
+    let data = collaboratorInfos.filter(c => {
+        if (statusFilter && c.status !== statusFilter) return false;
+        if (nameFilter && c.name !== nameFilter) return false;
+        if (admStart && c.admissionDate < admStart) return false;
+        if (admEnd && c.admissionDate > admEnd) return false;
+        if (termStart && (!c.terminationDate || c.terminationDate < termStart)) return false;
+        if (termEnd && (!c.terminationDate || c.terminationDate > termEnd)) return false;
+        return true;
+    });
+
+    if (data.length === 0) { alert('Nada para exportar.'); return; }
+
+    const headers = ['Nome', 'Status', 'Nascimento', 'Admissão', 'Desligamento', 'Tempo de Serviço', 'Últimas Férias', 'Obs'];
+    
+    const rows = data.map(c => {
+        const master = orientadores.find(o => o.name === c.name);
+        const birth = master ? master.birthDate : '';
+        const tempo = calcDateDiffString(c.admissionDate, c.status === 'Desligado da Empresa' ? c.terminationDate : null);
+
+        return [
+            c.name,
+            c.status,
+            formatDate(birth),
+            formatDate(c.admissionDate),
+            formatDate(c.terminationDate),
+            tempo,
+            formatDate(c.lastVacationEnd),
+            c.observation
+        ];
+    });
+
+    downloadXLSX("Relatorio_RH_Colaboradores_Filtrado", headers, rows);
 }
