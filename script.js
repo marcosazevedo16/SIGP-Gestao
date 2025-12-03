@@ -7040,15 +7040,19 @@ function generateReportPreview() {
             margin: { top: 40, bottom: 15, left: 14, right: 14 }
         });
 
-        // 6. TOTALIZADOR NO FINAL DO PDF
+       // 6. TOTALIZADOR NO FINAL DO PDF
         const finalY = doc.lastAutoTable.finalY || 40;
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'bold');
-        doc.setTextColor(0, 0, 0);
         
-        // Desenha o total logo após a tabela
-        doc.text(`Total de registros encontrados: ${totalRows}`, 14, finalY + 10);
+        // Pega a largura da página para alinhar à direita
+        const pageSize = doc.internal.pageSize;
+        const pageWidth = pageSize.width ? pageSize.width : pageSize.getWidth();
 
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold'); // Negrito
+        doc.setTextColor(0, 0, 0);      // Preto
+        
+        // Alinhado à DIREITA (pageWidth - 14 é a margem direita)
+        doc.text(`Total de registros encontrados: ${totalRows}`, pageWidth - 14, finalY + 10, { align: 'right' });
         // 7. EXIBE NO IFRAME
         const blob = doc.output('bloburl');
         const bodyEl = document.getElementById('report-preview-body');
