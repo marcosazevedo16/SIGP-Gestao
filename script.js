@@ -1388,71 +1388,6 @@ function updateMunicipalityCharts(data) {
             }
         });
     }
-
-    // 3. Gráfico de Evolução (Linha Acumulada)
-    const ctxTimeline = document.getElementById('timelineChart');
-    if (ctxTimeline && window.Chart) {
-        if (chartTimelineMun) {
-            chartTimelineMun.destroy();
-        }
-        
-        const implantations = data
-            .filter(m => m.implantationDate) 
-            .map(m => m.implantationDate.substring(0, 7)) 
-            .sort(); 
-
-        const timeData = {};
-        let totalAcumulado = 0;
-        
-        implantations.forEach(date => {
-            timeData[date] = (timeData[date] || 0) + 1;
-        });
-
-        const labels = [];
-        const values = [];
-        
-        Object.keys(timeData).sort().forEach(dateKey => {
-            const [ano, mes] = dateKey.split('-');
-            const labelBr = `${mes}/${ano}`; 
-            totalAcumulado += timeData[dateKey]; 
-            labels.push(labelBr);
-            values.push(totalAcumulado);
-        });
-        
-        chartTimelineMun = new Chart(document.getElementById('timelineChart'), {
-            type: 'line',
-            data: { 
-                labels: labels, 
-                datasets: [{ 
-                    label: 'Total de Clientes (Acumulado)', 
-                    data: values, 
-                    borderColor: '#005580', 
-                    backgroundColor: 'rgba(0, 85, 128, 0.1)', 
-                    fill: true, 
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }] 
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `Total Acumulado: ${context.raw}`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
-        });
-    }
-
     // Contadores (SEM A MÉDIA DE DIAS)
     if(document.getElementById('total-municipalities')) document.getElementById('total-municipalities').textContent = data.length;
     if(document.getElementById('active-municipalities')) document.getElementById('active-municipalities').textContent = data.filter(m => m.status === 'Em uso').length;
@@ -4348,7 +4283,65 @@ function initializeDashboardCharts() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }}
+        });
+    }
+    // --- NOVO: IMPLANTAÇÕES AO LONGO DO TEMPO (LINHA ACUMULADA) ---
+    // (Movido da aba Municípios para cá)
+    const ctxTimeline = document.getElementById('timelineChart');
+    if (ctxTimeline) {
+        if (chartTimelineMun) chartTimelineMun.destroy();
+        
+        // Usa a variável global 'municipalities'
+        const implantations = municipalities
+            .filter(m => m.implantationDate) 
+            .map(m => m.implantationDate.substring(0, 7)) 
+            .sort(); 
+
+        const timeData = {};
+        let totalAcumulado = 0;
+        
+        implantations.forEach(date => {
+            timeData[date] = (timeData[date] || 0) + 1;
+        });
+
+        const labels = [];
+        const values = [];
+        
+        Object.keys(timeData).sort().forEach(dateKey => {
+            const [ano, mes] = dateKey.split('-');
+            const labelBr = `${mes}/${ano}`; 
+            totalAcumulado += timeData[dateKey]; 
+            labels.push(labelBr);
+            values.push(totalAcumulado);
+        });
+        
+        chartTimelineMun = new Chart(ctxTimeline, {
+            type: 'line',
+            data: { 
+                labels: labels, 
+                datasets: [{ 
+                    label: 'Total de Clientes (Acumulado)', 
+                    data: values, 
+                    borderColor: '#005580', 
+                    backgroundColor: 'rgba(0, 85, 128, 0.1)', 
+                    fill: true, 
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }] 
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) { return `Total Acumulado: ${context.raw}`; }
+                        }
+                    }
+                },
+                scales: { y: { beginAtZero: true } }
             }
         });
     }
