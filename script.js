@@ -6944,35 +6944,29 @@ function exportReportMunicipiosExcel() {
 }
 
 // ============================================================================
-// 2. FUNÇÃO PRINCIPAL: Gera o PDF no Modal (Com Filtros, Rodapé e Totais)
+// 2. FUNÇÃO PRINCIPAL: Gera o PDF no Modal (Visualização)
 // ============================================================================
 function generateReportPreview() {
-    // 1. Verificações
     if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca jsPDF faltando.'); return; }
     
     const typeEl = document.getElementById('filter-report-type');
-    const dateFromEl = document.getElementById('filter-report-date-from');
-    const dateToEl = document.getElementById('filter-report-date-to');
-    
     if (!typeEl || !typeEl.value) { alert('Selecione um tipo de relatório.'); return; }
-
-    const type = typeEl.value;
-    const dateFrom = dateFromEl ? dateFromEl.value : '';
-    const dateTo = dateToEl ? dateToEl.value : '';
 
     const btnGerar = event.target;
     const textoOriginal = btnGerar ? btnGerar.innerHTML : 'Gerar';
     if(btnGerar) { btnGerar.innerHTML = '⏳ Gerando...'; btnGerar.disabled = true; }
 
     try {
-        // 2. Gera o HTML da tabela (lógica existente)
+        const type = typeEl.value;
+        
+        // 1. Gera o HTML da tabela (usando suas funções existentes)
         let reportHTML = '';
         let reportTitle = '';
 
         switch (type) {
             case 'municipios': reportHTML = genRepMunicipios(); reportTitle = 'Carteira de Clientes'; break;
             case 'treinamentos': reportHTML = genRepTreinamentos(); reportTitle = 'Controle de Treinamentos'; break;
-            case 'demandas': reportHTML = genRepDemandas(dateFrom, dateTo); reportTitle = 'Demandas de Suporte'; break;
+            case 'demandas': reportHTML = genRepDemandas(); reportTitle = 'Demandas de Suporte'; break;
             case 'apresentacoes': reportHTML = genRepApresentacoes(); reportTitle = 'Apresentações do Software'; break;
             case 'visitas': reportHTML = genRepVisitas(); reportTitle = 'Visitas Presenciais'; break;
             case 'producao': reportHTML = genRepProducao(); reportTitle = 'Controle de Produção'; break;
@@ -6981,51 +6975,69 @@ function generateReportPreview() {
             case 'usuarios': reportHTML = genRepUsuarios(); reportTitle = 'Gestão de Usuários'; break;
         }
 
-        // 3. Lê os dados da tabela gerada
+        // 2. Captura Tabela e Filtros
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = reportHTML;
         const tableEl = tempDiv.querySelector('table');
-        
-        // CONTA OS REGISTROS (Subtrai 1 se tiver cabeçalho)
         const totalRows = tempDiv.querySelectorAll('tbody tr').length;
 
-        if (!tableEl) { throw new Error("Nenhum dado encontrado para gerar o relatório."); }
+        if (!tableEl) throw new Error("Nenhum dado encontrado.");
 
-        // 4. Captura o Resumo dos Filtros
-        const filterSummary = getFilterSummary(type);
+        // USA A NOVA FUNÇÃO DE DADOS (AQUI ESTAVA O ERRO)
+        const filters = getFilterData(type); 
 
-        // 5. GERA O PDF
+        // 3. GERA O PDF EM MEMÓRIA
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4'); // Paisagem
+        const doc = new jsPDF('l', 'mm', 'a4');
+
+        let startY = 40; 
+        if (filters.length > 0) {
+            const lines = Math.ceil(filters.length / 3); 
+            startY += (lines * 6) + 5; 
+        }
 
         doc.autoTable({
             html: tableEl,
-            startY: 40, // Espaço para cabeçalho e filtros
+            startY: startY,
             theme: 'grid',
             styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
             headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold', halign: 'center' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             
-            // --- CABEÇALHO E RODAPÉ EM CADA PÁGINA ---
             didDrawPage: function (data) {
-                const pageSize = doc.internal.pageSize;
-                const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
-                const pageWidth = pageSize.width ? pageSize.width : pageSize.getWidth();
+                const pageWidth = doc.internal.pageSize.width;
+                const pageHeight = doc.internal.pageSize.height;
 
-                // 1. Título
+                // Título
                 doc.setFontSize(16); doc.setTextColor(0, 61, 92);
                 doc.text(`SIGP Saúde - ${reportTitle}`, 14, 15);
 
-                // 2. Linha Divisória
+                // Linha
                 doc.setDrawColor(0, 61, 92); doc.setLineWidth(0.5);
                 doc.line(14, 18, pageWidth - 14, 18);
 
-                // 3. Filtros Aplicados (Abaixo da linha)
-                doc.setFontSize(9); doc.setTextColor(80, 80, 80);
-                const splitFilters = doc.splitTextToSize(filterSummary, pageWidth - 28);
-                doc.text(splitFilters, 14, 24);
+                // Filtros (Negrito + Normal)
+                let x = 14; let y = 24;
+                const itemWidth = (pageWidth - 28) / 3;
 
-                // 4. Rodapé Esquerdo (Assinatura)
+                doc.setFontSize(9); doc.setTextColor(50, 50, 50);
+
+                if (filters.length === 0) {
+                    doc.setFont(undefined, 'normal');
+                    doc.text("Filtros: Nenhum filtro aplicado (Todos os registros)", 14, y);
+                } else {
+                    filters.forEach((f, index) => {
+                        doc.setFont(undefined, 'bold');
+                        doc.text(`${f.label}:`, x, y);
+                        const labelWidth = doc.getTextWidth(`${f.label}: `);
+                        doc.setFont(undefined, 'normal');
+                        doc.text(f.value, x + labelWidth, y);
+
+                        if ((index + 1) % 3 === 0) { x = 14; y += 6; } else { x += itemWidth; }
+                    });
+                }
+
+                // Rodapé
                 const now = new Date();
                 const dataHora = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
                 const usuario = currentUser ? currentUser.name.toUpperCase() : 'SISTEMA';
@@ -7033,27 +7045,18 @@ function generateReportPreview() {
                 doc.setFontSize(8); doc.setTextColor(100);
                 doc.text(`Impresso em ${dataHora} por ${usuario}`, 14, pageHeight - 10);
 
-                // 5. Rodapé Direito (Paginação)
-                const pag = 'Página ' + doc.internal.getNumberOfPages();
-                doc.text(pag, pageWidth - 14, pageHeight - 10, { align: 'right' });
+                doc.text('Página ' + doc.internal.getNumberOfPages(), pageWidth - 14, pageHeight - 10, { align: 'right' });
             },
             margin: { top: 40, bottom: 15, left: 14, right: 14 }
         });
 
-       // 6. TOTALIZADOR NO FINAL DO PDF
+        // Totalizador
         const finalY = doc.lastAutoTable.finalY || 40;
-        
-        // Pega a largura da página para alinhar à direita
-        const pageSize = doc.internal.pageSize;
-        const pageWidth = pageSize.width ? pageSize.width : pageSize.getWidth();
-
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'bold'); // Negrito
-        doc.setTextColor(0, 0, 0);      // Preto
-        
-        // Alinhado à DIREITA (pageWidth - 14 é a margem direita)
+        const pageWidth = doc.internal.pageSize.width;
+        doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(0, 0, 0);
         doc.text(`Total de registros encontrados: ${totalRows}`, pageWidth - 14, finalY + 10, { align: 'right' });
-        // 7. EXIBE NO IFRAME
+
+        // 4. EXIBE NO IFRAME
         const blob = doc.output('bloburl');
         const bodyEl = document.getElementById('report-preview-body');
         bodyEl.innerHTML = `<iframe id="pdf-preview-frame" src="${blob}#zoom=100" width="100%" height="100%"></iframe>`;
@@ -7062,8 +7065,7 @@ function generateReportPreview() {
         modalEl.classList.add('show');
 
     } catch (err) {
-        console.error(err);
-        alert('Erro: ' + err.message);
+        console.error(err); alert('Erro: ' + err.message);
     } finally {
         if(btnGerar) { btnGerar.innerHTML = textoOriginal; btnGerar.disabled = false; }
     }
@@ -7262,33 +7264,6 @@ function genRepDemandas(d1, d2) {
     if(d2) data = data.filter(d => d.date <= d2);
     const rows = data.map(d => `<tr><td>${formatDate(d.date)}</td><td>${d.priority}</td><td>${d.status}</td><td>${d.description}</td></tr>`).join('');
     return `<table class="report-table"><thead><th>Data</th><th>Prioridade</th><th>Status</th><th>Descrição</th></thead><tbody>${rows}</tbody></table>`;
-}
-
-function genRepVisitas(d1, d2) {
-    let data = visits;
-    if(d1) data = data.filter(v => v.date >= d1);
-    if(d2) data = data.filter(v => v.date <= d2);
-    const rows = data.map(v => `<tr><td>${v.municipality}</td><td>${formatDate(v.date)}</td><td>${v.applicant}</td><td>${v.status}</td></tr>`).join('');
-    return `<table class="report-table"><thead><th>Município</th><th>Data</th><th>Solicitante</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
-}
-
-function genRepProducao(d1, d2) {
-    let data = productions;
-    // Filtra pela data de Liberação
-    if(d1) data = data.filter(p => p.releaseDate >= d1);
-    if(d2) data = data.filter(p => p.releaseDate <= d2);
-    const rows = data.map(p => `<tr><td>${p.municipality}</td><td>${p.competence}</td><td>${p.period||'-'}</td><td>${p.status}</td></tr>`).join('');
-    return `<table class="report-table"><thead><th>Município</th><th>Competência</th><th>Período</th><th>Status</th></thead><tbody>${rows}</tbody></table>`;
-}
-
-function genRepIntegracoes() {
-    const rows = integrations.map(i => `<tr><td>${i.municipality}</td><td>${i.apis.join(', ')}</td><td>${formatDate(i.expirationDate)}</td></tr>`).join('');
-    return `<table class="report-table"><thead><th>Município</th><th>APIs</th><th>Vencimento</th></thead><tbody>${rows}</tbody></table>`;
-}
-
-function genRepColaboradores() {
-    const rows = collaboratorInfos.map(c => `<tr><td>${c.name}</td><td>${c.status}</td><td>${formatDate(c.admissionDate)}</td><td>${formatDate(c.lastVacationEnd)}</td></tr>`).join('');
-    return `<table class="report-table"><thead><th>Nome</th><th>Status</th><th>Admissão</th><th>Últimas Férias</th></thead><tbody>${rows}</tbody></table>`;
 }
 
 function genRepUsuarios() {
