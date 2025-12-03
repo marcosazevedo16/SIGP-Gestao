@@ -5011,3 +5011,30 @@ input:disabled, select:disabled, textarea:disabled {
 #report-preview-modal .modal-actions {
     display: none !important;
 }
+/* ==========================================================================
+   CORREÇÃO FINAL DE GRÁFICOS E GRID (ALINHAMENTO PERFEITO)
+   Adicione no final do arquivo style.css
+   ========================================================================== */
+
+/* Força o container de gráficos a respeitar 100% da largura disponível, sem estourar */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 Colunas exatas */
+    gap: 24px; /* Mesmo espaçamento dos cards */
+    width: 100%;
+    margin-bottom: 32px;
+    box-sizing: border-box;
+}
+
+/* O SEGREDO: Impede que o Chart.js empurre a largura da coluna para fora */
+.charts-grid .chart-card {
+    min-width: 0; 
+    width: 100%;
+}
+
+/* Responsividade: Em telas menores (tablets/notebooks pequenos), vira 1 coluna */
+@media (max-width: 1200px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
