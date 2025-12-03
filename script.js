@@ -6944,9 +6944,6 @@ function exportReportMunicipiosExcel() {
 }
 
 // ============================================================================
-// 2. FUNÇÃO PRINCIPAL: Gera o PDF no Modal (Visualização)
-// ============================================================================
-// ============================================================================
 // 2. FUNÇÃO PRINCIPAL: Gera o Preview na Tela (Com Espaçamento Otimizado)
 // ============================================================================
 function generateReportPreview() {
@@ -6992,12 +6989,12 @@ function generateReportPreview() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
 
-        // --- CÁLCULO DO ESPAÇAMENTO (Aqui está a correção) ---
-        let startY = 29; // Padrão sem filtros
+        // --- CÁLCULO DO ESPAÇAMENTO (Ajuste Fino) ---
+        let startY = 29; // Padrão sem filtros (começa bem mais acima)
         
         if (filters.length > 0) {
             const lines = Math.ceil(filters.length / 3); 
-            // Início (24) + Altura (lines*6) + Margem Mínima (3)
+            // Início dos filtros (24) + Altura deles (lines*6) + Margem Mínima (3)
             startY = 24 + (lines * 6) + 3;
         }
 
@@ -7921,126 +7918,4 @@ function getFilterData(type) {
     }
 
     return filters;
-}
-// ============================================================================
-// 2. FUNÇÃO PRINCIPAL: GERAR PDF (COM ESPAÇAMENTO OTIMIZADO)
-// ============================================================================
-function savePDFFromPreview() {
-    if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca jsPDF faltando.'); return; }
-
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ Gerando PDF...';
-    btn.disabled = true;
-
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4'); // Paisagem
-
-        // 1. Dados Básicos
-        const headerContainer = document.querySelector('.report-header-print');
-        let title = "Relatório de Gestão";
-        if (headerContainer) {
-            const h2 = headerContainer.querySelector('h2');
-            if (h2) title = h2.innerText;
-        }
-
-        // 2. Captura Filtros
-        const type = document.getElementById('filter-report-type').value;
-        const filters = getFilterData(type); 
-
-        // 3. Captura Tabela
-        const sourceTable = document.querySelector('.report-table');
-        if (!sourceTable) throw new Error("Tabela não encontrada.");
-        const totalRows = sourceTable.querySelectorAll('tbody tr').length;
-
-        // 4. CÁLCULO PRECISO DO INÍCIO DA TABELA (startY) - AJUSTADO
-        // Os filtros começam na altura Y=24.
-        // Se não tiver filtros, a tabela começa no Y=29 (Bem perto do texto padrão).
-        let startY = 29; 
-        
-        if (filters.length > 0) {
-            // Calcula quantas linhas de filtros existem (3 por linha)
-            const lines = Math.ceil(filters.length / 3); 
-            
-            // Y=24 (Início dos filtros) + (lines * 6 altura cada) + 3 (margem mínima de respiro)
-            // Antes estava +8, reduzimos para +3 para colar mais.
-            startY = 24 + (lines * 6) + 3;
-        }
-
-        doc.autoTable({
-            html: '.report-table',
-            startY: startY, // Usa o cálculo justo
-            theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
-            headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold', halign: 'center' },
-            alternateRowStyles: { fillColor: [245, 245, 245] },
-            
-            didDrawPage: function (data) {
-                const pageWidth = doc.internal.pageSize.width;
-                const pageHeight = doc.internal.pageSize.height;
-
-                // Título
-                doc.setFontSize(16); doc.setTextColor(0, 61, 92);
-                doc.text(title, 14, 15);
-
-                // Linha Divisória
-                doc.setDrawColor(0, 61, 92); doc.setLineWidth(0.5);
-                doc.line(14, 18, pageWidth - 14, 18);
-
-                // Filtros (Negrito + Normal)
-                let x = 14; 
-                let y = 24; // Ponto fixo de início dos filtros
-                const itemWidth = (pageWidth - 28) / 3;
-
-                doc.setFontSize(9); doc.setTextColor(50, 50, 50);
-
-                if (filters.length === 0) {
-                    doc.setFont(undefined, 'normal');
-                    doc.text("Filtros: Nenhum filtro aplicado (Todos os registros)", 14, y);
-                } else {
-                    filters.forEach((f, index) => {
-                        doc.setFont(undefined, 'bold');
-                        doc.text(`${f.label}:`, x, y);
-                        const labelWidth = doc.getTextWidth(`${f.label}: `);
-                        doc.setFont(undefined, 'normal');
-                        doc.text(f.value, x + labelWidth, y);
-
-                        if ((index + 1) % 3 === 0) { x = 14; y += 6; } else { x += itemWidth; }
-                    });
-                }
-
-                // Rodapé
-                const now = new Date();
-                const dataHora = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
-                const usuario = currentUser ? currentUser.name.toUpperCase() : 'SISTEMA';
-                
-                doc.setFontSize(8); doc.setTextColor(100);
-                doc.text(`Impresso em ${dataHora} por ${usuario}`, 14, pageHeight - 10);
-
-                doc.text('Página ' + doc.internal.getNumberOfPages(), pageWidth - 14, pageHeight - 10, { align: 'right' });
-            },
-            // Margem superior dinâmica baseada no startY calculado
-            margin: { top: startY, bottom: 15, left: 14, right: 14 }
-        });
-
-        // Totalizador (Direita)
-        const finalY = doc.lastAutoTable.finalY || 40;
-        const pageWidth = doc.internal.pageSize.width;
-        doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(0, 0, 0);
-        doc.text(`Total de registros encontrados: ${totalRows}`, pageWidth - 14, finalY + 10, { align: 'right' });
-
-        // 4. EXIBE NO IFRAME
-        const blob = doc.output('bloburl');
-        const bodyEl = document.getElementById('report-preview-body');
-        bodyEl.innerHTML = `<iframe id="pdf-preview-frame" src="${blob}#zoom=100" width="100%" height="100%"></iframe>`;
-
-        const modalEl = document.getElementById('report-preview-modal');
-        modalEl.classList.add('show');
-
-    } catch (err) {
-        console.error(err); alert('Erro: ' + err.message);
-    } finally {
-        if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
-    }
 }
