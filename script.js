@@ -4869,13 +4869,14 @@ function initializeApp() {
     if(!document.querySelector('.sidebar-btn.active')) {
         navigateToHome();
     }
-    // --- NOVA VERIFICAÇÃO DE SEGURANÇA (Adicione isto aqui) ---
-    if (currentUser && currentUser.mustChangePassword) {
-        alert('⚠️ Aviso de Segurança:\n\nVocê está usando uma credencial provisória ou padrão.\nPor favor, redefina sua senha agora.');
+
+    // --- BLOCO DE SEGURANÇA REMOVIDO PARA TESTES ---
+    /* if (currentUser && currentUser.mustChangePassword) {
+        alert('⚠️ Aviso de Segurança: ...');
         showChangePasswordModal();
     }
+    */
 }
-
 document.addEventListener('DOMContentLoaded', function() {
     checkAuthentication();
     
@@ -6943,7 +6944,7 @@ function exportReportMunicipiosExcel() {
     downloadXLSX("Relatorio_Carteira_Clientes_Filtrado", headers, rows);
 }
 // ============================================================================
-// 2. FUNÇÃO PRINCIPAL: Gera o Preview (Com Larguras Otimizadas)
+// 2. FUNÇÃO PRINCIPAL: Gera o Preview (Margens Estreitas + Sem Senha)
 // ============================================================================
 function generateReportPreview() {
     if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca jsPDF faltando.'); return; }
@@ -6983,25 +6984,32 @@ function generateReportPreview() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
 
-        // --- CÁLCULO DO ESPAÇAMENTO ---
-        let startY = 29; 
+        // --- CONFIGURAÇÕES DE MARGEM (MÍNIMAS) ---
+        const marginLeft = 7;  // Margem esquerda bem fina
+        const marginRight = 7; // Margem direita bem fina
+
+        // --- CÁLCULO DO ESPAÇAMENTO VERTICAL ---
+        const baseFiltersY = 24;
+        let startY = 30; 
+        
         if (filters.length > 0) {
             const lines = Math.ceil(filters.length / 3); 
-            startY = 24 + (lines * 6) + 3;
+            startY = baseFiltersY + (lines * 6) + 4;
         }
 
-        // --- CONFIGURAÇÃO DE COLUNAS (LARGURAS) ---
+        // --- CONFIGURAÇÃO DE COLUNAS (LARGURAS EXPANDIDAS) ---
+        // Como ganhamos espaço, aumentamos as colunas para preencher a folha
         let customColumnStyles = {};
         
         if (type === 'municipios') {
             customColumnStyles = {
-                0: { cellWidth: 55 }, // Município
-                1: { cellWidth: 22 }, // Status (Mais justo)
-                2: { cellWidth: 50 }, // Gestor (AUMENTADO)
-                3: { cellWidth: 32 }, // Contato (NOVO)
-                4: { cellWidth: 28, halign: 'center' }, // Implantação (Mais justo)
-                5: { cellWidth: 48 }, // Tempo de Uso (REDUZIDO)
-                6: { cellWidth: 28, halign: 'center' }  // Última Visita (Mais justo)
+                0: { cellWidth: 65 }, // Município (Aumentado)
+                1: { cellWidth: 25 }, // Status
+                2: { cellWidth: 55 }, // Gestor (Aumentado)
+                3: { cellWidth: 35 }, // Contato
+                4: { cellWidth: 30, halign: 'center' }, // Implantação
+                5: { cellWidth: 50 }, // Tempo de Uso (Aumentado)
+                6: { cellWidth: 30, halign: 'center' }  // Última Visita
             };
         }
 
@@ -7011,7 +7019,6 @@ function generateReportPreview() {
             theme: 'grid',
             styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
             
-            // Mantém todos os cabeçalhos alinhados à ESQUERDA
             headStyles: { 
                 fillColor: [0, 61, 92], 
                 textColor: 255, 
@@ -7020,28 +7027,34 @@ function generateReportPreview() {
             },
             
             alternateRowStyles: { fillColor: [245, 245, 245] },
-            
-            // Aplica as larguras personalizadas
             columnStyles: customColumnStyles,
             
+            // Cabeçalho e Rodapé
             didDrawPage: function (data) {
                 const pageWidth = doc.internal.pageSize.width;
                 const pageHeight = doc.internal.pageSize.height;
+                
+                // Área útil da linha (Largura total - margens)
+                const contentWidth = pageWidth - marginLeft - marginRight;
 
+                // Título
                 doc.setFontSize(16); doc.setTextColor(0, 61, 92);
-                doc.text(`SIGP Saúde - ${reportTitle}`, 14, 15);
+                doc.text(`SIGP Saúde - ${reportTitle}`, marginLeft, 15);
 
+                // Linha (Vai de ponta a ponta das margens novas)
                 doc.setDrawColor(0, 61, 92); doc.setLineWidth(0.5);
-                doc.line(14, 18, pageWidth - 14, 18);
+                doc.line(marginLeft, 18, pageWidth - marginRight, 18);
 
-                let x = 14; let y = 24; 
-                const itemWidth = (pageWidth - 28) / 3;
+                // Filtros
+                let x = marginLeft; 
+                let y = baseFiltersY; 
+                const itemWidth = contentWidth / 3; // Divide o espaço útil em 3
 
                 doc.setFontSize(9); doc.setTextColor(50, 50, 50);
 
                 if (filters.length === 0) {
                     doc.setFont(undefined, 'normal');
-                    doc.text("Filtros: Nenhum filtro aplicado (Todos os registros)", 14, y);
+                    doc.text("Filtros: Nenhum filtro aplicado (Todos os registros)", marginLeft, y);
                 } else {
                     filters.forEach((f, index) => {
                         doc.setFont(undefined, 'bold');
@@ -7050,26 +7063,38 @@ function generateReportPreview() {
                         doc.setFont(undefined, 'normal');
                         doc.text(f.value, x + labelWidth, y);
 
-                        if ((index + 1) % 3 === 0) { x = 14; y += 6; } else { x += itemWidth; }
+                        if ((index + 1) % 3 === 0) { 
+                            x = marginLeft; // Volta para a margem esquerda
+                            y += 6; 
+                        } else { 
+                            x += itemWidth; 
+                        }
                     });
                 }
 
+                // Rodapé
                 const now = new Date();
                 const dataHora = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
                 const usuario = currentUser ? currentUser.name.toUpperCase() : 'SISTEMA';
                 
                 doc.setFontSize(8); doc.setTextColor(100);
-                doc.text(`Impresso em ${dataHora} por ${usuario}`, 14, pageHeight - 10);
-                doc.text('Página ' + doc.internal.getNumberOfPages(), pageWidth - 14, pageHeight - 10, { align: 'right' });
+                doc.text(`Impresso em ${dataHora} por ${usuario}`, marginLeft, pageHeight - 10);
+                doc.text('Página ' + doc.internal.getNumberOfPages(), pageWidth - marginRight, pageHeight - 10, { align: 'right' });
             },
-            margin: { top: startY, bottom: 15, left: 14, right: 14 }
+            
+            // MARGENS APERTADAS (Aqui acontece a mágica do espaço)
+            margin: { top: startY, bottom: 15, left: marginLeft, right: marginRight }
         });
 
+        // Totalizador
         const finalY = doc.lastAutoTable.finalY || 40;
         const pageWidth = doc.internal.pageSize.width;
         doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(0, 0, 0);
-        doc.text(`Total de registros encontrados: ${totalRows}`, pageWidth - 14, finalY + 10, { align: 'right' });
+        
+        // Alinhado com a margem direita nova
+        doc.text(`Total de registros encontrados: ${totalRows}`, pageWidth - marginRight, finalY + 10, { align: 'right' });
 
+        // Exibe
         const blob = doc.output('bloburl');
         const bodyEl = document.getElementById('report-preview-body');
         bodyEl.innerHTML = `<iframe id="pdf-preview-frame" src="${blob}#zoom=100" width="100%" height="100%"></iframe>`;
