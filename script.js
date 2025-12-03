@@ -6942,7 +6942,7 @@ function exportReportMunicipiosExcel() {
     downloadXLSX("Relatorio_Carteira_Clientes_Filtrado", headers, rows);
 }
 // ============================================================================
-// 2. FUNÇÃO PRINCIPAL: Gera o Preview (Margens Estreitas + Sem Senha)
+// 2. FUNÇÃO PRINCIPAL: Gera o Preview (Margem 10mm - Equilibrada)
 // ============================================================================
 function generateReportPreview() {
     if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca jsPDF faltando.'); return; }
@@ -6982,31 +6982,29 @@ function generateReportPreview() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
 
-        // --- CONFIGURAÇÕES DE MARGEM (MÍNIMAS) ---
-        const marginLeft = 7;  // Margem esquerda bem fina
-        const marginRight = 7; // Margem direita bem fina
+        // --- MARGENS EQUILIBRADAS (10mm) ---
+        const marginLeft = 10;  
+        const marginRight = 10; 
 
-        // --- CÁLCULO DO ESPAÇAMENTO VERTICAL ---
+        // --- ESPAÇAMENTO VERTICAL ---
         const baseFiltersY = 24;
         let startY = 30; 
-        
         if (filters.length > 0) {
             const lines = Math.ceil(filters.length / 3); 
-            startY = baseFiltersY + (lines * 6) + 4;
+            startY = baseFiltersY + (lines * 6) + 3;
         }
 
-        // --- CONFIGURAÇÃO DE COLUNAS (LARGURAS EXPANDIDAS) ---
-        // Como ganhamos espaço, aumentamos as colunas para preencher a folha
+        // --- LARGURAS RECALCULADAS (Para área útil de ~277mm) ---
         let customColumnStyles = {};
         
         if (type === 'municipios') {
             customColumnStyles = {
-                0: { cellWidth: 65 }, // Município (Aumentado)
-                1: { cellWidth: 25 }, // Status
-                2: { cellWidth: 55 }, // Gestor (Aumentado)
+                0: { cellWidth: 60 }, // Município
+                1: { cellWidth: 22 }, // Status
+                2: { cellWidth: 50 }, // Gestor (Ajustado)
                 3: { cellWidth: 35 }, // Contato
                 4: { cellWidth: 30, halign: 'center' }, // Implantação
-                5: { cellWidth: 50 }, // Tempo de Uso (Aumentado)
+                5: { cellWidth: 45 }, // Tempo de Uso (Ajustado)
                 6: { cellWidth: 30, halign: 'center' }  // Última Visita
             };
         }
@@ -7023,30 +7021,24 @@ function generateReportPreview() {
                 fontStyle: 'bold', 
                 halign: 'left' 
             },
-            
+            bodyStyles: { halign: 'left' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             columnStyles: customColumnStyles,
             
-            // Cabeçalho e Rodapé
             didDrawPage: function (data) {
                 const pageWidth = doc.internal.pageSize.width;
                 const pageHeight = doc.internal.pageSize.height;
-                
-                // Área útil da linha (Largura total - margens)
                 const contentWidth = pageWidth - marginLeft - marginRight;
 
-                // Título
                 doc.setFontSize(16); doc.setTextColor(0, 61, 92);
                 doc.text(`SIGP Saúde - ${reportTitle}`, marginLeft, 15);
 
-                // Linha (Vai de ponta a ponta das margens novas)
                 doc.setDrawColor(0, 61, 92); doc.setLineWidth(0.5);
                 doc.line(marginLeft, 18, pageWidth - marginRight, 18);
 
-                // Filtros
                 let x = marginLeft; 
                 let y = baseFiltersY; 
-                const itemWidth = contentWidth / 3; // Divide o espaço útil em 3
+                const itemWidth = contentWidth / 3;
 
                 doc.setFontSize(9); doc.setTextColor(50, 50, 50);
 
@@ -7061,16 +7053,11 @@ function generateReportPreview() {
                         doc.setFont(undefined, 'normal');
                         doc.text(f.value, x + labelWidth, y);
 
-                        if ((index + 1) % 3 === 0) { 
-                            x = marginLeft; // Volta para a margem esquerda
-                            y += 6; 
-                        } else { 
-                            x += itemWidth; 
-                        }
+                        if ((index + 1) % 3 === 0) { x = marginLeft; y += 6; } 
+                        else { x += itemWidth; }
                     });
                 }
 
-                // Rodapé
                 const now = new Date();
                 const dataHora = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
                 const usuario = currentUser ? currentUser.name.toUpperCase() : 'SISTEMA';
@@ -7079,20 +7066,14 @@ function generateReportPreview() {
                 doc.text(`Impresso em ${dataHora} por ${usuario}`, marginLeft, pageHeight - 10);
                 doc.text('Página ' + doc.internal.getNumberOfPages(), pageWidth - marginRight, pageHeight - 10, { align: 'right' });
             },
-            
-            // MARGENS APERTADAS (Aqui acontece a mágica do espaço)
             margin: { top: startY, bottom: 15, left: marginLeft, right: marginRight }
         });
 
-        // Totalizador
         const finalY = doc.lastAutoTable.finalY || 40;
         const pageWidth = doc.internal.pageSize.width;
         doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(0, 0, 0);
-        
-        // Alinhado com a margem direita nova
         doc.text(`Total de registros encontrados: ${totalRows}`, pageWidth - marginRight, finalY + 10, { align: 'right' });
 
-        // Exibe
         const blob = doc.output('bloburl');
         const bodyEl = document.getElementById('report-preview-body');
         bodyEl.innerHTML = `<iframe id="pdf-preview-frame" src="${blob}#zoom=100" width="100%" height="100%"></iframe>`;
