@@ -7288,10 +7288,9 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 // ============================================================================
-// FUNÇÃO NOVA: GERAR PDF INTELIGENTE (PAISAGEM + PAGINAÇÃO A4)
+// FUNÇÃO NOVA: GERAR PDF (COM RODAPÉ, CONTADORES E FILTROS)
 // ============================================================================
 function savePDFFromPreview() {
-    // 1. Verificação de segurança das bibliotecas
     if (!window.jspdf || !window.jspdf.jsPDF) {
         alert('Erro: Biblioteca jsPDF não carregada.');
         return;
@@ -7304,108 +7303,169 @@ function savePDFFromPreview() {
 
     try {
         const { jsPDF } = window.jspdf;
-        
-        // 2. Cria o PDF em formato PAISAGEM ('l' = landscape) e tamanho A4
-        const doc = new jsPDF('l', 'mm', 'a4'); 
+        const doc = new jsPDF('l', 'mm', 'a4'); // Paisagem
 
-        // 3. Captura os textos do Cabeçalho (que já estão na tela de preview)
+        // 1. DADOS BÁSICOS
         const headerContainer = document.querySelector('.report-header-print');
-        let title = "Relatório de Gestão - SIGP Saúde";
-        let subtitle = "";
-        let period = "";
-
+        let title = "Relatório de Gestão";
         if (headerContainer) {
             const h2 = headerContainer.querySelector('h2');
-            const ps = headerContainer.querySelectorAll('p');
             if (h2) title = h2.innerText;
-            if (ps.length > 0) subtitle = ps[0].innerText; // Usuário/Data
-            if (ps.length > 1) period = ps[1].innerText;   // Período
         }
 
-        // 4. Gera a Tabela Automática (AutoTable)
-        // Isso lê a tabela HTML (.report-table) e converte para PDF nativo
+        // 2. CAPTURA DOS FILTROS (Resumo)
+        const type = document.getElementById('filter-report-type').value;
+        const filterSummary = getFilterSummary(type); // Função auxiliar nova (veja abaixo)
+
+        // 3. CAPTURA DA TABELA E TOTAL
+        // Clona a tabela para não alterar a tela
+        const sourceTable = document.querySelector('.report-table');
+        if (!sourceTable) throw new Error("Tabela não encontrada.");
+        
+        // Conta linhas (subtrai 1 se tiver thead)
+        const totalRows = sourceTable.querySelectorAll('tbody tr').length;
+
+        // 4. GERAÇÃO DO PDF
         doc.autoTable({
-            html: '.report-table', // Seletor da tabela no HTML
-            startY: 40, // Começa 40mm abaixo do topo (espaço para o cabeçalho)
-            theme: 'grid', // Estilo com linhas de grade (ideal para relatórios)
+            html: '.report-table',
+            startY: 45, // Mais espaço para o resumo dos filtros
+            theme: 'grid',
+            styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' }, // Fonte levemente menor para caber mais
+            headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold', halign: 'center' },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
             
-            // Estilos Gerais
-            styles: { 
-                fontSize: 9, 
-                cellPadding: 3,
-                font: 'helvetica',
-                valign: 'middle',
-                overflow: 'linebreak' // Quebra texto longo automaticamente
-            },
-            
-            // Estilo do Cabeçalho da Tabela (Azul do SIGP)
-            headStyles: { 
-                fillColor: [0, 61, 92], 
-                textColor: 255,
-                fontStyle: 'bold',
-                halign: 'center'
-            },
-            
-            // Estilo Zebrado (Alternar cores das linhas)
-            alternateRowStyles: {
-                fillColor: [245, 245, 245]
-            },
-
-            // --- A MÁGICA DO CABEÇALHO REPETIDO ---
-            // Esta função roda no topo de CADA página gerada
+            // Desenha Cabeçalho e Rodapé em CADA página
             didDrawPage: function (data) {
-                // Fundo do Cabeçalho (Barra cinza bem clara opcional, ou apenas branco)
-                // doc.setFillColor(250, 250, 250);
-                // doc.rect(0, 0, 297, 35, 'F');
-
-                // Título Principal
-                doc.setFontSize(18);
-                doc.setTextColor(0, 61, 92); // Azul SIGP
-                doc.text(title, 14, 15);
-
-                // Linha divisória
-                doc.setLineWidth(0.5);
-                doc.setDrawColor(0, 61, 92);
-                doc.line(14, 18, 283, 18); // Linha de ponta a ponta (A4 paisagem tem ~297mm)
-
-                // Subtítulos (Usuário, Data, Período)
-                doc.setFontSize(10);
-                doc.setTextColor(80, 80, 80); // Cinza escuro
-                doc.text(subtitle, 14, 24);
-                
-                if (period) {
-                    doc.text(period, 14, 29);
-                }
-
-                // Rodapé: Número da Página
                 const pageSize = doc.internal.pageSize;
                 const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
                 const pageWidth = pageSize.width ? pageSize.width : pageSize.getWidth();
+
+                // --- CABEÇALHO ---
+                doc.setFontSize(16); doc.setTextColor(0, 61, 92);
+                doc.text(title, 14, 15);
+
+                // Linha divisória
+                doc.setDrawColor(0, 61, 92); doc.setLineWidth(0.5);
+                doc.line(14, 18, pageWidth - 14, 18);
+
+                // Resumo dos Filtros (Embaixo da linha)
+                doc.setFontSize(9); doc.setTextColor(80, 80, 80);
+                // Divide o texto em linhas se for muito longo
+                const splitFilters = doc.splitTextToSize(filterSummary, pageWidth - 28);
+                doc.text(splitFilters, 14, 24);
+
+                // --- RODAPÉ ESQUERDO (Assinatura) ---
+                const now = new Date();
+                const dataHora = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
+                const usuario = currentUser ? currentUser.name.toUpperCase() : 'SISTEMA';
+                const rodapeTexto = `Impresso em ${dataHora} por ${usuario}`;
                 
+                doc.setFontSize(8); doc.setTextColor(100);
+                doc.text(rodapeTexto, 14, pageHeight - 10); // Canto Inferior Esquerdo
+
+                // --- RODAPÉ DIREITO (Paginação) ---
                 const str = 'Página ' + doc.internal.getNumberOfPages();
-                doc.setFontSize(8);
                 doc.text(str, pageWidth - 14, pageHeight - 10, { align: 'right' });
-                
-                // Marca d'água discreta (Opcional)
-                doc.setTextColor(200);
-                doc.text('SIGP Saúde', 14, pageHeight - 10);
             },
             
-            // Margens para não cortar conteúdo
-            margin: { top: 40, bottom: 15, left: 14, right: 14 } 
+            // Margens
+            margin: { top: 45, bottom: 15, left: 14, right: 14 } 
         });
 
-        // 5. Salvar arquivo
+        // 5. TOTALIZADOR AO FINAL (Após a tabela)
+        const finalY = doc.lastAutoTable.finalY || 45;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Total de registros encontrados: ${totalRows}`, 14, finalY + 10);
+
+        // 6. SALVAR
         const fileName = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.pdf';
         doc.save(fileName);
 
     } catch (err) {
-        console.error("Erro ao gerar PDF:", err);
-        alert('Ocorreu um erro ao processar o PDF. Tente reduzir o intervalo de datas.');
+        console.error("Erro PDF:", err);
+        alert('Erro ao gerar PDF.');
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
     }
+}
+
+// --- FUNÇÃO AUXILIAR PARA MONTAR O RESUMO DOS FILTROS ---
+function getFilterSummary(type) {
+    let summary = [];
+    
+    // Função helper para adicionar se tiver valor
+    const add = (label, val) => {
+        if (val && val !== 'Todos' && val !== 'Todas' && val !== '') {
+            summary.push(`${label}: ${val}`);
+        }
+    };
+    
+    // Formata datas
+    const fmtDate = (d) => d ? formatDate(d) : '';
+    const dateRange = (startId, endId, label) => {
+        const s = document.getElementById(startId).value;
+        const e = document.getElementById(endId).value;
+        if (s || e) {
+            summary.push(`${label}: ${s ? fmtDate(s) : 'Início'} à ${e ? fmtDate(e) : 'Hoje'}`);
+        }
+    };
+
+    if (type === 'municipios') {
+        const dType = document.getElementById('rep-mun-date-type').value === 'visita' ? 'Última Visita' : 'Implantação';
+        dateRange('rep-mun-start', 'rep-mun-end', `Data (${dType})`);
+        add('Status', document.getElementById('rep-mun-status').value);
+    }
+    else if (type === 'treinamentos') {
+        const dType = document.getElementById('rep-train-date-type').value === 'realizacao' ? 'Realização' : 'Solicitação';
+        dateRange('rep-train-start', 'rep-train-end', `Data (${dType})`);
+        add('Status', document.getElementById('rep-train-status').value);
+        add('Município', document.getElementById('rep-train-mun').value);
+        add('Colaborador', document.getElementById('rep-train-colab').value);
+        add('Cargo', document.getElementById('rep-train-cargo').value);
+        add('Profissional', document.getElementById('rep-train-prof').value);
+    }
+    else if (type === 'apresentacoes') {
+        const dType = document.getElementById('rep-pres-date-type').value === 'realizacao' ? 'Realização' : 'Solicitação';
+        dateRange('rep-pres-start', 'rep-pres-end', `Data (${dType})`);
+        add('Status', document.getElementById('rep-pres-status').value);
+        add('Município', document.getElementById('rep-pres-mun').value);
+        add('Colaborador', document.getElementById('rep-pres-colab').value);
+        add('Forma', document.getElementById('rep-pres-form').value);
+    }
+    else if (type === 'visitas') {
+        const dType = document.getElementById('rep-vis-date-type').value === 'realizacao' ? 'Realização' : 'Solicitação';
+        dateRange('rep-vis-start', 'rep-vis-end', `Data (${dType})`);
+        add('Status', document.getElementById('rep-vis-status').value);
+        add('Município', document.getElementById('rep-vis-mun').value);
+        add('Solicitante', document.getElementById('rep-vis-applicant').value);
+    }
+    else if (type === 'producao') {
+        const dType = document.getElementById('rep-prod-date-type').value === 'envio' ? 'Envio' : 'Liberação';
+        dateRange('rep-prod-start', 'rep-prod-end', `Data (${dType})`);
+        add('Status', document.getElementById('rep-prod-status').value);
+        add('Frequência', document.getElementById('rep-prod-freq').value);
+        add('Município', document.getElementById('rep-prod-mun').value);
+        add('Profissional', document.getElementById('rep-prod-prof').value);
+    }
+    else if (type === 'integracoes') {
+        dateRange('rep-int-start', 'rep-int-end', 'Vencimento');
+        add('Status', document.getElementById('rep-int-status').value);
+        add('Município', document.getElementById('rep-int-mun').value);
+        add('API', document.getElementById('rep-int-api').value);
+    }
+    else if (type === 'colaboradores') {
+        dateRange('rep-colab-adm-start', 'rep-colab-adm-end', 'Admissão');
+        dateRange('rep-colab-term-start', 'rep-colab-term-end', 'Desligamento');
+        add('Status', document.getElementById('rep-colab-status').value);
+        add('Colaborador', document.getElementById('rep-colab-name').value);
+    }
+
+    if (summary.length === 0) return "Filtros: Nenhum filtro específico aplicado (Todos os registros).";
+    
+    return "Filtros Aplicados: " + summary.join('  -  ');
 }
 
 function exportReportTreinamentosExcel() {
