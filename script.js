@@ -616,7 +616,7 @@ const DADOS_PADRAO = {
             passwordHash: null, 
             permission: 'Administrador', 
             status: 'Ativo', 
-            mustChangePassword: true 
+            mustChangePassword: false 
         }
     ],
     modulos: [],
