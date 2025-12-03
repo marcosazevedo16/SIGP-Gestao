@@ -7311,208 +7311,6 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
-// ============================================================================
-// FUNÇÃO AUXILIAR: Retorna filtros estruturados (Array de Objetos)
-// ============================================================================
-function getFilterData(type) {
-    let filters = [];
-    
-    const fmt = (d) => { if (!d) return ''; const p = d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
-    
-    // Helper inteligente
-    const add = (label, val) => {
-        if (val && val !== 'Todos' && val !== 'Todas' && val !== '') {
-            filters.push({ label: label, value: val });
-        }
-    };
-    const addDate = (idS, idE, label) => {
-        const s = document.getElementById(idS).value;
-        const e = document.getElementById(idE).value;
-        if (s || e) filters.push({ label: label, value: `${s ? fmt(s) : 'Início'} até ${e ? fmt(e) : 'Hoje'}` });
-    };
-
-    // Mapeamento
-    if (type === 'municipios') {
-        const dType = document.getElementById('rep-mun-date-type').value === 'visita' ? 'Última Visita' : 'Implantação';
-        addDate('rep-mun-start', 'rep-mun-end', dType);
-        add('Status', document.getElementById('rep-mun-status').value);
-    }
-    else if (type === 'treinamentos') {
-        const dType = document.getElementById('rep-train-date-type').value === 'realizacao' ? 'Realização' : 'Solicitação';
-        addDate('rep-train-start', 'rep-train-end', dType);
-        add('Status', document.getElementById('rep-train-status').value);
-        add('Município', document.getElementById('rep-train-mun').value);
-        add('Colaborador', document.getElementById('rep-train-colab').value);
-        add('Cargo', document.getElementById('rep-train-cargo').value);
-        add('Profissional', document.getElementById('rep-train-prof').value);
-    }
-    else if (type === 'apresentacoes') {
-        const dType = document.getElementById('rep-pres-date-type').value === 'realizacao' ? 'Realização' : 'Solicitação';
-        addDate('rep-pres-start', 'rep-pres-end', dType);
-        add('Status', document.getElementById('rep-pres-status').value);
-        add('Município', document.getElementById('rep-pres-mun').value);
-        add('Colaborador', document.getElementById('rep-pres-colab').value);
-        add('Forma', document.getElementById('rep-pres-form').value);
-    }
-    else if (type === 'visitas') {
-        const dType = document.getElementById('rep-vis-date-type').value === 'realizacao' ? 'Realização' : 'Solicitação';
-        addDate('rep-vis-start', 'rep-vis-end', dType);
-        add('Status', document.getElementById('rep-vis-status').value);
-        add('Município', document.getElementById('rep-vis-mun').value);
-        add('Solicitante', document.getElementById('rep-vis-applicant').value);
-    }
-    else if (type === 'producao') {
-        const dType = document.getElementById('rep-prod-date-type').value === 'envio' ? 'Envio' : 'Liberação';
-        addDate('rep-prod-start', 'rep-prod-end', dType);
-        add('Status', document.getElementById('rep-prod-status').value);
-        add('Frequência', document.getElementById('rep-prod-freq').value);
-        add('Município', document.getElementById('rep-prod-mun').value);
-        add('Profissional', document.getElementById('rep-prod-prof').value);
-    }
-    else if (type === 'integracoes') {
-        addDate('rep-int-start', 'rep-int-end', 'Vencimento');
-        add('Status', document.getElementById('rep-int-status').value);
-        add('Município', document.getElementById('rep-int-mun').value);
-        add('API', document.getElementById('rep-int-api').value);
-    }
-    else if (type === 'colaboradores') {
-        addDate('rep-colab-adm-start', 'rep-colab-adm-end', 'Admissão');
-        addDate('rep-colab-term-start', 'rep-colab-term-end', 'Desligamento');
-        add('Situação', document.getElementById('rep-colab-status').value);
-        add('Colaborador', document.getElementById('rep-colab-name').value);
-    }
-
-    return filters;
-}
-
-// ============================================================================
-// FUNÇÃO PRINCIPAL: GERAR PDF (COM NEGRITO NOS FILTROS)
-// ============================================================================
-function savePDFFromPreview() {
-    if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca jsPDF faltando.'); return; }
-
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ Gerando PDF...';
-    btn.disabled = true;
-
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4'); // Paisagem
-
-        // 1. Dados Básicos
-        const headerContainer = document.querySelector('.report-header-print');
-        let title = "Relatório de Gestão";
-        if (headerContainer) {
-            const h2 = headerContainer.querySelector('h2');
-            if (h2) title = h2.innerText;
-        }
-
-        // 2. Captura Filtros (Array de Objetos)
-        const type = document.getElementById('filter-report-type').value;
-        const filters = getFilterData(type); // Nova função acima
-
-        // 3. Captura Tabela
-        const sourceTable = document.querySelector('.report-table');
-        if (!sourceTable) throw new Error("Tabela não encontrada.");
-        const totalRows = sourceTable.querySelectorAll('tbody tr').length;
-
-        // 4. Configuração do Espaço dos Filtros
-        // Se tiver muitos filtros, empurra a tabela para baixo
-        let startY = 40; 
-        if (filters.length > 0) {
-            // Calcula quantas linhas de filtro vamos usar (ex: 3 filtros por linha)
-            const lines = Math.ceil(filters.length / 3); 
-            startY += (lines * 6) + 5; // Ajusta o início da tabela
-        }
-
-        doc.autoTable({
-            html: '.report-table',
-            startY: startY,
-            theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
-            headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold', halign: 'center' },
-            alternateRowStyles: { fillColor: [245, 245, 245] },
-            
-            // --- CABEÇALHO (REPETIDO) ---
-            didDrawPage: function (data) {
-                const pageWidth = doc.internal.pageSize.width;
-                const pageHeight = doc.internal.pageSize.height;
-
-                // Título
-                doc.setFontSize(16); doc.setTextColor(0, 61, 92);
-                doc.text(title, 14, 15);
-
-                // Linha Divisória
-                doc.setDrawColor(0, 61, 92); doc.setLineWidth(0.5);
-                doc.line(14, 18, pageWidth - 14, 18);
-
-                // --- DESENHO DOS FILTROS (NEGRITO + NORMAL) ---
-                let x = 14;
-                let y = 24;
-                const itemWidth = (pageWidth - 28) / 3; // 3 colunas de filtros
-
-                doc.setFontSize(9);
-                doc.setTextColor(50, 50, 50);
-
-                if (filters.length === 0) {
-                    doc.setFont(undefined, 'normal');
-                    doc.text("Filtros: Nenhum filtro aplicado (Todos os registros)", 14, y);
-                } else {
-                    filters.forEach((f, index) => {
-                        // Label em Negrito
-                        doc.setFont(undefined, 'bold');
-                        doc.text(`${f.label}:`, x, y);
-                        
-                        // Valor em Normal
-                        const labelWidth = doc.getTextWidth(`${f.label}: `);
-                        doc.setFont(undefined, 'normal');
-                        doc.text(f.value, x + labelWidth, y);
-
-                        // Pula para próxima coluna ou linha
-                        if ((index + 1) % 3 === 0) {
-                            x = 14; // Volta pro início
-                            y += 6; // Desce uma linha
-                        } else {
-                            x += itemWidth; // Vai pro lado
-                        }
-                    });
-                }
-
-                // Rodapés
-                const now = new Date();
-                const dataHora = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
-                const usuario = currentUser ? currentUser.name.toUpperCase() : 'SISTEMA';
-                
-                doc.setFontSize(8); doc.setTextColor(100);
-                doc.text(`Impresso em ${dataHora} por ${usuario}`, 14, pageHeight - 10);
-
-                const str = 'Página ' + doc.internal.getNumberOfPages();
-                doc.text(str, pageWidth - 14, pageHeight - 10, { align: 'right' });
-            },
-            margin: { top: 40, bottom: 15, left: 14, right: 14 } 
-        });
-
-        // 5. Totalizador
-        const finalY = doc.lastAutoTable.finalY || 40;
-        const pageWidth = doc.internal.pageSize.width;
-        doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(0, 0, 0);
-        doc.text(`Total de registros encontrados: ${totalRows}`, pageWidth - 14, finalY + 10, { align: 'right' });
-
-        // 6. Exibir
-        const blob = doc.output('bloburl');
-        const bodyEl = document.getElementById('report-preview-body');
-        bodyEl.innerHTML = `<iframe id="pdf-preview-frame" src="${blob}#zoom=100" width="100%" height="100%"></iframe>`;
-        
-        const modalEl = document.getElementById('report-preview-modal');
-        modalEl.classList.add('show');
-
-    } catch (err) {
-        console.error(err); alert('Erro ao gerar PDF.');
-    } finally {
-        if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
-    }
-}
 function exportReportTreinamentosExcel() {
     // 1. Recaptura os mesmos filtros
     const dateType = document.getElementById('rep-train-date-type').value;
@@ -8071,4 +7869,206 @@ function exportReportColaboradoresExcel() {
     });
 
     downloadXLSX("Relatorio_RH_Colaboradores_Filtrado", headers, rows);
+}
+// ============================================================================
+// 1. FUNÇÃO AUXILIAR: Retorna dados para o PDF (Array de Objetos)
+// ============================================================================
+function getFilterData(type) {
+    let filters = [];
+    
+    const fmt = (d) => { if (!d) return ''; const p = d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
+    
+    // Helper inteligente
+    const add = (label, val) => {
+        if (val && val !== 'Todos' && val !== 'Todas' && val !== '') {
+            filters.push({ label: label, value: val });
+        }
+    };
+    const addDate = (idS, idE, label) => {
+        const s = document.getElementById(idS).value;
+        const e = document.getElementById(idE).value;
+        if (s || e) filters.push({ label: label, value: `${s ? fmt(s) : 'Início'} até ${e ? fmt(e) : 'Hoje'}` });
+    };
+
+    // Mapeamento dos campos
+    if (type === 'municipios') {
+        const dType = document.getElementById('rep-mun-date-type').value === 'visita' ? 'Última Visita' : 'Implantação';
+        addDate('rep-mun-start', 'rep-mun-end', dType);
+        add('Status', document.getElementById('rep-mun-status').value);
+    }
+    else if (type === 'treinamentos') {
+        const dType = document.getElementById('rep-train-date-type').value === 'realizacao' ? 'Realização' : 'Solicitação';
+        addDate('rep-train-start', 'rep-train-end', dType);
+        add('Status', document.getElementById('rep-train-status').value);
+        add('Município', document.getElementById('rep-train-mun').value);
+        add('Colaborador', document.getElementById('rep-train-colab').value);
+        add('Cargo', document.getElementById('rep-train-cargo').value);
+        add('Profissional', document.getElementById('rep-train-prof').value);
+    }
+    else if (type === 'apresentacoes') {
+        const dType = document.getElementById('rep-pres-date-type').value === 'realizacao' ? 'Realização' : 'Solicitação';
+        addDate('rep-pres-start', 'rep-pres-end', dType);
+        add('Status', document.getElementById('rep-pres-status').value);
+        add('Município', document.getElementById('rep-pres-mun').value);
+        add('Colaborador', document.getElementById('rep-pres-colab').value);
+        add('Forma', document.getElementById('rep-pres-form').value);
+    }
+    else if (type === 'visitas') {
+        const dType = document.getElementById('rep-vis-date-type').value === 'realizacao' ? 'Realização' : 'Solicitação';
+        addDate('rep-vis-start', 'rep-vis-end', dType);
+        add('Status', document.getElementById('rep-vis-status').value);
+        add('Município', document.getElementById('rep-vis-mun').value);
+        add('Solicitante', document.getElementById('rep-vis-applicant').value);
+    }
+    else if (type === 'producao') {
+        const dType = document.getElementById('rep-prod-date-type').value === 'envio' ? 'Envio' : 'Liberação';
+        addDate('rep-prod-start', 'rep-prod-end', dType);
+        add('Status', document.getElementById('rep-prod-status').value);
+        add('Frequência', document.getElementById('rep-prod-freq').value);
+        add('Município', document.getElementById('rep-prod-mun').value);
+        add('Profissional', document.getElementById('rep-prod-prof').value);
+    }
+    else if (type === 'integracoes') {
+        addDate('rep-int-start', 'rep-int-end', 'Vencimento');
+        add('Status', document.getElementById('rep-int-status').value);
+        add('Município', document.getElementById('rep-int-mun').value);
+        add('API', document.getElementById('rep-int-api').value);
+    }
+    else if (type === 'colaboradores') {
+        addDate('rep-colab-adm-start', 'rep-colab-adm-end', 'Admissão');
+        addDate('rep-colab-term-start', 'rep-colab-term-end', 'Desligamento');
+        add('Situação', document.getElementById('rep-colab-status').value);
+        add('Colaborador', document.getElementById('rep-colab-name').value);
+    }
+
+    return filters;
+}
+
+// ============================================================================
+// 2. FUNÇÃO PRINCIPAL: GERAR PDF (COM NEGRITO, RODAPÉ E TOTAIS)
+// ============================================================================
+function savePDFFromPreview() {
+    if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca jsPDF faltando.'); return; }
+
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Gerando PDF...';
+    btn.disabled = true;
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4'); // Paisagem
+
+        // 1. Dados Básicos
+        const headerContainer = document.querySelector('.report-header-print');
+        let title = "Relatório de Gestão";
+        if (headerContainer) {
+            const h2 = headerContainer.querySelector('h2');
+            if (h2) title = h2.innerText;
+        }
+
+        // 2. Captura Filtros (Array de Objetos) - CHAMA A FUNÇÃO CORRETA AGORA
+        const type = document.getElementById('filter-report-type').value;
+        const filters = getFilterData(type); 
+
+        // 3. Captura Tabela
+        const sourceTable = document.querySelector('.report-table');
+        if (!sourceTable) throw new Error("Tabela não encontrada.");
+        const totalRows = sourceTable.querySelectorAll('tbody tr').length;
+
+        // 4. Configuração do Espaço dos Filtros
+        let startY = 40; 
+        if (filters.length > 0) {
+            const lines = Math.ceil(filters.length / 3); 
+            startY += (lines * 6) + 5; 
+        }
+
+        doc.autoTable({
+            html: '.report-table',
+            startY: startY,
+            theme: 'grid',
+            styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+            headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold', halign: 'center' },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
+            
+            // --- CABEÇALHO (REPETIDO) ---
+            didDrawPage: function (data) {
+                const pageWidth = doc.internal.pageSize.width;
+                const pageHeight = doc.internal.pageSize.height;
+
+                // Título
+                doc.setFontSize(16); doc.setTextColor(0, 61, 92);
+                doc.text(title, 14, 15);
+
+                // Linha Divisória
+                doc.setDrawColor(0, 61, 92); doc.setLineWidth(0.5);
+                doc.line(14, 18, pageWidth - 14, 18);
+
+                // --- DESENHO DOS FILTROS (NEGRITO + NORMAL) ---
+                let x = 14;
+                let y = 24;
+                const itemWidth = (pageWidth - 28) / 3; // 3 colunas de filtros
+
+                doc.setFontSize(9);
+                doc.setTextColor(50, 50, 50);
+
+                if (filters.length === 0) {
+                    doc.setFont(undefined, 'normal');
+                    doc.text("Filtros: Nenhum filtro aplicado (Todos os registros)", 14, y);
+                } else {
+                    filters.forEach((f, index) => {
+                        // Label em Negrito
+                        doc.setFont(undefined, 'bold');
+                        doc.text(`${f.label}:`, x, y);
+                        
+                        // Valor em Normal
+                        const labelWidth = doc.getTextWidth(`${f.label}: `);
+                        doc.setFont(undefined, 'normal');
+                        doc.text(f.value, x + labelWidth, y);
+
+                        // Pula para próxima coluna ou linha
+                        if ((index + 1) % 3 === 0) {
+                            x = 14; 
+                            y += 6; 
+                        } else {
+                            x += itemWidth; 
+                        }
+                    });
+                }
+
+                // Rodapés
+                const now = new Date();
+                const dataHora = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
+                const usuario = currentUser ? currentUser.name.toUpperCase() : 'SISTEMA';
+                
+                doc.setFontSize(8); doc.setTextColor(100);
+                doc.text(`Impresso em ${dataHora} por ${usuario}`, 14, pageHeight - 10);
+
+                const str = 'Página ' + doc.internal.getNumberOfPages();
+                doc.text(str, pageWidth - 14, pageHeight - 10, { align: 'right' });
+            },
+            margin: { top: 40, bottom: 15, left: 14, right: 14 } 
+        });
+
+        // 5. Totalizador (Lado Direito)
+        const finalY = doc.lastAutoTable.finalY || 40;
+        const pageWidth = doc.internal.pageSize.width;
+        doc.setFontSize(10); 
+        doc.setFont(undefined, 'bold'); 
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Total de registros encontrados: ${totalRows}`, pageWidth - 14, finalY + 10, { align: 'right' });
+
+        // 6. Exibir
+        const blob = doc.output('bloburl');
+        const bodyEl = document.getElementById('report-preview-body');
+        bodyEl.innerHTML = `<iframe id="pdf-preview-frame" src="${blob}#zoom=100" width="100%" height="100%"></iframe>`;
+        
+        const modalEl = document.getElementById('report-preview-modal');
+        modalEl.classList.add('show');
+
+    } catch (err) {
+        console.error(err); alert('Erro ao gerar PDF: ' + err.message);
+    } finally {
+        if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
+    }
 }
