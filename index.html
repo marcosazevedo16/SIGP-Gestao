@@ -861,17 +861,45 @@
                     </select>
             </div>
         </div>
-        <div id="filters-generic" class="report-filter-group" style="display:none; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div id="filters-colaboradores" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            
             <div class="form-group">
-                <label class="form-label">Data Inicial</label>
-                <input type="date" class="form-control" id="filter-report-date-from">
+                <label class="form-label">Situação</label>
+                <select class="form-control" id="rep-colab-status">
+                    <option value="">Todas</option>
+                    <option value="Ativo na Empresa">Ativo na Empresa</option>
+                    <option value="Desligado da Empresa">Desligado da Empresa</option>
+                </select>
             </div>
+
             <div class="form-group">
-                <label class="form-label">Data Final</label>
-                <input type="date" class="form-control" id="filter-report-date-to">
+                <label class="form-label">Colaborador</label>
+                <select class="form-control" id="rep-colab-name">
+                    <option value="">Todos</option>
+                    </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Admissão (Início)</label>
+                <input type="date" class="form-control" id="rep-colab-adm-start">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Admissão (Fim)</label>
+                <input type="date" class="form-control" id="rep-colab-adm-end">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Desligamento (Início)</label>
+                <input type="date" class="form-control" id="rep-colab-term-start">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Desligamento (Fim)</label>
+                <input type="date" class="form-control" id="rep-colab-term-end">
             </div>
         </div>
-        <div id="filters-visitas" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+          <div id="filters-visitas" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
             
             <div class="form-group">
                 <label class="form-label">Considerar Data de:</label>
@@ -966,7 +994,16 @@
                 <input type="text" class="form-control" id="rep-prod-prof" placeholder="Nome do profissional...">
             </div>
         </div>
-
+        <div id="filters-generic" class="report-filter-group" style="display:none; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+                <label class="form-label">Data Inicial</label>
+                <input type="date" class="form-control" id="filter-report-date-from">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Data Final</label>
+                <input type="date" class="form-control" id="filter-report-date-to">
+            </div>
+        </div>
         <div class="form-group" style="margin-top: 20px; margin-bottom: 0; display: flex; gap: 10px;">
             <button class="btn btn--secondary" onclick="clearReportFilters()" style="flex: 1;" title="Limpar todos os campos">
                 🧹 Limpar Filtros
