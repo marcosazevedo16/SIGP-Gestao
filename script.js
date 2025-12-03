@@ -6790,8 +6790,10 @@ function initOfflineDetection() {
 function updateReportFiltersUI() {
     const type = document.getElementById('filter-report-type').value;
     
+    // 1. Esconde TODOS os grupos primeiro
     document.querySelectorAll('.report-filter-group').forEach(el => el.style.display = 'none');
 
+    // 2. Mostra apenas o grupo específico selecionado
     if (type === 'municipios') {
         document.getElementById('filters-municipios').style.display = 'grid'; 
     } 
@@ -6807,14 +6809,12 @@ function updateReportFiltersUI() {
     else if (type === 'producao') {
         document.getElementById('filters-producao').style.display = 'grid'; 
     }
-    else if (type === 'integracoes') { 
+    else if (type === 'integracoes') {
         document.getElementById('filters-integracoes').style.display = 'grid'; 
     }
-    else if (type === 'colaboradores') { 
-        document.getElementById('filters-colaboradores').style.display = 'grid';
+    else if (type === 'colaboradores') {
+        document.getElementById('filters-colaboradores').style.display = 'grid'; 
     }
-    else if (type !== '') { 
-        document.getElementById('filters-generic').style.display = 'grid'; }
 }
 // ============================================================================
 // NOVAS AÇÕES DE RELATÓRIO: LIMPAR E EXCEL
