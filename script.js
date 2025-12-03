@@ -175,7 +175,6 @@ function calculateTimeInUse(dateString) {
     const start = new Date(dateString);
     const now = new Date();
     
-    // Zera horas para cálculo limpo apenas pelas datas
     start.setHours(0,0,0,0);
     now.setHours(0,0,0,0);
 
@@ -183,10 +182,9 @@ function calculateTimeInUse(dateString) {
     let months = now.getMonth() - start.getMonth();
     let days = now.getDate() - start.getDate();
 
-    // Ajuste matemático de datas
     if (days < 0) {
         months--;
-        // Pega o último dia do mês anterior para calcular os dias restantes
+        // Pega o último dia do mês anterior
         const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
         days += prevMonth.getDate();
     }
@@ -195,17 +193,21 @@ function calculateTimeInUse(dateString) {
         months += 12;
     }
 
-    // Monta a string de resultado
+    // --- NOVA LÓGICA DE EXIBIÇÃO (Compacta) ---
+    
+    // Se tiver menos de 1 mês (0 anos e 0 meses)
+    if (years === 0 && months === 0) {
+        return "Menos de um mês";
+    }
+
     let parts = [];
     if (years > 0) parts.push(`${years} ano(s)`);
     if (months > 0) parts.push(`${months} mês(es)`);
-    if (days > 0) parts.push(`${days} dia(s)`);
     
-    if (parts.length === 0) return "Hoje"; // Se for a mesma data
+    // Ignoramos os dias para economizar espaço
     
     return parts.join(' e ');
 }
-
 // Cálculo de Dias desde a última visita (PDF Item 15)
 function calculateDaysSince(dateString) {
     if (!dateString) {
@@ -1298,13 +1300,9 @@ function renderMunicipalities() {
                 <td class="module-tags-cell">${badges}</td>
                 <td style="font-size:12px;">${m.manager}</td>
                 <td>${m.contact}</td>
+                
                 <td>${formatDate(m.implantationDate)}</td>
-                
-                <td style="font-size:11px;">${formatDate(m.lastVisit)}</td> 
-                
-                <td style="font-size:11px;">${calculateTimeInUse(m.implantationDate)}</td>
-                
-                <td style="font-size:11px;">${calculateTimeInUse(m.lastVisit)}</td>
+                <td style="font-size:11px;">${calculateTimeInUse(m.implantationDate)}</td> <td style="font-size:11px;">${formatDate(m.lastVisit)}</td> <td style="font-size:11px;">${calculateTimeInUse(m.lastVisit)}</td>
                 
                 <td><span class="${stCls}">${m.status}</span></td>
                 <td style="color:${corDataFim}; font-size:11px;">${dataFim}</td>
@@ -1312,16 +1310,15 @@ function renderMunicipalities() {
             </tr>`;
         }).join('');
         
-        // Cabeçalho da Tabela
+        // Cabeçalho da Tabela (Reordenado)
         c.innerHTML = `<table><thead>
             <th>Município</th>
             <th>Módulos Em Uso</th>
             <th>Gestor(a) Atual</th>
             <th>Contato</th>
             <th>Data de<br>Implantação</th>
-            <th>Última Visita<br>Presencial</th>
-            <th>Tempo de Uso</th>
-            <th>Tempo sem Visita</th> <th>Status</th>
+            <th>Tempo de Uso</th> <th>Última Visita<br>Presencial</th> <th>Tempo sem Visita</th> 
+            <th>Status</th>
             <th>Bloqueio/<br>Parou de Usar</th>
             <th>Ações</th>
         </thead><tbody>${rows}</tbody></table>`;
