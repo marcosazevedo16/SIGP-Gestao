@@ -639,17 +639,18 @@ const DADOS_PADRAO = {
 };
 
 // Carrega usuários
-// CORREÇÃO DE LOGIN: Garante que o ADMIN tenha senha se ela estiver vazia
+let users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
+
+// CORREÇÃO DE LOGIN: Se o ADMIN estiver sem senha (null), define 'saude2025'
 if (users.length > 0 && users[0].login === 'ADMIN' && !users[0].passwordHash) {
-    // Gera a segurança inicial
+    // Gera segurança
     users[0].salt = generateSalt();
-    
-    // Define a senha padrão 'saude2025'
+    // Define a senha padrão
     users[0].passwordHash = hashPassword('saude2025', users[0].salt);
     
-    // Salva para não perder
+    // Salva
     salvarNoArmazenamento('users', users);
-    console.log('🔒 Senha do ADMIN configurada automaticamente para: saude2025');
+    console.log('🔒 Senha do ADMIN configurada para: saude2025');
 }
 
 let currentUser = recuperarDoArmazenamento('currentUser');
