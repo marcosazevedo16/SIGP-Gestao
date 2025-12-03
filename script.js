@@ -6944,10 +6944,10 @@ function exportReportMunicipiosExcel() {
 }
 
 // ============================================================================
-// GERAÇÃO DE PREVIEW REAL (PDF NO MODAL)
+// 2. FUNÇÃO PRINCIPAL: Gera o PDF no Modal (Com Filtros, Rodapé e Totais)
 // ============================================================================
 function generateReportPreview() {
-    // 1. Verificações Iniciais
+    // 1. Verificações
     if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca jsPDF faltando.'); return; }
     
     const typeEl = document.getElementById('filter-report-type');
@@ -6960,80 +6960,100 @@ function generateReportPreview() {
     const dateFrom = dateFromEl ? dateFromEl.value : '';
     const dateTo = dateToEl ? dateToEl.value : '';
 
-    // Feedback visual
-    const btnGerar = event.target; // Captura o botão que foi clicado
+    const btnGerar = event.target;
     const textoOriginal = btnGerar ? btnGerar.innerHTML : 'Gerar';
     if(btnGerar) { btnGerar.innerHTML = '⏳ Gerando...'; btnGerar.disabled = true; }
 
     try {
-        // 2. Gera o HTML da tabela (usando suas funções existentes)
+        // 2. Gera o HTML da tabela (lógica existente)
         let reportHTML = '';
         let reportTitle = '';
 
         switch (type) {
             case 'municipios': reportHTML = genRepMunicipios(); reportTitle = 'Carteira de Clientes'; break;
-            case 'treinamentos': reportHTML = genRepTreinamentos(dateFrom, dateTo); reportTitle = 'Controle de Treinamentos'; break;
+            case 'treinamentos': reportHTML = genRepTreinamentos(); reportTitle = 'Controle de Treinamentos'; break;
             case 'demandas': reportHTML = genRepDemandas(dateFrom, dateTo); reportTitle = 'Demandas de Suporte'; break;
-            case 'apresentacoes': reportHTML = genRepApresentacoes(dateFrom, dateTo); reportTitle = 'Apresentações do Software'; break;
-            case 'visitas': reportHTML = genRepVisitas(dateFrom, dateTo); reportTitle = 'Visitas Presenciais'; break;
-            case 'producao': reportHTML = genRepProducao(dateFrom, dateTo); reportTitle = 'Controle de Produção'; break;
+            case 'apresentacoes': reportHTML = genRepApresentacoes(); reportTitle = 'Apresentações do Software'; break;
+            case 'visitas': reportHTML = genRepVisitas(); reportTitle = 'Visitas Presenciais'; break;
+            case 'producao': reportHTML = genRepProducao(); reportTitle = 'Controle de Produção'; break;
             case 'integracoes': reportHTML = genRepIntegracoes(); reportTitle = 'Status de Integrações'; break;
             case 'colaboradores': reportHTML = genRepColaboradores(); reportTitle = 'Quadro de Colaboradores'; break;
             case 'usuarios': reportHTML = genRepUsuarios(); reportTitle = 'Gestão de Usuários'; break;
         }
 
-        // 3. Cria um elemento temporário invisível para o AutoTable ler
+        // 3. Lê os dados da tabela gerada
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = reportHTML;
-        // Pega a tabela de dentro do HTML gerado
         const tableEl = tempDiv.querySelector('table');
+        
+        // CONTA OS REGISTROS (Subtrai 1 se tiver cabeçalho)
+        const totalRows = tempDiv.querySelectorAll('tbody tr').length;
 
         if (!tableEl) { throw new Error("Nenhum dado encontrado para gerar o relatório."); }
 
-        // 4. GERA O PDF EM MEMÓRIA
+        // 4. Captura o Resumo dos Filtros
+        const filterSummary = getFilterSummary(type);
+
+        // 5. GERA O PDF
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4'); // Paisagem
 
-        // Configuração do Cabeçalho e Rodapé
-        const subtitle = `Gerado em: ${new Date().toLocaleString()} | Usuário: ${currentUser ? currentUser.name : 'Sistema'}`;
-        const periodText = (dateFrom || dateTo) ? `Período: ${dateFrom ? formatDate(dateFrom) : 'Início'} até ${dateTo ? formatDate(dateTo) : 'Hoje'}` : '';
-
         doc.autoTable({
             html: tableEl,
-            startY: 35,
+            startY: 40, // Espaço para cabeçalho e filtros
             theme: 'grid',
-            styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
+            styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
             headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold', halign: 'center' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             
-            // Desenha o cabeçalho em CADA página
+            // --- CABEÇALHO E RODAPÉ EM CADA PÁGINA ---
             didDrawPage: function (data) {
+                const pageSize = doc.internal.pageSize;
+                const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
+                const pageWidth = pageSize.width ? pageSize.width : pageSize.getWidth();
+
+                // 1. Título
                 doc.setFontSize(16); doc.setTextColor(0, 61, 92);
                 doc.text(`SIGP Saúde - ${reportTitle}`, 14, 15);
-                
-                doc.setFontSize(9); doc.setTextColor(100);
-                doc.text(subtitle, 14, 22);
-                if(periodText) doc.text(periodText, 14, 27);
 
+                // 2. Linha Divisória
                 doc.setDrawColor(0, 61, 92); doc.setLineWidth(0.5);
-                doc.line(14, 30, 283, 30);
+                doc.line(14, 18, pageWidth - 14, 18);
 
-                // Rodapé
-                const str = 'Página ' + doc.internal.getNumberOfPages();
-                doc.setFontSize(8);
-                doc.text(str, 283, 200, { align: 'right' });
+                // 3. Filtros Aplicados (Abaixo da linha)
+                doc.setFontSize(9); doc.setTextColor(80, 80, 80);
+                const splitFilters = doc.splitTextToSize(filterSummary, pageWidth - 28);
+                doc.text(splitFilters, 14, 24);
+
+                // 4. Rodapé Esquerdo (Assinatura)
+                const now = new Date();
+                const dataHora = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
+                const usuario = currentUser ? currentUser.name.toUpperCase() : 'SISTEMA';
+                
+                doc.setFontSize(8); doc.setTextColor(100);
+                doc.text(`Impresso em ${dataHora} por ${usuario}`, 14, pageHeight - 10);
+
+                // 5. Rodapé Direito (Paginação)
+                const pag = 'Página ' + doc.internal.getNumberOfPages();
+                doc.text(pag, pageWidth - 14, pageHeight - 10, { align: 'right' });
             },
-            margin: { top: 35, bottom: 15, left: 14, right: 14 }
+            margin: { top: 40, bottom: 15, left: 14, right: 14 }
         });
 
-        // 5. GERA O BLOB URL (Visualização)
-        const blob = doc.output('bloburl');
+        // 6. TOTALIZADOR NO FINAL DO PDF
+        const finalY = doc.lastAutoTable.finalY || 40;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(0, 0, 0);
+        
+        // Desenha o total logo após a tabela
+        doc.text(`Total de registros encontrados: ${totalRows}`, 14, finalY + 10);
 
-        // 6. Exibe no Iframe dentro do Modal
+        // 7. EXIBE NO IFRAME
+        const blob = doc.output('bloburl');
         const bodyEl = document.getElementById('report-preview-body');
         bodyEl.innerHTML = `<iframe id="pdf-preview-frame" src="${blob}#zoom=100" width="100%" height="100%"></iframe>`;
 
-        // Mostra o modal
         const modalEl = document.getElementById('report-preview-modal');
         modalEl.classList.add('show');
 
@@ -7044,7 +7064,6 @@ function generateReportPreview() {
         if(btnGerar) { btnGerar.innerHTML = textoOriginal; btnGerar.disabled = false; }
     }
 }
-
 function closeReportPreview() {
     const modal = document.getElementById('report-preview-modal');
     if (modal) {
@@ -7392,35 +7411,44 @@ function savePDFFromPreview() {
     }
 }
 
-// --- FUNÇÃO AUXILIAR PARA MONTAR O RESUMO DOS FILTROS ---
+// ============================================================================
+// 1. FUNÇÃO AUXILIAR: Monta o texto dos filtros aplicados
+// ============================================================================
 function getFilterSummary(type) {
     let summary = [];
     
-    // Função helper para adicionar se tiver valor
+    // Helper para formatar data
+    const fmt = (d) => {
+        if (!d) return '';
+        const parts = d.split('-'); // yyyy-mm-dd
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    };
+
+    // Helper para adicionar ao array se tiver valor
     const add = (label, val) => {
         if (val && val !== 'Todos' && val !== 'Todas' && val !== '') {
             summary.push(`${label}: ${val}`);
         }
     };
     
-    // Formata datas
-    const fmtDate = (d) => d ? formatDate(d) : '';
-    const dateRange = (startId, endId, label) => {
-        const s = document.getElementById(startId).value;
-        const e = document.getElementById(endId).value;
+    // Helper para datas
+    const addDate = (idStart, idEnd, label) => {
+        const s = document.getElementById(idStart).value;
+        const e = document.getElementById(idEnd).value;
         if (s || e) {
-            summary.push(`${label}: ${s ? fmtDate(s) : 'Início'} à ${e ? fmtDate(e) : 'Hoje'}`);
+            summary.push(`${label}: ${s ? fmt(s) : 'Início'} à ${e ? fmt(e) : 'Hoje'}`);
         }
     };
 
+    // Lógica por tipo
     if (type === 'municipios') {
         const dType = document.getElementById('rep-mun-date-type').value === 'visita' ? 'Última Visita' : 'Implantação';
-        dateRange('rep-mun-start', 'rep-mun-end', `Data (${dType})`);
+        addDate('rep-mun-start', 'rep-mun-end', dType);
         add('Status', document.getElementById('rep-mun-status').value);
     }
     else if (type === 'treinamentos') {
         const dType = document.getElementById('rep-train-date-type').value === 'realizacao' ? 'Realização' : 'Solicitação';
-        dateRange('rep-train-start', 'rep-train-end', `Data (${dType})`);
+        addDate('rep-train-start', 'rep-train-end', dType);
         add('Status', document.getElementById('rep-train-status').value);
         add('Município', document.getElementById('rep-train-mun').value);
         add('Colaborador', document.getElementById('rep-train-colab').value);
@@ -7429,7 +7457,7 @@ function getFilterSummary(type) {
     }
     else if (type === 'apresentacoes') {
         const dType = document.getElementById('rep-pres-date-type').value === 'realizacao' ? 'Realização' : 'Solicitação';
-        dateRange('rep-pres-start', 'rep-pres-end', `Data (${dType})`);
+        addDate('rep-pres-start', 'rep-pres-end', dType);
         add('Status', document.getElementById('rep-pres-status').value);
         add('Município', document.getElementById('rep-pres-mun').value);
         add('Colaborador', document.getElementById('rep-pres-colab').value);
@@ -7437,37 +7465,35 @@ function getFilterSummary(type) {
     }
     else if (type === 'visitas') {
         const dType = document.getElementById('rep-vis-date-type').value === 'realizacao' ? 'Realização' : 'Solicitação';
-        dateRange('rep-vis-start', 'rep-vis-end', `Data (${dType})`);
+        addDate('rep-vis-start', 'rep-vis-end', dType);
         add('Status', document.getElementById('rep-vis-status').value);
         add('Município', document.getElementById('rep-vis-mun').value);
         add('Solicitante', document.getElementById('rep-vis-applicant').value);
     }
     else if (type === 'producao') {
         const dType = document.getElementById('rep-prod-date-type').value === 'envio' ? 'Envio' : 'Liberação';
-        dateRange('rep-prod-start', 'rep-prod-end', `Data (${dType})`);
+        addDate('rep-prod-start', 'rep-prod-end', dType);
         add('Status', document.getElementById('rep-prod-status').value);
         add('Frequência', document.getElementById('rep-prod-freq').value);
         add('Município', document.getElementById('rep-prod-mun').value);
         add('Profissional', document.getElementById('rep-prod-prof').value);
     }
     else if (type === 'integracoes') {
-        dateRange('rep-int-start', 'rep-int-end', 'Vencimento');
+        addDate('rep-int-start', 'rep-int-end', 'Vencimento');
         add('Status', document.getElementById('rep-int-status').value);
         add('Município', document.getElementById('rep-int-mun').value);
         add('API', document.getElementById('rep-int-api').value);
     }
     else if (type === 'colaboradores') {
-        dateRange('rep-colab-adm-start', 'rep-colab-adm-end', 'Admissão');
-        dateRange('rep-colab-term-start', 'rep-colab-term-end', 'Desligamento');
-        add('Status', document.getElementById('rep-colab-status').value);
+        addDate('rep-colab-adm-start', 'rep-colab-adm-end', 'Admissão');
+        addDate('rep-colab-term-start', 'rep-colab-term-end', 'Desligamento');
+        add('Situação', document.getElementById('rep-colab-status').value);
         add('Colaborador', document.getElementById('rep-colab-name').value);
     }
 
     if (summary.length === 0) return "Filtros: Nenhum filtro específico aplicado (Todos os registros).";
-    
-    return "Filtros Aplicados: " + summary.join('  -  ');
+    return summary.join('  -  ');
 }
-
 function exportReportTreinamentosExcel() {
     // 1. Recaptura os mesmos filtros
     const dateType = document.getElementById('rep-train-date-type').value;
