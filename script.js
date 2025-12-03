@@ -6944,7 +6944,7 @@ function exportReportMunicipiosExcel() {
 }
 
 // ============================================================================
-// 2. FUNÇÃO PRINCIPAL: Gera o Preview na Tela (Com Espaçamento Otimizado)
+// 2. FUNÇÃO PRINCIPAL: Gera o Preview na Tela (Com Ajustes de Colunas)
 // ============================================================================
 function generateReportPreview() {
     if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca jsPDF faltando.'); return; }
@@ -6989,22 +6989,46 @@ function generateReportPreview() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
 
-        // --- CÁLCULO DO ESPAÇAMENTO (Ajuste Fino) ---
-        let startY = 29; // Padrão sem filtros (começa bem mais acima)
-        
+        // --- CÁLCULO DO ESPAÇAMENTO ---
+        let startY = 29; 
         if (filters.length > 0) {
             const lines = Math.ceil(filters.length / 3); 
-            // Início dos filtros (24) + Altura deles (lines*6) + Margem Mínima (3)
             startY = 24 + (lines * 6) + 3;
+        }
+
+        // --- CONFIGURAÇÃO DE COLUNAS ESPECÍFICAS ---
+        let customColumnStyles = {};
+        
+        // Se for o relatório de Municípios, ajusta as larguras manualmente
+        if (type === 'municipios') {
+            customColumnStyles = {
+                0: { cellWidth: 60 }, // Município (Largo)
+                1: { cellWidth: 25 }, // Status
+                2: { cellWidth: 40 }, // Gestor (Diminuído conforme solicitado)
+                3: { cellWidth: 35, halign: 'center' }, // Data Implantação
+                4: { cellWidth: 70 }, // Tempo de Uso (Largo para caber texto extenso)
+                5: { cellWidth: 35, halign: 'center' }  // Última Visita
+            };
         }
 
         doc.autoTable({
             html: tableEl,
-            startY: startY, // Aplica o cálculo justo
+            startY: startY, 
             theme: 'grid',
             styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
-            headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold', halign: 'center' },
+            
+            // Alterado halign para 'left' conforme solicitado
+            headStyles: { 
+                fillColor: [0, 61, 92], 
+                textColor: 255, 
+                fontStyle: 'bold', 
+                halign: 'left' // Antes era 'center'
+            },
+            
             alternateRowStyles: { fillColor: [245, 245, 245] },
+            
+            // Aplica os estilos de coluna personalizados definidos acima
+            columnStyles: customColumnStyles,
             
             didDrawPage: function (data) {
                 const pageWidth = doc.internal.pageSize.width;
@@ -7117,52 +7141,48 @@ function printReport() {
 
 // --- GERADORES DE TABELAS (Helpers) ---
 
-// 2. Atualizar a função genRepMunicipios para usar os novos filtros
+// ============================================================================
+// GERADOR HTML: CARTEIRA DE CLIENTES (ATUALIZADO)
+// ============================================================================
 function genRepMunicipios() {
-    // Captura os valores dos filtros ESPECÍFICOS
-    const dateType = document.getElementById('rep-mun-date-type').value; // 'implantacao' ou 'visita'
+    // Captura os valores dos filtros
+    const dateType = document.getElementById('rep-mun-date-type').value;
     const dateStart = document.getElementById('rep-mun-start').value;
     const dateEnd = document.getElementById('rep-mun-end').value;
     const statusFilter = document.getElementById('rep-mun-status').value;
 
-    // Filtra a lista global 'municipalities'
+    // Filtra os dados
     let data = municipalities.filter(m => {
-        // 1. Filtro de Status
         if (statusFilter && m.status !== statusFilter) return false;
-
-        // 2. Filtro de Data
-        // Decide qual campo de data olhar
         let dateToCheck = (dateType === 'visita') ? m.lastVisit : m.implantationDate;
-
-        // Se não tiver data cadastrada, e o filtro de data estiver ativo, ignora ou inclui?
-        // Regra: Se tem filtro de data, e o registro não tem data, ele sai.
         if ((dateStart || dateEnd) && !dateToCheck) return false;
-
         if (dateStart && dateToCheck < dateStart) return false;
-        if (dateEnd && dateToCheck > dateToCheck) return false; // Bug lógico corrigido abaixo
+        if (dateEnd && dateToCheck > dateToCheck) return false; 
         if (dateEnd && dateToCheck > dateEnd) return false;
-
         return true;
     });
 
-    // Ordenação
     data.sort((a,b) => a.name.localeCompare(b.name));
 
-    if (!data.length) return '<p style="text-align:center; padding:20px;">Nenhum cliente encontrado com esses filtros.</p>';
+    if (!data.length) return '<p style="text-align:center; padding:20px;">Nenhum cliente encontrado.</p>';
 
-    // Gera o HTML da tabela
+    // Gera as linhas
     const rows = data.map(m => {
-        // Formata as datas para exibição
         const dtImp = m.implantationDate ? formatDate(m.implantationDate) : '-';
         const dtVis = m.lastVisit ? formatDate(m.lastVisit) : '-';
         
+        // Calcula o tempo de uso (função já existente no seu sistema)
+        const tempoUso = calculateTimeInUse(m.implantationDate); 
+        
+        // Combina Nome e UF se a UF existir
+        const nomeExibicao = m.uf ? `${m.name} - ${m.uf}` : m.name;
+
         return `<tr>
-            <td>${m.name}</td>
-            <td>${m.uf || '-'}</td>
+            <td>${nomeExibicao}</td>
             <td>${m.status}</td>
             <td>${m.manager || '-'}</td>
             <td style="text-align:center;">${dtImp}</td>
-            <td style="text-align:center;">${dtVis}</td>
+            <td>${tempoUso}</td> <td style="text-align:center;">${dtVis}</td>
         </tr>`;
     }).join('');
 
@@ -7175,12 +7195,10 @@ function genRepMunicipios() {
     </div>
     <table class="report-table">
         <thead>
-            <th>Município</th>
-            <th>UF</th>
-            <th>Status</th>
+            <th>Município</th> <th>Status</th>
             <th>Gestor</th>
             <th style="text-align:center;">Data Implantação</th>
-            <th style="text-align:center;">Última Visita</th>
+            <th>Tempo de Uso</th> <th style="text-align:center;">Última Visita</th>
         </thead>
         <tbody>${rows}</tbody>
     </table>`;
