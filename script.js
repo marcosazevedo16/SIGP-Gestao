@@ -6942,9 +6942,8 @@ function exportReportMunicipiosExcel() {
 
     downloadXLSX("Relatorio_Carteira_Clientes_Filtrado", headers, rows);
 }
-
 // ============================================================================
-// 2. FUNÇÃO PRINCIPAL: Gera o Preview na Tela (Com Ajustes de Colunas)
+// 2. FUNÇÃO PRINCIPAL: Gera o Preview (Com Larguras Otimizadas)
 // ============================================================================
 function generateReportPreview() {
     if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca jsPDF faltando.'); return; }
@@ -6958,8 +6957,6 @@ function generateReportPreview() {
 
     try {
         const type = typeEl.value;
-        
-        // 1. Gera o HTML da tabela
         let reportHTML = '';
         let reportTitle = '';
 
@@ -6975,7 +6972,6 @@ function generateReportPreview() {
             case 'usuarios': reportHTML = genRepUsuarios(); reportTitle = 'Gestão de Usuários'; break;
         }
 
-        // 2. Captura Tabela e Filtros
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = reportHTML;
         const tableEl = tempDiv.querySelector('table');
@@ -6984,8 +6980,6 @@ function generateReportPreview() {
         if (!tableEl) throw new Error("Nenhum dado encontrado.");
 
         const filters = getFilterData(type); 
-
-        // 3. GERA O PDF EM MEMÓRIA
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
 
@@ -6996,18 +6990,18 @@ function generateReportPreview() {
             startY = 24 + (lines * 6) + 3;
         }
 
-        // --- CONFIGURAÇÃO DE COLUNAS ESPECÍFICAS ---
+        // --- CONFIGURAÇÃO DE COLUNAS (LARGURAS) ---
         let customColumnStyles = {};
         
-        // Se for o relatório de Municípios, ajusta as larguras manualmente
         if (type === 'municipios') {
             customColumnStyles = {
-                0: { cellWidth: 60 }, // Município (Largo)
-                1: { cellWidth: 25 }, // Status
-                2: { cellWidth: 40 }, // Gestor (Diminuído conforme solicitado)
-                3: { cellWidth: 35, halign: 'center' }, // Data Implantação
-                4: { cellWidth: 70 }, // Tempo de Uso (Largo para caber texto extenso)
-                5: { cellWidth: 35, halign: 'center' }  // Última Visita
+                0: { cellWidth: 55 }, // Município
+                1: { cellWidth: 22 }, // Status (Mais justo)
+                2: { cellWidth: 50 }, // Gestor (AUMENTADO)
+                3: { cellWidth: 32 }, // Contato (NOVO)
+                4: { cellWidth: 28, halign: 'center' }, // Implantação (Mais justo)
+                5: { cellWidth: 48 }, // Tempo de Uso (REDUZIDO)
+                6: { cellWidth: 28, halign: 'center' }  // Última Visita (Mais justo)
             };
         }
 
@@ -7017,32 +7011,29 @@ function generateReportPreview() {
             theme: 'grid',
             styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
             
-            // Alterado halign para 'left' conforme solicitado
+            // Mantém todos os cabeçalhos alinhados à ESQUERDA
             headStyles: { 
                 fillColor: [0, 61, 92], 
                 textColor: 255, 
                 fontStyle: 'bold', 
-                halign: 'left' // Antes era 'center'
+                halign: 'left' 
             },
             
             alternateRowStyles: { fillColor: [245, 245, 245] },
             
-            // Aplica os estilos de coluna personalizados definidos acima
+            // Aplica as larguras personalizadas
             columnStyles: customColumnStyles,
             
             didDrawPage: function (data) {
                 const pageWidth = doc.internal.pageSize.width;
                 const pageHeight = doc.internal.pageSize.height;
 
-                // Título
                 doc.setFontSize(16); doc.setTextColor(0, 61, 92);
                 doc.text(`SIGP Saúde - ${reportTitle}`, 14, 15);
 
-                // Linha
                 doc.setDrawColor(0, 61, 92); doc.setLineWidth(0.5);
                 doc.line(14, 18, pageWidth - 14, 18);
 
-                // Filtros
                 let x = 14; let y = 24; 
                 const itemWidth = (pageWidth - 28) / 3;
 
@@ -7063,7 +7054,6 @@ function generateReportPreview() {
                     });
                 }
 
-                // Rodapé
                 const now = new Date();
                 const dataHora = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
                 const usuario = currentUser ? currentUser.name.toUpperCase() : 'SISTEMA';
@@ -7075,13 +7065,11 @@ function generateReportPreview() {
             margin: { top: startY, bottom: 15, left: 14, right: 14 }
         });
 
-        // Totalizador
         const finalY = doc.lastAutoTable.finalY || 40;
         const pageWidth = doc.internal.pageSize.width;
         doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(0, 0, 0);
         doc.text(`Total de registros encontrados: ${totalRows}`, pageWidth - 14, finalY + 10, { align: 'right' });
 
-        // 4. EXIBE NO IFRAME
         const blob = doc.output('bloburl');
         const bodyEl = document.getElementById('report-preview-body');
         bodyEl.innerHTML = `<iframe id="pdf-preview-frame" src="${blob}#zoom=100" width="100%" height="100%"></iframe>`;
@@ -7137,12 +7125,8 @@ function printReport() {
     `);
     printWindow.document.close();
 }
-
-
-// --- GERADORES DE TABELAS (Helpers) ---
-
 // ============================================================================
-// GERADOR HTML: CARTEIRA DE CLIENTES (ATUALIZADO)
+// GERADOR HTML: CARTEIRA DE CLIENTES (COM CONTATO E COLUNAS AJUSTADAS)
 // ============================================================================
 function genRepMunicipios() {
     // Captura os valores dos filtros
@@ -7157,7 +7141,6 @@ function genRepMunicipios() {
         let dateToCheck = (dateType === 'visita') ? m.lastVisit : m.implantationDate;
         if ((dateStart || dateEnd) && !dateToCheck) return false;
         if (dateStart && dateToCheck < dateStart) return false;
-        if (dateEnd && dateToCheck > dateToCheck) return false; 
         if (dateEnd && dateToCheck > dateEnd) return false;
         return true;
     });
@@ -7170,19 +7153,16 @@ function genRepMunicipios() {
     const rows = data.map(m => {
         const dtImp = m.implantationDate ? formatDate(m.implantationDate) : '-';
         const dtVis = m.lastVisit ? formatDate(m.lastVisit) : '-';
-        
-        // Calcula o tempo de uso (função já existente no seu sistema)
         const tempoUso = calculateTimeInUse(m.implantationDate); 
-        
-        // Combina Nome e UF se a UF existir
         const nomeExibicao = m.uf ? `${m.name} - ${m.uf}` : m.name;
 
         return `<tr>
             <td>${nomeExibicao}</td>
             <td>${m.status}</td>
             <td>${m.manager || '-'}</td>
-            <td style="text-align:center;">${dtImp}</td>
-            <td>${tempoUso}</td> <td style="text-align:center;">${dtVis}</td>
+            <td>${m.contact || '-'}</td> <td style="text-align:center;">${dtImp}</td>
+            <td>${tempoUso}</td>
+            <td style="text-align:center;">${dtVis}</td>
         </tr>`;
     }).join('');
 
@@ -7195,10 +7175,12 @@ function genRepMunicipios() {
     </div>
     <table class="report-table">
         <thead>
-            <th>Município</th> <th>Status</th>
+            <th>Município</th>
+            <th>Status</th>
             <th>Gestor</th>
-            <th style="text-align:center;">Data Implantação</th>
-            <th>Tempo de Uso</th> <th style="text-align:center;">Última Visita</th>
+            <th>Contato</th> <th style="text-align:center;">Data Implantação</th>
+            <th>Tempo de Uso</th>
+            <th style="text-align:center;">Última Visita</th>
         </thead>
         <tbody>${rows}</tbody>
     </table>`;
