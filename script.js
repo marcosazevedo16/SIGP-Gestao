@@ -6942,7 +6942,7 @@ function exportReportMunicipiosExcel() {
     downloadXLSX("Relatorio_Carteira_Clientes_Filtrado", headers, rows);
 }
 // ============================================================================
-// 2. FUNÇÃO PRINCIPAL: Gera o Preview (Margem 10mm - Equilibrada)
+// 2. FUNÇÃO PRINCIPAL: Gera o Preview (LARGURA TOTAL DA FOLHA CORRIGIDA)
 // ============================================================================
 function generateReportPreview() {
     if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca jsPDF faltando.'); return; }
@@ -6982,7 +6982,7 @@ function generateReportPreview() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
 
-        // --- MARGENS EQUILIBRADAS (10mm) ---
+        // --- MARGENS (10mm cada lado) ---
         const marginLeft = 10;  
         const marginRight = 10; 
 
@@ -6994,18 +6994,20 @@ function generateReportPreview() {
             startY = baseFiltersY + (lines * 6) + 3;
         }
 
-        // --- LARGURAS RECALCULADAS (Para área útil de ~277mm) ---
+        // --- LARGURAS RECALCULADAS PARA PREENCHER 100% (Total ~277mm) ---
         let customColumnStyles = {};
         
         if (type === 'municipios') {
             customColumnStyles = {
-                0: { cellWidth: 60 }, // Município
+                // Aumentei Município e Gestor para empurrar a tabela até a borda direita
+                0: { cellWidth: 65 }, // Município 
                 1: { cellWidth: 22 }, // Status
-                2: { cellWidth: 50 }, // Gestor (Ajustado)
+                2: { cellWidth: 55 }, // Gestor (Aumentado)
                 3: { cellWidth: 35 }, // Contato
-                4: { cellWidth: 30, halign: 'center' }, // Implantação
-                5: { cellWidth: 45 }, // Tempo de Uso (Ajustado)
-                6: { cellWidth: 30, halign: 'center' }  // Última Visita
+                4: { cellWidth: 28, halign: 'center' }, // Implantação (Compacto)
+                5: { cellWidth: 45 }, // Tempo de Uso
+                6: { cellWidth: 27, halign: 'center' }  // Última Visita (Compacto)
+                // Soma Total: 277mm (Preenche exatamente o espaço entre as margens)
             };
         }
 
@@ -7072,6 +7074,7 @@ function generateReportPreview() {
         const finalY = doc.lastAutoTable.finalY || 40;
         const pageWidth = doc.internal.pageSize.width;
         doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(0, 0, 0);
+        // O Totalizador ficará alinhado com a borda da tabela
         doc.text(`Total de registros encontrados: ${totalRows}`, pageWidth - marginRight, finalY + 10, { align: 'right' });
 
         const blob = doc.output('bloburl');
