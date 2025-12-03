@@ -6811,11 +6811,11 @@ function updateReportFiltersUI() {
         document.getElementById('filters-integracoes').style.display = 'grid'; 
     }
     else if (type !== '') { 
-        document.getElementById('filters-generic').style.display = 'grid'; }
+        document.getElementById('filters-generic').style.display = 'grid';
     }
     else if (type === 'colaboradores') { 
-        document.getElementById('filters-colaboradores').style.display = 'grid'; }
-    
+        document.getElementById('filters-colaboradores').style.display = 'grid';
+    }
     else if (type !== '') { 
         document.getElementById('filters-generic').style.display = 'grid'; }
 }
