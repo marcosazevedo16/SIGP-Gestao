@@ -7310,141 +7310,28 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 });
-// ============================================================================
-// FUNÇÃO NOVA: GERAR PDF (COM RODAPÉ, CONTADORES E FILTROS)
-// ============================================================================
-function savePDFFromPreview() {
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-        alert('Erro: Biblioteca jsPDF não carregada.');
-        return;
-    }
-
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ Gerando PDF...';
-    btn.disabled = true;
-
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4'); // Paisagem
-
-        // 1. DADOS BÁSICOS
-        const headerContainer = document.querySelector('.report-header-print');
-        let title = "Relatório de Gestão";
-        if (headerContainer) {
-            const h2 = headerContainer.querySelector('h2');
-            if (h2) title = h2.innerText;
-        }
-
-        // 2. CAPTURA DOS FILTROS (Resumo)
-        const type = document.getElementById('filter-report-type').value;
-        const filterSummary = getFilterSummary(type); // Função auxiliar nova (veja abaixo)
-
-        // 3. CAPTURA DA TABELA E TOTAL
-        // Clona a tabela para não alterar a tela
-        const sourceTable = document.querySelector('.report-table');
-        if (!sourceTable) throw new Error("Tabela não encontrada.");
-        
-        // Conta linhas (subtrai 1 se tiver thead)
-        const totalRows = sourceTable.querySelectorAll('tbody tr').length;
-
-        // 4. GERAÇÃO DO PDF
-        doc.autoTable({
-            html: '.report-table',
-            startY: 45, // Mais espaço para o resumo dos filtros
-            theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' }, // Fonte levemente menor para caber mais
-            headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold', halign: 'center' },
-            alternateRowStyles: { fillColor: [245, 245, 245] },
-            
-            // Desenha Cabeçalho e Rodapé em CADA página
-            didDrawPage: function (data) {
-                const pageSize = doc.internal.pageSize;
-                const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
-                const pageWidth = pageSize.width ? pageSize.width : pageSize.getWidth();
-
-                // --- CABEÇALHO ---
-                doc.setFontSize(16); doc.setTextColor(0, 61, 92);
-                doc.text(title, 14, 15);
-
-                // Linha divisória
-                doc.setDrawColor(0, 61, 92); doc.setLineWidth(0.5);
-                doc.line(14, 18, pageWidth - 14, 18);
-
-                // Resumo dos Filtros (Embaixo da linha)
-                doc.setFontSize(9); doc.setTextColor(80, 80, 80);
-                // Divide o texto em linhas se for muito longo
-                const splitFilters = doc.splitTextToSize(filterSummary, pageWidth - 28);
-                doc.text(splitFilters, 14, 24);
-
-                // --- RODAPÉ ESQUERDO (Assinatura) ---
-                const now = new Date();
-                const dataHora = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
-                const usuario = currentUser ? currentUser.name.toUpperCase() : 'SISTEMA';
-                const rodapeTexto = `Impresso em ${dataHora} por ${usuario}`;
-                
-                doc.setFontSize(8); doc.setTextColor(100);
-                doc.text(rodapeTexto, 14, pageHeight - 10); // Canto Inferior Esquerdo
-
-                // --- RODAPÉ DIREITO (Paginação) ---
-                const str = 'Página ' + doc.internal.getNumberOfPages();
-                doc.text(str, pageWidth - 14, pageHeight - 10, { align: 'right' });
-            },
-            
-            // Margens
-            margin: { top: 45, bottom: 15, left: 14, right: 14 } 
-        });
-
-        // 5. TOTALIZADOR AO FINAL (Após a tabela)
-        const finalY = doc.lastAutoTable.finalY || 45;
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'bold');
-        doc.setTextColor(0, 0, 0);
-        doc.text(`Total de registros encontrados: ${totalRows}`, 14, finalY + 10);
-
-        // 6. SALVAR
-        const fileName = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.pdf';
-        doc.save(fileName);
-
-    } catch (err) {
-        console.error("Erro PDF:", err);
-        alert('Erro ao gerar PDF.');
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
-}
 
 // ============================================================================
-// 1. FUNÇÃO AUXILIAR: Monta o texto dos filtros aplicados
+// FUNÇÃO AUXILIAR: Retorna filtros estruturados (Array de Objetos)
 // ============================================================================
-function getFilterSummary(type) {
-    let summary = [];
+function getFilterData(type) {
+    let filters = [];
     
-    // Helper para formatar data
-    const fmt = (d) => {
-        if (!d) return '';
-        const parts = d.split('-'); // yyyy-mm-dd
-        return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    };
-
-    // Helper para adicionar ao array se tiver valor
+    const fmt = (d) => { if (!d) return ''; const p = d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
+    
+    // Helper inteligente
     const add = (label, val) => {
         if (val && val !== 'Todos' && val !== 'Todas' && val !== '') {
-            summary.push(`${label}: ${val}`);
+            filters.push({ label: label, value: val });
         }
     };
-    
-    // Helper para datas
-    const addDate = (idStart, idEnd, label) => {
-        const s = document.getElementById(idStart).value;
-        const e = document.getElementById(idEnd).value;
-        if (s || e) {
-            summary.push(`${label}: ${s ? fmt(s) : 'Início'} à ${e ? fmt(e) : 'Hoje'}`);
-        }
+    const addDate = (idS, idE, label) => {
+        const s = document.getElementById(idS).value;
+        const e = document.getElementById(idE).value;
+        if (s || e) filters.push({ label: label, value: `${s ? fmt(s) : 'Início'} até ${e ? fmt(e) : 'Hoje'}` });
     };
 
-    // Lógica por tipo
+    // Mapeamento
     if (type === 'municipios') {
         const dType = document.getElementById('rep-mun-date-type').value === 'visita' ? 'Última Visita' : 'Implantação';
         addDate('rep-mun-start', 'rep-mun-end', dType);
@@ -7495,8 +7382,136 @@ function getFilterSummary(type) {
         add('Colaborador', document.getElementById('rep-colab-name').value);
     }
 
-    if (summary.length === 0) return "Filtros: Nenhum filtro específico aplicado (Todos os registros).";
-    return summary.join('  -  ');
+    return filters;
+}
+
+// ============================================================================
+// FUNÇÃO PRINCIPAL: GERAR PDF (COM NEGRITO NOS FILTROS)
+// ============================================================================
+function savePDFFromPreview() {
+    if (!window.jspdf || !window.jspdf.jsPDF) { alert('Biblioteca jsPDF faltando.'); return; }
+
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Gerando PDF...';
+    btn.disabled = true;
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4'); // Paisagem
+
+        // 1. Dados Básicos
+        const headerContainer = document.querySelector('.report-header-print');
+        let title = "Relatório de Gestão";
+        if (headerContainer) {
+            const h2 = headerContainer.querySelector('h2');
+            if (h2) title = h2.innerText;
+        }
+
+        // 2. Captura Filtros (Array de Objetos)
+        const type = document.getElementById('filter-report-type').value;
+        const filters = getFilterData(type); // Nova função acima
+
+        // 3. Captura Tabela
+        const sourceTable = document.querySelector('.report-table');
+        if (!sourceTable) throw new Error("Tabela não encontrada.");
+        const totalRows = sourceTable.querySelectorAll('tbody tr').length;
+
+        // 4. Configuração do Espaço dos Filtros
+        // Se tiver muitos filtros, empurra a tabela para baixo
+        let startY = 40; 
+        if (filters.length > 0) {
+            // Calcula quantas linhas de filtro vamos usar (ex: 3 filtros por linha)
+            const lines = Math.ceil(filters.length / 3); 
+            startY += (lines * 6) + 5; // Ajusta o início da tabela
+        }
+
+        doc.autoTable({
+            html: '.report-table',
+            startY: startY,
+            theme: 'grid',
+            styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+            headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold', halign: 'center' },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
+            
+            // --- CABEÇALHO (REPETIDO) ---
+            didDrawPage: function (data) {
+                const pageWidth = doc.internal.pageSize.width;
+                const pageHeight = doc.internal.pageSize.height;
+
+                // Título
+                doc.setFontSize(16); doc.setTextColor(0, 61, 92);
+                doc.text(title, 14, 15);
+
+                // Linha Divisória
+                doc.setDrawColor(0, 61, 92); doc.setLineWidth(0.5);
+                doc.line(14, 18, pageWidth - 14, 18);
+
+                // --- DESENHO DOS FILTROS (NEGRITO + NORMAL) ---
+                let x = 14;
+                let y = 24;
+                const itemWidth = (pageWidth - 28) / 3; // 3 colunas de filtros
+
+                doc.setFontSize(9);
+                doc.setTextColor(50, 50, 50);
+
+                if (filters.length === 0) {
+                    doc.setFont(undefined, 'normal');
+                    doc.text("Filtros: Nenhum filtro aplicado (Todos os registros)", 14, y);
+                } else {
+                    filters.forEach((f, index) => {
+                        // Label em Negrito
+                        doc.setFont(undefined, 'bold');
+                        doc.text(`${f.label}:`, x, y);
+                        
+                        // Valor em Normal
+                        const labelWidth = doc.getTextWidth(`${f.label}: `);
+                        doc.setFont(undefined, 'normal');
+                        doc.text(f.value, x + labelWidth, y);
+
+                        // Pula para próxima coluna ou linha
+                        if ((index + 1) % 3 === 0) {
+                            x = 14; // Volta pro início
+                            y += 6; // Desce uma linha
+                        } else {
+                            x += itemWidth; // Vai pro lado
+                        }
+                    });
+                }
+
+                // Rodapés
+                const now = new Date();
+                const dataHora = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
+                const usuario = currentUser ? currentUser.name.toUpperCase() : 'SISTEMA';
+                
+                doc.setFontSize(8); doc.setTextColor(100);
+                doc.text(`Impresso em ${dataHora} por ${usuario}`, 14, pageHeight - 10);
+
+                const str = 'Página ' + doc.internal.getNumberOfPages();
+                doc.text(str, pageWidth - 14, pageHeight - 10, { align: 'right' });
+            },
+            margin: { top: 40, bottom: 15, left: 14, right: 14 } 
+        });
+
+        // 5. Totalizador
+        const finalY = doc.lastAutoTable.finalY || 40;
+        const pageWidth = doc.internal.pageSize.width;
+        doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(0, 0, 0);
+        doc.text(`Total de registros encontrados: ${totalRows}`, pageWidth - 14, finalY + 10, { align: 'right' });
+
+        // 6. Exibir
+        const blob = doc.output('bloburl');
+        const bodyEl = document.getElementById('report-preview-body');
+        bodyEl.innerHTML = `<iframe id="pdf-preview-frame" src="${blob}#zoom=100" width="100%" height="100%"></iframe>`;
+        
+        const modalEl = document.getElementById('report-preview-modal');
+        modalEl.classList.add('show');
+
+    } catch (err) {
+        console.error(err); alert('Erro ao gerar PDF.');
+    } finally {
+        if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
+    }
 }
 function exportReportTreinamentosExcel() {
     // 1. Recaptura os mesmos filtros
