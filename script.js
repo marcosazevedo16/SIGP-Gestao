@@ -6959,7 +6959,7 @@ function generateReportPreview() {
     try {
         const type = typeEl.value;
         
-        // 1. Gera o HTML da tabela (usando suas funções existentes)
+        // 1. Gera o HTML da tabela
         let reportHTML = '';
         let reportTitle = '';
 
@@ -6983,22 +6983,26 @@ function generateReportPreview() {
 
         if (!tableEl) throw new Error("Nenhum dado encontrado.");
 
-        // USA A NOVA FUNÇÃO DE DADOS (AQUI ESTAVA O ERRO)
         const filters = getFilterData(type); 
 
         // 3. GERA O PDF EM MEMÓRIA
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
 
-        let startY = 40; 
+        // --- CÁLCULO PRECISO DA POSIÇÃO (CORREÇÃO DE ESPAÇO) ---
+        let startY = 30; // Posição padrão se não tiver filtros
+        
         if (filters.length > 0) {
+            // Calcula quantas linhas de filtros existem (3 por linha)
             const lines = Math.ceil(filters.length / 3); 
-            startY += (lines * 6) + 5; 
+            
+            // Y=24 (Início dos filtros) + (lines * 6 altura cada) + 8 (margem de respiro)
+            startY = 24 + (lines * 6) + 8;
         }
 
         doc.autoTable({
             html: tableEl,
-            startY: startY,
+            startY: startY, // Usa o cálculo justo
             theme: 'grid',
             styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
             headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold', halign: 'center' },
@@ -7017,7 +7021,8 @@ function generateReportPreview() {
                 doc.line(14, 18, pageWidth - 14, 18);
 
                 // Filtros (Negrito + Normal)
-                let x = 14; let y = 24;
+                let x = 14; 
+                let y = 24; // Ponto fixo de início dos filtros
                 const itemWidth = (pageWidth - 28) / 3;
 
                 doc.setFontSize(9); doc.setTextColor(50, 50, 50);
@@ -7047,10 +7052,11 @@ function generateReportPreview() {
 
                 doc.text('Página ' + doc.internal.getNumberOfPages(), pageWidth - 14, pageHeight - 10, { align: 'right' });
             },
-            margin: { top: 40, bottom: 15, left: 14, right: 14 }
+            // Margem superior dinâmica baseada no startY calculado
+            margin: { top: startY, bottom: 15, left: 14, right: 14 }
         });
 
-        // Totalizador
+        // Totalizador (Direita)
         const finalY = doc.lastAutoTable.finalY || 40;
         const pageWidth = doc.internal.pageSize.width;
         doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(0, 0, 0);
