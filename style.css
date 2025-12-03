@@ -5105,7 +5105,7 @@ input:disabled, select:disabled, textarea:disabled {
         
         /* Isso é o respiro visual (O 1cm que você quer). 
            Tente 20px. Se quiser menos, diminua para 10px. */
-        padding-top: 20px !important; 
+        padding-top: 5px !important; 
         
         margin-left: 70px !important;
         width: calc(100% - 70px) !important;
