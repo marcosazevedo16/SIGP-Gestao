@@ -1503,7 +1503,7 @@ select.form-control {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-24);
   flex-wrap: wrap;
   gap: var(--space-16);
 }
