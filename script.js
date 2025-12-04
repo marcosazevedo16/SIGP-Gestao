@@ -6059,33 +6059,42 @@ function handleCollaboratorSelection() {
     }
 }
 
-function showColabInfoModal(id=null) {
+function showColabInfoModal(id = null) {
     editingId = id;
     document.getElementById('colab-info-form').reset();
-    document.getElementById('colab-info-counter').textContent = '0 / 250';
     
+    if(document.getElementById('colab-info-counter')) {
+        document.getElementById('colab-info-counter').textContent = '0 / 250';
+    }
+    
+    // 1. GARANTE QUE OS NOMES ESTEJAM CARREGADOS
     updateGlobalDropdowns(); 
 
-    if(id) {
-        // CORREÇÃO AQUI: Usar '==' em vez de '==='
+    // 2. BUSCA O REGISTRO
+    if (id) {
+        // Usa '==' para encontrar mesmo se um for número e outro texto
         const c = collaboratorInfos.find(x => x.id == id);
-        if(c) {
+        
+        if (c) {
+            // Preenche os campos
             document.getElementById('colab-info-name').value = c.name;
             document.getElementById('colab-info-admission').value = c.admissionDate;
             document.getElementById('colab-info-status').value = c.status;
             document.getElementById('colab-info-vacation').value = c.lastVacationEnd || '';
             document.getElementById('colab-info-obs').value = c.observation || '';
             
-            if(c.terminationDate) {
+            if (c.terminationDate) {
                 document.getElementById('colab-info-termination').value = c.terminationDate;
             }
             
-            // Dispara lógica de auto-preenchimento
+            // Preenche nascimento automaticamente
             handleCollaboratorSelection();
             
-            if(c.observation) {
+            if (c.observation && document.getElementById('colab-info-counter')) {
                 document.getElementById('colab-info-counter').textContent = c.observation.length + ' / 250';
             }
+        } else {
+            console.warn("Colaborador não encontrado para o ID:", id);
         }
     }
     
@@ -6097,15 +6106,15 @@ function saveColabInfo(e) {
     const status = document.getElementById('colab-info-status').value;
     const termDate = document.getElementById('colab-info-termination').value;
 
-    if(status === 'Desligado da Empresa' && !termDate) {
+    if (status === 'Desligado da Empresa' && !termDate) {
         alert('Data de Desligamento é obrigatória.'); return;
     }
 
-    // Validação de Duplicidade (Só uma ficha por colaborador ativo, talvez?)
-    // Vamos permitir editar, mas avisar se criar novo para o mesmo nome
     const name = document.getElementById('colab-info-name').value;
-    if(!editingId && collaboratorInfos.some(c => c.name === name)) {
-        if(!confirm(`Já existe uma ficha para "${name}". Deseja criar outra?`)) return;
+    
+    // Validação de Duplicidade (Apenas se for NOVO)
+    if (!editingId && collaboratorInfos.some(c => c.name === name)) {
+        if (!confirm(`Já existe uma ficha para "${name}". Deseja criar outra?`)) return;
     }
 
     const data = {
@@ -6117,11 +6126,21 @@ function saveColabInfo(e) {
         observation: sanitizeInput(document.getElementById('colab-info-obs').value)
     };
 
-    if(editingId) {
-        const i = collaboratorInfos.findIndex(x => x.id === editingId);
-        if(i !== -1) collaboratorInfos[i] = { ...collaboratorInfos[i], ...data };
+    if (editingId) {
+        // CORREÇÃO: Usa '==' para encontrar o índice corretamente
+        const i = collaboratorInfos.findIndex(x => x.id == editingId);
+        
+        if (i !== -1) {
+            collaboratorInfos[i] = { ...collaboratorInfos[i], ...data };
+            logSystemAction('Edição', 'Colaboradores Info', `Atualizou ficha: ${data.name}`);
+        } else {
+            // Se cair aqui, é porque perdeu o ID. Evita criar duplicado, avisa o erro.
+            alert('Erro ao atualizar: Registro original não encontrado.');
+            return; 
+        }
     } else {
         collaboratorInfos.push({ id: getNextId('colabInfo'), ...data });
+        logSystemAction('Criação', 'Colaboradores Info', `Nova ficha: ${data.name}`);
     }
 
     salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
@@ -6129,7 +6148,6 @@ function saveColabInfo(e) {
     renderCollaboratorInfos();
     showToast('Ficha salva com sucesso!', 'success');
 }
-
 function renderCollaboratorInfos() {
     // 1. Filtros
     const fName = document.getElementById('filter-colab-info-name')?.value;
