@@ -3819,17 +3819,17 @@ function saveModulo(e) {
         const i = modulos.findIndex(x => x.id === editingId);
         
         if (i !== -1) {
-            // --- CORREÇÃO DE CASCATA (IMPORTANTE) ---
+            // --- 1. LÓGICA DE CASCATA (ATUALIZAR VÍNCULOS) ---
             const oldName = modulos[i].name;
             const newName = data.name;
 
-            // Se o nome do módulo mudou, atualiza em todos os municípios
+            // Se o nome mudou, vai em cada município e atualiza
             if (oldName !== newName) {
                 let mudouAlgo = false;
                 
                 municipalities.forEach(mun => {
                     if (mun.modules && mun.modules.includes(oldName)) {
-                        // Troca o nome velho pelo novo dentro do array de módulos do município
+                        // Encontra o índice do módulo antigo e troca pelo novo
                         const idx = mun.modules.indexOf(oldName);
                         if (idx !== -1) {
                             mun.modules[idx] = newName;
@@ -3838,16 +3838,19 @@ function saveModulo(e) {
                     }
                 });
 
-                // Se houve alteração nos municípios, salva a lista atualizada
+                // Se houve mudança nos municípios, salva e atualiza a tela deles
                 if (mudouAlgo) {
                     salvarNoArmazenamento('municipalities', municipalities);
                     
-                    // Se a lista de municípios estiver na tela, atualiza ela
-                    renderMunicipalities();
+                    // Se a lista de municípios estiver visível, atualiza ela também
+                    const activeTab = document.querySelector('.tab-content.active');
+                    if (activeTab && activeTab.id === 'municipios-section') {
+                        renderMunicipalities();
+                    }
                 }
             }
             
-            // Atualiza o módulo
+            // Atualiza o módulo em si
             modulos[i] = { ...modulos[i], ...data };
         }
     } else {
@@ -3859,8 +3862,8 @@ function saveModulo(e) {
     
     renderModulos();
     
-    // --- ATUALIZAÇÃO GLOBAL ---
-    // Isso força a atualização imediata dos filtros e selects em todas as abas
+    // --- 2. ATUALIZAÇÃO IMEDIATA DOS FILTROS ---
+    // Esta função reconstrói todos os dropdowns, incluindo o filtro da aba municípios
     updateGlobalDropdowns();
     
     showToast('Módulo salvo com sucesso!', 'success');
