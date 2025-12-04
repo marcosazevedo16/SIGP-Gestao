@@ -5107,7 +5107,7 @@ input:disabled, select:disabled, textarea:disabled {
            Colocamos 90px aqui.
            90px - 75px = 15px (aprox 0.5cm a 1cm) de espaço visual visível.
         */
-        padding-top: 40px !important; 
+        padding-top: 30px !important; 
         
         margin-left: 70px !important;
         width: calc(100% - 70px) !important;
