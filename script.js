@@ -3806,19 +3806,64 @@ function closeOrientadorModal(){document.getElementById('orientador-modal').clas
 
 // Módulos
 function showModuloModal(id=null){ editingId=id; document.getElementById('modulo-form').reset(); const form=document.getElementById('modulo-form'); if(!document.getElementById('modulo-description')) { const div=document.createElement('div'); div.className='form-group'; div.innerHTML=`<label class="form-label">Descrição</label><textarea class="form-control" id="modulo-description"></textarea>`; form.insertBefore(div, form.querySelector('.modal-actions')); } if(id){const m=modulos.find(x=>x.id===id); document.getElementById('modulo-name').value=m.name; if(document.getElementById('modulo-abbreviation')) document.getElementById('modulo-abbreviation').value=m.abbreviation; if(document.getElementById('modulo-description')) document.getElementById('modulo-description').value=m.description||'';} document.getElementById('modulo-modal').classList.add('show'); }
-function saveModulo(e){ 
-    e.preventDefault(); 
-    const data={
-        name: sanitizeInput(document.getElementById('modulo-name').value), 
-        abbreviation: sanitizeInput(document.getElementById('modulo-abbreviation').value), 
+function saveModulo(e) {
+    e.preventDefault();
+    
+    const data = {
+        name: sanitizeInput(document.getElementById('modulo-name').value),
+        abbreviation: sanitizeInput(document.getElementById('modulo-abbreviation').value),
         description: sanitizeInput(document.getElementById('modulo-description').value)
-    }; 
-    // ... (restante igual)
-    if(editingId){const i=modulos.findIndex(x=>x.id===editingId); modulos[i]={...modulos[i],...data};}else{modulos.push({id:getNextId('mod'),...data});} 
-    salvarNoArmazenamento('modulos',modulos); 
-    document.getElementById('modulo-modal').classList.remove('show'); 
-    renderModulos(); 
-    showToast('Salvo!');
+    };
+
+    if (editingId) {
+        const i = modulos.findIndex(x => x.id === editingId);
+        
+        if (i !== -1) {
+            // --- CORREÇÃO DE CASCATA (IMPORTANTE) ---
+            const oldName = modulos[i].name;
+            const newName = data.name;
+
+            // Se o nome do módulo mudou, atualiza em todos os municípios
+            if (oldName !== newName) {
+                let mudouAlgo = false;
+                
+                municipalities.forEach(mun => {
+                    if (mun.modules && mun.modules.includes(oldName)) {
+                        // Troca o nome velho pelo novo dentro do array de módulos do município
+                        const idx = mun.modules.indexOf(oldName);
+                        if (idx !== -1) {
+                            mun.modules[idx] = newName;
+                            mudouAlgo = true;
+                        }
+                    }
+                });
+
+                // Se houve alteração nos municípios, salva a lista atualizada
+                if (mudouAlgo) {
+                    salvarNoArmazenamento('municipalities', municipalities);
+                    
+                    // Se a lista de municípios estiver na tela, atualiza ela
+                    renderMunicipalities();
+                }
+            }
+            
+            // Atualiza o módulo
+            modulos[i] = { ...modulos[i], ...data };
+        }
+    } else {
+        modulos.push({ id: getNextId('mod'), ...data });
+    }
+
+    salvarNoArmazenamento('modulos', modulos);
+    document.getElementById('modulo-modal').classList.remove('show');
+    
+    renderModulos();
+    
+    // --- ATUALIZAÇÃO GLOBAL ---
+    // Isso força a atualização imediata dos filtros e selects em todas as abas
+    updateGlobalDropdowns();
+    
+    showToast('Módulo salvo com sucesso!', 'success');
 }
 function renderModulos() {
     const c = document.getElementById('modulos-table');
