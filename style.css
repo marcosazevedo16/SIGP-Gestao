@@ -1503,7 +1503,7 @@ select.form-control {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-24);
+  margin-bottom: var(--space-8);
   flex-wrap: wrap;
   gap: var(--space-16);
 }
@@ -5096,20 +5096,22 @@ input:disabled, select:disabled, textarea:disabled {
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         transition: left 0.3s, width 0.3s;
     }
+
     /* 2. CONTEÚDO PRINCIPAL */
     .main-content {
-        /* Mantém a margem para sair de baixo da barra azul */
-        margin-top: 75px !important; 
+        /* ZERA a margem externa: O fundo cinza vai até o topo absoluto da tela */
+        margin-top: 0 !important; 
         
-        /* AQUI ESTÁ A CORREÇÃO SUGERIDA NA SUA MENSAGEM: */
-        /* Reduzimos o padding-top para 10px (ou até 5px) para colar o texto no topo */
-        padding-top: 5px !important; 
+        /* PADDING DE AJUSTE:
+           A barra azul tem aprox 75px de altura.
+           Colocamos 90px aqui.
+           90px - 75px = 15px (aprox 0.5cm a 1cm) de espaço visual visível.
+        */
+        padding-top: 90px !important; 
         
         margin-left: 70px !important;
         width: calc(100% - 70px) !important;
-        padding-left: 32px;
-        padding-right: 32px;
-        padding-bottom: 20px;
+        transition: margin-left 0.3s, width 0.3s;
     }
 
     /* 3. TÍTULO DA ABA (Remove gordura extra) */
