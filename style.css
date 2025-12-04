@@ -5100,7 +5100,7 @@ input:disabled, select:disabled, textarea:disabled {
     /* 2. CONTEÚDO PRINCIPAL */
     .main-content {
         /* Reduzi de 60px para 50px. Teste diminuir mais se precisar (ex: 45px) */
-        margin-top: 50px !important; 
+        margin-top: 35px !important; 
         
         /* Padding ZERO para colar o máximo possível */
         padding-top: 0 !important; 
