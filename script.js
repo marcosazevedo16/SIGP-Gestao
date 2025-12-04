@@ -4749,6 +4749,23 @@ function populateFilterSelects() {
         if(el) el.onchange = renderCollaboratorInfos;
     });
 }
+// ... (código existente da função populateFilterSelects) ...
+
+    // --- FILTRO DE MÓDULOS (ABA MUNICÍPIOS) ---
+    const filterMod = document.getElementById('filter-municipality-module');
+    if (filterMod && typeof modulos !== 'undefined') {
+        const cur = filterMod.value; // Guarda valor atual se houver
+        
+        // Ordena os módulos por nome
+        const sortedMods = modulos.slice().sort((a,b) => a.name.localeCompare(b.name));
+        
+        // Preenche o select
+        filterMod.innerHTML = '<option value="">Todos</option>' + 
+                              sortedMods.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+        
+        // Restaura valor selecionado (se ainda existir na lista)
+        if(cur) filterMod.value = cur;
+    }
 
 // 5. Salvar Colaborador (Com novos campos: Email e Nascimento)
 function saveOrientador(e){ 
