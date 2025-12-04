@@ -5076,51 +5076,63 @@ input:disabled, select:disabled, textarea:disabled {
 }
 
 /* ==========================================================================
-   CORREÇÃO MESTRE DE ESPAÇAMENTO (V-FINAL)
-   Cole isto no FINAL do arquivo para forçar a altura correta.
+   CORREÇÃO DE ESPAÇAMENTO (V-FINALÍSSIMA)
+   Substitua o bloco @media no final do style.css
    ========================================================================== */
 
 @media (min-width: 901px) {
     
     /* 1. BARRA AZUL (HEADER) */
-    /* Define altura fixa para não ocupar espaço invisível */
+    /* Vamos deixar ela um pouco mais compacta também */
     .app-header {
         position: fixed !important;
         top: 0 !important;
-        left: 70px !important;
-        width: calc(100% - 70px) !important;
+        left: 70px !important; 
+        width: calc(100% - 70px) !important; 
         z-index: 1000 !important;
         
-        /* Altura visual */
-        padding: 15px 24px !important; 
+        /* Reduzi o padding vertical para 10px */
+        padding: 10px 24px !important; 
         height: auto !important;
-        min-height: 60px !important; 
+        min-height: 50px !important; 
     }
 
-    /* 2. CONTEÚDO PRINCIPAL (Ajuste do "Buraco") */
+    /* 2. CONTEÚDO PRINCIPAL */
     .main-content {
-        /* Isso define onde o texto começa em relação ao topo da tela.
-           60px é apenas o suficiente para sair de baixo da barra azul. */
-        margin-top: 60px !important; 
+        /* Reduzi de 60px para 50px. Teste diminuir mais se precisar (ex: 45px) */
+        margin-top: 50px !important; 
         
-        /* Isso é o respiro visual (O 1cm que você quer). 
-           Tente 20px. Se quiser menos, diminua para 10px. */
-        padding-top: 5px !important; 
+        /* Padding ZERO para colar o máximo possível */
+        padding-top: 0 !important; 
         
         margin-left: 70px !important;
         width: calc(100% - 70px) !important;
+        transition: margin-left 0.3s, width 0.3s;
     }
 
-    /* 3. TÍTULO DA ABA (Remove margens extras do próprio título) */
+    /* 3. TÍTULO DA ABA */
     .section-header {
-        margin-top: 0 !important;
+        /* Margem negativa para puxar o título contra a gravidade se necessário */
+        margin-top: 10px !important; 
         padding-top: 0 !important;
-        margin-bottom: 20px !important;
+        margin-bottom: 15px !important; 
     }
     
     .section-header h2 {
         margin-top: 0 !important;
         padding-top: 0 !important;
-        line-height: 1.2 !important;
+        line-height: 1 !important;
     }
+
+    /* Regras de expansão (Mantidas) */
+    body.sidebar-is-expanded .sidebar { width: 300px !important; }
+    body.sidebar-is-expanded .app-header { left: 300px !important; width: calc(100% - 300px) !important; }
+    body.sidebar-is-expanded .main-content { margin-left: 300px !important; width: calc(100% - 300px) !important; }
+    
+    .sidebar-nav::before {
+        content: "☰"; font-size: 26px; color: rgba(255,255,255,0.8);
+        display: block; text-align: center; margin-bottom: 30px; cursor: pointer;
+    }
+    .sidebar:hover .sidebar-nav::before { color: #ffffff; }
+    .mobile-menu-toggle { display: none !important; }
 }
