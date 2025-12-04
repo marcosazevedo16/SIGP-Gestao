@@ -5076,58 +5076,69 @@ input:disabled, select:disabled, textarea:disabled {
 }
 
 /* ==========================================================================
-   CORREÇÃO DE ESPAÇAMENTO (V-FINALÍSSIMA)
-   Substitua o bloco @media no final do style.css
+   AJUSTE FINAL: BARRA GROSSA + TÍTULO PRÓXIMO (V-FINAL)
+   Substitua o último bloco @media do seu arquivo por este.
    ========================================================================== */
 
 @media (min-width: 901px) {
     
-    /* 1. BARRA AZUL (HEADER) */
-    /* Vamos deixar ela um pouco mais compacta também */
+    /* 1. BARRA AZUL (MANTIDA GROSSA) */
     .app-header {
         position: fixed !important;
         top: 0 !important;
-        left: 70px !important; 
-        width: calc(100% - 70px) !important; 
+        left: 70px !important;
+        width: calc(100% - 70px) !important;
         z-index: 1000 !important;
         
-        /* Reduzi o padding vertical para 10px */
-        padding: 10px 24px !important; 
+        /* Padding original de 20px para manter a barra alta/imponente */
+        padding: 20px 24px !important; 
         height: auto !important;
-        min-height: 50px !important; 
+        min-height: auto !important; /* Remove limitação de altura mínima */
+        
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* 2. CONTEÚDO PRINCIPAL */
+    /* 2. CONTEÚDO PRINCIPAL (SOBE ATÉ A BARRA) */
     .main-content {
-        /* Reduzi de 60px para 50px. Teste diminuir mais se precisar (ex: 45px) */
-        margin-top: 10px !important; 
+        /* Calculado: Barra grossa tem aprox 80px de altura real.
+           Definimos 80px aqui para o conteúdo começar logo abaixo dela.
+        */
+        margin-top: 80px !important; 
         
-        /* Padding ZERO para colar o máximo possível */
+        /* ZERA o espaço interno para o texto colar no topo */
         padding-top: 0 !important; 
         
         margin-left: 70px !important;
         width: calc(100% - 70px) !important;
-        transition: margin-left 0.3s, width 0.3s;
     }
 
-    /* 3. TÍTULO DA ABA */
+    /* 3. TÍTULO DA ABA (PUXA PARA CIMA) */
     .section-header {
-        /* Margem negativa para puxar o título contra a gravidade se necessário */
-        margin-top: 10px !important; 
+        /* Margem negativa para subir o título e aproximar da barra azul */
+        margin-top: -10px !important; 
+        
         padding-top: 0 !important;
-        margin-bottom: 15px !important; 
+        margin-bottom: 20px !important;
     }
     
     .section-header h2 {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-        line-height: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1.2 !important;
     }
 
-    /* Regras de expansão (Mantidas) */
+    /* 4. REGRAS DE EXPANSÃO (MANTIDAS) */
     body.sidebar-is-expanded .sidebar { width: 300px !important; }
-    body.sidebar-is-expanded .app-header { left: 300px !important; width: calc(100% - 300px) !important; }
-    body.sidebar-is-expanded .main-content { margin-left: 300px !important; width: calc(100% - 300px) !important; }
+    
+    /* Quando expande, ajusta a largura do header e content */
+    body.sidebar-is-expanded .app-header { 
+        left: 300px !important; 
+        width: calc(100% - 300px) !important; 
+    }
+    body.sidebar-is-expanded .main-content { 
+        margin-left: 300px !important; 
+        width: calc(100% - 300px) !important; 
+    }
     
     .sidebar-nav::before {
         content: "☰"; font-size: 26px; color: rgba(255,255,255,0.8);
