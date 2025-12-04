@@ -3850,7 +3850,7 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
            Colocamos 90px aqui.
            90px - 75px = 15px (aprox 0.5cm a 1cm) de espaço visual visível.
         */
-        padding-top: 90px !important; 
+        padding-top: 30px !important; 
         
         margin-left: 70px !important;
         width: calc(100% - 70px) !important;
