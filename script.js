@@ -5682,7 +5682,7 @@ function renderIntegrations() {
     // Filtros
     const fMun = document.getElementById('filter-integration-municipality')?.value;
     const fApi = document.getElementById('filter-integration-api')?.value;
-    const fStatus = document.getElementById('filter-integration-status')?.value; // Novo filtro
+    const fStatus = document.getElementById('filter-integration-status')?.value;
     const fStart = document.getElementById('filter-integration-start')?.value;
     const fEnd = document.getElementById('filter-integration-end')?.value;
 
@@ -5722,11 +5722,9 @@ function renderIntegrations() {
             const diff = getDaysDiff(i.expirationDate);
             const isExpired = diff < 0;
             
-            // Texto da Data e Cor
             const dateClass = isExpired ? 'date-expired' : 'date-valid';
             const dateText = formatDate(i.expirationDate);
             
-            // Texto de Dias Restantes (Correção Solicitada)
             let daysText = '';
             if (isExpired) {
                 daysText = `<span class="days-remaining-expired">Vencido há ${Math.abs(diff)} dias</span>`;
@@ -5736,14 +5734,21 @@ function renderIntegrations() {
                 daysText = `<span class="days-remaining-valid">Vence em ${diff} dias</span>`;
             }
 
-            // Busca UF na lista mestra
             const munData = municipalitiesList.find(m => m.name === i.municipality);
             const munDisplay = munData ? `${i.municipality} - ${munData.uf}` : i.municipality;
 
-            // Renderiza APIs (Centralizado via CSS)
-            const apisDisplay = (i.apis || []).map(api => 
-                `<span class="module-tag" style="background:#E1F5FE; color:#0277BD; border:1px solid #81D4FA;">${api}</span>`
-            ).join('');
+            // --- AQUI ESTÁ A MUDANÇA (TOOLTIP NA API) ---
+            const apisDisplay = (i.apis || []).map(apiName => {
+                // Busca a descrição na lista mestra de APIs
+                const apiObj = apisList.find(a => a.name === apiName);
+                const tooltipText = apiObj ? apiObj.description : ''; // Pega a descrição ou vazio
+                
+                // Adicionei 'title' e 'cursor: help' para indicar que tem info extra
+                return `<span class="module-tag" 
+                              style="background:#E1F5FE; color:#0277BD; border:1px solid #81D4FA; cursor: help;" 
+                              title="${tooltipText}">${apiName}</span>`;
+            }).join('');
+            // --------------------------------------------
 
             return `<tr>
                 <td class="text-primary-cell">${munDisplay}</td>
