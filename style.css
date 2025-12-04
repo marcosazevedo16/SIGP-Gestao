@@ -5076,13 +5076,13 @@ input:disabled, select:disabled, textarea:disabled {
 }
 
 /* ==========================================================================
-   CORREÇÃO FINAL DE LAYOUT (V68 - SEM FAIXA BRANCA)
+   AJUSTE FINAL DE ESPAÇAMENTO (V70 - 1CM DE RESPIRO)
    Substitua o último bloco @media do arquivo por este.
    ========================================================================== */
 
 @media (min-width: 901px) {
     
-    /* 1. BARRA AZUL (HEADER) */
+    /* 1. BARRA AZUL (Mantém altura original) */
     .app-header {
         position: fixed !important;
         top: 0 !important;
@@ -5090,45 +5090,46 @@ input:disabled, select:disabled, textarea:disabled {
         width: calc(100% - 70px) !important;
         z-index: 1000 !important;
         
-        /* Mantém a aparência robusta original */
+        /* Altura visual robusta */
         padding: 20px 24px !important; 
         height: auto !important;
-        min-height: 70px !important; /* Garante altura mínima */
-        
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         transition: left 0.3s, width 0.3s;
     }
 
-    /* 2. CONTEÚDO PRINCIPAL (A SOLUÇÃO DO BURACO BRANCO) */
+    /* 2. CONTEÚDO PRINCIPAL */
     .main-content {
-        /* ZERAMOS a margem externa. Assim o fundo cinza vai até o topo da tela. */
+        /* ZERA a margem externa: O fundo cinza vai até o topo absoluto da tela */
         margin-top: 0 !important; 
         
-        /* Usamos PADDING para empurrar o texto para baixo da barra azul.
-           Cálculo: Altura da Barra (~75px) + Espaço Desejado (25px/1cm) = 100px.
+        /* PADDING DE AJUSTE:
+           A barra azul tem aprox 75px de altura.
+           Colocamos 90px aqui.
+           90px - 75px = 15px (aprox 0.5cm a 1cm) de espaço visual visível.
         */
-        padding-top: 100px !important; 
+        padding-top: 90px !important; 
         
         margin-left: 70px !important;
         width: calc(100% - 70px) !important;
         transition: margin-left 0.3s, width 0.3s;
     }
 
-    /* 3. TÍTULO DA ABA */
-    /* Removemos puxadas negativas que causavam o corte */
+    /* 3. TÍTULO DA ABA (Remove gordura extra) */
     .section-header {
-        margin-top: 0 !important;
+        /* Remove qualquer margem que o elemento possa ter nativamente */
+        margin-top: 0 !important; 
         padding-top: 0 !important;
         margin-bottom: 20px !important;
     }
     
     .section-header h2 {
-        margin: 0 !important;
-        padding: 0 !important;
+        /* Remove margem do H2 para ele colar no topo do container */
+        margin-top: 0 !important;
+        padding-top: 0 !important;
         line-height: 1.2 !important;
     }
 
-    /* 4. REGRAS DE EXPANSÃO (Mantidas) */
+    /* 4. REGRAS DE MENU (Mantidas) */
     body.sidebar-is-expanded .sidebar { width: 300px !important; }
     body.sidebar-is-expanded .app-header { left: 300px !important; width: calc(100% - 300px) !important; }
     body.sidebar-is-expanded .main-content { margin-left: 300px !important; width: calc(100% - 300px) !important; }
