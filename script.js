@@ -1168,30 +1168,34 @@ function saveMunicipality(e) {
     const status = document.getElementById('municipality-status').value;
     const mods = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
     
-    // 1. BUSCA UF NA LISTA MESTRA (Para validar chave composta)
-    const munData = municipalitiesList.find(m => m.name === name);
-    const uf = munData ? munData.uf : '';
-
-    // 2. VALIDAÇÃO DE DUPLICIDADE (Nome + UF)
-    // Só barra se o Nome E a UF forem iguais a um registro existente
-    const isDuplicate = municipalities.some(m => 
-        m.name === name && 
-        (m.uf === uf || !m.uf) && // Compatibilidade com registros antigos sem UF
-        m.id !== editingId
-    );
-
-    if (isDuplicate) {
-        alert(`Erro: O município "${name} - ${uf}" já está cadastrado na carteira!`);
+    // Validação Básica
+    if (!name) {
+        alert('Por favor, selecione um município.');
         return;
     }
 
-    // Validação "Em Uso"
+    // --- 1. VALIDAÇÃO DE DUPLICIDADE ROBUSTA ---
+    // Verifica se o NOME já existe na lista de clientes (municipalities).
+    // O trecho '&& m.id !== editingId' permite salvar se você estiver apenas editando o próprio registro.
+    const isDuplicate = municipalities.some(m => m.name === name && m.id !== editingId);
+
+    if (isDuplicate) {
+        alert(`🚫 Ação Bloqueada: O município "${name}" já consta na sua carteira de clientes!\n\nUse a busca para encontrá-lo e editá-lo.`);
+        return;
+    }
+    // -------------------------------------------
+
+    // 2. BUSCA UF NA LISTA MESTRA (Para salvar junto e validar visualmente)
+    const munData = municipalitiesList.find(m => m.name === name);
+    const uf = munData ? munData.uf : '';
+
+    // 3. Validação "Em Uso" (Obriga a ter módulos)
     if (status === 'Em uso' && mods.length === 0) {
         alert('Erro: Para status "Em Uso", selecione pelo menos um módulo.');
         return;
     }
 
-    // 3. VALIDAÇÃO DE DATA DE BLOQUEIO (Não pode ser futura)
+    // 4. VALIDAÇÃO DE DATA DE BLOQUEIO (Não pode ser futura)
     const dateBlocked = document.getElementById('municipality-date-blocked') ? document.getElementById('municipality-date-blocked').value : '';
     
     if (status === 'Bloqueado') {
@@ -1225,37 +1229,21 @@ function saveMunicipality(e) {
 
     if (editingId) {
         const i = municipalities.findIndex(x => x.id === editingId);
-        if (i !== -1) municipalities[i] = { ...municipalities[i], ...data };
+        if (i !== -1) {
+            municipalities[i] = { ...municipalities[i], ...data };
+            logSystemAction('Edição', 'Municípios', `Atualizou dados de: ${data.name}`);
+        }
     } else {
         municipalities.push({ id: getNextId('mun'), ...data });
-        logSystemAction('Criação', 'Municípios', `Novo cliente: ${data.name} - ${data.uf}`);
+        logSystemAction('Criação', 'Municípios', `Novo cliente adicionado: ${data.name} - ${data.uf}`);
     }
     
     salvarNoArmazenamento('municipalities', municipalities);
     document.getElementById('municipality-modal').classList.remove('show');
     renderMunicipalities();
-    updateGlobalDropdowns();
+    updateGlobalDropdowns(); // Atualiza os selects em outras abas
     
     showToast('Município salvo com sucesso!', 'success');
-}
-
-function getFilteredMunicipalities() {
-    const fName = document.getElementById('filter-municipality-name') ? document.getElementById('filter-municipality-name').value : '';
-    const fStatus = document.getElementById('filter-municipality-status') ? document.getElementById('filter-municipality-status').value : '';
-    const fMod = document.getElementById('filter-municipality-module') ? document.getElementById('filter-municipality-module').value : '';
-    const fGest = document.getElementById('filter-municipality-manager') ? document.getElementById('filter-municipality-manager').value.toLowerCase() : '';
-
-    let filtered = municipalities.filter(function(m) {
-        if (fName && m.name !== fName) return false;
-        if (fStatus && m.status !== fStatus) return false;
-        if (fMod && !m.modules.includes(fMod)) return false;
-        if (fGest && !m.manager.toLowerCase().includes(fGest)) return false;
-        return true;
-    });
-    
-    return filtered.sort(function(a, b) {
-        return a.name.localeCompare(b.name);
-    });
 }
 
 function renderMunicipalities() {
