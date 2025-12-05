@@ -8202,7 +8202,7 @@ function generateAuditPDF() {
     doc.setLineWidth(0.5);
     doc.line(marginLeft, 18, pageWidth - marginRight, 18); // Linha de ponta a ponta
 
-    // Resumo dos Filtros (No cabeçalho)
+    // Resumo dos Filtros
     let filtroTexto = "Filtros aplicados: ";
     const partesFiltro = [];
     if(fAction) partesFiltro.push(`Ação: ${fAction}`);
@@ -8239,7 +8239,7 @@ function generateAuditPDF() {
         theme: 'grid',
         styles: { 
             fontSize: 8, 
-            cellPadding: 3, // Padding um pouco maior para leitura
+            cellPadding: 3, 
             overflow: 'linebreak' 
         },
         headStyles: { 
@@ -8248,18 +8248,17 @@ function generateAuditPDF() {
             fontStyle: 'bold',
             halign: 'left'
         },
-        // Ajuste de colunas para usar bem a largura (Total ~277mm)
         columnStyles: {
-            0: { cellWidth: 35 }, // Data
-            1: { cellWidth: 45 }, // Usuário (Mais largo)
-            2: { cellWidth: 25 }, // Ação
-            3: { cellWidth: 45 }, // Alvo (Mais largo)
-            4: { cellWidth: 'auto' } // Detalhes (Ocupa todo o resto)
+            0: { cellWidth: 35 }, 
+            1: { cellWidth: 45 }, 
+            2: { cellWidth: 25 }, 
+            3: { cellWidth: 45 }, 
+            4: { cellWidth: 'auto' } 
         },
         alternateRowStyles: { fillColor: [245, 245, 245] },
-        margin: { left: marginLeft, right: marginRight }, // Margens laterais de 10mm
+        margin: { left: marginLeft, right: marginRight },
         
-        // --- RODAPÉ (Informações de impressão e paginação) ---
+        // --- RODAPÉ ---
         didDrawPage: function (data) {
             const now = new Date();
             const dataHoraStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
@@ -8268,34 +8267,35 @@ function generateAuditPDF() {
             doc.setFontSize(8);
             doc.setTextColor(100);
             
-            // Canto Esquerdo Inferior: Dados de Impressão
+            // ESQUERDA: Dados de Impressão
             doc.text(`Impresso em ${dataHoraStr} por ${usuarioLogado}`, marginLeft, pageHeight - 10);
             
-            // Canto Direito Inferior: Paginação
+            // CENTRO: Mensagem de Confidencialidade (RECOLOCADO AQUI)
+            doc.text('SIGP Saúde - Documento Confidencial', pageWidth / 2, pageHeight - 10, { align: 'center' });
+            
+            // DIREITA: Paginação
             doc.text('Página ' + doc.internal.getNumberOfPages(), pageWidth - marginRight, pageHeight - 10, { align: 'right' });
         }
     });
 
-    // --- CONTADOR DE REGISTROS (No Final, à Direita) ---
+    // --- CONTADOR FINAL ---
     const finalY = doc.lastAutoTable.finalY || 40;
     
     doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0); // Preto
+    doc.setTextColor(0, 0, 0); 
     doc.setFont(undefined, 'bold');
     
-    // Alinhado à direita, usando a margem direita como referência
+    // Alinhado à Direita
     doc.text(`Total de Logs encontrados: ${filtered.length}`, pageWidth - marginRight, finalY + 10, { align: 'right' });
 
-    // --- ABRIR MODAL DE VISUALIZAÇÃO ---
+    // --- VISUALIZAR ---
     const blob = doc.output('bloburl');
     
     const bodyEl = document.getElementById('report-preview-body');
     if (bodyEl) {
         bodyEl.innerHTML = `<iframe id="pdf-preview-frame" src="${blob}#zoom=100" width="100%" height="100%" style="border:none;"></iframe>`;
-        
         const titleEl = document.querySelector('#report-preview-modal h3');
         if(titleEl) titleEl.textContent = 'Visualização de Auditoria';
-
         const modalEl = document.getElementById('report-preview-modal');
         modalEl.classList.add('show');
     } else {
