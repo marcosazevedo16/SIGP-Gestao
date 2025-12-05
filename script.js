@@ -1,5 +1,5 @@
 // ============================================================================
-// SIGP SAÚDE v25.0 - VERSÃO FINAL "EXTENSA" (SEM COMPACTAÇÃO)
+// SIGP SAÚDE v25.0 - VERSÃO FINAL(SEM COMPACTAÇÃO)
 // Todas as funcionalidades + Ajustes de Layout + Backup Completo
 // ============================================================================
 
@@ -8153,4 +8153,111 @@ function detectChanges(oldData, newData, fieldMap) {
     }
     
     return changes.length > 0 ? changes.join('. ') : 'Nenhuma alteração detectada';
+}
+function generateAuditPDF() {
+    if (!window.jspdf) {
+        alert('Erro: Biblioteca PDF não carregada.');
+        return;
+    }
+
+    // 1. Captura os Filtros Atuais (Igual ao renderAuditLogs)
+    const fAction = document.getElementById('filter-audit-action').value;
+    const fUser = document.getElementById('filter-audit-user').value.toLowerCase();
+    const fTarget = document.getElementById('filter-audit-target').value.toLowerCase();
+    const fStart = document.getElementById('filter-audit-start').value;
+    const fEnd = document.getElementById('filter-audit-end').value;
+
+    // 2. Filtra os dados da memória (auditLogs)
+    let filtered = auditLogs.filter(log => {
+        if (fAction && log.action !== fAction) return false;
+        if (fUser && !log.user.toLowerCase().includes(fUser)) return false;
+        if (fTarget && !log.target.toLowerCase().includes(fTarget)) return false;
+        
+        // Filtro de Data
+        const logDate = log.timestamp.split('T')[0]; 
+        if (fStart && logDate < fStart) return false;
+        if (fEnd && logDate > fEnd) return false;
+
+        return true;
+    });
+
+    if (filtered.length === 0) {
+        alert('Nenhum registro encontrado com os filtros atuais para gerar o PDF.');
+        return;
+    }
+
+    // 3. Configuração do PDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape' }); // Paisagem para caber os detalhes
+
+    // --- CABEÇALHO ---
+    doc.setFontSize(18);
+    doc.setTextColor(0, 61, 92); // Azul do tema
+    doc.text("Relatório de Auditoria do Sistema", 14, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleString()}`, 14, 28);
+    
+    // Mostra filtros aplicados no PDF
+    let filtroTexto = "Filtros: ";
+    filtroTexto += fAction ? `[Ação: ${fAction}] ` : "";
+    filtroTexto += fUser ? `[Usuário: ${document.getElementById('filter-audit-user').value}] ` : "";
+    filtroTexto += (fStart || fEnd) ? `[Período: ${fStart || 'Início'} até ${fEnd || 'Hoje'}]` : "";
+    
+    if (filtroTexto === "Filtros: ") filtroTexto = "Filtros: Nenhum (Todos os registros)";
+    
+    doc.setFontSize(9);
+    doc.text(filtroTexto, 14, 34);
+
+    // --- TABELA ---
+    const headers = [['Data/Hora', 'Usuário', 'Ação', 'Módulo Alvo', 'Detalhes da Operação']];
+    
+    const data = filtered.map(log => {
+        const d = new Date(log.timestamp);
+        const dataFmt = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR');
+        return [
+            dataFmt,
+            log.user,
+            log.action,
+            log.target,
+            log.details // O autoTable quebra linha automaticamente se for longo
+        ];
+    });
+
+    doc.autoTable({
+        head: headers,
+        body: data,
+        startY: 40,
+        styles: { 
+            fontSize: 9, 
+            cellPadding: 3, 
+            overflow: 'linebreak' 
+        },
+        headStyles: { 
+            fillColor: [0, 61, 92], // Azul do Header
+            textColor: 255,
+            fontStyle: 'bold'
+        },
+        columnStyles: {
+            0: { cellWidth: 35 }, // Data
+            1: { cellWidth: 40 }, // Usuário
+            2: { cellWidth: 25 }, // Ação
+            3: { cellWidth: 40 }, // Alvo
+            4: { cellWidth: 'auto' } // Detalhes (ocupa o resto)
+        },
+        alternateRowStyles: { fillColor: [245, 245, 245] } // Zebrado cinza claro
+    });
+
+    // --- RODAPÉ ---
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text('SIGP Saúde - Documento Confidencial', 14, doc.internal.pageSize.height - 10);
+        doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10);
+    }
+
+    // 4. Salvar
+    doc.save(`Auditoria_SIGP_${new Date().toISOString().slice(0,10)}.pdf`);
 }
