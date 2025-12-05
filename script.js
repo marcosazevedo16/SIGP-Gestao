@@ -910,18 +910,37 @@ function navigateToApiListManagement() { toggleSettings(); openTab('apis-list-se
 function navigateToBackupManagement() { toggleSettings(); openTab('backup-section'); updateBackupInfo(); }
 
 function openTab(sectionId) {
+    // 1. Esconde todas as seções
     document.querySelectorAll('.tab-content').forEach(function(c) {
         c.classList.remove('active');
     });
+
+    // 2. Remove ativo de todos os botões do menu
     document.querySelectorAll('.sidebar-btn').forEach(function(b) {
         b.classList.remove('active');
     });
+
+    // 3. Ativa a Seção Alvo
     const sec = document.getElementById(sectionId);
     if (sec) {
         sec.classList.add('active');
+        
+        // --- CORREÇÃO CRÍTICA: Renderizar Dados e Gráficos ---
+        // Chama o refreshCurrentTab para desenhar tabelas e gráficos
+        // O setTimeout garante que o navegador já aplicou o "display:block" antes de desenhar o gráfico
+        setTimeout(() => {
+            refreshCurrentTab(sectionId);
+        }, 50);
+    }
+
+    // 4. Sincroniza o Botão do Menu Lateral (Visual)
+    // Remove o sufixo "-section" para achar o botão correspondente (ex: apis-section -> apis)
+    const tabName = sectionId.replace('-section', '');
+    const sidebarBtn = document.querySelector(`.sidebar-btn[data-tab="${tabName}"]`);
+    if (sidebarBtn) {
+        sidebarBtn.classList.add('active');
     }
 }
-
 // ----------------------------------------------------------------------------
 // 10. AUTENTICAÇÃO
 // ----------------------------------------------------------------------------
