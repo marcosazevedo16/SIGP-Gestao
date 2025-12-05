@@ -3938,30 +3938,31 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     .mobile-menu-toggle { display: none !important; } }
 
 /* ==========================================================================
-   CORREÇÃO V80 - AJUSTE FINO TABELA INTEGRAÇÕES
-   Substitua ou adicione ao final do style.css
+   CORREÇÃO V81 - TABELA INTEGRAÇÕES (AJUSTE FINO)
+   Substitua o bloco anterior no final do style.css
    ========================================================================== */
 
 /* 1. Estrutura da Tabela Fixa */
 #integrations-table table {
     width: 100%;
-    min-width: 1400px !important; /* Garante espaço para rolagem lateral */
-    table-layout: fixed !important; /* Respeita as larguras definidas abaixo */
+    min-width: 1400px !important; 
+    table-layout: fixed !important;
     border-collapse: collapse;
 }
 
-/* 2. Cabeçalhos (Garante Negrito em TODOS) */
+/* 2. Cabeçalhos (TODOS EM NEGRITO) */
 #integrations-table th {
-    font-weight: 700 !important; /* Força negrito inclusive em Observações */
+    font-weight: 800 !important; /* Negrito extra forte para destaque */
     color: var(--color-text);
     background-color: var(--color-secondary);
-    padding: 12px 8px;
+    padding: 12px 10px;
     font-size: 13px;
     vertical-align: middle;
-    text-align: center; /* Centraliza cabeçalhos por padrão */
+    text-transform: uppercase; /* Opcional: Deixa mais profissional */
+    letter-spacing: 0.5px;
 }
 
-/* Alinhamento específico dos cabeçalhos à esquerda */
+/* Alinhamentos de Cabeçalho */
 #integrations-table th:nth-child(1), /* Município */
 #integrations-table th:nth-child(2), /* APIs */
 #integrations-table th:nth-child(3), /* Resp */
@@ -3970,78 +3971,77 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     text-align: left !important;
 }
 
-/* 3. LARGURA DAS COLUNAS (Ajuste Fino) */
+#integrations-table th:nth-child(5), /* Vencimento */
+#integrations-table th:nth-child(6), /* Status */
+#integrations-table th:nth-child(8)  /* Ações (Centralizado) */ {
+    text-align: center !important;
+}
 
-/* COL 1: Município (AUMENTADO) */
-#integrations-table th:nth-child(1),
+/* 3. LARGURA E ESTILO DAS COLUNAS (DADOS) */
+
+/* COL 1: Município (SEM NEGRITO) */
 #integrations-table td:nth-child(1) {
-    width: 280px !important; /* Aumentado para dar destaque */
-    min-width: 280px !important;
-    text-align: left !important;
-    white-space: normal !important; /* Permite quebra de linha no nome */
+    width: 280px !important;
+    font-weight: 400 !important; /* Normal (Sem negrito) */
+    color: var(--color-text) !important;
+    white-space: normal !important;
 }
 
 /* COL 2: APIs */
 #integrations-table th:nth-child(2),
 #integrations-table td:nth-child(2) {
-    width: auto !important; /* Ocupa o espaço flexível */
+    width: auto !important; /* Flexível */
     min-width: 200px;
 }
 
-/* COL 3: Responsável */
+/* COL 3: Responsável (AUMENTADO) */
 #integrations-table th:nth-child(3),
 #integrations-table td:nth-child(3) {
-    width: 150px !important;
+    width: 220px !important; /* Aumentado de 150px para 220px */
 }
 
-/* COL 4: Contato (AJUSTADO) */
+/* COL 4: Contato */
 #integrations-table th:nth-child(4),
 #integrations-table td:nth-child(4) {
-    width: 130px !important;
+    width: 140px !important;
 }
 
-/* COL 5: Vencimento (AJUSTADO) */
+/* COL 5: Vencimento */
 #integrations-table th:nth-child(5),
 #integrations-table td:nth-child(5) {
     width: 110px !important;
     text-align: center !important;
 }
 
-/* COL 6: Status (AJUSTADO) */
+/* COL 6: Status */
 #integrations-table th:nth-child(6),
 #integrations-table td:nth-child(6) {
-    width: 160px !important; /* Um pouco mais largo para o texto do status */
+    width: 160px !important;
     text-align: center !important;
 }
 
-/* COL 7: Observações (DIMINUÍDO E TRUNCADO) */
+/* COL 7: Observações (PEQUENO E TRUNCADO) */
 #integrations-table th:nth-child(7),
 #integrations-table td:nth-child(7) {
-    width: 120px !important; /* Reduzido */
-    max-width: 120px !important; /* Força o limite */
-    text-align: left !important;
+    width: 120px !important;
+    max-width: 120px !important;
 }
 
 #integrations-table td:nth-child(7) {
-    white-space: nowrap !important; /* Não quebra linha */
-    overflow: hidden !important;    /* Esconde o excesso */
-    text-overflow: ellipsis !important; /* Adiciona "..." */
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
     color: var(--color-text-secondary);
 }
 
-/* COL 8: Ações */
+/* COL 8: Ações (CENTRALIZADO) */
 #integrations-table th:nth-child(8),
 #integrations-table td:nth-child(8) {
-    width: 90px !important;
-    text-align: right !important;
+    width: 100px !important;
+    text-align: center !important; /* Centraliza a célula */
+    padding-right: 0 !important;
 }
 
-/* ESTILOS DE DATA */
-.date-expired {
-    color: #C85250 !important; /* Vermelho */
-    font-weight: bold;
-}
-.date-valid {
-    color: #005580; /* Azul */
-    font-weight: 500;
-}
+/* Cores de Data */
+.date-expired { color: #C85250 !important; font-weight: bold; }
+.date-valid { color: #005580; font-weight: 500; }
