@@ -330,15 +330,16 @@ function exportColabInfoExcel() {
 // 4. Exportar INTEGRAÇÕES (Aba Integrações)
 function exportIntegrationsExcel() {
     const data = integrations;
-    // Adicionada coluna Responsável
-    const headers = ['Município', 'APIs Integradas', 'Responsável Certificado', 'Vencimento', 'Dias Restantes', 'Observação'];
+    // Adicionado Contato
+    const headers = ['Município', 'APIs Integradas', 'Responsável Certificado', 'Contato', 'Vencimento', 'Dias Restantes', 'Observação'];
     
     const rows = data.map(i => {
         const diff = getDaysDiff(i.expirationDate);
         return [
             i.municipality,
             i.apis.join(', '),
-            i.responsible || '', // Valor
+            i.responsible || '',
+            i.contact || '', // <--- NOVO
             formatDate(i.expirationDate),
             diff + " dias",
             i.observation
@@ -428,7 +429,7 @@ function applyMasks() {
     // 1. Máscaras de Telefone
     const phoneInputs = [
         'municipality-contact', 'task-contact', 'orientador-contact', 
-        'request-contact', 'production-contact'
+        'request-contact', 'production-contact', 'integration-contact'
     ];
 
     phoneInputs.forEach(function(id) {
@@ -5828,55 +5829,36 @@ function showIntegrationModal(id=null) {
 function saveIntegration(e) {
     e.preventDefault();
     
-    // 1. Coleta e Valida APIs selecionadas
     const apisSel = Array.from(document.querySelectorAll('.api-check:checked')).map(c => c.value);
     
-    if (apisSel.length === 0) {
-        alert('Selecione pelo menos uma API Integrada.');
-        return;
-    }
+    if (apisSel.length === 0) { alert('Selecione pelo menos uma API Integrada.'); return; }
 
-    // 2. Captura os valores dos campos
     const munName = document.getElementById('integration-municipality').value;
     const resp = sanitizeInput(document.getElementById('integration-responsible').value);
     
-    // Validação Manual do Responsável
-    if (!resp) {
-        alert('O campo Responsável pelo Certificado é obrigatório.');
-        return;
-    }
+    if (!resp) { alert('O campo Responsável pelo Certificado é obrigatório.'); return; }
+    if (!munName) { alert('Selecione um município.'); return; }
 
-    if (!munName) {
-        alert('Selecione um município.');
-        return;
-    }
-
-    // --- NOVA VALIDAÇÃO DE DUPLICIDADE ---
-    // Verifica se já existe uma integração para este município na lista.
-    // O '&& i.id !== editingId' garante que, se estivermos EDITANDO o próprio registro, 
-    // ele não acuse duplicidade com ele mesmo.
+    // Validação de Duplicidade
     const isDuplicate = integrations.some(i => i.municipality === munName && i.id !== editingId);
-
     if (isDuplicate) {
         alert(`🚫 Erro: O município "${munName}" já possui uma integração cadastrada!\n\nPor favor, edite o registro existente na lista.`);
-        return; // Para a execução aqui
+        return;
     }
-    // -------------------------------------
 
     const data = {
         municipality: munName,
         expirationDate: document.getElementById('integration-expiration').value,
         responsible: resp,
+        contact: sanitizeInput(document.getElementById('integration-contact').value), // <--- NOVO
         apis: apisSel,
         observation: sanitizeInput(document.getElementById('integration-observation').value)
     };
 
     if(editingId) {
-        // Modo Edição
         const i = integrations.findIndex(x => x.id === editingId);
         if(i !== -1) integrations[i] = { ...integrations[i], ...data };
     } else {
-        // Modo Criação (Novo)
         integrations.push({ id: getNextId('integration'), ...data });
     }
 
@@ -5891,7 +5873,7 @@ function saveIntegration(e) {
 // --- GERENCIAMENTO DE INTEGRAÇÕES (ABA PRINCIPAL) CORRIGIDO ---
 
 function renderIntegrations() {
-    // ... (Filtros permanecem iguais) ...
+    // ... (Filtros iguais, omiti para economizar espaço) ...
     const fMun = document.getElementById('filter-integration-municipality')?.value;
     const fApi = document.getElementById('filter-integration-api')?.value;
     const fStatus = document.getElementById('filter-integration-status')?.value;
@@ -5953,7 +5935,8 @@ function renderIntegrations() {
             return `<tr>
                 <td class="text-primary-cell">${munDisplay}</td>
                 <td class="module-tags-cell">${apisDisplay}</td>
-                <td>${i.responsible || '-'}</td> <td class="${dateClass}">${dateText}</td>
+                <td>${i.responsible || '-'}</td>
+                <td>${i.contact || '-'}</td> <td class="${dateClass}">${dateText}</td>
                 <td>${daysText}</td>
                 <td class="text-secondary-cell">${i.observation || '-'}</td>
                 <td>
@@ -5965,13 +5948,13 @@ function renderIntegrations() {
             </tr>`;
         }).join('');
 
-        // ATUALIZADO: Cabeçalho com a nova ordem
         c.innerHTML = `<table>
             <thead>
                 <th>Município</th>
                 <th>APIs Integradas</th>
-                <th>Responsável</th> <th>Vencimento Certificado</th>
-                <th>Status Vencimento</th>
+                <th>Responsável</th>
+                <th>Contato</th> <th>Vencimento</th>
+                <th>Status</th>
                 <th>Observações</th>
                 <th style="text-align:right; padding-right:30px;">Ações</th>
             </thead>
@@ -6025,12 +6008,11 @@ function showIntegrationModal(id = null) {
     editingId = id;
     document.getElementById('integration-form').reset();
     
-    // Reseta contador de caracteres
     if(document.getElementById('integration-char-counter')) {
         document.getElementById('integration-char-counter').textContent = '0 / 250';
     }
 
-    // 1. Popula Municípios (Com UF)
+    // 1. Popula Municípios
     const munSelect = document.getElementById('integration-municipality');
     if(munSelect) {
         const sortedList = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
@@ -6048,11 +6030,10 @@ function showIntegrationModal(id = null) {
         }
     }
 
-    // 3. Preenche se for Edição
+    // 3. Edição
     if (id) {
         const int = integrations.find(x => x.id == id);
         if (int) {
-            // Verifica se o município ainda existe no select
             let exists = false;
             for(let i=0; i<munSelect.options.length; i++) {
                 if(munSelect.options[i].value === int.municipality) exists = true;
@@ -6066,16 +6047,15 @@ function showIntegrationModal(id = null) {
 
             document.getElementById('integration-municipality').value = int.municipality;
             document.getElementById('integration-expiration').value = int.expirationDate;
-            document.getElementById('integration-responsible').value = int.responsible || ''; // <--- NOVO
+            document.getElementById('integration-responsible').value = int.responsible || '';
+            document.getElementById('integration-contact').value = int.contact || ''; // <--- NOVO
             document.getElementById('integration-observation').value = int.observation || '';
             
-            // Marca checkboxes
             if(int.apis) {
                 document.querySelectorAll('.api-check').forEach(cb => {
                     cb.checked = int.apis.includes(cb.value);
                 });
             }
-            
             if(document.getElementById('integration-char-counter')) {
                 document.getElementById('integration-char-counter').textContent = (int.observation ? int.observation.length : 0) + ' / 250';
             }
@@ -7855,7 +7835,7 @@ function exportReportProducaoExcel() {
 }
 
 function genRepIntegracoes() {
-    // ... (Filtros iguais) ...
+    // ... (Filtros permanecem os mesmos) ...
     const dateStart = document.getElementById('rep-int-start').value;
     const dateEnd = document.getElementById('rep-int-end').value;
     const statusFilter = document.getElementById('rep-int-status').value;
@@ -7883,7 +7863,6 @@ function genRepIntegracoes() {
     const rows = data.map(i => {
         const diff = getDaysDiff(i.expirationDate);
         let statusTexto = `<span style="color:green; font-weight:bold;">Em dia (${diff} dias)</span>`;
-        
         if (diff < 0) statusTexto = `<span style="color:#C85250; font-weight:bold;">Vencido há ${Math.abs(diff)} dias</span>`;
         else if (diff <= 30) statusTexto = `<span style="color:#E68161; font-weight:bold;">Vence em ${diff} dias</span>`;
 
@@ -7891,7 +7870,8 @@ function genRepIntegracoes() {
         <tr>
             <td>${i.municipality}</td>
             <td>${(i.apis || []).join(', ')}</td>
-            <td>${i.responsible || '-'}</td> <td style="text-align:center;">${formatDate(i.expirationDate)}</td>
+            <td>${i.responsible || '-'}</td>
+            <td>${i.contact || '-'}</td> <td style="text-align:center;">${formatDate(i.expirationDate)}</td>
             <td style="text-align:center;">${statusTexto}</td>
             <td>${i.observation || '-'}</td>
         </tr>`;
@@ -7907,7 +7887,8 @@ function genRepIntegracoes() {
         <thead>
             <th>Município</th>
             <th>APIs Integradas</th>
-            <th>Responsável</th> <th style="text-align:center;">Vencimento</th>
+            <th>Responsável</th>
+            <th>Contato</th> <th style="text-align:center;">Vencimento</th>
             <th style="text-align:center;">Status</th>
             <th>Observação</th>
         </thead>
@@ -7938,12 +7919,12 @@ function exportReportIntegracoesExcel() {
 
     if (data.length === 0) { alert('Nada para exportar.'); return; }
 
-    // Adicionado Responsável
-    const headers = ['Município', 'APIs', 'Responsável Certificado', 'Data Vencimento', 'Dias Restantes', 'Observação'];
+    const headers = ['Município', 'APIs', 'Responsável Certificado', 'Contato', 'Data Vencimento', 'Dias Restantes', 'Observação'];
     const rows = data.map(i => [
         i.municipality,
         (i.apis || []).join(', '),
-        i.responsible || '', // Valor
+        i.responsible || '',
+        i.contact || '', // <--- NOVO
         formatDate(i.expirationDate),
         getDaysDiff(i.expirationDate),
         i.observation
