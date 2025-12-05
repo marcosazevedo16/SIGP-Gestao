@@ -3938,28 +3938,28 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     .mobile-menu-toggle { display: none !important; } }
 
 /* ==========================================================================
-   CORREÇÃO V83 - TABELA INTEGRAÇÕES (LARGURA E FONTE AJUSTADAS)
+   CORREÇÃO V84 - TABELA INTEGRAÇÕES (LARGURA REAL + TÍTULOS NORMAIS)
    Substitua o bloco anterior da tabela de integrações no style.css
    ========================================================================== */
 
 /* 1. Estrutura da Tabela Fixa */
 #integrations-table table {
     width: 100%;
-    min-width: 1500px !important; /* Aumentado para acomodar a coluna maior */
-    table-layout: fixed !important;
+    min-width: 1500px !important;
+    table-layout: fixed !important; /* Respeita estritamente as larguras abaixo */
     border-collapse: collapse;
 }
 
-/* 2. Cabeçalhos (PADRONIZADO COM O SISTEMA) */
+/* 2. Cabeçalhos (CORREÇÃO: SEM CAIXA ALTA) */
 #integrations-table th {
-    font-weight: 600 !important; /* Reduzido de 800 para 600 (Padrão) */
-    font-size: 12px !important;  /* Reduzido de 13px para 12px (Padrão) */
+    font-weight: 600 !important;
+    font-size: 12px !important;
     color: var(--color-text);
     background-color: var(--color-secondary);
-    padding: 10px 8px;           /* Padding levemente menor */
+    padding: 10px 8px;
     vertical-align: middle;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    text-transform: none !important; /* CORRIGIDO: Remove o Caps Lock visual */
+    letter-spacing: normal;
 }
 
 /* Alinhamento dos Cabeçalhos */
@@ -3977,22 +3977,28 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     text-align: center !important;
 }
 
-/* 3. Estilo das Colunas (Dados) */
+/* 3. LARGURA DAS COLUNAS (APLICADA NO TH E NO TD) */
+/* É crucial aplicar no TH para o table-layout: fixed funcionar */
 
-/* COL 1: Município (MUITO MAIS ESPAÇO) */
+/* COL 1: Município (LARGURA FORÇADA 380px) */
+#integrations-table th:nth-child(1),
 #integrations-table td:nth-child(1) {
-    width: 350px !important; /* Aumentado de 250px para 350px */
-    min-width: 350px !important;
-    font-weight: 400 !important;
-    color: var(--color-text) !important;
-    white-space: normal !important; /* Permite quebra de linha confortável */
-    padding-right: 15px !important; /* Respiro extra */
+    width: 380px !important; /* Aumentado drásticamente */
+    min-width: 380px !important;
 }
 
-/* COL 2: APIs */
+#integrations-table td:nth-child(1) {
+    font-weight: 400 !important;
+    color: var(--color-text) !important;
+    white-space: normal !important; /* Permite quebra de linha natural */
+    padding-right: 15px !important;
+    line-height: 1.4; /* Melhora leitura se quebrar linha */
+}
+
+/* COL 2: APIs (Flexível) */
 #integrations-table th:nth-child(2),
 #integrations-table td:nth-child(2) {
-    width: auto !important; /* Flexível */
+    width: auto !important;
     min-width: 200px;
 }
 
@@ -4025,8 +4031,8 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
 /* COL 7: Observações (Reduzido) */
 #integrations-table th:nth-child(7),
 #integrations-table td:nth-child(7) {
-    width: 120px !important;
-    max-width: 120px !important;
+    width: 150px !important; /* Levemente ajustado */
+    max-width: 150px !important;
 }
 
 #integrations-table td:nth-child(7) {
