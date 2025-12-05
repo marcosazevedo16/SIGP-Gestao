@@ -1925,7 +1925,6 @@ function getFilteredRequests() {
 
 function renderRequests() {
     const fMun = document.getElementById('filter-request-municipality')?.value;
-    // ... (capture as outras variáveis)
     const fStatus = document.getElementById('filter-request-status')?.value;
     const fSol = document.getElementById('filter-request-solicitante')?.value.toLowerCase();
     const fUser = document.getElementById('filter-request-user')?.value;
@@ -1935,9 +1934,7 @@ function renderRequests() {
     const fRealEnd = document.getElementById('filter-request-real-end')?.value;
 
     let filtered = requests.filter(r => {
-        // CORREÇÃO C: Comparação exata
         if (fMun && r.municipality !== fMun) return false;
-        
         if (fStatus && r.status !== fStatus) return false;
         if (fSol && !r.requester.toLowerCase().includes(fSol)) return false;
         if (fUser && r.user !== fUser) return false;
@@ -1948,15 +1945,14 @@ function renderRequests() {
         return true;
     }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // ... (Mantenha o restante da função renderRequests que já está correta no seu código) ...
-    // Apenas garantindo o cabeçalho e tabela:
     const c = document.getElementById('requests-table');
-    // (Lógica de contadores...)
     
     if(document.getElementById('requests-results-count')) {
         document.getElementById('requests-results-count').innerHTML = '<strong>' + filtered.length + '</strong> solicitações encontradas';
         document.getElementById('requests-results-count').style.display = 'block';
     }
+    
+    // Contadores
     if(document.getElementById('total-requests')) document.getElementById('total-requests').textContent = requests.length;
     if(document.getElementById('pending-requests')) document.getElementById('pending-requests').textContent = filtered.filter(r => r.status === 'Pendente').length;
     if(document.getElementById('completed-requests')) document.getElementById('completed-requests').textContent = filtered.filter(r => r.status === 'Realizado').length;
@@ -1970,8 +1966,12 @@ function renderRequests() {
             const just = x.justification ? (x.justification.length > 30 ? `<span title="${x.justification}">${x.justification.substring(0,30)}...</span>` : x.justification) : '-';
             let stCls = x.status === 'Realizado' ? 'completed' : (x.status === 'Inviável' ? 'cancelled' : 'pending');
 
+            // --- CORREÇÃO: Busca UF na lista mestra ---
+            const munData = municipalitiesList.find(m => m.name === x.municipality);
+            const munDisplay = munData ? `${x.municipality} - ${munData.uf}` : x.municipality;
+
             return `<tr>
-                <td class="text-primary-cell">${x.municipality}</td>
+                <td class="text-primary-cell">${munDisplay}</td>
                 <td style="text-align:center;">${formatDate(x.date)}</td>
                 <td>${x.requester}</td>
                 <td>${x.contact}</td>
