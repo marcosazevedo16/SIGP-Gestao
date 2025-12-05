@@ -1906,7 +1906,6 @@
 
         <div class="filters-section">
             <div class="filters-grid">
-    
     <div class="form-group">
         <label class="form-label">Ação</label>
         <select class="form-control" id="filter-audit-action" onchange="currentPage=1; renderAuditLogs()">
@@ -1915,6 +1914,7 @@
             <option value="Edição">Edição</option>
             <option value="Exclusão">Exclusão</option>
             <option value="Login">Login</option>
+            <option value="Restauração">Restauração</option>
         </select>
     </div>
 
@@ -1926,10 +1926,19 @@
 
     <div class="form-group">
         <label class="form-label">Módulo/Alvo</label>
-        <input type="text" class="form-control" id="filter-audit-target" placeholder="Ex: Município, Visita..." 
+        <input type="text" class="form-control" id="filter-audit-target" placeholder="Ex: Município..." 
                oninput="currentPage=1; renderAuditLogs()">
     </div>
 
+    <div class="form-group">
+        <label class="form-label">De (Data)</label>
+        <input type="date" class="form-control" id="filter-audit-start" onchange="currentPage=1; renderAuditLogs()">
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Até (Data)</label>
+        <input type="date" class="form-control" id="filter-audit-end" onchange="currentPage=1; renderAuditLogs()">
+    </div>
 </div>
         </div>
 
