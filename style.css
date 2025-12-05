@@ -2844,10 +2844,38 @@ table th { vertical-align: bottom; /* Alinha texto do cabeçalho embaixo */
    ========================================================================== */
 
 /* 1. Modais (Mantidos) */
+/* GRUPO 3: Modais PEQUENOS (500px) - Apenas listas simples */
 #api-list-modal .modal-content,
-#integration-modal .modal-content { width: 500px !important;
+#colab-info-modal .modal-content { 
+    width: 500px !important;
     max-width: 90% !important;
-    margin: 5% auto !important; }
+    margin: 5% auto !important; 
+}
+
+/* GRUPO 4: Modal de Integração (Personalizado: Largo e Compacto) */
+#integration-modal .modal-content {
+    width: 800px !important; /* Mais largo para caber os 3 campos */
+    max-width: 95% !important;
+    margin: 2% auto !important; /* Margem superior menor para subir o modal */
+}
+
+/* Reduzir espaçamento vertical APENAS neste modal */
+#integration-modal .form-grid {
+    gap: 10px !important; /* Reduz o espaço entre as linhas (era 16px) */
+    padding-bottom: 0 !important;
+}
+
+#integration-modal form {
+    padding: 15px 24px !important; /* Reduz padding superior/inferior */
+}
+
+#integration-modal .modal-header {
+    padding: 15px 24px !important; /* Cabeçalho mais fino */
+}
+
+#integration-modal .modal-actions {
+    margin-top: 10px !important; /* Aproxima os botões do formulário */
+}
 
 /* 2. Tabela Fixa */
 #integrations-table table { border-collapse: collapse !important;
