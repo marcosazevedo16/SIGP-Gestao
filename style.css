@@ -3982,8 +3982,8 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
 /* COL 1: Município (MANTIDO GRANDE) */
 #integrations-table th:nth-child(1),
 #integrations-table td:nth-child(1) {
-    width: 380px !important;
-    min-width: 380px !important;
+    width: 350px !important;
+    min-width: 350px !important;
 }
 
 #integrations-table td:nth-child(1) {
