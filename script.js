@@ -1083,20 +1083,18 @@ function showMunicipalityModal(id = null) {
     editingId = id;
     document.getElementById('municipality-form').reset();
     
-    // 1. Popula o dropdown com a Lista Mestra atual (AGORA COM UF)
-const munSelect = document.getElementById('municipality-name');
-
-// Ordena a lista
-const sortedList = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
-
-// Gera as opções mostrando "Nome - UF"
-munSelect.innerHTML = '<option value="">Selecione o município</option>' + 
-                      sortedList.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
+    // 1. Popula o dropdown usando o formato "Nome|UF" no valor
+    const munSelect = document.getElementById('municipality-name');
+    
+    // Ordena e cria as opções
+    const sortedList = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
+    munSelect.innerHTML = '<option value="">Selecione o município</option>' + 
+                          sortedList.map(m => `<option value="${m.name}|${m.uf}">${m.name} - ${m.uf}</option>`).join('');
     
     const statusSel = document.getElementById('municipality-status');
     statusSel.onchange = handleMunicipalityStatusChange;
 
-    // 2. Renderiza Checkboxes de Módulos Dinamicamente
+    // 2. Renderiza Checkboxes de Módulos
     const checkboxContainer = document.querySelector('#municipality-form .checkbox-grid');
     if(checkboxContainer) {
         if(modulos.length > 0) {
@@ -1112,24 +1110,24 @@ munSelect.innerHTML = '<option value="">Selecione o município</option>' +
     if (id) {
         const m = municipalities.find(function(x) { return x.id === id; });
         if (m) {
-            // --- CORREÇÃO DO NOME (INÍCIO) ---
-            // Verifica se o nome do município existe nas opções do dropdown.
-            // Se não existir (veio de CSV ou backup antigo), cria a opção temporariamente para exibir corretamente.
+            // Reconstrói o valor esperado "Nome|UF"
+            const valToSelect = `${m.name}|${m.uf}`;
+            
+            // Verifica se a opção existe, senão cria temporariamente para não perder a seleção visual
             let exists = false;
             for (let i = 0; i < munSelect.options.length; i++) {
-                if (munSelect.options[i].value === m.name) {
+                if (munSelect.options[i].value === valToSelect) {
                     exists = true;
                     break;
                 }
             }
             if (!exists) {
                 const opt = document.createElement('option');
-                opt.value = m.name;
-                opt.textContent = m.name;
+                opt.value = valToSelect;
+                opt.textContent = m.uf ? `${m.name} - ${m.uf}` : m.name;
                 munSelect.appendChild(opt);
             }
-            munSelect.value = m.name;
-            // --- CORREÇÃO DO NOME (FIM) ---
+            munSelect.value = valToSelect;
 
             document.getElementById('municipality-status').value = m.status;
             document.getElementById('municipality-manager').value = m.manager;
@@ -1150,11 +1148,9 @@ munSelect.innerHTML = '<option value="">Selecione o município</option>' +
                 });
             }
             
-            // Atualiza a visibilidade dos campos de data extra (Bloqueio/Parada)
             handleMunicipalityStatusChange();
         }
     } else {
-        // Se for Novo Cadastro, garante que campos extras fiquem ocultos
         handleMunicipalityStatusChange();
     }
     
@@ -1163,39 +1159,39 @@ munSelect.innerHTML = '<option value="">Selecione o município</option>' +
 
 function saveMunicipality(e) {
     e.preventDefault();
-    // Sanitiza inputs
-    const name = sanitizeInput(document.getElementById('municipality-name').value);
-    const status = document.getElementById('municipality-status').value;
-    const mods = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
     
-    // Validação Básica
-    if (!name) {
+    // Captura o valor bruto do select (Ex: "Turmalina|MG")
+    const rawValue = document.getElementById('municipality-name').value;
+    
+    if (!rawValue) {
         alert('Por favor, selecione um município.');
         return;
     }
 
-    // --- 1. VALIDAÇÃO DE DUPLICIDADE ROBUSTA ---
-    // Verifica se o NOME já existe na lista de clientes (municipalities).
-    // O trecho '&& m.id !== editingId' permite salvar se você estiver apenas editando o próprio registro.
+    // Separa Nome e UF
+    const parts = rawValue.split('|');
+    const name = sanitizeInput(parts[0]); // Nome
+    const uf = parts.length > 1 ? parts[1] : ''; // UF (Garantido do dropdown)
+
+    const status = document.getElementById('municipality-status').value;
+    const mods = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
+
+    // --- VALIDAÇÃO DE DUPLICIDADE ---
+    // Verifica se o NOME já existe na lista.
     const isDuplicate = municipalities.some(m => m.name === name && m.id !== editingId);
 
     if (isDuplicate) {
         alert(`🚫 Ação Bloqueada: O município "${name}" já consta na sua carteira de clientes!\n\nUse a busca para encontrá-lo e editá-lo.`);
         return;
     }
-    // -------------------------------------------
 
-    // 2. BUSCA UF NA LISTA MESTRA (Para salvar junto e validar visualmente)
-    const munData = municipalitiesList.find(m => m.name === name);
-    const uf = munData ? munData.uf : '';
-
-    // 3. Validação "Em Uso" (Obriga a ter módulos)
+    // Validação "Em Uso"
     if (status === 'Em uso' && mods.length === 0) {
         alert('Erro: Para status "Em Uso", selecione pelo menos um módulo.');
         return;
     }
 
-    // 4. VALIDAÇÃO DE DATA DE BLOQUEIO (Não pode ser futura)
+    // Validação Data de Bloqueio
     const dateBlocked = document.getElementById('municipality-date-blocked') ? document.getElementById('municipality-date-blocked').value : '';
     
     if (status === 'Bloqueado') {
@@ -1203,11 +1199,9 @@ function saveMunicipality(e) {
             alert('Erro: Preencha a "Data em que foi Bloqueado".');
             return;
         }
-        
         const dBlock = new Date(dateBlocked);
         const today = new Date();
-        today.setHours(0,0,0,0); // Zera horas para comparar apenas dia
-
+        today.setHours(0,0,0,0);
         if (dBlock > today) {
             alert('🚫 Erro Lógico: A data de bloqueio não pode ser uma data futura.');
             return;
@@ -1216,7 +1210,7 @@ function saveMunicipality(e) {
 
     const data = {
         name: name,
-        uf: uf, // Agora salvamos a UF junto com o cliente
+        uf: uf, // Salva a UF corretamente extraída
         status: status,
         manager: sanitizeInput(document.getElementById('municipality-manager').value),
         contact: sanitizeInput(document.getElementById('municipality-contact').value),
@@ -1241,7 +1235,7 @@ function saveMunicipality(e) {
     salvarNoArmazenamento('municipalities', municipalities);
     document.getElementById('municipality-modal').classList.remove('show');
     renderMunicipalities();
-    updateGlobalDropdowns(); // Atualiza os selects em outras abas
+    updateGlobalDropdowns();
     
     showToast('Município salvo com sucesso!', 'success');
 }
