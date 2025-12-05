@@ -3938,7 +3938,7 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     .mobile-menu-toggle { display: none !important; } }
 
 /* ==========================================================================
-   CORREÇÃO V84 - TABELA INTEGRAÇÕES (LARGURA REAL + TÍTULOS NORMAIS)
+   CORREÇÃO V85 - TABELA INTEGRAÇÕES (CORRIGIDO COR OBSERVAÇÕES)
    Substitua o bloco anterior da tabela de integrações no style.css
    ========================================================================== */
 
@@ -3946,56 +3946,55 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
 #integrations-table table {
     width: 100%;
     min-width: 1500px !important;
-    table-layout: fixed !important; /* Respeita estritamente as larguras abaixo */
+    table-layout: fixed !important;
     border-collapse: collapse;
 }
 
-/* 2. Cabeçalhos (CORREÇÃO: SEM CAIXA ALTA) */
+/* 2. Cabeçalhos (PADRONIZADO) */
 #integrations-table th {
     font-weight: 600 !important;
     font-size: 12px !important;
-    color: var(--color-text);
+    color: var(--color-text) !important; /* Garante cor escura no título */
     background-color: var(--color-secondary);
     padding: 10px 8px;
     vertical-align: middle;
-    text-transform: none !important; /* CORRIGIDO: Remove o Caps Lock visual */
+    text-transform: none !important;
     letter-spacing: normal;
 }
 
 /* Alinhamento dos Cabeçalhos */
-#integrations-table th:nth-child(1), /* Município */
-#integrations-table th:nth-child(2), /* APIs */
-#integrations-table th:nth-child(3), /* Responsável */
-#integrations-table th:nth-child(4), /* Contato */
-#integrations-table th:nth-child(7)  /* Observações */ {
+#integrations-table th:nth-child(1),
+#integrations-table th:nth-child(2),
+#integrations-table th:nth-child(3),
+#integrations-table th:nth-child(4),
+#integrations-table th:nth-child(7) {
     text-align: left !important;
 }
 
-#integrations-table th:nth-child(5), /* Vencimento */
-#integrations-table th:nth-child(6), /* Status */
-#integrations-table th:nth-child(8)  /* Ações */ {
+#integrations-table th:nth-child(5),
+#integrations-table th:nth-child(6),
+#integrations-table th:nth-child(8) {
     text-align: center !important;
 }
 
-/* 3. LARGURA DAS COLUNAS (APLICADA NO TH E NO TD) */
-/* É crucial aplicar no TH para o table-layout: fixed funcionar */
+/* 3. Estilo das Colunas (Dados) */
 
-/* COL 1: Município (LARGURA FORÇADA 380px) */
+/* COL 1: Município (MANTIDO GRANDE) */
 #integrations-table th:nth-child(1),
 #integrations-table td:nth-child(1) {
-    width: 380px !important; /* Aumentado drásticamente */
+    width: 380px !important;
     min-width: 380px !important;
 }
 
 #integrations-table td:nth-child(1) {
     font-weight: 400 !important;
     color: var(--color-text) !important;
-    white-space: normal !important; /* Permite quebra de linha natural */
+    white-space: normal !important;
     padding-right: 15px !important;
-    line-height: 1.4; /* Melhora leitura se quebrar linha */
+    line-height: 1.4;
 }
 
-/* COL 2: APIs (Flexível) */
+/* COL 2: APIs */
 #integrations-table th:nth-child(2),
 #integrations-table td:nth-child(2) {
     width: auto !important;
@@ -4028,10 +4027,10 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     text-align: center !important;
 }
 
-/* COL 7: Observações (Reduzido) */
+/* COL 7: Observações (COR CORRIGIDA) */
 #integrations-table th:nth-child(7),
 #integrations-table td:nth-child(7) {
-    width: 150px !important; /* Levemente ajustado */
+    width: 150px !important;
     max-width: 150px !important;
 }
 
@@ -4039,7 +4038,9 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    color: var(--color-text-secondary);
+    /* CORREÇÃO: Removemos a cor secundária e forçamos a cor padrão */
+    color: var(--color-text) !important; 
+    opacity: 1 !important;
 }
 
 /* COL 8: Ações (Centralizado) */
