@@ -5873,7 +5873,6 @@ function saveIntegration(e) {
 // --- GERENCIAMENTO DE INTEGRAÇÕES (ABA PRINCIPAL) CORRIGIDO ---
 
 function renderIntegrations() {
-    // 1. Captura Filtros (Mantido igual)
     const fMun = document.getElementById('filter-integration-municipality')?.value;
     const fApi = document.getElementById('filter-integration-api')?.value;
     const fStatus = document.getElementById('filter-integration-status')?.value;
@@ -5910,7 +5909,7 @@ function renderIntegrations() {
             const diff = getDaysDiff(i.expirationDate);
             const isExpired = diff < 0;
             
-            // LÓGICA DA COR DA DATA (VERMELHO SE VENCIDO)
+            // LÓGICA: Aplica vermelho na DATA se vencido
             const dateClass = isExpired ? 'date-expired' : 'date-valid';
             const dateText = formatDate(i.expirationDate);
             
@@ -5923,11 +5922,9 @@ function renderIntegrations() {
                 daysText = `<span class="days-remaining-valid">Vence em ${diff} dias</span>`;
             }
 
-            // Busca UF na lista mestra
             const munData = municipalitiesList.find(m => m.name === i.municipality);
             const munDisplay = munData ? `${i.municipality} - ${munData.uf}` : i.municipality;
 
-            // Renderiza tags das APIs
             const apisDisplay = (i.apis || []).map(apiName => {
                 const apiObj = apisList.find(a => a.name === apiName);
                 const tooltipText = apiObj ? apiObj.description : ''; 
@@ -5937,7 +5934,8 @@ function renderIntegrations() {
             }).join('');
 
             return `<tr>
-                <td class="text-primary-cell"><strong>${munDisplay}</strong></td>
+                <td style="font-weight: normal;">${munDisplay}</td>
+                
                 <td class="module-tags-cell">${apisDisplay}</td>
                 <td>${i.responsible || '-'}</td>
                 <td>${i.contact || '-'}</td> 
@@ -5949,7 +5947,7 @@ function renderIntegrations() {
                 <td class="text-secondary-cell" title="${i.observation || ''}">${i.observation || '-'}</td>
                 
                 <td>
-                    <div style="display:flex; justify-content:flex-end; gap:5px;">
+                    <div style="display:flex; justify-content:center; gap:5px;">
                         <button class="btn btn--sm" onclick="showIntegrationModal(${i.id})">✏️</button>
                         <button class="btn btn--sm" onclick="deleteIntegration(${i.id})">🗑️</button>
                     </div>
@@ -5965,8 +5963,7 @@ function renderIntegrations() {
                 <th>Contato</th> 
                 <th>Vencimento</th>
                 <th>Status Vencimento</th>
-                <th>Observações</th>
-                <th>Ações</th>
+                <th>Observações</th> <th>Ações</th>
             </thead>
             <tbody>${rows}</tbody>
         </table>`;
