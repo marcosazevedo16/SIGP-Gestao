@@ -3607,37 +3607,61 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     font-size: 13px;
     overflow: hidden; }
 
-/* DISTRIBUIÇÃO DAS COLUNAS - AJUSTADA */
+/* 1. Município */
 #integrations-table th:nth-child(1), 
-#integrations-table td:nth-child(1) { width: 180px !important;     /* Município: mais espaço */
+#integrations-table td:nth-child(1) { 
+    width: 160px !important;     
     text-align: left !important;
-    font-weight: 600; }
+}
 
+/* 2. APIs Integradas (Reduzido um pouco) */
 #integrations-table th:nth-child(2), 
-#integrations-table td:nth-child(2) { width: 500px !important;     /* APIs Integradas: muito largo e na mesma linha */
-    text-align: left !important; }
-
-#integrations-table th:nth-child(3), 
-#integrations-table td:nth-child(3) { width: 120px !important;     /* Vencimento Certificado */
-    text-align: center !important; }
-
-#integrations-table th:nth-child(4), 
-#integrations-table td:nth-child(4) { width: 130px !important;     /* Status Vencimento */
-    text-align: center !important; }
-
-#integrations-table th:nth-child(5), 
-#integrations-table td:nth-child(5) { width: 250px !important;     /* Observações: muito mais espaço */
+#integrations-table td:nth-child(2) { 
+    width: 350px !important;     
     text-align: left !important;
+}
+
+/* 3. Vencimento */
+#integrations-table th:nth-child(3), 
+#integrations-table td:nth-child(3) { 
+    width: 110px !important;     
+    text-align: center !important;
+}
+
+/* 4. Status Vencimento */
+#integrations-table th:nth-child(4), 
+#integrations-table td:nth-child(4) { 
+    width: 130px !important;     
+    text-align: center !important;
+}
+
+/* 5. NOVO: Responsável */
+#integrations-table th:nth-child(5), 
+#integrations-table td:nth-child(5) { 
+    width: 180px !important;     
+    text-align: left !important;
+    white-space: normal !important; /* Permite quebrar linha se nome for longo */
     font-size: 12px;
+}
+
+/* 6. Observações (Empurrado para o índice 6) */
+#integrations-table th:nth-child(6), 
+#integrations-table td:nth-child(6) { 
+    width: 200px !important;     
+    text-align: left !important;
     color: var(--color-text-secondary);
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; }
+    text-overflow: ellipsis;
+}
 
-#integrations-table th:nth-child(6), 
-#integrations-table td:nth-child(6) { width: 100px !important;     /* Ações */
+/* 7. Ações (Empurrado para o índice 7) */
+#integrations-table th:nth-child(7), 
+#integrations-table td:nth-child(7) { 
+    width: 90px !important;     
     text-align: right !important;
-    padding-right: 16px !important; }
+    padding-right: 16px !important;
+}
 
 /* FORÇA AS APIs A FICAREM NA MESMA LINHA (SEM QUEBRA) */
 #integrations-table .module-tags-cell { display: flex !important;
