@@ -1897,13 +1897,14 @@
 
     <section id="audit-section" class="tab-content">
         <div class="section-header">
-            <h2>Auditoria do Sistema</h2>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn--secondary" onclick="clearAuditLogs()">Limpar Logs Antigos</button>
-                <button class="btn btn--primary" onclick="exportAuditCSV()">📥 Exportar Logs</button>
-            </div>
-        </div>
-
+    <h2>Auditoria do Sistema</h2>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn--secondary" onclick="clearAuditLogs()">Limpar Logs Antigos</button>
+        <button class="btn btn--outline" onclick="exportAuditCSV()">📥 Exportar CSV</button>
+        
+        <button class="btn btn--primary" onclick="generateAuditPDF()">🖨️ Imprimir PDF</button>
+    </div>
+</div>
         <div class="filters-section">
             <div class="filters-grid">
     <div class="form-group">
