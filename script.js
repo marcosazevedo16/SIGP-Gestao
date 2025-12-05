@@ -2317,7 +2317,7 @@ function renderPresentations() {
     const filtered = getFilteredPresentations(); // Usa a função de filtro real
     const c = document.getElementById('presentations-table');
     
-    // --- CORREÇÃO: ESTATÍSTICAS REATIVADAS ---
+    // Contadores
     if(document.getElementById('presentations-results-count')) {
         document.getElementById('presentations-results-count').innerHTML = '<strong>' + filtered.length + '</strong> apresentações encontradas';
         document.getElementById('presentations-results-count').style.display = 'block';
@@ -2326,7 +2326,6 @@ function renderPresentations() {
     if(document.getElementById('pending-presentations')) document.getElementById('pending-presentations').textContent = filtered.filter(p => p.status === 'Pendente').length;
     if(document.getElementById('completed-presentations')) document.getElementById('completed-presentations').textContent = filtered.filter(p => p.status === 'Realizada').length;
     if(document.getElementById('cancelled-presentations')) document.getElementById('cancelled-presentations').textContent = filtered.filter(p => p.status === 'Cancelada').length;
-    // ----------------------------------------
 
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhuma apresentação encontrada.</div>';
@@ -2336,8 +2335,12 @@ function renderPresentations() {
             const stCls = p.status === 'Realizada' ? 'completed' : (p.status === 'Cancelada' ? 'cancelled' : 'pending');
             const oStr = (p.orientadores || []).join(', ');
 
+            // --- CORREÇÃO: Busca UF na lista mestra ---
+            const munData = municipalitiesList.find(m => m.name === p.municipality);
+            const munDisplay = munData ? `${p.municipality} - ${munData.uf}` : p.municipality;
+
             return `<tr>
-                <td class="text-primary-cell">${p.municipality}</td>
+                <td class="text-primary-cell">${munDisplay}</td>
                 <td style="text-align:center;">${formatDate(p.dateSolicitacao)}</td>
                 <td>${p.requester}</td>
                 <td>${oStr}</td>
@@ -2355,7 +2358,6 @@ function renderPresentations() {
         c.innerHTML = `<table><thead><th>Município</th><th>Data Solicitação</th><th>Solicitante(s)</th><th>Colaborador(es) Responsável(is)</th><th>Formas</th><th>Descrição</th><th>Data Realização</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
     
-    // --- CORREÇÃO: GRÁFICOS REATIVADOS ---
     updatePresentationCharts(filtered);
 }
 
@@ -3152,9 +3154,16 @@ function showProductionModal(id = null) {
     editingId = id;
     document.getElementById('production-form').reset();
     
-    // 1. Popula dropdown com Lista Mestra
+    // 1. Popula dropdown com Lista Mestra (AGORA COM UF)
     const munSelect = document.getElementById('production-municipality');
-    populateSelect(munSelect, municipalitiesList, 'name', 'name');
+    if (munSelect) {
+        // Ordena
+        const sortedList = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Cria as opções no formato "Nome - UF", mas salva apenas o "Nome" no value
+        munSelect.innerHTML = '<option value="">Selecione o município</option>' + 
+                              sortedList.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
+    }
     
     // Garante estado inicial do campo Período
     handleProductionFrequencyChange();
@@ -3162,7 +3171,8 @@ function showProductionModal(id = null) {
     if (id) {
         const p = productions.find(x => x.id === id);
         if(p) {
-            // Cria opção se não existir
+            // Garante que o valor selecionado exista no dropdown
+            // (Mesmo se o dropdown foi recriado acima, o valor deve bater pelo nome)
             let exists = false;
             for (let i = 0; i < munSelect.options.length; i++) {
                 if (munSelect.options[i].value === p.municipality) {
@@ -3170,10 +3180,11 @@ function showProductionModal(id = null) {
                     break;
                 }
             }
+            // Se não existir (ex: município deletado da lista mestra), cria temporário
             if (!exists) {
                 const opt = document.createElement('option');
                 opt.value = p.municipality;
-                opt.textContent = p.municipality;
+                opt.textContent = p.municipality; // Sem UF pois não achou o registro mestre
                 munSelect.appendChild(opt);
             }
             munSelect.value = p.municipality;
