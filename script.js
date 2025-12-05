@@ -5909,7 +5909,6 @@ function renderIntegrations() {
             const diff = getDaysDiff(i.expirationDate);
             const isExpired = diff < 0;
             
-            // LÓGICA: Aplica vermelho na DATA se vencido
             const dateClass = isExpired ? 'date-expired' : 'date-valid';
             const dateText = formatDate(i.expirationDate);
             
@@ -5935,16 +5934,13 @@ function renderIntegrations() {
 
             return `<tr>
                 <td style="font-weight: normal;">${munDisplay}</td>
-                
                 <td class="module-tags-cell">${apisDisplay}</td>
                 <td>${i.responsible || '-'}</td>
                 <td>${i.contact || '-'}</td> 
-                
                 <td style="text-align:center;" class="${dateClass}">${dateText}</td>
-                
                 <td style="text-align:center;">${daysText}</td>
                 
-                <td class="text-secondary-cell" title="${i.observation || ''}">${i.observation || '-'}</td>
+                <td title="${i.observation || ''}">${i.observation || '-'}</td>
                 
                 <td>
                     <div style="display:flex; justify-content:center; gap:5px;">
@@ -5963,14 +5959,14 @@ function renderIntegrations() {
                 <th>Contato</th> 
                 <th>Vencimento</th>
                 <th>Status Vencimento</th>
-                <th>Observações</th> <th>Ações</th>
+                <th>Observações</th>
+                <th>Ações</th>
             </thead>
             <tbody>${rows}</tbody>
         </table>`;
     }
     updateIntegrationChart(filtered);
 }
-
 function updateIntegrationChart(data) {
     const ctx = document.getElementById('chartApisUsage');
     if(!ctx || !window.Chart) return;
