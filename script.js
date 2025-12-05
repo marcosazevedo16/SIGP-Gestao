@@ -1279,29 +1279,44 @@ function renderMunicipalities() {
             else if (m.status === 'Bloqueado') stCls += ' cancelled'; 
             else if (m.status === 'Parou de usar') stCls += ' pending';
 
+            // --- CORREÇÃO DE EXIBIÇÃO DO NOME ---
+            // 1. Tenta usar a UF salva no próprio registro (novo padrão)
+            let displayUF = m.uf; 
+            
+            // 2. Se não tiver (registro antigo), tenta buscar na lista mestra pelo nome
+            if (!displayUF && typeof municipalitiesList !== 'undefined') {
+                const match = municipalitiesList.find(ml => ml.name === m.name);
+                if (match) displayUF = match.uf;
+            }
+
+            // 3. Monta a string final
+            const nomeExibicao = displayUF ? `${m.name} - ${displayUF}` : m.name;
+            // ------------------------------------
+
             return `<tr>
-                <td class="text-primary-cell">${m.name}</td>
-                <td class="module-tags-cell">${badges}</td>
+                <td class="text-primary-cell">${nomeExibicao}</td> <td class="module-tags-cell">${badges}</td>
                 <td style="font-size:12px;">${m.manager}</td>
                 <td>${m.contact}</td>
                 
                 <td>${formatDate(m.implantationDate)}</td>
-                <td style="font-size:11px;">${calculateTimeInUse(m.implantationDate)}</td> <td style="font-size:11px;">${formatDate(m.lastVisit)}</td> <td style="font-size:11px;">${calculateTimeInUse(m.lastVisit)}</td>
-                
-                <td><span class="${stCls}">${m.status}</span></td>
+                <td style="font-size:11px;">${calculateTimeInUse(m.implantationDate)}</td> 
+                <td style="font-size:11px;">${formatDate(m.lastVisit)}</td> 
+                <td style="font-size:11px;">${calculateDaysSince(m.lastVisit)}</td> <td><span class="${stCls}">${m.status}</span></td>
                 <td style="color:${corDataFim}; font-size:11px;">${dataFim}</td>
                 <td><button class="btn btn--sm" onclick="showMunicipalityModal(${m.id})">✏️</button><button class="btn btn--sm" onclick="deleteMunicipality(${m.id})">🗑️</button></td>
             </tr>`;
         }).join('');
         
-        // Cabeçalho da Tabela (Reordenado)
+        // Cabeçalho da Tabela
         c.innerHTML = `<table><thead>
             <th>Município</th>
             <th>Módulos Em Uso</th>
             <th>Gestor(a) Atual</th>
             <th>Contato</th>
             <th>Data de<br>Implantação</th>
-            <th>Tempo de Uso</th> <th>Última Visita<br>Presencial</th> <th>Tempo sem Visita</th> 
+            <th>Tempo de Uso</th> 
+            <th>Última Visita<br>Presencial</th> 
+            <th>Tempo sem Visita</th> 
             <th>Status</th>
             <th>Bloqueio/<br>Parou de Usar</th>
             <th>Ações</th>
