@@ -8196,19 +8196,26 @@ function generateAuditPDF() {
     // --- CABEÇALHO ---
     doc.setFontSize(16);
     doc.setTextColor(0, 61, 92); // Azul do tema
-    doc.text("SIGP Saúde - Relatório de Auditoria do Sistema", marginLeft, 15);
+    doc.text("Relatório de Auditoria do Sistema", marginLeft, 15);
 
     doc.setDrawColor(0, 61, 92);
     doc.setLineWidth(0.5);
-    doc.line(marginLeft, 18, pageWidth - marginRight, 18); // Linha de ponta a ponta
+    doc.line(marginLeft, 18, pageWidth - marginRight, 18);
 
-    // Resumo dos Filtros
+    // Resumo dos Filtros (AGORA COM DATA FORMATADA)
     let filtroTexto = "Filtros aplicados: ";
     const partesFiltro = [];
+    
     if(fAction) partesFiltro.push(`Ação: ${fAction}`);
     if(fUser) partesFiltro.push(`Usuário: ${document.getElementById('filter-audit-user').value}`);
     if(fTarget) partesFiltro.push(`Módulo: ${document.getElementById('filter-audit-target').value}`);
-    if(fStart || fEnd) partesFiltro.push(`Período: ${fStart || 'Início'} até ${fEnd || 'Hoje'}`);
+    
+    // --- CORREÇÃO AQUI: Aplica formatDate() nas datas do filtro ---
+    if(fStart || fEnd) {
+        const txtInicio = fStart ? formatDate(fStart) : 'Início';
+        const txtFim = fEnd ? formatDate(fEnd) : 'Hoje';
+        partesFiltro.push(`Período: ${txtInicio} até ${txtFim}`);
+    }
     
     if (partesFiltro.length === 0) filtroTexto += "Nenhum (Todos os registros)";
     else filtroTexto += partesFiltro.join(' | ');
@@ -8267,13 +8274,13 @@ function generateAuditPDF() {
             doc.setFontSize(8);
             doc.setTextColor(100);
             
-            // ESQUERDA: Dados de Impressão
+            // Esquerda
             doc.text(`Impresso em ${dataHoraStr} por ${usuarioLogado}`, marginLeft, pageHeight - 10);
             
-            // CENTRO: Mensagem de Confidencialidade (RECOLOCADO AQUI)
+            // Centro
             doc.text('SIGP Saúde - Documento Confidencial', pageWidth / 2, pageHeight - 10, { align: 'center' });
             
-            // DIREITA: Paginação
+            // Direita
             doc.text('Página ' + doc.internal.getNumberOfPages(), pageWidth - marginRight, pageHeight - 10, { align: 'right' });
         }
     });
