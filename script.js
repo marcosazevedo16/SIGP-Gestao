@@ -5070,22 +5070,36 @@ function navigateToAudit() {
 
 // Renderização da Tabela
 function renderAuditLogs() {
+    // 1. Captura Filtros
     const fAction = document.getElementById('filter-audit-action') ? document.getElementById('filter-audit-action').value : '';
     const fUser = document.getElementById('filter-audit-user') ? document.getElementById('filter-audit-user').value.toLowerCase() : '';
     const fTarget = document.getElementById('filter-audit-target') ? document.getElementById('filter-audit-target').value.toLowerCase() : '';
+    
+    // Novos Filtros de Data
+    const fStart = document.getElementById('filter-audit-start') ? document.getElementById('filter-audit-start').value : '';
+    const fEnd = document.getElementById('filter-audit-end') ? document.getElementById('filter-audit-end').value : '';
 
-    // 1. Filtra os dados
+    // 2. Filtragem
     const filtered = auditLogs.filter(log => {
+        // Filtros de Texto
         if (fAction && log.action !== fAction) return false;
         if (fUser && !log.user.toLowerCase().includes(fUser)) return false;
         if (fTarget && !log.target.toLowerCase().includes(fTarget)) return false;
+
+        // Filtros de Data (Comparação de String ISO funciona bem: '2023-12-01' < '2023-12-05')
+        // Extraímos apenas a parte da data YYYY-MM-DD do timestamp ISO
+        const logDate = log.timestamp.split('T')[0]; 
+        
+        if (fStart && logDate < fStart) return false;
+        if (fEnd && logDate > fEnd) return false;
+
         return true;
     });
 
     const c = document.getElementById('audit-table');
     const countDiv = document.getElementById('audit-count');
 
-    // --- ATUALIZAÇÃO DO CONTADOR (REQUISITO 1) ---
+    // Contador
     if (countDiv) {
         countDiv.style.display = 'block';
         countDiv.style.padding = '10px';
@@ -5094,14 +5108,11 @@ function renderAuditLogs() {
         countDiv.style.marginBottom = '15px';
         countDiv.style.border = '1px solid var(--color-primary)';
         countDiv.style.color = 'var(--color-primary)';
-        
-        // Mostra filtrados e o total absoluto
-        countDiv.innerHTML = `📊 <strong>${filtered.length}</strong> logs exibidos (de um total de ${auditLogs.length} registros no histórico).`;
+        countDiv.innerHTML = `📊 <strong>${filtered.length}</strong> logs exibidos (de um total de ${auditLogs.length} registros).`;
     }
-    // ----------------------------------------------
 
     if (filtered.length === 0) {
-        c.innerHTML = '<div class="empty-state">Nenhum registro de auditoria encontrado.</div>';
+        c.innerHTML = '<div class="empty-state">Nenhum registro de auditoria encontrado neste período.</div>';
         return;
     }
 
@@ -5118,25 +5129,46 @@ function renderAuditLogs() {
 
     const formatDateTime = (isoStr) => {
         const d = new Date(isoStr);
-        return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR');
+        return d.toLocaleDateString('pt-BR') + ' <span style="color:#999; font-size:10px;">' + d.toLocaleTimeString('pt-BR') + '</span>';
     };
 
-    const getActionColor = (act) => {
-        if(act === 'Exclusão') return '#C85250'; // Vermelho
-        if(act === 'Criação') return '#005580';  // Azul
-        if(act === 'Edição') return '#E7B85F';   // Amarelo/Laranja (Melhor para leitura)
-        return 'inherit';
+    // --- NOVO: ÍCONES E ESTILO VISUAL ---
+    const getActionStyle = (act) => {
+        if(act === 'Exclusão') return { icon: '🗑️', color: '#C85250', bg: 'rgba(200, 82, 80, 0.1)' };
+        if(act === 'Criação') return { icon: '✨', color: '#005580', bg: 'rgba(0, 85, 128, 0.1)' };
+        if(act === 'Edição') return { icon: '✏️', color: '#E7B85F', bg: 'rgba(231, 184, 95, 0.1)' };
+        if(act === 'Login') return { icon: '🔑', color: '#79C2A9', bg: 'rgba(121, 194, 169, 0.1)' };
+        if(act === 'Restauração') return { icon: '♻️', color: '#666', bg: '#eee' };
+        return { icon: '📝', color: 'inherit', bg: 'transparent' };
     };
 
-    const rows = paginatedData.map(log => `
+    const rows = paginatedData.map(log => {
+        const style = getActionStyle(log.action);
+        
+        return `
         <tr>
-            <td style="font-size:11px; white-space:nowrap;">${formatDateTime(log.timestamp)}</td>
-            <td><strong>${log.user}</strong></td>
-            <td style="color:${getActionColor(log.action)}; font-weight:bold;">${log.action}</td>
+            <td style="font-size:12px; white-space:nowrap;">${formatDateTime(log.timestamp)}</td>
+            <td>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:16px;">👤</span> 
+                    <strong>${log.user}</strong>
+                </div>
+            </td>
+            <td>
+                <span style="
+                    display:inline-flex; align-items:center; gap:5px;
+                    background-color:${style.bg}; color:${style.color};
+                    padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px;
+                    border: 1px solid ${style.color}30;">
+                    ${style.icon} ${log.action}
+                </span>
+            </td>
             <td>${log.target}</td>
-            <td class="text-secondary-cell" style="font-size:12px; white-space:normal; line-height:1.4;">${log.details}</td>
+            <td class="text-secondary-cell" style="font-size:12px; white-space:normal; line-height:1.4;">
+                ${log.details}
+            </td>
         </tr>
-    `).join('');
+    `}).join('');
 
     const paginationHTML = getPaginationHTML(filtered.length, 'renderAuditLogs');
     
@@ -5144,9 +5176,9 @@ function renderAuditLogs() {
         <table style="width:100%">
             <thead>
                 <th style="width:140px;">Data/Hora</th>
-                <th style="width:150px;">Usuário</th>
-                <th style="width:100px;">Ação</th>
-                <th style="width:150px;">Módulo</th>
+                <th style="width:180px;">Usuário</th>
+                <th style="width:110px;">Ação</th>
+                <th style="width:120px;">Módulo</th>
                 <th>Detalhes da Operação</th>
             </thead>
             <tbody>${rows}</tbody>
