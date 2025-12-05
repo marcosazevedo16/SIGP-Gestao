@@ -3585,32 +3585,37 @@ function showUserModal(id = null) {
     document.getElementById('user-form').reset();
     editingId = id;
     
-    // Controle do campo Login (não edita se já existir)
+    // CORREÇÃO 1: Garante que o campo login esteja SEMPRE habilitado, mesmo editando
     document.getElementById('user-login').disabled = false;
 
     if (id) {
         const u = users.find(x => x.id === id);
         if (u) {
             document.getElementById('user-login').value = u.login;
-            document.getElementById('user-login').disabled = true;
             document.getElementById('user-name').value = u.name;
-            // NOVO CAMPO:
             document.getElementById('user-email').value = u.email || ''; 
             document.getElementById('user-permission').value = u.permission;
             document.getElementById('user-status').value = u.status;
-            document.getElementById('user-password').required = false; // Senha opcional na edição
+            
+            // CORREÇÃO 2: Mostra máscara visual para indicar que existe senha
+            // O tipo "password" do input fará virar bolinhas/asteriscos visuais
+            document.getElementById('user-password').value = '********'; 
+            document.getElementById('user-password').required = false; 
         }
     } else {
-        document.getElementById('user-password').required = true; // Senha obrigatória no cadastro
+        document.getElementById('user-password').value = ''; // Limpa para novo usuário
+        document.getElementById('user-password').required = true; // Obrigatório se for novo
     }
     m.classList.add('show');
 }
 function saveUser(e) {
     e.preventDefault();
-    // Sanitiza Login
+    
+    // Sanitiza Login e transforma em maiúsculas
     const login = sanitizeInput(document.getElementById('user-login').value.trim().toUpperCase());
     
     // Validação Duplicidade
+    // Verifica se existe outro usuário com esse login (excluindo o próprio id de edição)
     const loginJaExiste = users.some(u => u.login === login && u.id !== editingId);
     if (loginJaExiste) {
         alert('Erro: Este Login já está sendo utilizado por outro usuário.');
@@ -3619,40 +3624,82 @@ function saveUser(e) {
 
     const data = {
         login: login,
-        // SANITIZAÇÃO AQUI:
         name: sanitizeInput(document.getElementById('user-name').value),
         email: sanitizeInput(document.getElementById('user-email').value),
         permission: document.getElementById('user-permission').value,
         status: document.getElementById('user-status').value
     };
-    // ... (restante da função saveUser com a senha e auditoria mantém igual) ...
-    // Vou resumir para não ficar gigante, mantenha o bloco do 'if (!editingId)' igual ao que fizemos antes.
-    
+
+    const passInput = document.getElementById('user-password').value;
+
     if (!editingId) {
+        // --- NOVO USUÁRIO ---
         data.id = getNextId('user');
+        
+        // Gera hash da senha nova
         data.salt = generateSalt();
-        data.passwordHash = hashPassword(document.getElementById('user-password').value, data.salt);
+        data.passwordHash = hashPassword(passInput, data.salt);
+        
         users.push(data);
-        logSystemAction('Criação', 'Usuários', `Novo usuário: ${data.login} (${data.permission})`);
+        logSystemAction('Criação', 'Usuários', `Criou usuário: ${data.login} (${data.permission})`);
+    
     } else {
+        // --- EDIÇÃO ---
         const i = users.findIndex(u => u.id === editingId);
         if (i !== -1) {
             const oldUser = users[i];
+
+            // Preserva credenciais antigas por padrão
             data.salt = oldUser.salt;
             data.passwordHash = oldUser.passwordHash;
-            const newPass = document.getElementById('user-password').value;
-            if (newPass) {
+
+            // Lógica da Senha:
+            // Só altera se o campo NÃO estiver vazio E NÃO for a máscara "********"
+            if (passInput && passInput !== '********') {
                 data.salt = generateSalt();
-                data.passwordHash = hashPassword(newPass, data.salt);
+                data.passwordHash = hashPassword(passInput, data.salt);
+                // Adiciona aviso no log se a senha mudou
+                data._passwordChanged = true; 
             }
+
+            // --- AUDITORIA DETALHADA PARA USUÁRIOS ---
+            const mapCampos = {
+                login: 'Login',
+                name: 'Nome',
+                email: 'E-mail',
+                permission: 'Permissão',
+                status: 'Status'
+            };
+
+            let detailsLog = detectChanges(oldUser, data, mapCampos);
+            
+            if (data._passwordChanged) {
+                detailsLog += detailsLog ? ". " : "";
+                detailsLog += "Alterou a Senha de Acesso";
+                delete data._passwordChanged; // Limpa flag interna
+            }
+
+            // Atualiza
             users[i] = { ...oldUser, ...data };
-            logSystemAction('Edição', 'Usuários', `Editou usuário: ${data.login}`);
+            
+            logSystemAction('Edição', 'Usuários', `Usuário: ${data.login}. ${detailsLog}`);
         }
     }
     
     salvarNoArmazenamento('users', users);
     document.getElementById('user-modal').classList.remove('show');
     renderUsers();
+    
+    // Se o usuário editou o próprio login, atualiza a sessão
+    if (currentUser && currentUser.id === editingId) {
+        // Atualiza os dados da sessão com o novo login/nome
+        currentUser.login = data.login;
+        currentUser.name = data.name;
+        currentUser.permission = data.permission;
+        salvarNoArmazenamento('currentUser', currentUser);
+        updateUserInterface(); // Atualiza o "Bem-vindo" no topo
+    }
+
     showToast('Usuário salvo com sucesso!', 'success');
 }
 
