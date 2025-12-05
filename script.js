@@ -8167,7 +8167,7 @@ function generateAuditPDF() {
     const fStart = document.getElementById('filter-audit-start').value;
     const fEnd = document.getElementById('filter-audit-end').value;
 
-    // 2. Filtra os dados da memória
+    // 2. Filtra os dados
     let filtered = auditLogs.filter(log => {
         if (fAction && log.action !== fAction) return false;
         if (fUser && !log.user.toLowerCase().includes(fUser)) return false;
@@ -8185,7 +8185,7 @@ function generateAuditPDF() {
         return;
     }
 
-    // 3. Configuração do PDF (Paisagem)
+    // 3. Configuração do PDF
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageWidth = doc.internal.pageSize.width;
@@ -8195,22 +8195,20 @@ function generateAuditPDF() {
 
     // --- CABEÇALHO ---
     doc.setFontSize(16);
-    doc.setTextColor(0, 61, 92); // Azul do tema
-    doc.text("Relatório de Auditoria do Sistema", marginLeft, 15);
+    doc.setTextColor(0, 61, 92);
+    doc.text("SIGP Saúde - Relatório de Auditoria do Sistema", marginLeft, 15);
 
     doc.setDrawColor(0, 61, 92);
     doc.setLineWidth(0.5);
     doc.line(marginLeft, 18, pageWidth - marginRight, 18);
 
-    // Resumo dos Filtros (AGORA COM DATA FORMATADA)
+    // Resumo dos Filtros
     let filtroTexto = "Filtros aplicados: ";
     const partesFiltro = [];
-    
     if(fAction) partesFiltro.push(`Ação: ${fAction}`);
     if(fUser) partesFiltro.push(`Usuário: ${document.getElementById('filter-audit-user').value}`);
     if(fTarget) partesFiltro.push(`Módulo: ${document.getElementById('filter-audit-target').value}`);
     
-    // --- CORREÇÃO AQUI: Aplica formatDate() nas datas do filtro ---
     if(fStart || fEnd) {
         const txtInicio = fStart ? formatDate(fStart) : 'Início';
         const txtFim = fEnd ? formatDate(fEnd) : 'Hoje';
@@ -8244,17 +8242,8 @@ function generateAuditPDF() {
         body: data,
         startY: 28,
         theme: 'grid',
-        styles: { 
-            fontSize: 8, 
-            cellPadding: 3, 
-            overflow: 'linebreak' 
-        },
-        headStyles: { 
-            fillColor: [0, 61, 92], 
-            textColor: 255,
-            fontStyle: 'bold',
-            halign: 'left'
-        },
+        styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak' },
+        headStyles: { fillColor: [0, 61, 92], textColor: 255, fontStyle: 'bold', halign: 'left' },
         columnStyles: {
             0: { cellWidth: 35 }, 
             1: { cellWidth: 45 }, 
@@ -8263,7 +8252,7 @@ function generateAuditPDF() {
             4: { cellWidth: 'auto' } 
         },
         alternateRowStyles: { fillColor: [245, 245, 245] },
-        margin: { left: marginLeft, right: marginRight },
+        margin: { left: marginLeft, right: marginRight, bottom: 25 },
         
         // --- RODAPÉ ---
         didDrawPage: function (data) {
@@ -8276,28 +8265,34 @@ function generateAuditPDF() {
             
             // Esquerda
             doc.text(`Impresso em ${dataHoraStr} por ${usuarioLogado}`, marginLeft, pageHeight - 10);
-            
             // Centro
             doc.text('SIGP Saúde - Documento Confidencial', pageWidth / 2, pageHeight - 10, { align: 'center' });
-            
             // Direita
             doc.text('Página ' + doc.internal.getNumberOfPages(), pageWidth - marginRight, pageHeight - 10, { align: 'right' });
         }
     });
 
-    // --- CONTADOR FINAL ---
-    const finalY = doc.lastAutoTable.finalY || 40;
+    // --- CONTADOR FINAL (SIMPLIFICADO) ---
+    // Pega onde a tabela parou
+    let finalY = doc.lastAutoTable.finalY + 10;
+    
+    // Verificação de Segurança Mínima:
+    // Se a tabela acabou EXATAMENTE em cima do rodapé (muito raro), joga pra outra página.
+    // Caso contrário (99% dos casos), imprime logo abaixo.
+    if (finalY > pageHeight - 15) {
+        doc.addPage();
+        finalY = 20;
+    }
     
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0); 
     doc.setFont(undefined, 'bold');
     
-    // Alinhado à Direita
-    doc.text(`Total de Logs encontrados: ${filtered.length}`, pageWidth - marginRight, finalY + 10, { align: 'right' });
+    // Imprime logo abaixo da tabela
+    doc.text(`Total de Logs encontrados: ${filtered.length}`, pageWidth - marginRight, finalY, { align: 'right' });
 
     // --- VISUALIZAR ---
     const blob = doc.output('bloburl');
-    
     const bodyEl = document.getElementById('report-preview-body');
     if (bodyEl) {
         bodyEl.innerHTML = `<iframe id="pdf-preview-frame" src="${blob}#zoom=100" width="100%" height="100%" style="border:none;"></iframe>`;
