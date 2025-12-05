@@ -3635,47 +3635,55 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     font-size: 13px;
     overflow: hidden; }
 
-/* 1. Município */
+/* 1. Município (Reduzi um pouco para caber o contato) */
 #integrations-table th:nth-child(1), 
 #integrations-table td:nth-child(1) { 
-    width: 160px !important;     
+    width: 150px !important;     
     text-align: left !important;
 }
 
 /* 2. APIs Integradas */
 #integrations-table th:nth-child(2), 
 #integrations-table td:nth-child(2) { 
-    width: 350px !important;     
+    width: 280px !important;     
     text-align: left !important;
 }
 
-/* 3. NOVO ORDEM: Responsável (Era o 5, agora é o 3) */
+/* 3. Responsável */
 #integrations-table th:nth-child(3), 
 #integrations-table td:nth-child(3) { 
-    width: 180px !important;     
+    width: 160px !important;     
     text-align: left !important;
     white-space: normal !important;
     font-size: 12px;
 }
 
-/* 4. Vencimento (Era o 3, agora é o 4) */
+/* 4. NOVO: Contato */
 #integrations-table th:nth-child(4), 
 #integrations-table td:nth-child(4) { 
+    width: 130px !important;     
+    text-align: left !important;
+    font-size: 12px;
+}
+
+/* 5. Vencimento (Era 4) */
+#integrations-table th:nth-child(5), 
+#integrations-table td:nth-child(5) { 
     width: 110px !important;     
     text-align: center !important;
 }
 
-/* 5. Status Vencimento (Era o 4, agora é o 5) */
-#integrations-table th:nth-child(5), 
-#integrations-table td:nth-child(5) { 
+/* 6. Status Vencimento (Era 5) */
+#integrations-table th:nth-child(6), 
+#integrations-table td:nth-child(6) { 
     width: 130px !important;     
     text-align: center !important;
 }
 
-/* 6. Observações */
-#integrations-table th:nth-child(6), 
-#integrations-table td:nth-child(6) { 
-    width: 200px !important;     
+/* 7. Observações (Era 6) */
+#integrations-table th:nth-child(7), 
+#integrations-table td:nth-child(7) { 
+    width: 180px !important;     
     text-align: left !important;
     color: var(--color-text-secondary);
     white-space: nowrap;
@@ -3683,9 +3691,9 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     text-overflow: ellipsis;
 }
 
-/* 7. Ações */
-#integrations-table th:nth-child(7), 
-#integrations-table td:nth-child(7) { 
+/* 8. Ações (Era 7) */
+#integrations-table th:nth-child(8), 
+#integrations-table td:nth-child(8) { 
     width: 90px !important;     
     text-align: right !important;
     padding-right: 16px !important;
