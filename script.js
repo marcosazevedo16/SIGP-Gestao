@@ -4704,47 +4704,93 @@ function updateGlobalDropdowns() {
 // 2. ATUALIZA OS FILTROS (TOPO DAS TABELAS) - TODAS AS ABAS
 function populateFilterSelects() {
     
-    // Ordena as listas para usar nos filtros
-    const sortedMun = (typeof municipalitiesList !== 'undefined') ? municipalitiesList.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
+    // --- LISTAS MESTRAS ORDENADAS ---
+    // Fonte da Verdade para Municípios: municipalitiesList (Lista Mestra em Configurações)
+    const sortedMun = (typeof municipalitiesList !== 'undefined') ? 
+        municipalitiesList.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
+        
     const sortedApis = (typeof apisList !== 'undefined') ? apisList.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
     const sortedOrient = (typeof orientadores !== 'undefined') ? orientadores.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
     const sortedCargos = (typeof cargos !== 'undefined') ? cargos.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
     const sortedUsers = (typeof users !== 'undefined') ? users.slice().sort((a,b) => a.name.localeCompare(b.name)) : [];
 
-    // 1. FILTROS DE MUNICÍPIO
+    // --- 1. FILTROS DE MUNICÍPIO (TODAS AS ABAS PRINCIPAIS) ---
     const munFilterIds = [
-        'filter-municipality-name', 
-        'filter-task-municipality', 
-        'filter-request-municipality',
-        'filter-visit-municipality', 
-        'filter-production-municipality', 
-        'filter-presentation-municipality',
-        'filter-integration-municipality'
+        'filter-municipality-name',       // Aba Municípios
+        'filter-task-municipality',       // Aba Treinamentos
+        'filter-request-municipality',    // Aba Solicitações
+        'filter-visit-municipality',      // Aba Visitas
+        'filter-production-municipality', // Aba Produção
+        'filter-presentation-municipality', // Aba Apresentações
+        'filter-integration-municipality' // Aba Integrações
     ];
 
     munFilterIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             const cur = el.value;
+            // CORREÇÃO: Adicionado " - ${m.uf}" na exibição visual
             el.innerHTML = '<option value="">Todos</option>' + 
-                           sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+                           sortedMun.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
+            
+            // Tenta restaurar a seleção anterior
             if(cur) el.value = cur;
             
+            // Listener específico para a aba de integrações (renderização imediata)
             if(id === 'filter-integration-municipality') el.onchange = renderIntegrations;
         }
     });
 
-    // --- FILTROS DO RELATÓRIO DE TREINAMENTOS ---
+    // --- FILTROS DOS RELATÓRIOS (ABA RELATÓRIOS) ---
     
-    // 1. Município
+    // 1. Relatório de Treinamentos (Município)
     const repTrainMun = document.getElementById('rep-train-mun');
     if (repTrainMun) {
         const cur = repTrainMun.value;
-        repTrainMun.innerHTML = '<option value="">Todos</option>' + sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+        repTrainMun.innerHTML = '<option value="">Todos</option>' + 
+                                sortedMun.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
         if(cur) repTrainMun.value = cur;
     }
 
-    // 2. Colaborador
+    // 2. Relatório de Apresentações (Município)
+    const repPresMun = document.getElementById('rep-pres-mun');
+    if (repPresMun) {
+        const cur = repPresMun.value;
+        repPresMun.innerHTML = '<option value="">Todos</option>' + 
+                               sortedMun.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
+        if(cur) repPresMun.value = cur;
+    }
+
+    // 3. Relatório de Visitas (Município)
+    const repVisMun = document.getElementById('rep-vis-mun');
+    if (repVisMun) {
+        const cur = repVisMun.value;
+        repVisMun.innerHTML = '<option value="">Todos</option>' + 
+                              sortedMun.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
+        if(cur) repVisMun.value = cur;
+    }
+
+    // 4. Relatório de Produção (Município)
+    const repProdMun = document.getElementById('rep-prod-mun');
+    if (repProdMun) {
+        const cur = repProdMun.value;
+        repProdMun.innerHTML = '<option value="">Todos</option>' + 
+                               sortedMun.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
+        if(cur) repProdMun.value = cur;
+    }
+
+    // 5. Relatório de Integrações (Município)
+    const repIntMun = document.getElementById('rep-int-mun');
+    if (repIntMun) {
+        const cur = repIntMun.value;
+        repIntMun.innerHTML = '<option value="">Todos</option>' + 
+                              sortedMun.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
+        if(cur) repIntMun.value = cur;
+    }
+
+    // --- OUTROS FILTROS (MANTIDOS ORIGINAIS) ---
+
+    // Filtros de Relatório (Outros campos)
     const repTrainColab = document.getElementById('rep-train-colab');
     if (repTrainColab) {
         const cur = repTrainColab.value;
@@ -4752,26 +4798,13 @@ function populateFilterSelects() {
         if(cur) repTrainColab.value = cur;
     }
 
-    // 3. Cargo
     const repTrainCargo = document.getElementById('rep-train-cargo');
     if (repTrainCargo) {
         const cur = repTrainCargo.value;
-        // 'sortedCargos' deve estar declarado no início da função populateFilterSelects
         repTrainCargo.innerHTML = '<option value="">Todos</option>' + sortedCargos.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         if(cur) repTrainCargo.value = cur;
     }
 
-    // --- FILTROS DO RELATÓRIO DE APRESENTAÇÕES ---
-    
-    // 1. Município
-    const repPresMun = document.getElementById('rep-pres-mun');
-    if (repPresMun) {
-        const cur = repPresMun.value;
-        repPresMun.innerHTML = '<option value="">Todos</option>' + sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-        if(cur) repPresMun.value = cur;
-    }
-
-    // 2. Colaborador
     const repPresColab = document.getElementById('rep-pres-colab');
     if (repPresColab) {
         const cur = repPresColab.value;
@@ -4779,66 +4812,37 @@ function populateFilterSelects() {
         if(cur) repPresColab.value = cur;
     }
 
-    // 3. Formas de Apresentação
     const repPresForm = document.getElementById('rep-pres-form');
     if (repPresForm && typeof formasApresentacao !== 'undefined') {
         const cur = repPresForm.value;
-        // Ordena as formas antes de exibir
         const sortedFormas = formasApresentacao.slice().sort((a,b) => a.name.localeCompare(b.name));
         repPresForm.innerHTML = '<option value="">Todas</option>' + sortedFormas.map(f => `<option value="${f.name}">${f.name}</option>`).join('');
         if(cur) repPresForm.value = cur;
     }
 
-    // --- FILTROS DO RELATÓRIO DE VISITAS ---
-    const repVisMun = document.getElementById('rep-vis-mun');
-    if (repVisMun) {
-        const cur = repVisMun.value;
-        repVisMun.innerHTML = '<option value="">Todos</option>' + sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-        if(cur) repVisMun.value = cur;
-    }
-
-    // --- FILTROS DO RELATÓRIO DE PRODUÇÃO ---
-    const repProdMun = document.getElementById('rep-prod-mun');
-    if (repProdMun) {
-        const cur = repProdMun.value;
-        repProdMun.innerHTML = '<option value="">Todos</option>' + sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-        if(cur) repProdMun.value = cur;
-    }
-    // --- FILTROS DO RELATÓRIO DE INTEGRAÇÕES ---
-    const repIntMun = document.getElementById('rep-int-mun');
-    if (repIntMun) {
-        const cur = repIntMun.value;
-        repIntMun.innerHTML = '<option value="">Todos</option>' + sortedMun.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-        if(cur) repIntMun.value = cur;
-    }
-
     const repIntApi = document.getElementById('rep-int-api');
     if (repIntApi && typeof apisList !== 'undefined') {
         const cur = repIntApi.value;
-        // sortedApis deve vir da sua lista global de apis cadastradas
         repIntApi.innerHTML = '<option value="">Todas</option>' + sortedApis.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
         if(cur) repIntApi.value = cur;
     }
-    // --- FILTROS DO RELATÓRIO DE COLABORADORES ---
+
     const repColabName = document.getElementById('rep-colab-name');
     if (repColabName) {
         const cur = repColabName.value;
-        // sortedOrient vem da lista global de orientadores
         repColabName.innerHTML = '<option value="">Todos</option>' + sortedOrient.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
         if(cur) repColabName.value = cur;
     }
 
-    // 2. FILTRO DE API
+    // Filtros de Tabelas Principais (Não-Município)
     const apiFilter = document.getElementById('filter-integration-api');
     if (apiFilter) {
         const cur = apiFilter.value;
-        apiFilter.innerHTML = '<option value="">Todas</option>' + 
-                              sortedApis.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+        apiFilter.innerHTML = '<option value="">Todas</option>' + sortedApis.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
         if(cur) apiFilter.value = cur;
         apiFilter.onchange = renderIntegrations;
     }
 
-    // 3. OUTROS FILTROS
     ['filter-task-performer', 'filter-presentation-orientador'].forEach(id => {
         const el = document.getElementById(id);
         if(el) { 
@@ -4855,7 +4859,6 @@ function populateFilterSelects() {
         if(c) cargoEl.value=c; 
     }
 
-    // 4. FILTROS DE USUÁRIO
     ['filter-request-user', 'filter-demand-user'].forEach(id => {
         const el = document.getElementById(id);
         if(el) { 
@@ -4865,7 +4868,7 @@ function populateFilterSelects() {
         }
     });
 
-    // 5. FILTRO DA ABA COLABORADORES INFO (NOVO)
+    // Filtro da aba Colaboradores Info
     const filterColabInfoName = document.getElementById('filter-colab-info-name');
     if(filterColabInfoName) {
         const cur = filterColabInfoName.value;
@@ -4874,29 +4877,16 @@ function populateFilterSelects() {
         filterColabInfoName.onchange = renderCollaboratorInfos;
     }
     
-    // Listeners para outros filtros da aba Colaboradores
-    ['filter-colab-info-status', 'filter-colab-info-start', 'filter-colab-info-end'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.onchange = renderCollaboratorInfos;
-    });
-}
-// ... (código existente da função populateFilterSelects) ...
-
-    // --- FILTRO DE MÓDULOS (ABA MUNICÍPIOS) ---
+    // Filtro de Módulos (Aba Municípios)
     const filterMod = document.getElementById('filter-municipality-module');
     if (filterMod && typeof modulos !== 'undefined') {
-        const cur = filterMod.value; // Guarda valor atual se houver
-        
-        // Ordena os módulos por nome
+        const cur = filterMod.value;
         const sortedMods = modulos.slice().sort((a,b) => a.name.localeCompare(b.name));
-        
-        // Preenche o select
         filterMod.innerHTML = '<option value="">Todos</option>' + 
                               sortedMods.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-        
-        // Restaura valor selecionado (se ainda existir na lista)
         if(cur) filterMod.value = cur;
     }
+}
 
 // 5. Salvar Colaborador (Com novos campos: Email e Nascimento)
 function saveOrientador(e){ 
