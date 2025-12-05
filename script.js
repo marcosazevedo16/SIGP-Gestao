@@ -1179,57 +1179,38 @@ function showMunicipalityModal(id = null) {
 function saveMunicipality(e) {
     e.preventDefault();
     
-    // Captura o valor bruto do select (Ex: "Turmalina|MG")
     const rawValue = document.getElementById('municipality-name').value;
-    
-    if (!rawValue) {
-        alert('Por favor, selecione um município.');
-        return;
-    }
+    if (!rawValue) { alert('Por favor, selecione um município.'); return; }
 
-    // Separa Nome e UF
     const parts = rawValue.split('|');
-    const name = sanitizeInput(parts[0]); // Nome
-    const uf = parts.length > 1 ? parts[1] : ''; // UF (Garantido do dropdown)
+    const name = sanitizeInput(parts[0]);
+    const uf = parts.length > 1 ? parts[1] : '';
 
     const status = document.getElementById('municipality-status').value;
     const mods = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
 
-    // --- VALIDAÇÃO DE DUPLICIDADE ---
-    // Verifica se o NOME já existe na lista.
+    // Validação de Duplicidade
     const isDuplicate = municipalities.some(m => m.name === name && m.id !== editingId);
-
     if (isDuplicate) {
-        alert(`🚫 Ação Bloqueada: O município "${name}" já consta na sua carteira de clientes!\n\nUse a busca para encontrá-lo e editá-lo.`);
+        alert(`🚫 Ação Bloqueada: O município "${name}" já consta na sua carteira.`);
         return;
     }
 
-    // Validação "Em Uso"
     if (status === 'Em uso' && mods.length === 0) {
         alert('Erro: Para status "Em Uso", selecione pelo menos um módulo.');
         return;
     }
 
-    // Validação Data de Bloqueio
+    // Validação Data Bloqueio
     const dateBlocked = document.getElementById('municipality-date-blocked') ? document.getElementById('municipality-date-blocked').value : '';
-    
-    if (status === 'Bloqueado') {
-        if (!dateBlocked) {
-            alert('Erro: Preencha a "Data em que foi Bloqueado".');
-            return;
-        }
-        const dBlock = new Date(dateBlocked);
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        if (dBlock > today) {
-            alert('🚫 Erro Lógico: A data de bloqueio não pode ser uma data futura.');
-            return;
-        }
+    if (status === 'Bloqueado' && !dateBlocked) {
+        alert('Erro: Preencha a "Data em que foi Bloqueado".');
+        return;
     }
 
     const data = {
         name: name,
-        uf: uf, // Salva a UF corretamente extraída
+        uf: uf,
         status: status,
         manager: sanitizeInput(document.getElementById('municipality-manager').value),
         contact: sanitizeInput(document.getElementById('municipality-contact').value),
@@ -1243,12 +1224,37 @@ function saveMunicipality(e) {
     if (editingId) {
         const i = municipalities.findIndex(x => x.id === editingId);
         if (i !== -1) {
+            const oldMun = municipalities[i];
+            
+            // --- DETECÇÃO DE MUDANÇAS (AUDITORIA AVANÇADA) ---
+            // Mapeia o nome técnico (key) para o nome legível (label)
+            const mapCampos = {
+                status: 'Situação',
+                manager: 'Gestor',
+                contact: 'Contato',
+                implantationDate: 'Data Implantação',
+                lastVisit: 'Última Visita'
+            };
+            
+            // Gera a string de detalhes
+            let detailsLog = detectChanges(oldMun, data, mapCampos);
+            
+            // Verificação especial para Módulos (Array)
+            const oldMods = (oldMun.modules || []).sort().join(', ');
+            const newMods = (data.modules || []).sort().join(', ');
+            if (oldMods !== newMods) {
+                detailsLog += `. Alterou Módulos de [${oldMods}] para [${newMods}]`;
+            }
+
+            // Salva
             municipalities[i] = { ...municipalities[i], ...data };
-            logSystemAction('Edição', 'Municípios', `Atualizou dados de: ${data.name}`);
+            
+            // Loga com os detalhes ricos
+            logSystemAction('Edição', 'Municípios', `Município: ${data.name}. ${detailsLog}`);
         }
     } else {
         municipalities.push({ id: getNextId('mun'), ...data });
-        logSystemAction('Criação', 'Municípios', `Novo cliente adicionado: ${data.name} - ${data.uf}`);
+        logSystemAction('Criação', 'Municípios', `Cadastrou o município: ${data.name} - ${data.uf} com status "${data.status}"`);
     }
     
     salvarNoArmazenamento('municipalities', municipalities);
@@ -1413,16 +1419,16 @@ function deleteMunicipality(id) {
     if (confirm('Excluir este município?')) {
         const item = municipalities.find(x => x.id === id);
         if(item) {
-            // 1. Registra o Undo
             registerUndo(item, 'municipalities', renderMunicipalities);
             
-            // 2. Exclui
             municipalities = municipalities.filter(x => x.id !== id);
             salvarNoArmazenamento('municipalities', municipalities);
             renderMunicipalities();
             updateGlobalDropdowns();
             
-            logSystemAction('Exclusão', 'Municípios', `Município excluído: ${item.name}`);
+            // --- AUDITORIA DETALHADA ---
+            const detalhes = `Nome: ${item.name}, Status: ${item.status}, Gestor: ${item.manager}`;
+            logSystemAction('Exclusão', 'Municípios', `Excluiu município. Dados anteriores: [${detalhes}]`);
         }
     }
 }
@@ -5021,7 +5027,7 @@ function renderAuditLogs() {
     const fUser = document.getElementById('filter-audit-user') ? document.getElementById('filter-audit-user').value.toLowerCase() : '';
     const fTarget = document.getElementById('filter-audit-target') ? document.getElementById('filter-audit-target').value.toLowerCase() : '';
 
-    // 1. Filtra os dados (Igual antes)
+    // 1. Filtra os dados
     const filtered = auditLogs.filter(log => {
         if (fAction && log.action !== fAction) return false;
         if (fUser && !log.user.toLowerCase().includes(fUser)) return false;
@@ -5030,28 +5036,38 @@ function renderAuditLogs() {
     });
 
     const c = document.getElementById('audit-table');
-    document.getElementById('audit-count').innerHTML = `<strong>${filtered.length}</strong> registros encontrados`;
+    const countDiv = document.getElementById('audit-count');
+
+    // --- ATUALIZAÇÃO DO CONTADOR (REQUISITO 1) ---
+    if (countDiv) {
+        countDiv.style.display = 'block';
+        countDiv.style.padding = '10px';
+        countDiv.style.backgroundColor = 'var(--color-bg-1)';
+        countDiv.style.borderRadius = '8px';
+        countDiv.style.marginBottom = '15px';
+        countDiv.style.border = '1px solid var(--color-primary)';
+        countDiv.style.color = 'var(--color-primary)';
+        
+        // Mostra filtrados e o total absoluto
+        countDiv.innerHTML = `📊 <strong>${filtered.length}</strong> logs exibidos (de um total de ${auditLogs.length} registros no histórico).`;
+    }
+    // ----------------------------------------------
 
     if (filtered.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhum registro de auditoria encontrado.</div>';
         return;
     }
 
-    // --- 2. LÓGICA DE PAGINAÇÃO (NOVO) ---
-    // Calcula o índice inicial e final
+    // Paginação
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    
-    // Fatia os dados (Pega só os 10 da página atual)
     const paginatedData = filtered.slice(startIndex, endIndex);
     
-    // Se a página atual ficou vazia (ex: filtrou e reduziu resultados), volta para a 1
     if (paginatedData.length === 0 && currentPage > 1) {
         currentPage = 1;
         renderAuditLogs();
         return;
     }
-    // -------------------------------------
 
     const formatDateTime = (isoStr) => {
         const d = new Date(isoStr);
@@ -5059,29 +5075,33 @@ function renderAuditLogs() {
     };
 
     const getActionColor = (act) => {
-        if(act === 'Exclusão') return '#C85250';
-        if(act === 'Criação') return '#005580';
-        if(act === 'Edição') return '#E68161';
+        if(act === 'Exclusão') return '#C85250'; // Vermelho
+        if(act === 'Criação') return '#005580';  // Azul
+        if(act === 'Edição') return '#E7B85F';   // Amarelo/Laranja (Melhor para leitura)
         return 'inherit';
     };
 
-    // Gera as linhas usando APENAS os dados fatiados (paginatedData)
     const rows = paginatedData.map(log => `
         <tr>
-            <td style="font-size:12px; white-space:nowrap;">${formatDateTime(log.timestamp)}</td>
+            <td style="font-size:11px; white-space:nowrap;">${formatDateTime(log.timestamp)}</td>
             <td><strong>${log.user}</strong></td>
             <td style="color:${getActionColor(log.action)}; font-weight:bold;">${log.action}</td>
             <td>${log.target}</td>
-            <td class="text-secondary-cell">${log.details}</td>
+            <td class="text-secondary-cell" style="font-size:12px; white-space:normal; line-height:1.4;">${log.details}</td>
         </tr>
     `).join('');
 
-    // --- 3. INSERE TABELA + PAGINAÇÃO ---
     const paginationHTML = getPaginationHTML(filtered.length, 'renderAuditLogs');
     
     c.innerHTML = `
-        <table>
-            <thead><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Módulo</th><th>Detalhes</th></thead>
+        <table style="width:100%">
+            <thead>
+                <th style="width:140px;">Data/Hora</th>
+                <th style="width:150px;">Usuário</th>
+                <th style="width:100px;">Ação</th>
+                <th style="width:150px;">Módulo</th>
+                <th>Detalhes da Operação</th>
+            </thead>
             <tbody>${rows}</tbody>
         </table>
         ${paginationHTML}
@@ -8033,4 +8053,25 @@ function getFilterData(type) {
     }
 
     return filters;
+}
+// Função Auxiliar para gerar texto de auditoria detalhado
+function detectChanges(oldData, newData, fieldMap) {
+    let changes = [];
+    
+    for (const [key, label] of Object.entries(fieldMap)) {
+        // Compara valores (tratando null/undefined como string vazia para evitar erros)
+        const valOld = oldData[key] !== null && oldData[key] !== undefined ? String(oldData[key]) : '';
+        const valNew = newData[key] !== null && newData[key] !== undefined ? String(newData[key]) : '';
+
+        // Se for diferente, registra a mudança
+        if (valOld !== valNew) {
+            // Formata datas se parecer uma data (YYYY-MM-DD)
+            const fmtOld = valOld.match(/^\d{4}-\d{2}-\d{2}$/) ? formatDate(valOld) : valOld;
+            const fmtNew = valNew.match(/^\d{4}-\d{2}-\d{2}$/) ? formatDate(valNew) : valNew;
+            
+            changes.push(`Alterou ${label} de "${fmtOld}" para "${fmtNew}"`);
+        }
+    }
+    
+    return changes.length > 0 ? changes.join('. ') : 'Nenhuma alteração detectada';
 }
