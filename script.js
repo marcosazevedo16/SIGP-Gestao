@@ -8196,7 +8196,7 @@ function generateAuditPDF() {
     // --- CABEÇALHO ---
     doc.setFontSize(16);
     doc.setTextColor(0, 61, 92); // Azul do tema
-    doc.text("Relatório de Auditoria do Sistema", marginLeft, 15);
+    doc.text("SIGP Saúde - Relatório de Auditoria do Sistema", marginLeft, 15);
 
     doc.setDrawColor(0, 61, 92);
     doc.setLineWidth(0.5);
