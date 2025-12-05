@@ -3938,36 +3938,36 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     .mobile-menu-toggle { display: none !important; } }
 
 /* ==========================================================================
-   CORREÇÃO V81 - TABELA INTEGRAÇÕES (AJUSTE FINO)
-   Substitua o bloco anterior no final do style.css
+   CORREÇÃO V82 - TABELA INTEGRAÇÕES (AJUSTES FINAIS)
+   Substitua o bloco anterior da tabela de integrações no style.css
    ========================================================================== */
 
-/* 1. Estrutura da Tabela Fixa */
+/* 1. Estrutura da Tabela */
 #integrations-table table {
     width: 100%;
-    min-width: 1400px !important; 
+    min-width: 1400px !important;
     table-layout: fixed !important;
     border-collapse: collapse;
 }
 
 /* 2. Cabeçalhos (TODOS EM NEGRITO) */
 #integrations-table th {
-    font-weight: 800 !important; /* Negrito extra forte para destaque */
+    font-weight: 800 !important; /* Força Negrito nos Títulos */
     color: var(--color-text);
     background-color: var(--color-secondary);
     padding: 12px 10px;
     font-size: 13px;
     vertical-align: middle;
-    text-transform: uppercase; /* Opcional: Deixa mais profissional */
+    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-/* Alinhamentos de Cabeçalho */
+/* Alinhamento dos Cabeçalhos */
 #integrations-table th:nth-child(1), /* Município */
 #integrations-table th:nth-child(2), /* APIs */
-#integrations-table th:nth-child(3), /* Resp */
+#integrations-table th:nth-child(3), /* Responsável */
 #integrations-table th:nth-child(4), /* Contato */
-#integrations-table th:nth-child(7)  /* Obs */ {
+#integrations-table th:nth-child(7)  /* Observações */ {
     text-align: left !important;
 }
 
@@ -3977,12 +3977,12 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     text-align: center !important;
 }
 
-/* 3. LARGURA E ESTILO DAS COLUNAS (DADOS) */
+/* 3. Estilo das Colunas (Dados) */
 
-/* COL 1: Município (SEM NEGRITO) */
+/* COL 1: Município (SEM NEGRITO e Aumentado) */
 #integrations-table td:nth-child(1) {
-    width: 280px !important;
-    font-weight: 400 !important; /* Normal (Sem negrito) */
+    width: 250px !important;
+    font-weight: 400 !important; /* Texto Normal */
     color: var(--color-text) !important;
     white-space: normal !important;
 }
@@ -3994,10 +3994,10 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     min-width: 200px;
 }
 
-/* COL 3: Responsável (AUMENTADO) */
+/* COL 3: Responsável (LARGURA RESTAURADA/AUMENTADA) */
 #integrations-table th:nth-child(3),
 #integrations-table td:nth-child(3) {
-    width: 220px !important; /* Aumentado de 150px para 220px */
+    width: 220px !important; /* Aumentado para não cortar nomes */
 }
 
 /* COL 4: Contato */
@@ -4020,17 +4020,17 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
     text-align: center !important;
 }
 
-/* COL 7: Observações (PEQUENO E TRUNCADO) */
+/* COL 7: Observações (Reduzido e Truncado) */
 #integrations-table th:nth-child(7),
 #integrations-table td:nth-child(7) {
-    width: 120px !important;
+    width: 120px !important; /* Espaço reduzido */
     max-width: 120px !important;
 }
 
 #integrations-table td:nth-child(7) {
     white-space: nowrap !important;
     overflow: hidden !important;
-    text-overflow: ellipsis !important;
+    text-overflow: ellipsis !important; /* Cria o efeito "..." */
     color: var(--color-text-secondary);
 }
 
