@@ -8173,7 +8173,6 @@ function generateAuditPDF() {
         if (fUser && !log.user.toLowerCase().includes(fUser)) return false;
         if (fTarget && !log.target.toLowerCase().includes(fTarget)) return false;
         
-        // Filtro de Data (YYYY-MM-DD)
         const logDate = log.timestamp.split('T')[0]; 
         if (fStart && logDate < fStart) return false;
         if (fEnd && logDate > fEnd) return false;
@@ -8186,29 +8185,24 @@ function generateAuditPDF() {
         return;
     }
 
-    // 3. Configuração do PDF
+    // 3. Configuração do PDF (Paisagem)
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const marginLeft = 10;
+    const marginRight = 10;
 
     // --- CABEÇALHO ---
     doc.setFontSize(16);
     doc.setTextColor(0, 61, 92); // Azul do tema
-    doc.text("Relatório de Auditoria do Sistema", 14, 15);
+    doc.text("Relatório de Auditoria do Sistema", marginLeft, 15);
 
     doc.setDrawColor(0, 61, 92);
     doc.setLineWidth(0.5);
-    doc.line(14, 18, 283, 18); // Linha horizontal
+    doc.line(marginLeft, 18, pageWidth - marginRight, 18); // Linha de ponta a ponta
 
-    // Informações de Geração
-    const now = new Date();
-    const dataHora = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
-    const usuarioLogado = currentUser ? currentUser.name.toUpperCase() : 'SISTEMA';
-
-    doc.setFontSize(9);
-    doc.setTextColor(100);
-    doc.text(`Gerado em: ${dataHora} por ${usuarioLogado}`, 14, 24);
-    
-    // Resumo dos Filtros
+    // Resumo dos Filtros (No cabeçalho)
     let filtroTexto = "Filtros aplicados: ";
     const partesFiltro = [];
     if(fAction) partesFiltro.push(`Ação: ${fAction}`);
@@ -8221,7 +8215,7 @@ function generateAuditPDF() {
     
     doc.setFontSize(9);
     doc.setTextColor(50);
-    doc.text(filtroTexto, 14, 29);
+    doc.text(filtroTexto, marginLeft, 24);
 
     // --- TABELA ---
     const headers = [['Data/Hora', 'Usuário', 'Ação', 'Módulo Alvo', 'Detalhes da Operação']];
@@ -8241,67 +8235,70 @@ function generateAuditPDF() {
     doc.autoTable({
         head: headers,
         body: data,
-        startY: 35,
+        startY: 28,
         theme: 'grid',
         styles: { 
             fontSize: 8, 
-            cellPadding: 2, 
+            cellPadding: 3, // Padding um pouco maior para leitura
             overflow: 'linebreak' 
         },
         headStyles: { 
             fillColor: [0, 61, 92], 
             textColor: 255,
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            halign: 'left'
         },
+        // Ajuste de colunas para usar bem a largura (Total ~277mm)
         columnStyles: {
             0: { cellWidth: 35 }, // Data
-            1: { cellWidth: 40 }, // Usuário
+            1: { cellWidth: 45 }, // Usuário (Mais largo)
             2: { cellWidth: 25 }, // Ação
-            3: { cellWidth: 40 }, // Alvo
-            4: { cellWidth: 'auto' } // Detalhes
+            3: { cellWidth: 45 }, // Alvo (Mais largo)
+            4: { cellWidth: 'auto' } // Detalhes (Ocupa todo o resto)
         },
         alternateRowStyles: { fillColor: [245, 245, 245] },
+        margin: { left: marginLeft, right: marginRight }, // Margens laterais de 10mm
         
-        // Rodapé de Página (Número da página)
+        // --- RODAPÉ (Informações de impressão e paginação) ---
         didDrawPage: function (data) {
-            const pageSize = doc.internal.pageSize;
-            const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
+            const now = new Date();
+            const dataHoraStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
+            const usuarioLogado = currentUser ? currentUser.name.toUpperCase() : 'SISTEMA';
+
             doc.setFontSize(8);
-            doc.setTextColor(150);
-            doc.text('Página ' + doc.internal.getNumberOfPages(), 283, pageHeight - 10, { align: 'right' });
+            doc.setTextColor(100);
+            
+            // Canto Esquerdo Inferior: Dados de Impressão
+            doc.text(`Impresso em ${dataHoraStr} por ${usuarioLogado}`, marginLeft, pageHeight - 10);
+            
+            // Canto Direito Inferior: Paginação
+            doc.text('Página ' + doc.internal.getNumberOfPages(), pageWidth - marginRight, pageHeight - 10, { align: 'right' });
         }
     });
 
-    // --- CONTADOR DE REGISTROS (NOVO REQUISITO) ---
-    // Pega a posição Y onde a tabela terminou
+    // --- CONTADOR DE REGISTROS (No Final, à Direita) ---
     const finalY = doc.lastAutoTable.finalY || 40;
     
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0); // Preto
     doc.setFont(undefined, 'bold');
     
-    // Adiciona o texto no canto esquerdo (X=14), logo abaixo da tabela (finalY + 10)
-    doc.text(`Total de Logs encontrados: ${filtered.length}`, 14, finalY + 10);
+    // Alinhado à direita, usando a margem direita como referência
+    doc.text(`Total de Logs encontrados: ${filtered.length}`, pageWidth - marginRight, finalY + 10, { align: 'right' });
 
     // --- ABRIR MODAL DE VISUALIZAÇÃO ---
-    // Gera o Blob URL
     const blob = doc.output('bloburl');
     
-    // Pega o elemento do corpo do modal de preview
     const bodyEl = document.getElementById('report-preview-body');
     if (bodyEl) {
-        // Injeta o iframe com o PDF
         bodyEl.innerHTML = `<iframe id="pdf-preview-frame" src="${blob}#zoom=100" width="100%" height="100%" style="border:none;"></iframe>`;
         
-        // Atualiza título do modal
         const titleEl = document.querySelector('#report-preview-modal h3');
         if(titleEl) titleEl.textContent = 'Visualização de Auditoria';
 
-        // Abre o modal
         const modalEl = document.getElementById('report-preview-modal');
         modalEl.classList.add('show');
     } else {
-        // Fallback caso o modal não exista (segurança)
         window.open(blob, '_blank');
     }
 }
