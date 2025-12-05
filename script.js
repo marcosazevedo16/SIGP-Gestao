@@ -5713,7 +5713,7 @@ function showIntegrationModal(id=null) {
 function saveIntegration(e) {
     e.preventDefault();
     
-    // Coleta APIs selecionadas
+    // 1. Coleta e Valida APIs selecionadas
     const apisSel = Array.from(document.querySelectorAll('.api-check:checked')).map(c => c.value);
     
     if (apisSel.length === 0) {
@@ -5721,25 +5721,47 @@ function saveIntegration(e) {
         return;
     }
 
-    // Validação Manual do Responsável (caso o browser não pegue o required)
+    // 2. Captura os valores dos campos
+    const munName = document.getElementById('integration-municipality').value;
     const resp = sanitizeInput(document.getElementById('integration-responsible').value);
+    
+    // Validação Manual do Responsável
     if (!resp) {
         alert('O campo Responsável pelo Certificado é obrigatório.');
         return;
     }
 
+    if (!munName) {
+        alert('Selecione um município.');
+        return;
+    }
+
+    // --- NOVA VALIDAÇÃO DE DUPLICIDADE ---
+    // Verifica se já existe uma integração para este município na lista.
+    // O '&& i.id !== editingId' garante que, se estivermos EDITANDO o próprio registro, 
+    // ele não acuse duplicidade com ele mesmo.
+    const isDuplicate = integrations.some(i => i.municipality === munName && i.id !== editingId);
+
+    if (isDuplicate) {
+        alert(`🚫 Erro: O município "${munName}" já possui uma integração cadastrada!\n\nPor favor, edite o registro existente na lista.`);
+        return; // Para a execução aqui
+    }
+    // -------------------------------------
+
     const data = {
-        municipality: document.getElementById('integration-municipality').value,
+        municipality: munName,
         expirationDate: document.getElementById('integration-expiration').value,
-        responsible: resp, // <--- NOVO CAMPO SALVO
+        responsible: resp,
         apis: apisSel,
         observation: sanitizeInput(document.getElementById('integration-observation').value)
     };
 
     if(editingId) {
+        // Modo Edição
         const i = integrations.findIndex(x => x.id === editingId);
         if(i !== -1) integrations[i] = { ...integrations[i], ...data };
     } else {
+        // Modo Criação (Novo)
         integrations.push({ id: getNextId('integration'), ...data });
     }
 
