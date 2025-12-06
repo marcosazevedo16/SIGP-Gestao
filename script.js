@@ -8240,50 +8240,87 @@ function generateAuditPDF() {
         window.open(blob, '_blank');
     }
 }
-// --- FUNÇÃO DE SEGURANÇA DE DATAS (BLOQUEIO VISUAL / UX) ---
-// Esta função configura os inputs para que, ao selecionar uma data inicial,
-// o calendário da data final bloqueie automaticamente os dias anteriores.
+// --- FUNÇÃO DE SEGURANÇA DE DATAS (BLOQUEIO VISUAL / UX - VERSÃO COMPLETA) ---
+// Configura TODOS os pares de datas do sistema (Modais, Filtros e Relatórios)
+// para que a Data Final nunca possa ser menor que a Data Inicial no calendário.
 function enforceDateSecurity() {
-    // Lista de regras: Data Inicial -> Datas que não podem ser menores
     const rules = [
-        // 1. Municípios
+        // --- 1. FORMULÁRIOS DE CADASTRO (MODAIS) ---
         { start: 'municipality-implantation-date', ends: ['municipality-date-blocked', 'municipality-date-stopped'] },
-        // 2. Treinamentos
         { start: 'task-date-requested', ends: ['task-date-performed'] },
-        // 3. Solicitações
         { start: 'request-date', ends: ['request-date-realization'] },
-        // 4. Apresentações
         { start: 'presentation-date-solicitacao', ends: ['presentation-date-realizacao'] },
-        // 5. Demandas
         { start: 'demand-date', ends: ['demand-realization-date'] },
-        // 6. Visitas
         { start: 'visit-date', ends: ['visit-date-realization'] },
-        // 7. Colaboradores
-        { start: 'colab-info-admission', ends: ['colab-info-termination', 'colab-info-vacation'] }
+        { start: 'colab-info-admission', ends: ['colab-info-termination', 'colab-info-vacation'] },
+
+        // --- 2. FILTROS DAS ABAS PRINCIPAIS ---
+        // Treinamentos
+        { start: 'filter-task-req-start', ends: ['filter-task-req-end'] },
+        { start: 'filter-task-perf-start', ends: ['filter-task-perf-end'] },
+        // Solicitações
+        { start: 'filter-request-sol-start', ends: ['filter-request-sol-end'] },
+        { start: 'filter-request-real-start', ends: ['filter-request-real-end'] },
+        // Apresentações
+        { start: 'filter-presentation-sol-start', ends: ['filter-presentation-sol-end'] },
+        { start: 'filter-presentation-real-start', ends: ['filter-presentation-real-end'] },
+        // Demandas
+        { start: 'filter-demand-sol-start', ends: ['filter-demand-sol-end'] },
+        { start: 'filter-demand-real-start', ends: ['filter-demand-real-end'] },
+        // Visitas
+        { start: 'filter-visit-sol-start', ends: ['filter-visit-sol-end'] },
+        { start: 'filter-visit-real-start', ends: ['filter-visit-real-end'] },
+        // Produção
+        { start: 'filter-production-release-start', ends: ['filter-production-release-end'] },
+        { start: 'filter-production-send-start', ends: ['filter-production-send-end'] },
+        // Integrações e Colaboradores
+        { start: 'filter-integration-start', ends: ['filter-integration-end'] },
+        { start: 'filter-colab-info-start', ends: ['filter-colab-info-end'] },
+        // Auditoria
+        { start: 'filter-audit-start', ends: ['filter-audit-end'] },
+
+        // --- 3. RELATÓRIOS (CENTRAL DE RELATÓRIOS) ---
+        { start: 'rep-mun-start', ends: ['rep-mun-end'] },
+        { start: 'rep-train-start', ends: ['rep-train-end'] },
+        { start: 'rep-pres-start', ends: ['rep-pres-end'] },
+        { start: 'rep-vis-start', ends: ['rep-vis-end'] },
+        { start: 'rep-prod-start', ends: ['rep-prod-end'] },
+        { start: 'rep-int-start', ends: ['rep-int-end'] },
+        { start: 'rep-colab-adm-start', ends: ['rep-colab-adm-end'] },
+        { start: 'rep-colab-term-start', ends: ['rep-colab-term-end'] }
     ];
 
     rules.forEach(rule => {
         const startEl = document.getElementById(rule.start);
         if (startEl) {
-            // Evento: Quando mudar a data inicial
+            // Aplica o evento 'change' (quando o usuário escolhe a data)
             startEl.addEventListener('change', function() {
                 const minDate = this.value;
                 
                 rule.ends.forEach(targetId => {
                     const targetEl = document.getElementById(targetId);
                     if (targetEl) {
-                        // Define o atributo 'min' no HTML (bloqueia dias anteriores no calendário visualmente)
+                        // 1. Bloqueia dias anteriores no calendário
                         targetEl.setAttribute('min', minDate);
                         
-                        // Se a data que já estava preenchida lá for menor que a nova data inicial, limpa ela
+                        // 2. Se a data que já estava lá for menor, limpa ela para forçar nova escolha
                         if (targetEl.value && targetEl.value < minDate) {
                             targetEl.value = '';
-                            // Opcional: Avisar o usuário que a data foi limpa
-                            // showToast('Data ajustada automaticamente.', 'warning'); 
                         }
                     }
                 });
             });
+            
+            // ATIVAÇÃO INICIAL:
+            // Se já houver uma data preenchida ao carregar a tela (ex: ao editar um item),
+            // já aplica o bloqueio imediatamente.
+            if (startEl.value) {
+                const minDate = startEl.value;
+                rule.ends.forEach(targetId => {
+                    const targetEl = document.getElementById(targetId);
+                    if (targetEl) targetEl.setAttribute('min', minDate);
+                });
+            }
         }
     });
 }
