@@ -998,56 +998,38 @@ function handleLogin(e) {
 }
 
 function checkAuthentication() {
-    // 1. Tenta recuperar o usuário diretamente do LocalStorage para garantir
-    // Isso evita problemas caso a variável global tenha se perdido no F5
-    const sessionData = localStorage.getItem('currentUser');
-    let validUser = null;
-
-    try {
-        if (sessionData) {
-            validUser = JSON.parse(sessionData);
-        }
-    } catch (e) {
-        console.error("Erro ao restaurar sessão:", e);
-        // Se o dado estiver corrompido, aí sim forçamos logout
-        localStorage.removeItem('currentUser'); 
+    // 1. Garante que o usuário foi lido do armazenamento (Correção para F5)
+    if (!currentUser) {
+        currentUser = recuperarDoArmazenamento('currentUser');
+        isAuthenticated = !!currentUser;
     }
 
-    // 2. Validação da Sessão
-    if (validUser && validUser.login) {
-        // --- SUCESSO: RECARREGANDO A SESSÃO ---
-        
-        // Restaura as variáveis globais críticas
-        currentUser = validUser;
-        isAuthenticated = true;
-
-        // Atualiza a Interface
+    if (isAuthenticated && currentUser) {
+        // Remove a tela de login
         document.getElementById('login-screen').classList.remove('active');
         document.getElementById('main-app').classList.add('active');
         
-        // ATUALIZA O TIMER IMEDIATAMENTE
-        // Isso diz ao sistema: "O usuário acabou de dar F5, ele está ativo agora!"
+        // --- CORREÇÃO CRÍTICA DE SESSÃO ---
+        // "Reseta" o relógio de inatividade AGORA. 
+        // Isso impede que o sistema te deslogue achando que o tempo passou enquanto a página recarregava.
         localStorage.setItem('lastActivityTime', Date.now().toString());
+        // ----------------------------------
 
-        // Inicializa o sistema (Tabelas, Gráficos, Abas)
-        // O try-catch aqui impede que um erro de renderização cause logout visual
+        // Carrega o sistema (Tabelas, Abas, etc)
+        // O try/catch evita que um erro visual cause logout
         try {
             initializeApp();
-        } catch (err) {
-            console.error("Erro ao inicializar app:", err);
+        } catch (erro) {
+            console.error("Erro ao inicializar app:", erro);
         }
         
-        // Só agora liga o monitoramento de segurança
-        // (Garante que o timer não leia um valor antigo antes da atualização acima)
+        // Só inicia o monitoramento DEPOIS de ter resetado o relógio acima
         if (typeof initializeInactivityTracking === 'function') {
             initializeInactivityTracking();
         }
         
     } else {
-        // --- FALHA: NÃO TEM SESSÃO VÁLIDA ---
-        currentUser = null;
-        isAuthenticated = false;
-        
+        // Se não achou usuário válido, mostra login
         document.getElementById('login-screen').classList.add('active');
         document.getElementById('main-app').classList.remove('active');
     }
