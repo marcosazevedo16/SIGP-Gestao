@@ -1,6 +1,12 @@
 // CONFIGURAÇÃO FIREBASE
 const firebaseConfig = {
-  // ... SUAS CHAVES AQUI ...
+ apiKey: "AIzaSyATTTu0WtcWC0p8irfTkbco-CfzPzZXqxs",
+    authDomain: "sigpgestao.firebaseapp.com",
+    projectId: "sigpgestao",
+    storageBucket: "sigpgestao.firebasestorage.app",
+    messagingSenderId: "225860756360",
+    appId: "1:225860756360:web:04a21a8ead9ae03fa5503d",
+    measurementId: "G-JWFFYZP83Z"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
