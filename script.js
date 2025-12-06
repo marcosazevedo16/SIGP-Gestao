@@ -5510,18 +5510,13 @@ function resetLoginAttempts(login) {
     }
 }
 
-// --- B. TIMEOUT DE SESSÃO (Logout por Inatividade) ---
-let inactivityTimeout;
-const INACTIVITY_MINUTES = 15;
-let isPageLoading = true; // <--- NOVO: Trava de segurança para o F5
-
 // --- VARIÁVEIS GLOBAIS DE CONTROLE DE SESSÃO ---
 let inactivityTimeout;
-let isPageLoading = true; // <--- O ESCUDO CONTRA LOGOUT NO F5
+const INACTIVITY_MINUTES = 15;
+let isPageLoading = true; // O ESCUDO CONTRA LOGOUT NO F5
 
 function initializeInactivityTracking() {
     // 1. Remove o "escudo" após 2 segundos.
-    // Isso dá tempo pro sistema carregar sem deslogar você por "falso positivo".
     setTimeout(() => {
         isPageLoading = false;
     }, 2000);
