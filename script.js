@@ -1,3 +1,10 @@
+// CONFIGURAÇÃO FIREBASE
+const firebaseConfig = {
+  // ... SUAS CHAVES AQUI ...
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+console.log("🔥 Firebase Iniciado!");
 // ============================================================================
 // SIGP SAÚDE v26.0 - VERSÃO FINAL(SEM COMPACTAÇÃO)
 // Todas as funcionalidades + Ajustes de Layout + Backup Completo
