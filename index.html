@@ -734,13 +734,13 @@
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Data Inicial</label>
-                <input type="date" class="form-control" id="rep-mun-start">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Data Final</label>
-                <input type="date" class="form-control" id="rep-mun-end">
-            </div>
+    <label class="form-label">Data Inicial</label>
+    <input type="date" class="form-control" id="rep-mun-start" onchange="validateDateRange('rep-mun')">
+</div>
+<div class="form-group">
+    <label class="form-label">Data Final</label>
+    <input type="date" class="form-control" id="rep-mun-end" onchange="validateDateRange('rep-mun')">
+</div>
             <div class="form-group">
                 <label class="form-label">Filtrar por Status</label>
                 <select class="form-control" id="rep-mun-status">
@@ -762,13 +762,13 @@
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Data Inicial</label>
-                <input type="date" class="form-control" id="rep-train-start">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Data Final</label>
-                <input type="date" class="form-control" id="rep-train-end">
-            </div>
+    <label class="form-label">Data Inicial</label>
+    <input type="date" class="form-control" id="rep-train-start" onchange="validateDateRange('rep-train')">
+</div>
+<div class="form-group">
+    <label class="form-label">Data Final</label>
+    <input type="date" class="form-control" id="rep-train-end" onchange="validateDateRange('rep-train')">
+</div>
             <div class="form-group">
                 <label class="form-label">Status</label>
                 <select class="form-control" id="rep-train-status">
@@ -804,14 +804,14 @@
                     <option value="realizacao">Data da Realização</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label class="form-label">Data Inicial</label>
-                <input type="date" class="form-control" id="rep-pres-start">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Data Final</label>
-                <input type="date" class="form-control" id="rep-pres-end">
-            </div>
+           <div class="form-group">
+    <label class="form-label">Data Inicial</label>
+    <input type="date" class="form-control" id="rep-pres-start" onchange="validateDateRange('rep-pres')">
+</div>
+<div class="form-group">
+    <label class="form-label">Data Final</label>
+    <input type="date" class="form-control" id="rep-pres-end" onchange="validateDateRange('rep-pres')">
+</div>
             <div class="form-group">
                 <label class="form-label">Status</label>
                 <select class="form-control" id="rep-pres-status">
@@ -837,15 +837,14 @@
         
 <div id="filters-integracoes" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
             
-            <div class="form-group">
-                <label class="form-label">Vencimento (Início)</label>
-                <input type="date" class="form-control" id="rep-int-start">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Vencimento (Fim)</label>
-                <input type="date" class="form-control" id="rep-int-end">
-            </div>
+           <div class="form-group">
+    <label class="form-label">Vencimento (Início)</label>
+    <input type="date" class="form-control" id="rep-int-start" onchange="validateDateRange('rep-int')">
+</div>
+<div class="form-group">
+    <label class="form-label">Vencimento (Fim)</label>
+    <input type="date" class="form-control" id="rep-int-end" onchange="validateDateRange('rep-int')">
+</div>
 
             <div class="form-group">
                 <label class="form-label">Status do Certificado</label>
@@ -889,25 +888,23 @@
                     </select>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Admissão (Início)</label>
-                <input type="date" class="form-control" id="rep-colab-adm-start">
-            </div>
+           <div class="form-group">
+    <label class="form-label">Admissão (Início)</label>
+    <input type="date" class="form-control" id="rep-colab-adm-start" onchange="validateDateRange('rep-colab-adm')">
+</div>
+<div class="form-group">
+    <label class="form-label">Admissão (Fim)</label>
+    <input type="date" class="form-control" id="rep-colab-adm-end" onchange="validateDateRange('rep-colab-adm')">
+</div>
 
-            <div class="form-group">
-                <label class="form-label">Admissão (Fim)</label>
-                <input type="date" class="form-control" id="rep-colab-adm-end">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Desligamento (Início)</label>
-                <input type="date" class="form-control" id="rep-colab-term-start">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Desligamento (Fim)</label>
-                <input type="date" class="form-control" id="rep-colab-term-end">
-            </div>
+<div class="form-group">
+    <label class="form-label">Desligamento (Início)</label>
+    <input type="date" class="form-control" id="rep-colab-term-start" onchange="validateDateRange('rep-colab-term')">
+</div>
+<div class="form-group">
+    <label class="form-label">Desligamento (Fim)</label>
+    <input type="date" class="form-control" id="rep-colab-term-end" onchange="validateDateRange('rep-colab-term')">
+</div>
         </div>
           <div id="filters-visitas" class="report-filter-group" style="display:none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
             
@@ -920,14 +917,13 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">Data Inicial</label>
-                <input type="date" class="form-control" id="rep-vis-start">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Data Final</label>
-                <input type="date" class="form-control" id="rep-vis-end">
-            </div>
+    <label class="form-label">Data Inicial</label>
+    <input type="date" class="form-control" id="rep-vis-start" onchange="validateDateRange('rep-vis')">
+</div>
+<div class="form-group">
+    <label class="form-label">Data Final</label>
+    <input type="date" class="form-control" id="rep-vis-end" onchange="validateDateRange('rep-vis')">
+</div>
 
             <div class="form-group">
                 <label class="form-label">Status</label>
@@ -962,14 +958,13 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">Data Inicial</label>
-                <input type="date" class="form-control" id="rep-prod-start">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Data Final</label>
-                <input type="date" class="form-control" id="rep-prod-end">
-            </div>
+    <label class="form-label">Data Inicial</label>
+    <input type="date" class="form-control" id="rep-prod-start" onchange="validateDateRange('rep-prod')">
+</div>
+<div class="form-group">
+    <label class="form-label">Data Final</label>
+    <input type="date" class="form-control" id="rep-prod-end" onchange="validateDateRange('rep-prod')">
+</div>
 
             <div class="form-group">
                 <label class="form-label">Status</label>
