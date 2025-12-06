@@ -1001,10 +1001,18 @@ function checkAuthentication() {
     if (isAuthenticated && currentUser) {
         document.getElementById('login-screen').classList.remove('active');
         document.getElementById('main-app').classList.add('active');
-        updateUserInterface();
         
-        // ATIVA PROTEÇÃO DE INATIVIDADE
+        // 1. ATUALIZA A SESSÃO PARA EVITAR LOGOUT IMEDIATO
+        // Isso diz ao sistema: "O usuário acabou de chegar/recarregar, está ativo!"
+        localStorage.setItem('lastActivityTime', Date.now().toString());
+
+        // 2. INICIALIZA O SISTEMA (Tabelas, Gráficos, Abas)
+        // Chama a initializeApp para garantir que os dados apareçam
+        initializeApp();
+        
+        // 3. INICIA O MONITORAMENTO DE SEGURANÇA
         initializeInactivityTracking();
+        
     } else {
         document.getElementById('login-screen').classList.add('active');
         document.getElementById('main-app').classList.remove('active');
