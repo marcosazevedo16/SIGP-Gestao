@@ -1533,53 +1533,87 @@ logSystemAction(editingId ? 'Edição' : 'Criação', 'Treinamentos', `Para: ${d
     showToast('Treinamento salvo com sucesso!', 'success');
 }
 
-// Função Auxiliar para validar datas (Tarefas e Solicitações)
-// CORREÇÃO: Validação de Datas (Incluindo Aba Colaboradores)
-// CORREÇÃO DEFINITIVA: Validação de Datas (Trava Imediata)
-// CORREÇÃO DEFINITIVA: Validação de Datas (Trava Imediata)
-// CORREÇÃO DEFINITIVA: Validação de Datas (Trava de Segurança)
-// CORREÇÃO DEFINITIVA: Validação de Datas (Com Objetos de Data)
+// CORREÇÃO DEFINITIVA: Validação de Datas (Todos os Módulos)
 function validateDateRange(type) {
-    let startId, endId;
+    let startId, endId, renderFunction;
 
-    // Mapeamento
-    if (type === 'colab') {
-        startId = 'filter-colab-info-start'; endId = 'filter-colab-info-end';
-    } else if (type === 'integration') {
-        startId = 'filter-integration-start'; endId = 'filter-integration-end';
-    } else {
-        // Fallback genérico para outros filtros
-        // Adicione aqui os outros 'else if' se necessário, mas o foco é o colab agora
-        return; 
+    // Mapeamento de IDs e Funções de Renderização
+    switch (type) {
+        // 1. Treinamentos (Tarefas)
+        case 'task-req': // Solicitação
+            startId = 'filter-task-req-start'; endId = 'filter-task-req-end'; renderFunction = renderTasks; break;
+        case 'task-perf': // Realização
+            startId = 'filter-task-perf-start'; endId = 'filter-task-perf-end'; renderFunction = renderTasks; break;
+
+        // 2. Solicitações/Sugestões
+        case 'request-sol': // Solicitação
+            startId = 'filter-request-sol-start'; endId = 'filter-request-sol-end'; renderFunction = renderRequests; break;
+        case 'request-real': // Realização
+            startId = 'filter-request-real-start'; endId = 'filter-request-real-end'; renderFunction = renderRequests; break;
+
+        // 3. Apresentações
+        case 'pres-sol': // Solicitação
+            startId = 'filter-presentation-sol-start'; endId = 'filter-presentation-sol-end'; renderFunction = renderPresentations; break;
+        case 'pres-real': // Realização
+            startId = 'filter-presentation-real-start'; endId = 'filter-presentation-real-end'; renderFunction = renderPresentations; break;
+
+        // 4. Demandas
+        case 'dem-sol': // Solicitação (Data)
+            startId = 'filter-demand-sol-start'; endId = 'filter-demand-sol-end'; renderFunction = renderDemands; break;
+        case 'dem-real': // Realização
+            startId = 'filter-demand-real-start'; endId = 'filter-demand-real-end'; renderFunction = renderDemands; break;
+
+        // 5. Visitas
+        case 'visit-sol': // Solicitação
+            startId = 'filter-visit-sol-start'; endId = 'filter-visit-sol-end'; renderFunction = renderVisits; break;
+        case 'visit-real': // Visita (Realização)
+            startId = 'filter-visit-real-start'; endId = 'filter-visit-real-end'; renderFunction = renderVisits; break;
+
+        // 6. Produção
+        case 'prod-rel': // Liberação
+            startId = 'filter-production-release-start'; endId = 'filter-production-release-end'; renderFunction = renderProductions; break;
+        case 'prod-send': // Envio
+            startId = 'filter-production-send-start'; endId = 'filter-production-send-end'; renderFunction = renderProductions; break;
+
+        // 7. Auditoria
+        case 'audit':
+            startId = 'filter-audit-start'; endId = 'filter-audit-end'; renderFunction = renderAuditLogs; break;
+
+        // Outros (Já existentes)
+        case 'colab':
+            startId = 'filter-colab-info-start'; endId = 'filter-colab-info-end'; renderFunction = renderCollaboratorInfos; break;
+        case 'integration':
+            startId = 'filter-integration-start'; endId = 'filter-integration-end'; renderFunction = renderIntegrations; break;
+            
+        default: return;
     }
 
     const startInput = document.getElementById(startId);
     const endInput = document.getElementById(endId);
     
     if (startInput && endInput) {
-        // 1. Configura o atributo 'min' visualmente
+        // 1. Configura o atributo 'min' visualmente no campo final
         if (startInput.value) {
             endInput.min = startInput.value;
         } else {
             endInput.removeAttribute('min');
         }
 
-        // 2. Validação Lógica (Data Real)
+        // 2. Validação Lógica (Data Real) - Trava de segurança
         if (startInput.value && endInput.value) {
-            const dtStart = new Date(startInput.value);
-            const dtEnd = new Date(endInput.value);
-
-            // Se a Data Final for MENOR que a Inicial
-            if (dtEnd < dtStart) {
-                alert('🚫 Erro: A Data Final não pode ser anterior à Data Inicial.');
+            if (endInput.value < startInput.value) {
+                alert('🚫 A Data Final não pode ser anterior à Data Inicial.');
                 endInput.value = ''; // Limpa o campo incorreto
             }
         }
     }
 
-    // Refresh da tabela
-    if (type === 'colab') renderCollaboratorInfos();
-    else if (type === 'integration') renderIntegrations();
+    // 3. Atualiza a tabela correspondente
+    if (typeof renderFunction === 'function') {
+        // Se for auditoria, reseta a página para 1
+        if (type === 'audit') currentPage = 1;
+        renderFunction();
+    }
 }
 
 function getFilteredTasks() {
