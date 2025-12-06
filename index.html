@@ -426,22 +426,21 @@
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label">Solicitação (Início)</label>
-                        <input type="date" class="form-control" id="filter-demand-sol-start" onchange="validateDateRange('dem-sol')">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Solicitação (Fim)</label>
-                        <input type="date" class="form-control" id="filter-demand-sol-end" onchange="validateDateRange('dem-sol')">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Realização (Início)</label>
-                        <input type="date" class="form-control" id="filter-demand-real-start" onchange="validateDateRange('dem-real')">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Realização (Fim)</label>
-                        <input type="date" class="form-control" id="filter-demand-real-end" onchange="validateDateRange('dem-real')">
-                    </div>
+    <label class="form-label">Solicitação (Início)</label>
+    <input type="date" class="form-control" id="filter-demand-sol-start" onchange="validateDateRange('dem-sol')">
+</div>
+<div class="form-group">
+    <label class="form-label">Solicitação (Fim)</label>
+    <input type="date" class="form-control" id="filter-demand-sol-end" onchange="validateDateRange('dem-sol')">
+</div>
+<div class="form-group">
+    <label class="form-label">Realização (Início)</label>
+    <input type="date" class="form-control" id="filter-demand-real-start" onchange="validateDateRange('dem-real')">
+</div>
+<div class="form-group">
+    <label class="form-label">Realização (Fim)</label>
+    <input type="date" class="form-control" id="filter-demand-real-end" onchange="validateDateRange('dem-real')">
+</div>
 
                     <div class="form-group" style="display: flex; align-items: flex-end;">
                         <button class="btn btn--secondary btn--full-width" onclick="clearDemandFilters()">Limpar Filtros</button>
@@ -533,22 +532,21 @@
                     <div class="form-group"></div> 
 
                     <div class="form-group">
-                        <label class="form-label">Solicitação (Início)</label>
-                        <input type="date" class="form-control" id="filter-visit-sol-start" onchange="validateDateRange('visit-sol')">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Solicitação (Fim)</label>
-                        <input type="date" class="form-control" id="filter-visit-sol-end" onchange="validateDateRange('visit-sol')">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Data Visita (Início)</label>
-                        <input type="date" class="form-control" id="filter-visit-real-start" onchange="validateDateRange('visit-real')">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data Visita (Fim)</label>
-                        <input type="date" class="form-control" id="filter-visit-real-end" onchange="validateDateRange('visit-real')">
-                    </div>
+    <label class="form-label">Solicitação (Início)</label>
+    <input type="date" class="form-control" id="filter-visit-sol-start" onchange="validateDateRange('visit-sol')">
+</div>
+<div class="form-group">
+    <label class="form-label">Solicitação (Fim)</label>
+    <input type="date" class="form-control" id="filter-visit-sol-end" onchange="validateDateRange('visit-sol')">
+</div>
+<div class="form-group">
+    <label class="form-label">Data Visita (Início)</label>
+    <input type="date" class="form-control" id="filter-visit-real-start" onchange="validateDateRange('visit-real')">
+</div>
+<div class="form-group">
+    <label class="form-label">Data Visita (Fim)</label>
+    <input type="date" class="form-control" id="filter-visit-real-end" onchange="validateDateRange('visit-real')">
+</div>
 
                     <div class="form-group" style="display: flex; align-items: flex-end;">
                         <button class="btn btn--secondary btn--full-width" onclick="clearVisitFilters()">Limpar Filtros</button>
@@ -638,21 +636,21 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Data Liberação Inicial</label>
-                        <input type="date" class="form-control" id="filter-production-release-start">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data Liberação Final</label>
-                        <input type="date" class="form-control" id="filter-production-release-end">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data Envio Inicial</label>
-                        <input type="date" class="form-control" id="filter-production-send-start">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data Envio Final</label>
-                        <input type="date" class="form-control" id="filter-production-send-end">
-                    </div>
+    <label class="form-label">Data Liberação Inicial</label>
+    <input type="date" class="form-control" id="filter-production-release-start" onchange="validateDateRange('prod-rel')">
+</div>
+<div class="form-group">
+    <label class="form-label">Data Liberação Final</label>
+    <input type="date" class="form-control" id="filter-production-release-end" onchange="validateDateRange('prod-rel')">
+</div>
+<div class="form-group">
+    <label class="form-label">Data Envio Inicial</label>
+    <input type="date" class="form-control" id="filter-production-send-start" onchange="validateDateRange('prod-send')">
+</div>
+<div class="form-group">
+    <label class="form-label">Data Envio Final</label>
+    <input type="date" class="form-control" id="filter-production-send-end" onchange="validateDateRange('prod-send')">
+</div>
                     <div class="form-group" style="display: flex; align-items: flex-end;">
                         <button class="btn btn--secondary btn--full-width" onclick="clearProductionFilters()">Limpar Filtros</button>
                     </div>
@@ -1301,23 +1299,22 @@
                         <input type="text" class="form-control" id="filter-request-solicitante" placeholder="Buscar nome">
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Solicitação (Início)</label>
-                        <input type="date" class="form-control" id="filter-request-sol-start" onchange="validateDateRange('request-sol')">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Solicitação (Fim)</label>
-                        <input type="date" class="form-control" id="filter-request-sol-end" onchange="validateDateRange('request-sol')">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Realização (Início)</label>
-                        <input type="date" class="form-control" id="filter-request-real-start" onchange="validateDateRange('request-real')">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Realização (Fim)</label>
-                        <input type="date" class="form-control" id="filter-request-real-end" onchange="validateDateRange('request-real')">
-                    </div>
+                   <div class="form-group">
+    <label class="form-label">Solicitação (Início)</label>
+    <input type="date" class="form-control" id="filter-request-sol-start" onchange="validateDateRange('request-sol')">
+</div>
+<div class="form-group">
+    <label class="form-label">Solicitação (Fim)</label>
+    <input type="date" class="form-control" id="filter-request-sol-end" onchange="validateDateRange('request-sol')">
+</div>
+<div class="form-group">
+    <label class="form-label">Realização (Início)</label>
+    <input type="date" class="form-control" id="filter-request-real-start" onchange="validateDateRange('request-real')">
+</div>
+<div class="form-group">
+    <label class="form-label">Realização (Fim)</label>
+    <input type="date" class="form-control" id="filter-request-real-end" onchange="validateDateRange('request-real')">
+</div>
 
                     <div class="form-group" style="display: flex; align-items: flex-end;">
                         <button class="btn btn--secondary btn--full-width" onclick="clearRequestFilters()">Limpar Filtros</button>
@@ -1413,22 +1410,21 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Solicitação (Início)</label>
-                        <input type="date" class="form-control" id="filter-presentation-sol-start" onchange="validateDateRange('pres-sol')">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Solicitação (Fim)</label>
-                        <input type="date" class="form-control" id="filter-presentation-sol-end" onchange="validateDateRange('pres-sol')">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Realização (Início)</label>
-                        <input type="date" class="form-control" id="filter-presentation-real-start" onchange="validateDateRange('pres-real')">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Realização (Fim)</label>
-                        <input type="date" class="form-control" id="filter-presentation-real-end" onchange="validateDateRange('pres-real')">
-                    </div>
+    <label class="form-label">Solicitação (Início)</label>
+    <input type="date" class="form-control" id="filter-presentation-sol-start" onchange="validateDateRange('pres-sol')">
+</div>
+<div class="form-group">
+    <label class="form-label">Solicitação (Fim)</label>
+    <input type="date" class="form-control" id="filter-presentation-sol-end" onchange="validateDateRange('pres-sol')">
+</div>
+<div class="form-group">
+    <label class="form-label">Realização (Início)</label>
+    <input type="date" class="form-control" id="filter-presentation-real-start" onchange="validateDateRange('pres-real')">
+</div>
+<div class="form-group">
+    <label class="form-label">Realização (Fim)</label>
+    <input type="date" class="form-control" id="filter-presentation-real-end" onchange="validateDateRange('pres-real')">
+</div>
 
                     <div class="form-group" style="display: flex; align-items: flex-end;">
                         <button class="btn btn--secondary btn--full-width" onclick="clearPresentationFilters()">Limpar Filtros</button>
@@ -1535,21 +1531,21 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Solicitação (Início)</label>
-                        <input type="date" class="form-control" id="filter-task-req-start" onchange="validateDateRange('req')">
-                    </div>
+                    <label class="form-label">Solicitação (Início)</label>
+                    <input type="date" class="form-control" id="filter-task-req-start" onchange="validateDateRange('task-req')">
+              </div>
                     <div class="form-group">
-                        <label class="form-label">Solicitação (Fim)</label>
-                        <input type="date" class="form-control" id="filter-task-req-end" onchange="validateDateRange('req')">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Realização (Início)</label>
-                        <input type="date" class="form-control" id="filter-task-perf-start" onchange="validateDateRange('perf')">
-                    </div>
+                    <label class="form-label">Solicitação (Fim)</label>
+                   <input type="date" class="form-control" id="filter-task-req-end" onchange="validateDateRange('task-req')">
+             </div>
+                   <div class="form-group">
+                         <label class="form-label">Realização (Início)</label>
+                        <input type="date" class="form-control" id="filter-task-perf-start" onchange="validateDateRange('task-perf')">
+                   </div>
                     <div class="form-group">
                         <label class="form-label">Realização (Fim)</label>
-                        <input type="date" class="form-control" id="filter-task-perf-end" onchange="validateDateRange('perf')">
-                    </div>
+                        <input type="date" class="form-control" id="filter-task-perf-end" onchange="validateDateRange('task-perf')">
+                 </div>
 
                     <div class="form-group" style="display: flex; align-items: flex-end;">
                         <button class="btn btn--secondary btn--full-width" onclick="clearTaskFilters()">Limpar Filtros</button>
@@ -1932,14 +1928,13 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label">De (Data)</label>
-            <input type="date" class="form-control" id="filter-audit-start" onchange="currentPage=1; renderAuditLogs()">
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Até (Data)</label>
-            <input type="date" class="form-control" id="filter-audit-end" onchange="currentPage=1; renderAuditLogs()">
-        </div>
+    <label class="form-label">De (Data)</label>
+    <input type="date" class="form-control" id="filter-audit-start" onchange="validateDateRange('audit')">
+</div>
+<div class="form-group">
+    <label class="form-label">Até (Data)</label>
+    <input type="date" class="form-control" id="filter-audit-end" onchange="validateDateRange('audit')">
+</div>
 
         <div class="form-group" style="display: flex; align-items: flex-end;">
             <button class="btn btn--secondary btn--full-width" onclick="clearAuditFilters()">Limpar Filtros</button>
