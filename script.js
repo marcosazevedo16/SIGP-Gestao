@@ -804,15 +804,12 @@ function initializeTabs() {
         btn.onclick = function() {
             const tabId = this.getAttribute('data-tab');
             
-            // Remove active de todos os botões
-            buttons.forEach(function(b) {
-                b.classList.remove('active');
-            });
-            
-            // Remove active de todas as seções
-            document.querySelectorAll('.tab-content').forEach(function(c) {
-                c.classList.remove('active');
-            });
+            // SALVA A ABA ATUAL NO NAVEGADOR
+            localStorage.setItem('lastActiveTab', tabId);
+
+            // Remove active de todos
+            buttons.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             
             // Ativa o atual
             this.classList.add('active');
@@ -821,12 +818,13 @@ function initializeTabs() {
             
             if (section) {
                 section.classList.add('active');
+                // Pequeno delay para garantir renderização antes de processar gráficos
                 setTimeout(function() {
                     refreshCurrentTab(sectionId);
-                }, 10);
+                }, 50);
             }
             
-            // FECHAR MENU MOBILE SE ESTIVER ABERTO
+            // Fecha menu mobile se necessário
             if (window.innerWidth <= 900) {
                 const sidebar = document.querySelector('.sidebar');
                 const overlay = document.querySelector('.sidebar-overlay');
@@ -4895,71 +4893,72 @@ function renderOrientadores() {
 }
 
 function initializeApp() {
-    updateUserInterface();
-    initializeTheme();
-    initializeTabs();
-    applyMasks();
-    setupDynamicFormFields();
-    updateGlobalDropdowns();    
-    renderMunicipalities();
-    renderTasks();
-    renderRequests();
-    renderDemands();
-    renderVisits();
-    renderProductions();
-    renderPresentations();
-    renderVersions();    
-    updateDashboardStats();
-    initializeDashboardCharts();
-    checkSystemNotifications();
-    initOfflineDetection();
-    enforceDateSecurity();
-    
-    // Listener do Menu Mobile
-    const overlay = document.querySelector('.sidebar-overlay');
-    if (overlay) {
-        overlay.onclick = toggleMobileMenu;
-    }
-    
-    if(!document.querySelector('.sidebar-btn.active')) {
-        navigateToHome();
-    }
+    try {
+        // 1. Configurações Iniciais da Interface
+        updateUserInterface();
+        initializeTheme();
+        initializeTabs();
+        applyMasks();
+        setupDynamicFormFields();
+        updateGlobalDropdowns();    
+        
+        // 2. Renderizações Críticas (Carrega as tabelas)
+        renderMunicipalities();
+        renderTasks();
+        renderRequests();
+        renderDemands();
+        renderVisits();
+        renderProductions();
+        renderPresentations();
+        renderVersions();
+        
+        // Renderiza abas novas se existirem no seu código
+        if (typeof renderCollaboratorInfos === 'function') renderCollaboratorInfos();
+        if (typeof renderIntegrations === 'function') renderIntegrations();
+        if (typeof renderApiList === 'function') renderApiList();
+        
+        // 3. Atualiza Dashboards e Notificações
+        updateDashboardStats();
+        initializeDashboardCharts();
+        checkSystemNotifications();
+        initOfflineDetection();
+        
+        // 4. Segurança de Datas (Protegido contra falhas)
+        try {
+            if (typeof enforceDateSecurity === 'function') {
+                enforceDateSecurity();
+            }
+        } catch (errData) {
+            console.warn('Aviso: Erro não fatal na segurança de datas:', errData);
+        }
 
-    // --- BLOCO DE SEGURANÇA REMOVIDO PARA TESTES ---
-    /* if (currentUser && currentUser.mustChangePassword) {
-        alert('⚠️ Aviso de Segurança: ...');
-        showChangePasswordModal();
+        // 5. RECUPERAÇÃO INTELIGENTE DA ÚLTIMA ABA (A Correção do Travamento)
+        const lastTab = localStorage.getItem('lastActiveTab');
+        // Tenta achar o botão da aba salva
+        const tabBtn = lastTab ? document.querySelector(`.sidebar-btn[data-tab="${lastTab}"]`) : null;
+
+        if (lastTab && tabBtn) {
+            // Se tinha uma aba salva, clica nela para abrir onde parou
+            console.log("Restaurando aba anterior:", lastTab);
+            tabBtn.click();
+        } else {
+            // Se não tinha (primeira vez), vai para o Dashboard
+            if(!document.querySelector('.sidebar-btn.active')) {
+                navigateToHome();
+            }
+        }
+
+        // 6. Listener do Menu Mobile
+        const overlay = document.querySelector('.sidebar-overlay');
+        if (overlay) {
+            overlay.onclick = toggleMobileMenu;
+        }
+
+    } catch (error) {
+        console.error("ERRO CRÍTICO NA INICIALIZAÇÃO:", error);
+        alert("Ocorreu um erro ao carregar o sistema. Se persistir, limpe o cache (CTRL + F5).");
     }
-    */
 }
-document.addEventListener('DOMContentLoaded', function() {
-    checkAuthentication();
-    
-    // FECHAR MODAIS E MENUS AO CLICAR FORA
-    window.onclick = function(e) { 
-        // 1. Fecha Modais
-        if (e.target.classList.contains('modal')) {
-            e.target.classList.remove('show');
-        }
-
-        // 2. Fecha Menus Suspensos (Configurações e Notificações)
-        // Se o clique NÃO foi dentro de um dropdown, fecha todos
-        if (!e.target.closest('.settings-dropdown')) {
-            const menus = document.querySelectorAll('.settings-menu');
-            menus.forEach(menu => {
-                menu.classList.remove('show');
-            });
-        }
-    };
-    
-    document.querySelectorAll('.btn--secondary').forEach(function(b) { 
-        if (b.textContent.includes('Cancelar')) {
-            b.onclick = function(){ 
-                this.closest('.modal').classList.remove('show'); 
-            }; 
-        }
-    });
-});
 
 // --- 21. SISTEMA DE AUDITORIA ---
 
