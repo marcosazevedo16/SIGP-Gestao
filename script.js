@@ -998,38 +998,67 @@ function handleLogin(e) {
 }
 
 function checkAuthentication() {
-    // 1. Garante que o usuário foi lido do armazenamento (Correção para F5)
-    if (!currentUser) {
-        currentUser = recuperarDoArmazenamento('currentUser');
-        isAuthenticated = !!currentUser;
+    // 1. LEITURA DIRETA E FORÇADA DO LOCALSTORAGE
+    // Ignoramos a variável global temporariamente para garantir que estamos lendo o disco
+    const sessionJson = localStorage.getItem('currentUser');
+    
+    // Variável local para validar
+    let userFromDisk = null;
+
+    if (sessionJson) {
+        try {
+            userFromDisk = JSON.parse(sessionJson);
+        } catch (e) {
+            console.error("Erro crítico ao ler sessão:", e);
+            userFromDisk = null;
+        }
     }
 
-    if (isAuthenticated && currentUser) {
-        // Remove a tela de login
+    // 2. VALIDAÇÃO
+    if (userFromDisk && userFromDisk.login) {
+        // --- SUCESSO: TEM DADOS NO DISCO ---
+        
+        // Restaura as variáveis globais para o resto do sistema funcionar
+        currentUser = userFromDisk;
+        isAuthenticated = true;
+
+        // Atualiza a Interface Visual
         document.getElementById('login-screen').classList.remove('active');
         document.getElementById('main-app').classList.add('active');
         
-        // --- CORREÇÃO CRÍTICA DE SESSÃO ---
-        // "Reseta" o relógio de inatividade AGORA. 
-        // Isso impede que o sistema te deslogue achando que o tempo passou enquanto a página recarregava.
+        // --- O SEGREDO DO F5 ---
+        // Atualiza o relógio de inatividade AGORA.
+        // Isso impede que o sistema ache que você está inativo desde o último acesso antes do F5.
         localStorage.setItem('lastActivityTime', Date.now().toString());
-        // ----------------------------------
 
-        // Carrega o sistema (Tabelas, Abas, etc)
-        // O try/catch evita que um erro visual cause logout
+        // Carrega o sistema (Tabelas, Gráficos)
+        // Usamos try-catch para que um erro visual não deslogue o usuário
         try {
-            initializeApp();
-        } catch (erro) {
-            console.error("Erro ao inicializar app:", erro);
+            // Verifica se a função existe antes de chamar
+            if (typeof initializeApp === 'function') {
+                initializeApp();
+            } else {
+                console.error("Função initializeApp não encontrada!");
+            }
+        } catch (erroInit) {
+            console.error("Erro na inicialização visual:", erroInit);
         }
         
-        // Só inicia o monitoramento DEPOIS de ter resetado o relógio acima
+        // LIGA O MONITOR DE SEGURANÇA COM ATRASO
+        // O setTimeout de 500ms garante que o navegador tenha tempo de processar
+        // o 'setItem' da linha acima antes do monitor ler o horário.
         if (typeof initializeInactivityTracking === 'function') {
-            initializeInactivityTracking();
+            setTimeout(function() {
+                initializeInactivityTracking();
+            }, 500); 
         }
         
     } else {
-        // Se não achou usuário válido, mostra login
+        // --- FALHA: NÃO TEM DADOS NO DISCO ---
+        console.warn("Nenhuma sessão válida encontrada no LocalStorage.");
+        currentUser = null;
+        isAuthenticated = false;
+        
         document.getElementById('login-screen').classList.add('active');
         document.getElementById('main-app').classList.remove('active');
     }
