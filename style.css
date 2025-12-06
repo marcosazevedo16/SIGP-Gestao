@@ -296,8 +296,12 @@ html { font-size: var(--font-size-base);
   -webkit-font-smoothing: antialiased;
   box-sizing: border-box; }
 
-body { margin: 0;
-  padding: 0; }
+body { 
+  margin: 0;
+  padding: 0;
+  /* ADICIONE ESTA LINHA ABAIXO: */
+  background-color: #003d5c; /* Cor azul do seu tema para evitar clarão branco */
+}
 
 *,
 *::before,
