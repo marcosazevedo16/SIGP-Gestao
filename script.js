@@ -1190,24 +1190,23 @@ function saveMunicipality(e) {
     const status = document.getElementById('municipality-status').value;
     const mods = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
 
-    // --- NOVA VALIDAÇÃO DE DATAS (ITEM 1) ---
+    // --- VALIDAÇÃO DE DATAS ---
     const dtImpl = document.getElementById('municipality-implantation-date').value;
     const dtBlock = document.getElementById('municipality-date-blocked') ? document.getElementById('municipality-date-blocked').value : '';
     const dtStop = document.getElementById('municipality-date-stopped') ? document.getElementById('municipality-date-stopped').value : '';
 
     if (dtImpl) {
         if (dtBlock && dtBlock < dtImpl) {
-            alert('🚫 Erro: A "Data em que foi Bloqueado" não pode ser anterior à "Data de Implantação".');
+            alert('🚫 ERRO DE DATA: A "Data em que foi Bloqueado" não pode ser anterior à "Data de Implantação".');
             return;
         }
         if (dtStop && dtStop < dtImpl) {
-            alert('🚫 Erro: A "Data em que Parou de Usar" não pode ser anterior à "Data de Implantação".');
+            alert('🚫 ERRO DE DATA: A "Data em que Parou de Usar" não pode ser anterior à "Data de Implantação".');
             return;
         }
     }
-    // ----------------------------------------
+    // --------------------------
 
-    // Validação de Duplicidade
     const isDuplicate = municipalities.some(m => m.name === name && m.id !== editingId);
     if (isDuplicate) {
         alert(`🚫 Ação Bloqueada: O município "${name}" já consta na sua carteira.`);
@@ -1219,7 +1218,6 @@ function saveMunicipality(e) {
         return;
     }
 
-    // Validação Data Bloqueio (Campo Obrigatório se status for Bloqueado)
     if (status === 'Bloqueado' && !dtBlock) {
         alert('Erro: Preencha a "Data em que foi Bloqueado".');
         return;
@@ -1242,24 +1240,11 @@ function saveMunicipality(e) {
         const i = municipalities.findIndex(x => x.id === editingId);
         if (i !== -1) {
             const oldMun = municipalities[i];
-            
-            // --- DETECÇÃO DE MUDANÇAS (AUDITORIA AVANÇADA) ---
-            const mapCampos = {
-                status: 'Situação',
-                manager: 'Gestor',
-                contact: 'Contato',
-                implantationDate: 'Data Implantação',
-                lastVisit: 'Última Visita'
-            };
-            
+            const mapCampos = { status: 'Situação', manager: 'Gestor', contact: 'Contato', implantationDate: 'Data Implantação', lastVisit: 'Última Visita' };
             let detailsLog = detectChanges(oldMun, data, mapCampos);
-            
             const oldMods = (oldMun.modules || []).sort().join(', ');
             const newMods = (data.modules || []).sort().join(', ');
-            if (oldMods !== newMods) {
-                detailsLog += `. Alterou Módulos de [${oldMods}] para [${newMods}]`;
-            }
-
+            if (oldMods !== newMods) detailsLog += `. Alterou Módulos de [${oldMods}] para [${newMods}]`;
             municipalities[i] = { ...municipalities[i], ...data };
             logSystemAction('Edição', 'Municípios', `Município: ${data.name}. ${detailsLog}`);
         }
@@ -1272,10 +1257,8 @@ function saveMunicipality(e) {
     document.getElementById('municipality-modal').classList.remove('show');
     renderMunicipalities();
     updateGlobalDropdowns();
-    
     showToast('Município salvo com sucesso!', 'success');
 }
-
 function renderMunicipalities() {
     const fName = document.getElementById('filter-municipality-name') ? document.getElementById('filter-municipality-name').value : '';
     const fStatus = document.getElementById('filter-municipality-status') ? document.getElementById('filter-municipality-status').value : '';
@@ -1505,15 +1488,15 @@ function showTaskModal(id = null) {
 function saveTask(e) {
     e.preventDefault();
     
-    // --- VALIDAÇÃO DE DATAS (ITEM 2) ---
     const dReq = document.getElementById('task-date-requested').value;
     const dPerf = document.getElementById('task-date-performed').value;
 
+    // --- VALIDAÇÃO DE DATA ---
     if (dPerf && dReq && dPerf < dReq) {
-        alert('🚫 Erro: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        alert('🚫 ERRO DE DATA: A Data de Realização não pode ser anterior à Data de Solicitação.');
         return;
     }
-    // -----------------------------------
+    // -------------------------
 
     const data = {
         dateRequested: dReq,
@@ -1529,120 +1512,18 @@ function saveTask(e) {
     };
 
     if (editingId) {
-        const i = tasks.findIndex(function(x) { return x.id === editingId; });
+        const i = tasks.findIndex(x => x.id === editingId);
         if (i !== -1) tasks[i] = { ...tasks[i], ...data };
+        logSystemAction('Edição', 'Treinamentos', `Município: ${data.municipality}`);
     } else {
         tasks.push({ id: getNextId('task'), ...data });
+        logSystemAction('Criação', 'Treinamentos', `Município: ${data.municipality}`);
     }
     
     salvarNoArmazenamento('tasks', tasks);
     document.getElementById('task-modal').classList.remove('show');
     clearTaskFilters(); 
-
-    // AUDITORIA
-    logSystemAction(editingId ? 'Edição' : 'Criação', 'Treinamentos', `Para: ${data.municipality} | Solicitante: ${data.requestedBy}`);
-    
     showToast('Treinamento salvo com sucesso!', 'success');
-}
-
-// CORREÇÃO DEFINITIVA: Validação de Datas (Todos os Módulos + Relatórios)
-function validateDateRange(type) {
-    let startId, endId, renderFunction;
-
-    // Mapeamento de IDs e Funções de Renderização
-    switch (type) {
-        // --- FILTROS DAS ABAS PRINCIPAIS ---
-        case 'task-req': // Treinamentos - Solicitação
-            startId = 'filter-task-req-start'; endId = 'filter-task-req-end'; renderFunction = renderTasks; break;
-        case 'task-perf': // Treinamentos - Realização
-            startId = 'filter-task-perf-start'; endId = 'filter-task-perf-end'; renderFunction = renderTasks; break;
-
-        case 'request-sol': // Solicitações - Solicitação
-            startId = 'filter-request-sol-start'; endId = 'filter-request-sol-end'; renderFunction = renderRequests; break;
-        case 'request-real': // Solicitações - Realização
-            startId = 'filter-request-real-start'; endId = 'filter-request-real-end'; renderFunction = renderRequests; break;
-
-        case 'pres-sol': // Apresentações - Solicitação
-            startId = 'filter-presentation-sol-start'; endId = 'filter-presentation-sol-end'; renderFunction = renderPresentations; break;
-        case 'pres-real': // Apresentações - Realização
-            startId = 'filter-presentation-real-start'; endId = 'filter-presentation-real-end'; renderFunction = renderPresentations; break;
-
-        case 'dem-sol': // Demandas - Solicitação
-            startId = 'filter-demand-sol-start'; endId = 'filter-demand-sol-end'; renderFunction = renderDemands; break;
-        case 'dem-real': // Demandas - Realização
-            startId = 'filter-demand-real-start'; endId = 'filter-demand-real-end'; renderFunction = renderDemands; break;
-
-        case 'visit-sol': // Visitas - Solicitação
-            startId = 'filter-visit-sol-start'; endId = 'filter-visit-sol-end'; renderFunction = renderVisits; break;
-        case 'visit-real': // Visitas - Realização
-            startId = 'filter-visit-real-start'; endId = 'filter-visit-real-end'; renderFunction = renderVisits; break;
-
-        case 'prod-rel': // Produção - Liberação
-            startId = 'filter-production-release-start'; endId = 'filter-production-release-end'; renderFunction = renderProductions; break;
-        case 'prod-send': // Produção - Envio
-            startId = 'filter-production-send-start'; endId = 'filter-production-send-end'; renderFunction = renderProductions; break;
-
-        case 'audit': // Auditoria
-            startId = 'filter-audit-start'; endId = 'filter-audit-end'; renderFunction = renderAuditLogs; break;
-
-        case 'colab': // Aba Info Colaboradores (Filtro Principal)
-            startId = 'filter-colab-info-start'; endId = 'filter-colab-info-end'; renderFunction = renderCollaboratorInfos; break;
-        case 'integration': // Aba Integrações
-            startId = 'filter-integration-start'; endId = 'filter-integration-end'; renderFunction = renderIntegrations; break;
-
-        // --- FILTROS DA ABA RELATÓRIOS (Novos) ---
-        case 'rep-mun': // Relatório Municípios
-            startId = 'rep-mun-start'; endId = 'rep-mun-end'; break;
-        
-        case 'rep-train': // Relatório Treinamentos
-            startId = 'rep-train-start'; endId = 'rep-train-end'; break;
-            
-        case 'rep-pres': // Relatório Apresentações
-            startId = 'rep-pres-start'; endId = 'rep-pres-end'; break;
-            
-        case 'rep-vis': // Relatório Visitas
-            startId = 'rep-vis-start'; endId = 'rep-vis-end'; break;
-            
-        case 'rep-prod': // Relatório Produção
-            startId = 'rep-prod-start'; endId = 'rep-prod-end'; break;
-            
-        case 'rep-int': // Relatório Integrações
-            startId = 'rep-int-start'; endId = 'rep-int-end'; break;
-            
-        case 'rep-colab-adm': // Relatório Colaboradores (Admissão)
-            startId = 'rep-colab-adm-start'; endId = 'rep-colab-adm-end'; break;
-            
-        case 'rep-colab-term': // Relatório Colaboradores (Desligamento)
-            startId = 'rep-colab-term-start'; endId = 'rep-colab-term-end'; break;
-
-        default: return;
-    }
-
-    const startInput = document.getElementById(startId);
-    const endInput = document.getElementById(endId);
-    
-    if (startInput && endInput) {
-        // 1. Configura o atributo 'min' visualmente no campo final
-        if (startInput.value) {
-            endInput.min = startInput.value;
-        } else {
-            endInput.removeAttribute('min');
-        }
-
-        // 2. Validação Lógica (Data Real) - Trava de segurança
-        if (startInput.value && endInput.value) {
-            if (endInput.value < startInput.value) {
-                alert('🚫 A Data Final não pode ser anterior à Data Inicial.');
-                endInput.value = ''; // Limpa o campo incorreto
-            }
-        }
-    }
-
-    // 3. Atualiza a tabela correspondente (apenas se existir função)
-    if (typeof renderFunction === 'function') {
-        if (type === 'audit') currentPage = 1;
-        renderFunction();
-    }
 }
 
 function getFilteredTasks() {
@@ -1912,16 +1793,15 @@ function showRequestModal(id = null) {
 function saveRequest(e) {
     e.preventDefault();
     const status = document.getElementById('request-status').value;
-    
-    // --- NOVA VALIDAÇÃO DE DATAS (ITEM 3) ---
     const dSol = document.getElementById('request-date').value;
     const dReal = document.getElementById('request-date-realization').value;
 
+    // --- VALIDAÇÃO DE DATA ---
     if (dReal && dSol && dReal < dSol) {
-        alert('🚫 Erro: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        alert('🚫 ERRO DE DATA: A Data de Realização não pode ser anterior à Data de Solicitação.');
         return;
     }
-    // ----------------------------------------
+    // -------------------------
     
     if (status === 'Realizado' && !dReal) {
         alert('Data de Realização é obrigatória.'); return;
@@ -1951,12 +1831,9 @@ function saveRequest(e) {
     salvarNoArmazenamento('requests', requests);
     document.getElementById('request-modal').classList.remove('show');
     renderRequests();
-    
-    // AUDITORIA
-    logSystemAction(editingId ? 'Edição' : 'Criação', 'Solicitações', `Para: ${data.municipality} | Solicitante: ${data.requester}`);
+    logSystemAction(editingId ? 'Edição' : 'Criação', 'Solicitações', `Para: ${data.municipality}`);
     showToast('Salvo!');
 }
-
 function getFilteredRequests() {
     const fMun = document.getElementById('filter-request-municipality')?.value;
     const fStatus = document.getElementById('filter-request-status')?.value;
@@ -2289,47 +2166,27 @@ function showPresentationModal(id = null) {
 function savePresentation(e) {
     e.preventDefault();
     const status = document.getElementById('presentation-status').value;
-    
-    // Captura os valores para validar
     const orientadoresSel = Array.from(document.querySelectorAll('.orientador-check:checked')).map(c => c.value);
     const formasSel = Array.from(document.querySelectorAll('.forma-check:checked')).map(c => c.value);
     const dateReal = document.getElementById('presentation-date-realizacao').value;
     const dateSol = document.getElementById('presentation-date-solicitacao').value;
     const desc = document.getElementById('presentation-description').value.trim();
 
-    // --- NOVA VALIDAÇÃO DE DATAS (ITEM 4) ---
+    // --- VALIDAÇÃO DE DATA ---
     if (dateReal && dateSol && dateReal < dateSol) {
-        alert('🚫 Erro: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        alert('🚫 ERRO DE DATA: A Data de Realização não pode ser anterior à Data de Solicitação.');
         return;
     }
-    // ----------------------------------------
+    // -------------------------
 
-    // --- REGRAS DE VALIDAÇÃO ---
     if (status === 'Realizada') {
-        if (!dateReal) {
-            alert('Para status "Realizada", a Data de Realização é obrigatória.');
-            return;
-        }
-        if (orientadoresSel.length === 0) {
-            alert('Para status "Realizada", selecione ao menos um Orientador.');
-            return;
-        }
-        if (formasSel.length === 0) {
-            alert('Para status "Realizada", selecione ao menos uma Forma de Apresentação.');
-            return;
-        }
-    } 
-    else if (status === 'Pendente') {
-        if (orientadoresSel.length === 0) {
-            alert('Para status "Pendente", selecione ao menos um Orientador.');
-            return;
-        }
-    } 
-    else if (status === 'Cancelada') {
-        if (desc === '') {
-            alert('Para status "Cancelada", a Descrição/Justificativa é obrigatória.');
-            return;
-        }
+        if (!dateReal) { alert('Data de Realização obrigatória.'); return; }
+        if (orientadoresSel.length === 0) { alert('Selecione ao menos um Orientador.'); return; }
+        if (formasSel.length === 0) { alert('Selecione ao menos uma Forma.'); return; }
+    } else if (status === 'Pendente' && orientadoresSel.length === 0) {
+        alert('Selecione ao menos um Orientador.'); return;
+    } else if (status === 'Cancelada' && desc === '') {
+        alert('Descrição/Justificativa obrigatória.'); return;
     }
 
     const data = {
@@ -2349,12 +2206,10 @@ function savePresentation(e) {
     } else {
         presentations.push({ id: getNextId('pres'), ...data });
     }
-    
     salvarNoArmazenamento('presentations', presentations);
     document.getElementById('presentation-modal').classList.remove('show');
     clearPresentationFilters(); 
-    
-    showToast('Apresentação salva com sucesso!', 'success');
+    showToast('Apresentação salva!', 'success');
 }
 function getFilteredPresentations() {
     const fMun = document.getElementById('filter-presentation-municipality')?.value;
@@ -2629,19 +2484,15 @@ function saveDemand(e) {
     const dateSol = document.getElementById('demand-date').value;
     const justif = sanitizeInput(document.getElementById('demand-justification').value.trim());
 
-    // --- NOVA VALIDAÇÃO DE DATAS (ITEM 5) ---
+    // --- VALIDAÇÃO DE DATA ---
     if (dateReal && dateSol && dateReal < dateSol) {
-        alert('🚫 Erro: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        alert('🚫 ERRO DE DATA: A Data de Realização não pode ser anterior à Data de Solicitação.');
         return;
     }
-    // ----------------------------------------
+    // -------------------------
 
-    if (status === 'Realizada' && !dateReal) {
-        alert('Para status "Realizada", a Data de Realização é obrigatória.'); return;
-    }
-    if (status === 'Inviável' && !justif) {
-        alert('Para status "Inviável", a Justificativa é obrigatória.'); return;
-    }
+    if (status === 'Realizada' && !dateReal) { alert('Para status "Realizada", a Data de Realização é obrigatória.'); return; }
+    if (status === 'Inviável' && !justif) { alert('Para status "Inviável", a Justificativa é obrigatória.'); return; }
     
     const data = {
         date: dateSol,
@@ -2662,12 +2513,9 @@ function saveDemand(e) {
     salvarNoArmazenamento('demands', demands);
     document.getElementById('demand-modal').classList.remove('show');
     clearDemandFilters();
-    
-    // AUDITORIA
-    logSystemAction(editingId ? 'Edição' : 'Criação', 'Demandas', `Prioridade: ${data.priority} | Desc: ${data.description.substring(0,30)}...`);
-    showToast('Demanda salva com sucesso!', 'success');
+    logSystemAction(editingId ? 'Edição' : 'Criação', 'Demandas', `Desc: ${data.description.substring(0,20)}...`);
+    showToast('Demanda salva!', 'success');
 }
-
 function getFilteredDemands() {
     const fStatus = document.getElementById('filter-demand-status')?.value;
     const fPrio = document.getElementById('filter-demand-priority')?.value;
@@ -2973,20 +2821,16 @@ function saveVisit(e) {
     const status = document.getElementById('visit-status').value;
     const dateSol = document.getElementById('visit-date').value;
     const dateReal = document.getElementById('visit-date-realization').value;
-    
-    // --- NOVA VALIDAÇÃO DE DATAS (ITEM 6) ---
+
+    // --- VALIDAÇÃO DE DATA ---
     if (dateReal && dateSol && dateReal < dateSol) {
-        alert('🚫 Erro: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        alert('🚫 ERRO DE DATA: A Data de Realização não pode ser anterior à Data de Solicitação.');
         return;
     }
-    // ----------------------------------------
+    // -------------------------
 
-    if (status === 'Realizada' && !dateReal) {
-        alert('Data de Realização é obrigatória.'); return;
-    }
-    if (status === 'Cancelada' && !document.getElementById('visit-justification').value) {
-        alert('Justificativa é obrigatória.'); return;
-    }
+    if (status === 'Realizada' && !dateReal) { alert('Data de Realização obrigatória.'); return; }
+    if (status === 'Cancelada' && !document.getElementById('visit-justification').value) { alert('Justificativa obrigatória.'); return; }
 
     const data = {
         municipality: document.getElementById('visit-municipality').value,
@@ -3004,14 +2848,11 @@ function saveVisit(e) {
     } else {
         visits.push({ id: getNextId('visit'), ...data });
     }
-    
     salvarNoArmazenamento('visits', visits);
     document.getElementById('visit-modal').classList.remove('show');
     clearVisitFilters(); 
-    
-    // AUDITORIA
-    logSystemAction(editingId ? 'Edição' : 'Criação', 'Visitas', `Para: ${data.municipality} | Motivo: ${data.reason}`);
-    showToast('Visita salva com sucesso!', 'success');
+    logSystemAction(editingId ? 'Edição' : 'Criação', 'Visitas', `Para: ${data.municipality}`);
+    showToast('Visita salva!', 'success');
 }
 
 function getFilteredVisits() {
@@ -5072,6 +4913,7 @@ function initializeApp() {
     initializeDashboardCharts();
     checkSystemNotifications();
     initOfflineDetection();
+    enforceDateSecurity();
     
     // Listener do Menu Mobile
     const overlay = document.querySelector('.sidebar-overlay');
@@ -6332,26 +6174,23 @@ function saveColabInfo(e) {
     const feriasDate = document.getElementById('colab-info-vacation').value;
     const name = document.getElementById('colab-info-name').value;
 
-    // --- NOVA VALIDAÇÃO DE DATAS (ITEM 7) ---
+    // --- VALIDAÇÃO DE DATA ---
     if (admDate) {
         if (termDate && termDate < admDate) {
-            alert('🚫 Erro: A Data de Desligamento não pode ser anterior à Data de Admissão.');
+            alert('🚫 ERRO DE DATA: A Data de Desligamento não pode ser anterior à Admissão.');
             return;
         }
         if (feriasDate && feriasDate < admDate) {
-            alert('🚫 Erro: A Data Final das Férias não pode ser anterior à Data de Admissão.');
+            alert('🚫 ERRO DE DATA: A Data das Férias não pode ser anterior à Admissão.');
             return;
         }
     }
-    // ----------------------------------------
+    // -------------------------
 
-    if (status === 'Desligado da Empresa' && !termDate) {
-        alert('Data de Desligamento é obrigatória.'); return;
-    }
-    
-    // Validação de Duplicidade (Apenas se for NOVO)
+    if (status === 'Desligado da Empresa' && !termDate) { alert('Data de Desligamento obrigatória.'); return; }
+
     if (!editingId && collaboratorInfos.some(c => c.name === name)) {
-        if (!confirm(`Já existe uma ficha para "${name}". Deseja criar outra?`)) return;
+        if (!confirm(`Já existe uma ficha para "${name}". Criar outra?`)) return;
     }
 
     const data = {
@@ -6365,23 +6204,19 @@ function saveColabInfo(e) {
 
     if (editingId) {
         const i = collaboratorInfos.findIndex(x => x.id == editingId);
-        
         if (i !== -1) {
             collaboratorInfos[i] = { ...collaboratorInfos[i], ...data };
-            logSystemAction('Edição', 'Colaboradores Info', `Atualizou ficha: ${data.name}`);
-        } else {
-            alert('Erro ao atualizar: Registro original não encontrado.');
-            return; 
+            logSystemAction('Edição', 'Colaboradores Info', `Atualizou: ${data.name}`);
         }
     } else {
         collaboratorInfos.push({ id: getNextId('colabInfo'), ...data });
-        logSystemAction('Criação', 'Colaboradores Info', `Nova ficha: ${data.name}`);
+        logSystemAction('Criação', 'Colaboradores Info', `Novo: ${data.name}`);
     }
 
     salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
     document.getElementById('colab-info-modal').classList.remove('show');
     renderCollaboratorInfos();
-    showToast('Ficha salva com sucesso!', 'success');
+    showToast('Ficha salva!', 'success');
 }
 function renderCollaboratorInfos() {
     // 1. Filtros
@@ -8404,4 +8239,51 @@ function generateAuditPDF() {
     } else {
         window.open(blob, '_blank');
     }
+}
+// --- FUNÇÃO DE SEGURANÇA DE DATAS (BLOQUEIO VISUAL / UX) ---
+// Esta função configura os inputs para que, ao selecionar uma data inicial,
+// o calendário da data final bloqueie automaticamente os dias anteriores.
+function enforceDateSecurity() {
+    // Lista de regras: Data Inicial -> Datas que não podem ser menores
+    const rules = [
+        // 1. Municípios
+        { start: 'municipality-implantation-date', ends: ['municipality-date-blocked', 'municipality-date-stopped'] },
+        // 2. Treinamentos
+        { start: 'task-date-requested', ends: ['task-date-performed'] },
+        // 3. Solicitações
+        { start: 'request-date', ends: ['request-date-realization'] },
+        // 4. Apresentações
+        { start: 'presentation-date-solicitacao', ends: ['presentation-date-realizacao'] },
+        // 5. Demandas
+        { start: 'demand-date', ends: ['demand-realization-date'] },
+        // 6. Visitas
+        { start: 'visit-date', ends: ['visit-date-realization'] },
+        // 7. Colaboradores
+        { start: 'colab-info-admission', ends: ['colab-info-termination', 'colab-info-vacation'] }
+    ];
+
+    rules.forEach(rule => {
+        const startEl = document.getElementById(rule.start);
+        if (startEl) {
+            // Evento: Quando mudar a data inicial
+            startEl.addEventListener('change', function() {
+                const minDate = this.value;
+                
+                rule.ends.forEach(targetId => {
+                    const targetEl = document.getElementById(targetId);
+                    if (targetEl) {
+                        // Define o atributo 'min' no HTML (bloqueia dias anteriores no calendário visualmente)
+                        targetEl.setAttribute('min', minDate);
+                        
+                        // Se a data que já estava preenchida lá for menor que a nova data inicial, limpa ela
+                        if (targetEl.value && targetEl.value < minDate) {
+                            targetEl.value = '';
+                            // Opcional: Avisar o usuário que a data foi limpa
+                            // showToast('Data ajustada automaticamente.', 'warning'); 
+                        }
+                    }
+                });
+            });
+        }
+    });
 }
