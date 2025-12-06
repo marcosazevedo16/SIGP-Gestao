@@ -6,18 +6,20 @@
    
     <title>SIGP Saúde v4.3 - Gestão de Setor</title>
   
-   <meta http-equiv="Content-Security-Policy" 
+    <meta http-equiv="Content-Security-Policy" 
     content="default-src 'self' 'unsafe-inline' https: data: blob:; 
              style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
              font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:; 
-             script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; 
-             connect-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+             script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.gstatic.com; 
+             connect-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://*.googleapis.com https://*.firebaseio.com;
              frame-src 'self' blob: data:;">
-    <!-- Seu CSS -->
+             
     <link rel="stylesheet" href="style.css">
-    <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
