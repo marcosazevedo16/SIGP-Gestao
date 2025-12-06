@@ -5188,6 +5188,23 @@ function renderAuditLogs() {
         ${paginationHTML}
     `;
 }
+function clearAuditFilters() {
+    const ids = [
+        'filter-audit-action', 
+        'filter-audit-user', 
+        'filter-audit-target', 
+        'filter-audit-start', 
+        'filter-audit-end'
+    ];
+    
+    ids.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.value = '';
+    });
+
+    currentPage = 1; // Reseta a paginação para a primeira página
+    renderAuditLogs(); // Recarrega a tabela sem filtros
+}
 
 function clearAuditLogs() {
     if(confirm('Tem certeza? Isso apagará todo o histórico de auditoria.')) {
