@@ -804,8 +804,9 @@ function initializeTabs() {
         btn.onclick = function() {
             const tabId = this.getAttribute('data-tab');
             
-            // SALVA A ABA ATUAL NO NAVEGADOR
-            localStorage.setItem('lastActiveTab', tabId);
+            // --- NOVO: SALVA A ESCOLHA NO NAVEGADOR ---
+            localStorage.setItem('lastActiveTab', tabId); 
+            // ------------------------------------------
 
             // Remove active de todos
             buttons.forEach(b => b.classList.remove('active'));
@@ -818,7 +819,7 @@ function initializeTabs() {
             
             if (section) {
                 section.classList.add('active');
-                // Pequeno delay para garantir renderização antes de processar gráficos
+                // Pequeno delay para garantir que o CSS aplicou antes de desenhar gráficos
                 setTimeout(function() {
                     refreshCurrentTab(sectionId);
                 }, 50);
@@ -4935,7 +4936,6 @@ function renderOrientadores() {
 
 function initializeApp() {
     try {
-        // 1. Configurações Iniciais da Interface
         updateUserInterface();
         initializeTheme();
         initializeTabs();
@@ -4943,7 +4943,7 @@ function initializeApp() {
         setupDynamicFormFields();
         updateGlobalDropdowns();    
         
-        // 2. Renderizações Críticas (Carrega as tabelas)
+        // Renderizações
         renderMunicipalities();
         renderTasks();
         renderRequests();
@@ -4951,53 +4951,40 @@ function initializeApp() {
         renderVisits();
         renderProductions();
         renderPresentations();
-        renderVersions();
+        renderVersions();    
         
-        // Renderiza abas novas se existirem no seu código
+        // Renderizações opcionais (se existirem no código)
         if (typeof renderCollaboratorInfos === 'function') renderCollaboratorInfos();
         if (typeof renderIntegrations === 'function') renderIntegrations();
         if (typeof renderApiList === 'function') renderApiList();
-        
-        // 3. Atualiza Dashboards e Notificações
+
         updateDashboardStats();
         initializeDashboardCharts();
         checkSystemNotifications();
         initOfflineDetection();
         
-        // 4. Segurança de Datas (Protegido contra falhas)
-        try {
-            if (typeof enforceDateSecurity === 'function') {
-                enforceDateSecurity();
-            }
-        } catch (errData) {
-            console.warn('Aviso: Erro não fatal na segurança de datas:', errData);
-        }
+        // Tenta aplicar segurança de datas
+        try { if (typeof enforceDateSecurity === 'function') enforceDateSecurity(); } catch (e) {}
 
-        // 5. RECUPERAÇÃO INTELIGENTE DA ÚLTIMA ABA (A Correção do Travamento)
+        // --- RESTAURAÇÃO DA ABA (O Pulo do Gato) ---
         const lastTab = localStorage.getItem('lastActiveTab');
-        // Tenta achar o botão da aba salva
         const tabBtn = lastTab ? document.querySelector(`.sidebar-btn[data-tab="${lastTab}"]`) : null;
 
         if (lastTab && tabBtn) {
-            // Se tinha uma aba salva, clica nela para abrir onde parou
-            console.log("Restaurando aba anterior:", lastTab);
+            // Se tinha aba salva, clica nela
             tabBtn.click();
         } else {
-            // Se não tinha (primeira vez), vai para o Dashboard
-            if(!document.querySelector('.sidebar-btn.active')) {
-                navigateToHome();
-            }
+            // Se não, vai pro Dashboard
+            navigateToHome();
         }
+        // --------------------------------------------
 
-        // 6. Listener do Menu Mobile
+        // Listener Menu Mobile
         const overlay = document.querySelector('.sidebar-overlay');
-        if (overlay) {
-            overlay.onclick = toggleMobileMenu;
-        }
+        if (overlay) overlay.onclick = toggleMobileMenu;
 
     } catch (error) {
-        console.error("ERRO CRÍTICO NA INICIALIZAÇÃO:", error);
-        alert("Ocorreu um erro ao carregar o sistema. Se persistir, limpe o cache (CTRL + F5).");
+        console.error("Erro na inicialização:", error);
     }
 }
 
@@ -5528,79 +5515,69 @@ let inactivityTimeout;
 const INACTIVITY_MINUTES = 15;
 let isPageLoading = true; // <--- NOVO: Trava de segurança para o F5
 
-// SEGURANÇA: Timeout de Sessão Sincronizado (Smart Session)
-function resetInactivityTimer() {
-    if (!currentUser) return;
-
-    // 1. Marca no banco que houve atividade AGORA
-    localStorage.setItem('lastActivityTime', Date.now().toString());
-    
-    // 2. Reinicia o contador local
-    startLocalTimer();
-}
-
-function startLocalTimer() {
-    clearTimeout(inactivityTimeout);
-    
-    const limitMs = INACTIVITY_MINUTES * 60 * 1000;
-
-    inactivityTimeout = setTimeout(() => {
-        // --- AQUI ESTÁ A CORREÇÃO ---
-        // Se a página acabou de carregar (está nos primeiros 2 segundos), CANCELA o logout.
-        if (isPageLoading) {
-            console.log("🛡️ Logout prevenido durante carregamento da página.");
-            return;
-        }
-        // ----------------------------
-
-        // Antes de deslogar, verifica se houve atividade em OUTRA aba recentemente
-        const lastActivity = parseInt(localStorage.getItem('lastActivityTime') || 0);
-        const now = Date.now();
-        const timeSinceLastActivity = now - lastActivity;
-
-        if (timeSinceLastActivity < limitMs) {
-            // Se houve atividade recente (aqui ou em outra aba), reinicia o timer
-            startLocalTimer();
-        } else {
-            // Realmente expirou
-            console.warn("Sessão expirada por inatividade.");
-            alert('⏱️ Sua sessão expirou por tempo de inatividade.\nPor segurança, você foi desconectado.');
-            localStorage.removeItem('currentUser');
-            location.reload();
-        }
-    }, limitMs);
-}
+// --- VARIÁVEIS GLOBAIS DE CONTROLE DE SESSÃO ---
+let inactivityTimeout;
+let isPageLoading = true; // <--- O ESCUDO CONTRA LOGOUT NO F5
 
 function initializeInactivityTracking() {
-    // 1. Ativa o "Escudo" contra logout imediato
-    isPageLoading = true;
-    
-    // 2. Remove o escudo após 2 segundos (tempo suficiente para o sistema estabilizar)
+    // 1. Remove o "escudo" após 2 segundos.
+    // Isso dá tempo pro sistema carregar sem deslogar você por "falso positivo".
     setTimeout(() => {
         isPageLoading = false;
     }, 2000);
 
-    // Eventos locais (Mouse, Teclado)
+    // Eventos que resetam o timer (mouse, teclado, etc)
     window.onload = resetInactivityTimer;
     document.onmousemove = resetInactivityTimer;
     document.onkeypress = resetInactivityTimer;
     document.onclick = resetInactivityTimer;
     document.onscroll = resetInactivityTimer;
 
-    // Evento Remoto: Se outra aba atualizar o 'lastActivityTime', reiniciamos nosso timer
+    // Monitora se outra aba foi usada
     window.addEventListener('storage', (e) => {
         if (e.key === 'lastActivityTime') {
             startLocalTimer(); 
         }
     });
     
-    // Inicia o monitoramento de bloqueio também
-    if (typeof initCrossTabRateLimit === 'function') {
-        initCrossTabRateLimit();
-    }
-    
-    // Inicia o primeiro ciclo
+    // Inicia o ciclo
     resetInactivityTimer();
+}
+
+function resetInactivityTimer() {
+    if (!currentUser) return;
+    // Atualiza o relógio para "AGORA"
+    localStorage.setItem('lastActivityTime', Date.now().toString());
+    startLocalTimer();
+}
+
+function startLocalTimer() {
+    clearTimeout(inactivityTimeout);
+    
+    // TEMPO DE INATIVIDADE (15 Minutos)
+    const INACTIVITY_LIMIT = 15 * 60 * 1000; 
+
+    inactivityTimeout = setTimeout(() => {
+        // --- A MÁGICA ---
+        // Se a página acabou de carregar (F5), NUNCA desloga.
+        if (isPageLoading) {
+            return; 
+        }
+
+        const lastActivity = parseInt(localStorage.getItem('lastActivityTime') || 0);
+        const now = Date.now();
+        
+        // Verifica se realmente passou o tempo
+        if (now - lastActivity < INACTIVITY_LIMIT) {
+            startLocalTimer(); // Falso alarme, reinicia
+        } else {
+            // Realmente inativo
+            console.warn("Sessão expirada.");
+            alert('⏱️ Sessão expirada por inatividade.');
+            localStorage.removeItem('currentUser');
+            location.reload();
+        }
+    }, INACTIVITY_LIMIT);
 }
 
 // CORREÇÃO: Sanitização XSS Robusta (Fase 2)
