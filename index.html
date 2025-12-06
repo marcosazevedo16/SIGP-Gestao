@@ -1906,43 +1906,46 @@
     </div>
 </div>
         <div class="filters-section">
-            <div class="filters-grid">
-    <div class="form-group">
-        <label class="form-label">Ação</label>
-        <select class="form-control" id="filter-audit-action" onchange="currentPage=1; renderAuditLogs()">
-            <option value="">Todas</option>
-            <option value="Criação">Criação</option>
-            <option value="Edição">Edição</option>
-            <option value="Exclusão">Exclusão</option>
-            <option value="Login">Login</option>
-            <option value="Restauração">Restauração</option>
-        </select>
-    </div>
-
-    <div class="form-group">
-        <label class="form-label">Usuário</label>
-        <input type="text" class="form-control" id="filter-audit-user" placeholder="Quem fez?" 
-               oninput="currentPage=1; renderAuditLogs()">
-    </div>
-
-    <div class="form-group">
-        <label class="form-label">Módulo/Alvo</label>
-        <input type="text" class="form-control" id="filter-audit-target" placeholder="Ex: Município..." 
-               oninput="currentPage=1; renderAuditLogs()">
-    </div>
-
-    <div class="form-group">
-        <label class="form-label">De (Data)</label>
-        <input type="date" class="form-control" id="filter-audit-start" onchange="currentPage=1; renderAuditLogs()">
-    </div>
-
-    <div class="form-group">
-        <label class="form-label">Até (Data)</label>
-        <input type="date" class="form-control" id="filter-audit-end" onchange="currentPage=1; renderAuditLogs()">
-    </div>
-</div>
+    <div class="filters-grid">
+        <div class="form-group">
+            <label class="form-label">Ação</label>
+            <select class="form-control" id="filter-audit-action" onchange="currentPage=1; renderAuditLogs()">
+                <option value="">Todas</option>
+                <option value="Criação">Criação</option>
+                <option value="Edição">Edição</option>
+                <option value="Exclusão">Exclusão</option>
+                <option value="Login">Login</option>
+                <option value="Restauração">Restauração</option>
+            </select>
         </div>
 
+        <div class="form-group">
+            <label class="form-label">Usuário</label>
+            <input type="text" class="form-control" id="filter-audit-user" placeholder="Quem fez?" 
+                   oninput="currentPage=1; renderAuditLogs()">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Módulo/Alvo</label>
+            <input type="text" class="form-control" id="filter-audit-target" placeholder="Ex: Município..." 
+                   oninput="currentPage=1; renderAuditLogs()">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">De (Data)</label>
+            <input type="date" class="form-control" id="filter-audit-start" onchange="currentPage=1; renderAuditLogs()">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Até (Data)</label>
+            <input type="date" class="form-control" id="filter-audit-end" onchange="currentPage=1; renderAuditLogs()">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: flex-end;">
+            <button class="btn btn--secondary btn--full-width" onclick="clearAuditFilters()">Limpar Filtros</button>
+        </div>
+    </div>
+</div>
         <div class="results-count" id="audit-count" style="margin-bottom: 10px; display:none;"></div>
         
         <div class="municipalities-table" id="audit-table"></div>
