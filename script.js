@@ -5526,6 +5526,7 @@ function resetLoginAttempts(login) {
 // --- B. TIMEOUT DE SESSÃO (Logout por Inatividade) ---
 let inactivityTimeout;
 const INACTIVITY_MINUTES = 15;
+let isPageLoading = true; // <--- NOVO: Trava de segurança para o F5
 
 // SEGURANÇA: Timeout de Sessão Sincronizado (Smart Session)
 function resetInactivityTimer() {
@@ -5541,27 +5542,44 @@ function resetInactivityTimer() {
 function startLocalTimer() {
     clearTimeout(inactivityTimeout);
     
+    const limitMs = INACTIVITY_MINUTES * 60 * 1000;
+
     inactivityTimeout = setTimeout(() => {
+        // --- AQUI ESTÁ A CORREÇÃO ---
+        // Se a página acabou de carregar (está nos primeiros 2 segundos), CANCELA o logout.
+        if (isPageLoading) {
+            console.log("🛡️ Logout prevenido durante carregamento da página.");
+            return;
+        }
+        // ----------------------------
+
         // Antes de deslogar, verifica se houve atividade em OUTRA aba recentemente
         const lastActivity = parseInt(localStorage.getItem('lastActivityTime') || 0);
         const now = Date.now();
         const timeSinceLastActivity = now - lastActivity;
-        const timeoutMs = INACTIVITY_MINUTES * 60 * 1000;
 
-        if (timeSinceLastActivity < timeoutMs) {
-            // Se houve atividade recente em outra aba, apenas reinicia este timer
-            // (Sincroniza sem deslogar)
+        if (timeSinceLastActivity < limitMs) {
+            // Se houve atividade recente (aqui ou em outra aba), reinicia o timer
             startLocalTimer();
         } else {
-            // Realmente expirou em todas as abas
+            // Realmente expirou
+            console.warn("Sessão expirada por inatividade.");
             alert('⏱️ Sua sessão expirou por tempo de inatividade.\nPor segurança, você foi desconectado.');
             localStorage.removeItem('currentUser');
             location.reload();
         }
-    }, INACTIVITY_MINUTES * 60 * 1000);
+    }, limitMs);
 }
 
 function initializeInactivityTracking() {
+    // 1. Ativa o "Escudo" contra logout imediato
+    isPageLoading = true;
+    
+    // 2. Remove o escudo após 2 segundos (tempo suficiente para o sistema estabilizar)
+    setTimeout(() => {
+        isPageLoading = false;
+    }, 2000);
+
     // Eventos locais (Mouse, Teclado)
     window.onload = resetInactivityTimer;
     document.onmousemove = resetInactivityTimer;
@@ -5572,12 +5590,17 @@ function initializeInactivityTracking() {
     // Evento Remoto: Se outra aba atualizar o 'lastActivityTime', reiniciamos nosso timer
     window.addEventListener('storage', (e) => {
         if (e.key === 'lastActivityTime') {
-            startLocalTimer(); // Apenas reseta o relógio, sem escrever no storage (evita loop)
+            startLocalTimer(); 
         }
     });
     
     // Inicia o monitoramento de bloqueio também
-    initCrossTabRateLimit();
+    if (typeof initCrossTabRateLimit === 'function') {
+        initCrossTabRateLimit();
+    }
+    
+    // Inicia o primeiro ciclo
+    resetInactivityTimer();
 }
 
 // CORREÇÃO: Sanitização XSS Robusta (Fase 2)
