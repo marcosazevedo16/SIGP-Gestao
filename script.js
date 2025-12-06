@@ -999,32 +999,33 @@ function handleLogin(e) {
 }
 
 function checkAuthentication() {
-    // 1. TENTA RECUPERAR A SESSÃO DO DISCO
+    console.log('🔍 Autenticação: Verificando sessão...');
+    
+    // 1. TENTA RECUPERAR A SESSÃO DO DISCO (DIRETO, SEM DESERIALIZAÇÃO PROBLEMÁTICA)
     const sessionData = localStorage.getItem('currentUser');
     
     if (sessionData) {
         try {
             currentUser = JSON.parse(sessionData);
             
-            // ✅ VALIDAÇÃO CRÍTICA: Verifica se o usuário da sessão ainda existe no banco de dados
-            // Isso evita erros se você restaurar um backup onde seu usuário não existia
+            // ✅ VALIDAÇÃO CRÍTICA: Verifica se o usuário ainda existe no banco de dados
             const userStillExists = users.find(u => u.id === currentUser.id);
             
             if (!userStillExists) {
-                console.warn('Usuário da sessão não encontrado no banco de dados. Forçando logout.');
+                console.warn('⚠️ Usuário da sessão não encontrado no banco de dados. Forçando logout.');
                 localStorage.removeItem('currentUser');
                 currentUser = null;
                 isAuthenticated = false;
             } else {
-                // ✅ Usuário válido!
-                // Atualiza o lastActivityTime AGORA para evitar que o timer de inatividade
+                // ✅ Usuário válido! Atualiza o lastActivityTime AGORA para evitar que o timer de inatividade
                 // te deslogue imediatamente após o F5.
                 const now = Date.now().toString();
                 localStorage.setItem('lastActivityTime', now);
                 isAuthenticated = true;
+                console.log('✅ Sessão válida. Usuário: ' + currentUser.name);
             }
         } catch (e) {
-            console.error('Sessão corrompida:', e);
+            console.error('❌ Sessão corrompida:', e);
             localStorage.removeItem('currentUser');
             currentUser = null;
             isAuthenticated = false;
@@ -1032,11 +1033,12 @@ function checkAuthentication() {
     } else {
         currentUser = null;
         isAuthenticated = false;
+        console.log('ℹ️ Nenhuma sessão encontrada.');
     }
     
-    // 2. DECISÃO: LOGADO OU NÃO
+    // 2. DECISÃO: Logado ou não?
     if (isAuthenticated && currentUser) {
-        // Mostra a tela principal
+        // ✅ Mostra a tela principal
         document.getElementById('login-screen').classList.remove('active');
         document.getElementById('main-app').classList.add('active');
         
@@ -1046,7 +1048,7 @@ function checkAuthentication() {
                 initializeApp();
             }
         } catch (err) {
-            console.error('Erro ao inicializar app:', err);
+            console.error('❌ Erro ao inicializar app:', err);
         }
         
         // Liga o monitor de inatividade com um pequeno delay seguro
@@ -1054,15 +1056,17 @@ function checkAuthentication() {
             setTimeout(initializeInactivityTracking, 100);
         }
         
-        // ✅ RESTAURA A ABA ATIVA (Correção visual do F5)
+        // ✅ RESTAURA A ABA ATIVA - Correção visual do F5
         restoreActiveTab();
         
     } else {
         // Sem sessão = vai pro login
         document.getElementById('login-screen').classList.add('active');
         document.getElementById('main-app').classList.remove('active');
+        console.log('🔐 Redirecionando para tela de login...');
     }
 }
+
 function handleLogout() {
     // Removemos a verificação 'confirm'
     // O sistema agora limpa o usuário e recarrega a página imediatamente
@@ -5541,28 +5545,31 @@ const INACTIVITY_MINUTES = 15;
 let isPageLoading = true; // O ESCUDO CONTRA LOGOUT NO F5
 
 function initializeInactivityTracking() {
-    // 1. Remove o "escudo" após 2 segundos.
+    // 1. Remove o escudo após 2 segundos (protege contra logout no F5)
     setTimeout(() => {
         isPageLoading = false;
     }, 2000);
-
-    // Eventos que resetam o timer (mouse, teclado, etc)
-    window.onload = resetInactivityTimer;
-    document.onmousemove = resetInactivityTimer;
-    document.onkeypress = resetInactivityTimer;
-    document.onclick = resetInactivityTimer;
-    document.onscroll = resetInactivityTimer;
-
+    
+    // Eventos que resetam o timer (atividade do usuário)
+    document.addEventListener('mousemove', resetInactivityTimer);
+    document.addEventListener('keypress', resetInactivityTimer);
+    document.addEventListener('click', resetInactivityTimer);
+    document.addEventListener('scroll', resetInactivityTimer);
+    
+    // ✅ CORRETO: Usa addEventListener, não window.onload
+    window.addEventListener('load', resetInactivityTimer);
+    
     // Monitora se outra aba foi usada
     window.addEventListener('storage', (e) => {
         if (e.key === 'lastActivityTime') {
-            startLocalTimer(); 
+            startLocalTimer();
         }
     });
     
     // Inicia o ciclo
     resetInactivityTimer();
 }
+
 
 function resetInactivityTimer() {
     if (!currentUser) return;
@@ -8389,12 +8396,13 @@ function enforceDateSecurity() {
 // ============================================================================
 
 // 1. Função para restaurar a aba visualmente
+// ✅ ADICIONE ESTA FUNÇÃO se ainda não existir
 function restoreActiveTab() {
     const lastTab = localStorage.getItem('lastActiveTab');
     
     // Só restaura se houver uma aba salva e se a seção existir no HTML
     if (lastTab && document.getElementById(lastTab + '-section')) {
-        // Remove 'active' de tudo antes
+        // Remove active anterior
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.classList.remove('active');
         });
@@ -8402,41 +8410,33 @@ function restoreActiveTab() {
             btn.classList.remove('active');
         });
         
-        // Seleciona os elementos da aba salva
+        // Ativa a aba anterior
         const tabSection = document.getElementById(lastTab + '-section');
         const sidebarBtn = document.querySelector(`.sidebar-btn[data-tab="${lastTab}"]`);
         
-        // Ativa visualmente
         if (tabSection) tabSection.classList.add('active');
         if (sidebarBtn) sidebarBtn.classList.add('active');
         
-        // Força a renderização dos dados dessa aba específica
+        // Renderiza os dados da aba
         setTimeout(() => {
             refreshCurrentTab(lastTab + '-section');
         }, 100);
         
-        console.log(`✅ Aba restaurada com sucesso: ${lastTab}`);
-    } else {
-        // Se não tiver histórico, vai para o Dashboard (padrão) ou mantém o que o HTML definiu
-        if(!document.querySelector('.tab-content.active')) {
-             navigateToHome();
-        }
+        console.log(`✅ Aba restaurada: ${lastTab}`);
     }
 }
 
-// 2. Listener global para SALVAR a aba sempre que clicar no menu
+
+// ========== SALVAR ABA ATIVA AO MUDAR ==========
 document.addEventListener('click', function(e) {
-    // Procura se o clique foi em um botão da sidebar (ou no ícone dentro dele)
     const btn = e.target.closest('.sidebar-btn');
-    
     if (btn) {
         const tabName = btn.getAttribute('data-tab');
-        if (tabName) {
-            localStorage.setItem('lastActiveTab', tabName);
-            // console.log(`💾 Aba salva: ${tabName}`); // Debug opcional
-        }
+        localStorage.setItem('lastActiveTab', tabName);
+        console.log(`💾 Aba salva: ${tabName}`);
     }
 });
+
 
 // 3. Listener de carregamento da página (Garante que a checagem rode)
 window.addEventListener('load', function() {
