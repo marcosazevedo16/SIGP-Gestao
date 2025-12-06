@@ -998,27 +998,60 @@ function handleLogin(e) {
 }
 
 function checkAuthentication() {
-    if (isAuthenticated && currentUser) {
+    // 1. Tenta recuperar o usuário diretamente do LocalStorage para garantir
+    // Isso evita problemas caso a variável global tenha se perdido no F5
+    const sessionData = localStorage.getItem('currentUser');
+    let validUser = null;
+
+    try {
+        if (sessionData) {
+            validUser = JSON.parse(sessionData);
+        }
+    } catch (e) {
+        console.error("Erro ao restaurar sessão:", e);
+        // Se o dado estiver corrompido, aí sim forçamos logout
+        localStorage.removeItem('currentUser'); 
+    }
+
+    // 2. Validação da Sessão
+    if (validUser && validUser.login) {
+        // --- SUCESSO: RECARREGANDO A SESSÃO ---
+        
+        // Restaura as variáveis globais críticas
+        currentUser = validUser;
+        isAuthenticated = true;
+
+        // Atualiza a Interface
         document.getElementById('login-screen').classList.remove('active');
         document.getElementById('main-app').classList.add('active');
         
-        // 1. ATUALIZA A SESSÃO PARA EVITAR LOGOUT IMEDIATO
-        // Isso diz ao sistema: "O usuário acabou de chegar/recarregar, está ativo!"
+        // ATUALIZA O TIMER IMEDIATAMENTE
+        // Isso diz ao sistema: "O usuário acabou de dar F5, ele está ativo agora!"
         localStorage.setItem('lastActivityTime', Date.now().toString());
 
-        // 2. INICIALIZA O SISTEMA (Tabelas, Gráficos, Abas)
-        // Chama a initializeApp para garantir que os dados apareçam
-        initializeApp();
+        // Inicializa o sistema (Tabelas, Gráficos, Abas)
+        // O try-catch aqui impede que um erro de renderização cause logout visual
+        try {
+            initializeApp();
+        } catch (err) {
+            console.error("Erro ao inicializar app:", err);
+        }
         
-        // 3. INICIA O MONITORAMENTO DE SEGURANÇA
-        initializeInactivityTracking();
+        // Só agora liga o monitoramento de segurança
+        // (Garante que o timer não leia um valor antigo antes da atualização acima)
+        if (typeof initializeInactivityTracking === 'function') {
+            initializeInactivityTracking();
+        }
         
     } else {
+        // --- FALHA: NÃO TEM SESSÃO VÁLIDA ---
+        currentUser = null;
+        isAuthenticated = false;
+        
         document.getElementById('login-screen').classList.add('active');
         document.getElementById('main-app').classList.remove('active');
     }
 }
-
 function handleLogout() {
     // Removemos a verificação 'confirm'
     // O sistema agora limpa o usuário e recarrega a página imediatamente
