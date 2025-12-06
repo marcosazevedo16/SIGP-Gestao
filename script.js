@@ -1494,9 +1494,20 @@ function showTaskModal(id = null) {
 
 function saveTask(e) {
     e.preventDefault();
+    
+    // --- VALIDAÇÃO DE DATAS ---
+    const dReq = document.getElementById('task-date-requested').value;
+    const dPerf = document.getElementById('task-date-performed').value;
+
+    if (dPerf && dReq && dPerf < dReq) {
+        alert('🚫 Erro: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        return;
+    }
+    // --------------------------
+
     const data = {
-        dateRequested: document.getElementById('task-date-requested').value,
-        datePerformed: document.getElementById('task-date-performed').value,
+        dateRequested: dReq,
+        datePerformed: dPerf,
         municipality: document.getElementById('task-municipality').value,
         requestedBy: document.getElementById('task-requested-by').value,
         performedBy: document.getElementById('task-performed-by').value,
@@ -1516,19 +1527,10 @@ function saveTask(e) {
     
     salvarNoArmazenamento('tasks', tasks);
     document.getElementById('task-modal').classList.remove('show');
-    
-    // CORREÇÃO: Limpa os filtros para garantir que o novo item apareça na lista
-    // Se preferir manter os filtros, remova a linha abaixo, mas o item pode ficar oculto se não bater com o filtro
     clearTaskFilters(); 
 
-    // LÓGICA DE AUDITORIA
-const actionType = editingId ? 'Edição' : 'Criação';
-const detailsMsg = `${actionType} de treinamento para ${data.municipality} (Solicitante: ${data.requestedBy})`;
-logSystemAction(actionType, 'Treinamentos', detailsMsg);
-
-// ...
     // AUDITORIA
-logSystemAction(editingId ? 'Edição' : 'Criação', 'Treinamentos', `Para: ${data.municipality} | Solicitante: ${data.requestedBy}`);
+    logSystemAction(editingId ? 'Edição' : 'Criação', 'Treinamentos', `Para: ${data.municipality} | Solicitante: ${data.requestedBy}`);
     
     showToast('Treinamento salvo com sucesso!', 'success');
 }
