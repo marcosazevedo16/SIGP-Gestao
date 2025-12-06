@@ -999,16 +999,32 @@ function handleLogin(e) {
 }
 
 function checkAuthentication() {
-    // 1. TENTA RECUPERAR A SESSÃO DO DISCO (Prioridade total)
+    // 1. TENTA RECUPERAR A SESSÃO DO DISCO
     const sessionData = localStorage.getItem('currentUser');
     
-    // Se tiver dados no disco, carregamos para a memória
     if (sessionData) {
         try {
             currentUser = JSON.parse(sessionData);
-            isAuthenticated = true;
+            
+            // ✅ VALIDAÇÃO CRÍTICA: Verifica se o usuário da sessão ainda existe no banco de dados
+            // Isso evita erros se você restaurar um backup onde seu usuário não existia
+            const userStillExists = users.find(u => u.id === currentUser.id);
+            
+            if (!userStillExists) {
+                console.warn('Usuário da sessão não encontrado no banco de dados. Forçando logout.');
+                localStorage.removeItem('currentUser');
+                currentUser = null;
+                isAuthenticated = false;
+            } else {
+                // ✅ Usuário válido!
+                // Atualiza o lastActivityTime AGORA para evitar que o timer de inatividade
+                // te deslogue imediatamente após o F5.
+                const now = Date.now().toString();
+                localStorage.setItem('lastActivityTime', now);
+                isAuthenticated = true;
+            }
         } catch (e) {
-            console.error("Sessão corrompida, limpando...");
+            console.error('Sessão corrompida:', e);
             localStorage.removeItem('currentUser');
             currentUser = null;
             isAuthenticated = false;
@@ -1017,38 +1033,32 @@ function checkAuthentication() {
         currentUser = null;
         isAuthenticated = false;
     }
-
-    // 2. VERIFICAÇÃO E INICIALIZAÇÃO
+    
+    // 2. DECISÃO: LOGADO OU NÃO
     if (isAuthenticated && currentUser) {
-        // --- O SEGREDO DO F5 (CRÍTICO) ---
-        // Atualizamos o relógio AGORA, antes de qualquer verificação de segurança.
-        // Isso impede que o sistema leia um horário antigo e te expulse.
-        const now = Date.now().toString();
-        localStorage.setItem('lastActivityTime', now);
-        
-        // Atualiza Interface
+        // Mostra a tela principal
         document.getElementById('login-screen').classList.remove('active');
         document.getElementById('main-app').classList.add('active');
         
-        // Inicializa o sistema (Tabelas, Gráficos e RESTAURAÇÃO DA ABA)
+        // Inicializa o sistema (Tabelas, Gráficos)
         try {
             if (typeof initializeApp === 'function') {
                 initializeApp();
             }
         } catch (err) {
-            console.error("Erro ao inicializar app:", err);
+            console.error('Erro ao inicializar app:', err);
         }
         
-        // Só liga o monitor de inatividade DEPOIS de ter atualizado o horário acima
+        // Liga o monitor de inatividade com um pequeno delay seguro
         if (typeof initializeInactivityTracking === 'function') {
-            // Pequeno delay para garantir que o navegador salvou o novo horário
-            setTimeout(() => {
-                initializeInactivityTracking();
-            }, 100); 
+            setTimeout(initializeInactivityTracking, 100);
         }
+        
+        // ✅ RESTAURA A ABA ATIVA (Correção visual do F5)
+        restoreActiveTab();
         
     } else {
-        // Se não tem sessão, manda pro login
+        // Sem sessão = vai pro login
         document.getElementById('login-screen').classList.add('active');
         document.getElementById('main-app').classList.remove('active');
     }
@@ -4195,60 +4205,70 @@ function closeRestoreConfirmModal() {
 
 function confirmRestore() {
     if (!pendingBackupData) return;
-
-    // --- VALIDAÇÃO DE SEGURANÇA (NOVO) ---
-    // Verifica se o arquivo tem a estrutura mínima esperada
+    
+    // Validação básica do arquivo
     const d = pendingBackupData.data;
-    
     if (!d || typeof d !== 'object') {
-        alert('❌ Erro Crítico: O arquivo selecionado não é um backup válido ou está corrompido.');
+        alert('Erro Crítico: O arquivo selecionado não é um backup válido ou está corrompido.');
         return;
     }
 
-    // Verifica chaves essenciais para garantir integridade
-    const chavesEssenciais = ['users', 'municipalities'];
-    const chavesFaltantes = chavesEssenciais.filter(key => !Array.isArray(d[key]));
-
-    if (chavesFaltantes.length > 0) {
-        alert('❌ Erro Crítico: O backup está incompleto. Faltam os dados: ' + chavesFaltantes.join(', '));
-        return;
-    }
-    // -------------------------------------
-
-    // 1. Preserva o Usuário Logado Atual (Para não deslogar)
+    // 1. PRESERVA O USUÁRIO LOGADO ATUAL (Na memória)
     const sessionUser = recuperarDoArmazenamento('currentUser');
-
-    // 2. Limpa o LocalStorage
-    localStorage.clear();
-
-    // 3. Atualiza as Variáveis Globais e Salva
     
-    users = d.users || []; salvarNoArmazenamento('users', users);
-    municipalities = d.municipalities || []; salvarNoArmazenamento('municipalities', municipalities);
-    municipalitiesList = d.municipalitiesList || []; salvarNoArmazenamento('municipalitiesList', municipalitiesList);
-    tasks = d.tasks || d.trainings || []; salvarNoArmazenamento('tasks', tasks);
-    requests = d.requests || []; salvarNoArmazenamento('requests', requests);
-    demands = d.demands || []; salvarNoArmazenamento('demands', demands);
-    visits = d.visits || []; salvarNoArmazenamento('visits', visits);
-    productions = d.productions || []; salvarNoArmazenamento('productions', productions);
-    presentations = d.presentations || []; salvarNoArmazenamento('presentations', presentations);
-    systemVersions = d.systemVersions || []; salvarNoArmazenamento('systemVersions', systemVersions);
-    cargos = d.cargos || []; salvarNoArmazenamento('cargos', cargos);
-    orientadores = d.orientadores || []; salvarNoArmazenamento('orientadores', orientadores);
-    modulos = d.modules || d.modulos || []; salvarNoArmazenamento('modulos', modulos);
-    formasApresentacao = d.formasApresentacao || []; salvarNoArmazenamento('formasApresentacao', formasApresentacao);
+    // 2. LIMPEZA INTELIGENTE: Limpa tudo, EXCETO dados de sessão e configuração
+    const chavesCriticas = ['currentUser', 'theme', 'lastActivityTime', 'lastActiveTab'];
     
-    // Novos Dados
-    integrations = d.integrations || []; salvarNoArmazenamento('integrations', integrations);
-    apisList = d.apisList || []; salvarNoArmazenamento('apisList', apisList);
-    collaboratorInfos = d.collaboratorInfos || []; salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
-
-    if (d.counters) {
-        counters = d.counters;
-        salvarNoArmazenamento('counters', counters);
-    }
-
-    // Auditoria
+    // Itera sobre todas as chaves e remove apenas as que não são críticas
+    Object.keys(localStorage).forEach(key => {
+        if (!chavesCriticas.includes(key)) {
+            localStorage.removeItem(key);
+        }
+    });
+    
+    // 3. ATUALIZA AS VARIÁVEIS GLOBAIS E SALVA
+    users = d.users || [];
+    municipalities = d.municipalities || [];
+    municipalitiesList = d.municipalitiesList || [];
+    tasks = d.tasks || d.trainings || [];
+    requests = d.requests || [];
+    demands = d.demands || [];
+    visits = d.visits || [];
+    productions = d.productions || [];
+    presentations = d.presentations || [];
+    systemVersions = d.systemVersions || [];
+    cargos = d.cargos || [];
+    orientadores = d.orientadores || [];
+    modulos = d.modules || d.modulos || [];
+    formasApresentacao = d.formasApresentacao || [];
+    integrations = d.integrations || [];
+    apisList = d.apisList || [];
+    collaboratorInfos = d.collaboratorInfos || [];
+    
+    if (d.counters) counters = d.counters;
+    
+    // Salva as listas restauradas no LocalStorage
+    salvarNoArmazenamento('users', users);
+    salvarNoArmazenamento('municipalities', municipalities);
+    salvarNoArmazenamento('municipalitiesList', municipalitiesList);
+    salvarNoArmazenamento('tasks', tasks);
+    salvarNoArmazenamento('requests', requests);
+    salvarNoArmazenamento('demands', demands);
+    salvarNoArmazenamento('visits', visits);
+    salvarNoArmazenamento('productions', productions);
+    salvarNoArmazenamento('presentations', presentations);
+    salvarNoArmazenamento('systemVersions', systemVersions);
+    salvarNoArmazenamento('cargos', cargos);
+    salvarNoArmazenamento('orientadores', orientadores);
+    salvarNoArmazenamento('modulos', modulos);
+    salvarNoArmazenamento('formasApresentacao', formasApresentacao);
+    salvarNoArmazenamento('integrations', integrations);
+    salvarNoArmazenamento('apisList', apisList);
+    salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
+    
+    if (d.counters) salvarNoArmazenamento('counters', counters);
+    
+    // Registro de Auditoria da Restauração
     auditLogs = d.auditLogs || [];
     auditLogs.unshift({
         id: Date.now(),
@@ -4256,21 +4276,26 @@ function confirmRestore() {
         user: sessionUser ? sessionUser.name : 'Admin',
         action: 'Restauração',
         target: 'Sistema Completo',
-        details: 'Restaurou backup de: ' + (pendingBackupData.date || 'Data desconhecida')
+        details: `Restaurou backup de ${pendingBackupData.date || 'Data desconhecida'}`
     });
     salvarNoArmazenamento('auditLogs', auditLogs);
-
-    // 4. Restaura a Sessão
+    
+    // 4. GARANTE A SESSÃO (Se por acaso foi perdida, restaura da memória)
     if (sessionUser) {
         currentUser = sessionUser;
         salvarNoArmazenamento('currentUser', currentUser);
         isAuthenticated = true;
     }
-
-    // 5. Atualiza a Interface
-    initializeApp(); 
-    closeRestoreConfirmModal();
     
+    // 5. Atualiza a Interface
+    // Chama initializeApp para redesenhar tudo com os dados novos
+    try {
+        initializeApp();
+    } catch (e) {
+        console.error("Erro ao reinicializar após restore:", e);
+    }
+    
+    closeRestoreConfirmModal();
     alert('✅ Dados restaurados e verificados com sucesso!');
 }
 
@@ -8359,3 +8384,66 @@ function enforceDateSecurity() {
         }
     });
 }
+// ============================================================================
+// LÓGICA DE PERSISTÊNCIA DE ABAS E EVENTOS (SOLUÇÃO FINAL)
+// ============================================================================
+
+// 1. Função para restaurar a aba visualmente
+function restoreActiveTab() {
+    const lastTab = localStorage.getItem('lastActiveTab');
+    
+    // Só restaura se houver uma aba salva e se a seção existir no HTML
+    if (lastTab && document.getElementById(lastTab + '-section')) {
+        // Remove 'active' de tudo antes
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelectorAll('.sidebar-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Seleciona os elementos da aba salva
+        const tabSection = document.getElementById(lastTab + '-section');
+        const sidebarBtn = document.querySelector(`.sidebar-btn[data-tab="${lastTab}"]`);
+        
+        // Ativa visualmente
+        if (tabSection) tabSection.classList.add('active');
+        if (sidebarBtn) sidebarBtn.classList.add('active');
+        
+        // Força a renderização dos dados dessa aba específica
+        setTimeout(() => {
+            refreshCurrentTab(lastTab + '-section');
+        }, 100);
+        
+        console.log(`✅ Aba restaurada com sucesso: ${lastTab}`);
+    } else {
+        // Se não tiver histórico, vai para o Dashboard (padrão) ou mantém o que o HTML definiu
+        if(!document.querySelector('.tab-content.active')) {
+             navigateToHome();
+        }
+    }
+}
+
+// 2. Listener global para SALVAR a aba sempre que clicar no menu
+document.addEventListener('click', function(e) {
+    // Procura se o clique foi em um botão da sidebar (ou no ícone dentro dele)
+    const btn = e.target.closest('.sidebar-btn');
+    
+    if (btn) {
+        const tabName = btn.getAttribute('data-tab');
+        if (tabName) {
+            localStorage.setItem('lastActiveTab', tabName);
+            // console.log(`💾 Aba salva: ${tabName}`); // Debug opcional
+        }
+    }
+});
+
+// 3. Listener de carregamento da página (Garante que a checagem rode)
+window.addEventListener('load', function() {
+    // console.log('✅ Página carregada. Verificando autenticação...');
+    // A função checkAuthentication já é chamada no DOMContentLoaded, 
+    // mas isso serve como redundância segura.
+    if (!isAuthenticated) {
+        checkAuthentication();
+    }
+});
