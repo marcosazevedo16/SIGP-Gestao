@@ -1533,58 +1533,76 @@ logSystemAction(editingId ? 'Edição' : 'Criação', 'Treinamentos', `Para: ${d
     showToast('Treinamento salvo com sucesso!', 'success');
 }
 
-// CORREÇÃO DEFINITIVA: Validação de Datas (Todos os Módulos)
+// CORREÇÃO DEFINITIVA: Validação de Datas (Todos os Módulos + Relatórios)
 function validateDateRange(type) {
     let startId, endId, renderFunction;
 
     // Mapeamento de IDs e Funções de Renderização
     switch (type) {
-        // 1. Treinamentos (Tarefas)
-        case 'task-req': // Solicitação
+        // --- FILTROS DAS ABAS PRINCIPAIS ---
+        case 'task-req': // Treinamentos - Solicitação
             startId = 'filter-task-req-start'; endId = 'filter-task-req-end'; renderFunction = renderTasks; break;
-        case 'task-perf': // Realização
+        case 'task-perf': // Treinamentos - Realização
             startId = 'filter-task-perf-start'; endId = 'filter-task-perf-end'; renderFunction = renderTasks; break;
 
-        // 2. Solicitações/Sugestões
-        case 'request-sol': // Solicitação
+        case 'request-sol': // Solicitações - Solicitação
             startId = 'filter-request-sol-start'; endId = 'filter-request-sol-end'; renderFunction = renderRequests; break;
-        case 'request-real': // Realização
+        case 'request-real': // Solicitações - Realização
             startId = 'filter-request-real-start'; endId = 'filter-request-real-end'; renderFunction = renderRequests; break;
 
-        // 3. Apresentações
-        case 'pres-sol': // Solicitação
+        case 'pres-sol': // Apresentações - Solicitação
             startId = 'filter-presentation-sol-start'; endId = 'filter-presentation-sol-end'; renderFunction = renderPresentations; break;
-        case 'pres-real': // Realização
+        case 'pres-real': // Apresentações - Realização
             startId = 'filter-presentation-real-start'; endId = 'filter-presentation-real-end'; renderFunction = renderPresentations; break;
 
-        // 4. Demandas
-        case 'dem-sol': // Solicitação (Data)
+        case 'dem-sol': // Demandas - Solicitação
             startId = 'filter-demand-sol-start'; endId = 'filter-demand-sol-end'; renderFunction = renderDemands; break;
-        case 'dem-real': // Realização
+        case 'dem-real': // Demandas - Realização
             startId = 'filter-demand-real-start'; endId = 'filter-demand-real-end'; renderFunction = renderDemands; break;
 
-        // 5. Visitas
-        case 'visit-sol': // Solicitação
+        case 'visit-sol': // Visitas - Solicitação
             startId = 'filter-visit-sol-start'; endId = 'filter-visit-sol-end'; renderFunction = renderVisits; break;
-        case 'visit-real': // Visita (Realização)
+        case 'visit-real': // Visitas - Realização
             startId = 'filter-visit-real-start'; endId = 'filter-visit-real-end'; renderFunction = renderVisits; break;
 
-        // 6. Produção
-        case 'prod-rel': // Liberação
+        case 'prod-rel': // Produção - Liberação
             startId = 'filter-production-release-start'; endId = 'filter-production-release-end'; renderFunction = renderProductions; break;
-        case 'prod-send': // Envio
+        case 'prod-send': // Produção - Envio
             startId = 'filter-production-send-start'; endId = 'filter-production-send-end'; renderFunction = renderProductions; break;
 
-        // 7. Auditoria
-        case 'audit':
+        case 'audit': // Auditoria
             startId = 'filter-audit-start'; endId = 'filter-audit-end'; renderFunction = renderAuditLogs; break;
 
-        // Outros (Já existentes)
-        case 'colab':
+        case 'colab': // Aba Info Colaboradores (Filtro Principal)
             startId = 'filter-colab-info-start'; endId = 'filter-colab-info-end'; renderFunction = renderCollaboratorInfos; break;
-        case 'integration':
+        case 'integration': // Aba Integrações
             startId = 'filter-integration-start'; endId = 'filter-integration-end'; renderFunction = renderIntegrations; break;
+
+        // --- FILTROS DA ABA RELATÓRIOS (Novos) ---
+        case 'rep-mun': // Relatório Municípios
+            startId = 'rep-mun-start'; endId = 'rep-mun-end'; break;
+        
+        case 'rep-train': // Relatório Treinamentos
+            startId = 'rep-train-start'; endId = 'rep-train-end'; break;
             
+        case 'rep-pres': // Relatório Apresentações
+            startId = 'rep-pres-start'; endId = 'rep-pres-end'; break;
+            
+        case 'rep-vis': // Relatório Visitas
+            startId = 'rep-vis-start'; endId = 'rep-vis-end'; break;
+            
+        case 'rep-prod': // Relatório Produção
+            startId = 'rep-prod-start'; endId = 'rep-prod-end'; break;
+            
+        case 'rep-int': // Relatório Integrações
+            startId = 'rep-int-start'; endId = 'rep-int-end'; break;
+            
+        case 'rep-colab-adm': // Relatório Colaboradores (Admissão)
+            startId = 'rep-colab-adm-start'; endId = 'rep-colab-adm-end'; break;
+            
+        case 'rep-colab-term': // Relatório Colaboradores (Desligamento)
+            startId = 'rep-colab-term-start'; endId = 'rep-colab-term-end'; break;
+
         default: return;
     }
 
@@ -1608,9 +1626,8 @@ function validateDateRange(type) {
         }
     }
 
-    // 3. Atualiza a tabela correspondente
+    // 3. Atualiza a tabela correspondente (apenas se existir função)
     if (typeof renderFunction === 'function') {
-        // Se for auditoria, reseta a página para 1
         if (type === 'audit') currentPage = 1;
         renderFunction();
     }
