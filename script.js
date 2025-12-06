@@ -1190,6 +1190,23 @@ function saveMunicipality(e) {
     const status = document.getElementById('municipality-status').value;
     const mods = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
 
+    // --- NOVA VALIDAÇÃO DE DATAS (ITEM 1) ---
+    const dtImpl = document.getElementById('municipality-implantation-date').value;
+    const dtBlock = document.getElementById('municipality-date-blocked') ? document.getElementById('municipality-date-blocked').value : '';
+    const dtStop = document.getElementById('municipality-date-stopped') ? document.getElementById('municipality-date-stopped').value : '';
+
+    if (dtImpl) {
+        if (dtBlock && dtBlock < dtImpl) {
+            alert('🚫 Erro: A "Data em que foi Bloqueado" não pode ser anterior à "Data de Implantação".');
+            return;
+        }
+        if (dtStop && dtStop < dtImpl) {
+            alert('🚫 Erro: A "Data em que Parou de Usar" não pode ser anterior à "Data de Implantação".');
+            return;
+        }
+    }
+    // ----------------------------------------
+
     // Validação de Duplicidade
     const isDuplicate = municipalities.some(m => m.name === name && m.id !== editingId);
     if (isDuplicate) {
@@ -1202,9 +1219,8 @@ function saveMunicipality(e) {
         return;
     }
 
-    // Validação Data Bloqueio
-    const dateBlocked = document.getElementById('municipality-date-blocked') ? document.getElementById('municipality-date-blocked').value : '';
-    if (status === 'Bloqueado' && !dateBlocked) {
+    // Validação Data Bloqueio (Campo Obrigatório se status for Bloqueado)
+    if (status === 'Bloqueado' && !dtBlock) {
         alert('Erro: Preencha a "Data em que foi Bloqueado".');
         return;
     }
@@ -1215,11 +1231,11 @@ function saveMunicipality(e) {
         status: status,
         manager: sanitizeInput(document.getElementById('municipality-manager').value),
         contact: sanitizeInput(document.getElementById('municipality-contact').value),
-        implantationDate: document.getElementById('municipality-implantation-date').value,
+        implantationDate: dtImpl,
         lastVisit: document.getElementById('municipality-last-visit').value,
         modules: mods,
-        dateBlocked: dateBlocked,
-        dateStopped: document.getElementById('municipality-date-stopped') ? document.getElementById('municipality-date-stopped').value : ''
+        dateBlocked: dtBlock,
+        dateStopped: dtStop
     };
 
     if (editingId) {
@@ -1228,7 +1244,6 @@ function saveMunicipality(e) {
             const oldMun = municipalities[i];
             
             // --- DETECÇÃO DE MUDANÇAS (AUDITORIA AVANÇADA) ---
-            // Mapeia o nome técnico (key) para o nome legível (label)
             const mapCampos = {
                 status: 'Situação',
                 manager: 'Gestor',
@@ -1237,20 +1252,15 @@ function saveMunicipality(e) {
                 lastVisit: 'Última Visita'
             };
             
-            // Gera a string de detalhes
             let detailsLog = detectChanges(oldMun, data, mapCampos);
             
-            // Verificação especial para Módulos (Array)
             const oldMods = (oldMun.modules || []).sort().join(', ');
             const newMods = (data.modules || []).sort().join(', ');
             if (oldMods !== newMods) {
                 detailsLog += `. Alterou Módulos de [${oldMods}] para [${newMods}]`;
             }
 
-            // Salva
             municipalities[i] = { ...municipalities[i], ...data };
-            
-            // Loga com os detalhes ricos
             logSystemAction('Edição', 'Municípios', `Município: ${data.name}. ${detailsLog}`);
         }
     } else {
@@ -1495,7 +1505,7 @@ function showTaskModal(id = null) {
 function saveTask(e) {
     e.preventDefault();
     
-    // --- VALIDAÇÃO DE DATAS ---
+    // --- VALIDAÇÃO DE DATAS (ITEM 2) ---
     const dReq = document.getElementById('task-date-requested').value;
     const dPerf = document.getElementById('task-date-performed').value;
 
@@ -1503,7 +1513,7 @@ function saveTask(e) {
         alert('🚫 Erro: A Data de Realização não pode ser anterior à Data de Solicitação.');
         return;
     }
-    // --------------------------
+    // -----------------------------------
 
     const data = {
         dateRequested: dReq,
@@ -1903,7 +1913,17 @@ function saveRequest(e) {
     e.preventDefault();
     const status = document.getElementById('request-status').value;
     
-    if (status === 'Realizado' && !document.getElementById('request-date-realization').value) {
+    // --- NOVA VALIDAÇÃO DE DATAS (ITEM 3) ---
+    const dSol = document.getElementById('request-date').value;
+    const dReal = document.getElementById('request-date-realization').value;
+
+    if (dReal && dSol && dReal < dSol) {
+        alert('🚫 Erro: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        return;
+    }
+    // ----------------------------------------
+    
+    if (status === 'Realizado' && !dReal) {
         alert('Data de Realização é obrigatória.'); return;
     }
     if (status === 'Inviável' && !document.getElementById('request-justification').value) {
@@ -1911,16 +1931,14 @@ function saveRequest(e) {
     }
 
     const data = {
-        date: document.getElementById('request-date').value,
+        date: dSol,
         municipality: document.getElementById('request-municipality').value,
-        // SANITIZAÇÃO AQUI:
         requester: sanitizeInput(document.getElementById('request-requester').value),
         contact: sanitizeInput(document.getElementById('request-contact').value),
         description: sanitizeInput(document.getElementById('request-description').value),
         justification: sanitizeInput(document.getElementById('request-justification').value),
-        
         status: status,
-        dateRealization: document.getElementById('request-date-realization').value,
+        dateRealization: dReal,
         user: currentUser.name
     };
 
@@ -2276,10 +2294,17 @@ function savePresentation(e) {
     const orientadoresSel = Array.from(document.querySelectorAll('.orientador-check:checked')).map(c => c.value);
     const formasSel = Array.from(document.querySelectorAll('.forma-check:checked')).map(c => c.value);
     const dateReal = document.getElementById('presentation-date-realizacao').value;
+    const dateSol = document.getElementById('presentation-date-solicitacao').value;
     const desc = document.getElementById('presentation-description').value.trim();
 
+    // --- NOVA VALIDAÇÃO DE DATAS (ITEM 4) ---
+    if (dateReal && dateSol && dateReal < dateSol) {
+        alert('🚫 Erro: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        return;
+    }
+    // ----------------------------------------
+
     // --- REGRAS DE VALIDAÇÃO ---
-    
     if (status === 'Realizada') {
         if (!dateReal) {
             alert('Para status "Realizada", a Data de Realização é obrigatória.');
@@ -2307,10 +2332,9 @@ function savePresentation(e) {
         }
     }
 
-    // Se passou nas validações, monta o objeto
     const data = {
         municipality: document.getElementById('presentation-municipality').value,
-        dateSolicitacao: document.getElementById('presentation-date-solicitacao').value,
+        dateSolicitacao: dateSol,
         requester: document.getElementById('presentation-requester').value,
         status: status,
         description: desc,
@@ -2328,8 +2352,6 @@ function savePresentation(e) {
     
     salvarNoArmazenamento('presentations', presentations);
     document.getElementById('presentation-modal').classList.remove('show');
-    
-    // Limpa filtros para garantir que o novo item apareça se for compatível, ou renderiza direto
     clearPresentationFilters(); 
     
     showToast('Apresentação salva com sucesso!', 'success');
@@ -2604,8 +2626,15 @@ function saveDemand(e) {
     e.preventDefault();
     const status = document.getElementById('demand-status').value;
     const dateReal = document.getElementById('demand-realization-date').value;
-    // Sanitiza justificativa aqui para validar se está vazia depois
+    const dateSol = document.getElementById('demand-date').value;
     const justif = sanitizeInput(document.getElementById('demand-justification').value.trim());
+
+    // --- NOVA VALIDAÇÃO DE DATAS (ITEM 5) ---
+    if (dateReal && dateSol && dateReal < dateSol) {
+        alert('🚫 Erro: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        return;
+    }
+    // ----------------------------------------
 
     if (status === 'Realizada' && !dateReal) {
         alert('Para status "Realizada", a Data de Realização é obrigatória.'); return;
@@ -2615,11 +2644,9 @@ function saveDemand(e) {
     }
     
     const data = {
-        date: document.getElementById('demand-date').value,
-        // SANITIZAÇÃO AQUI:
+        date: dateSol,
         description: sanitizeInput(document.getElementById('demand-description').value),
         justification: justif,
-        
         priority: document.getElementById('demand-priority').value,
         status: status,
         dateRealization: dateReal,
@@ -2944,8 +2971,17 @@ function showVisitModal(id = null) {
 function saveVisit(e) {
     e.preventDefault();
     const status = document.getElementById('visit-status').value;
+    const dateSol = document.getElementById('visit-date').value;
+    const dateReal = document.getElementById('visit-date-realization').value;
     
-    if (status === 'Realizada' && !document.getElementById('visit-date-realization').value) {
+    // --- NOVA VALIDAÇÃO DE DATAS (ITEM 6) ---
+    if (dateReal && dateSol && dateReal < dateSol) {
+        alert('🚫 Erro: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        return;
+    }
+    // ----------------------------------------
+
+    if (status === 'Realizada' && !dateReal) {
         alert('Data de Realização é obrigatória.'); return;
     }
     if (status === 'Cancelada' && !document.getElementById('visit-justification').value) {
@@ -2954,14 +2990,12 @@ function saveVisit(e) {
 
     const data = {
         municipality: document.getElementById('visit-municipality').value,
-        date: document.getElementById('visit-date').value,
-        // SANITIZAÇÃO AQUI:
+        date: dateSol,
         applicant: sanitizeInput(document.getElementById('visit-applicant').value),
         reason: sanitizeInput(document.getElementById('visit-reason').value),
         justification: sanitizeInput(document.getElementById('visit-justification').value),
-        
         status: status,
-        dateRealization: document.getElementById('visit-date-realization').value
+        dateRealization: dateReal
     };
 
     if (editingId) {
@@ -6294,12 +6328,26 @@ function saveColabInfo(e) {
     e.preventDefault();
     const status = document.getElementById('colab-info-status').value;
     const termDate = document.getElementById('colab-info-termination').value;
+    const admDate = document.getElementById('colab-info-admission').value;
+    const feriasDate = document.getElementById('colab-info-vacation').value;
+    const name = document.getElementById('colab-info-name').value;
+
+    // --- NOVA VALIDAÇÃO DE DATAS (ITEM 7) ---
+    if (admDate) {
+        if (termDate && termDate < admDate) {
+            alert('🚫 Erro: A Data de Desligamento não pode ser anterior à Data de Admissão.');
+            return;
+        }
+        if (feriasDate && feriasDate < admDate) {
+            alert('🚫 Erro: A Data Final das Férias não pode ser anterior à Data de Admissão.');
+            return;
+        }
+    }
+    // ----------------------------------------
 
     if (status === 'Desligado da Empresa' && !termDate) {
         alert('Data de Desligamento é obrigatória.'); return;
     }
-
-    const name = document.getElementById('colab-info-name').value;
     
     // Validação de Duplicidade (Apenas se for NOVO)
     if (!editingId && collaboratorInfos.some(c => c.name === name)) {
@@ -6308,22 +6356,20 @@ function saveColabInfo(e) {
 
     const data = {
         name: name,
-        admissionDate: document.getElementById('colab-info-admission').value,
+        admissionDate: admDate,
         status: status,
         terminationDate: termDate,
-        lastVacationEnd: document.getElementById('colab-info-vacation').value,
+        lastVacationEnd: feriasDate,
         observation: sanitizeInput(document.getElementById('colab-info-obs').value)
     };
 
     if (editingId) {
-        // CORREÇÃO: Usa '==' para encontrar o índice corretamente
         const i = collaboratorInfos.findIndex(x => x.id == editingId);
         
         if (i !== -1) {
             collaboratorInfos[i] = { ...collaboratorInfos[i], ...data };
             logSystemAction('Edição', 'Colaboradores Info', `Atualizou ficha: ${data.name}`);
         } else {
-            // Se cair aqui, é porque perdeu o ID. Evita criar duplicado, avisa o erro.
             alert('Erro ao atualizar: Registro original não encontrado.');
             return; 
         }
