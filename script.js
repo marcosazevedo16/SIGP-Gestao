@@ -1,5 +1,5 @@
 // ============================================================================
-// SIGP SAÚDE v25.0 - VERSÃO FINAL(SEM COMPACTAÇÃO)
+// SIGP SAÚDE v26.0 - VERSÃO FINAL(SEM COMPACTAÇÃO)
 // Todas as funcionalidades + Ajustes de Layout + Backup Completo
 // ============================================================================
 
