@@ -6565,6 +6565,8 @@ function debounce(func, wait) {
 
 // Inicializa os filtros com Debounce automaticamente
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ DOMContentLoaded disparado. Verificando autenticação...');
+    checkAuthentication();
     // Seleciona todos os inputs de texto dentro das áreas de filtro
     const filterInputs = document.querySelectorAll('.filters-section input[type="text"]');
     
