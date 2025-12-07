@@ -3885,8 +3885,7 @@ window.saveUser = function(e) {
                 } else {
                     alert("Erro: " + msg);
                 }
-            });
-    }
+            };
 
     // Função para limpar e fechar o modal
     function finalizarSalvar() {
