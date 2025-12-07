@@ -2664,24 +2664,49 @@ function showDemandModal(id = null) {
 // ============================================================
 function saveDemand(e) {
     e.preventDefault();
+    
+    // 1. Captura os valores
     const status = document.getElementById('demand-status').value;
     const dateReal = document.getElementById('demand-realization-date').value;
     const dateSol = document.getElementById('demand-date').value;
-    const justif = sanitizeInput(document.getElementById('demand-justification').value.trim());
+    
+    // Captura Descrição e Justificativa (Raw Values)
+    const rawDesc = document.getElementById('demand-description').value;
+    const rawJustif = document.getElementById('demand-justification').value;
 
-    // --- VALIDAÇÃO DE DATA ---
+    // 2. Validações Manuais (Obrigatórias por causa do noValidate)
+    
+    // Validação da Descrição (Novo)
+    if (!rawDesc || rawDesc.trim() === '') {
+        alert('O campo Descrição da Demanda é obrigatório.');
+        return;
+    }
+
+    // Validação de Datas
     if (dateReal && dateSol && dateReal < dateSol) {
         alert('🚫 ERRO: A Data de Realização não pode ser anterior à Data de Solicitação.');
         return;
     }
 
-    if (status === 'Realizada' && !dateReal) { alert('Para status "Realizada", a Data de Realização é obrigatória.'); return; }
-    if (status === 'Inviável' && !justif) { alert('Para status "Inviável", a Justificativa é obrigatória.'); return; }
+    // Validações Condicionais de Status
+    if (status === 'Realizada' && !dateReal) { 
+        alert('Para status "Realizada", a Data de Realização é obrigatória.'); 
+        return; 
+    }
     
+    if (status === 'Inviável') {
+        // Verifica se tem texto na justificativa
+        if (!rawJustif || rawJustif.trim() === '') {
+            alert('Para status "Inviável", a Justificativa é obrigatória.'); 
+            return; 
+        }
+    }
+    
+    // 3. Prepara o objeto
     const data = {
         date: dateSol,
-        description: sanitizeInput(document.getElementById('demand-description').value),
-        justification: justif,
+        description: sanitizeInput(rawDesc),
+        justification: sanitizeInput(rawJustif),
         priority: document.getElementById('demand-priority').value,
         status: status,
         dateRealization: dateReal,
@@ -2689,12 +2714,13 @@ function saveDemand(e) {
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    // Feedback Visual
+    // 4. Feedback Visual
     const btnSubmit = document.querySelector('#demand-form button[type="submit"]');
     const txtOriginal = btnSubmit.innerText;
     btnSubmit.innerText = 'Salvando...';
     btnSubmit.disabled = true;
 
+    // 5. Envia para o Firebase
     const collection = db.collection('demands');
     let promise;
 
