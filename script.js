@@ -6584,7 +6584,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (loginForm) {
         console.log("Formulário de login detectado. Ativando escuta...");
 
-       loginForm.addEventListener('submit', (e) => {
+        loginForm.addEventListener('submit', (e) => {
             e.preventDefault(); 
             
             // Pega o valor digitado
@@ -6592,7 +6592,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const password = document.getElementById('login-password').value;
             
             // --- TRUQUE PARA ACEITAR "ADMIN" ---
-            // Se o usuário digitou "ADMIN", convertemos para o e-mail cadastrado no Firebase
             if (emailInput.toUpperCase() === 'ADMIN') {
                 emailInput = 'admin@sigpsaude.com';
             }
@@ -6612,48 +6611,40 @@ document.addEventListener('DOMContentLoaded', function() {
             btnSubmit.innerText = "Verificando...";
             btnSubmit.disabled = true;
 
-            // Envia para o Firebase (usando a variável emailInput tratada)
+            // Envia para o Firebase
             auth.signInWithEmailAndPassword(emailInput, password)
                 .then((userCredential) => {
-                console.log("Login realizado: ", userCredential.user.email);
-                
-                // 1. Cria o objeto do usuário
-                const usuarioLogado = {
-                    id: 1,
-                    login: 'ADMIN',
-                    name: 'Administrador',
-                    permission: 'Administrador',
-                    status: 'Ativo'
-                };
-                
-                // 2. Atualiza a variável GLOBAL (para o sistema saber que logou AGORA)
-                currentUser = usuarioLogado;
-                isAuthenticated = true;
+                    console.log("Login realizado: ", userCredential.user.email);
+                    
+                    // 1. Cria o objeto do usuário
+                    const usuarioLogado = {
+                        id: 1,
+                        login: 'ADMIN',
+                        name: 'Administrador',
+                        permission: 'Administrador',
+                        status: 'Ativo'
+                    };
+                    
+                    // 2. Atualiza a variável GLOBAL
+                    currentUser = usuarioLogado;
+                    isAuthenticated = true;
 
-                // 3. Salva no DISCO (para garantir que o F5 funcione depois)
-                localStorage.setItem('currentUser', JSON.stringify(usuarioLogado));
-                localStorage.setItem('lastActivityTime', Date.now().toString());
-                
-                // 4. Mágica Visual: Troca a tela instantaneamente sem recarregar
-                document.getElementById('login-screen').classList.remove('active');
-                document.getElementById('main-app').classList.add('active');
-                
-                // 5. Inicia o sistema manualmente
-                updateUserInterface();
-                initializeApp();
-                initializeInactivityTracking();
-                
-                // Feedback
-                showToast(`Bem-vindo, ${usuarioLogado.name}!`, 'success');
-            })
-
-    // 2. Salva a sessão no navegador (localStorage)
-    // Isso é o que o seu sistema lê para saber que está logado!
-    localStorage.setItem('currentUser', JSON.stringify(usuarioLogado));
-    
-    // 3. Recarrega a página para entrar no Dashboard
-    window.location.reload();
-})
+                    // 3. Salva no DISCO
+                    localStorage.setItem('currentUser', JSON.stringify(usuarioLogado));
+                    localStorage.setItem('lastActivityTime', Date.now().toString());
+                    
+                    // 4. Mágica Visual: Troca a tela instantaneamente
+                    document.getElementById('login-screen').classList.remove('active');
+                    document.getElementById('main-app').classList.add('active');
+                    
+                    // 5. Inicia o sistema
+                    updateUserInterface();
+                    initializeApp();
+                    initializeInactivityTracking();
+                    
+                    // Feedback final
+                    showToast(`Bem-vindo, ${usuarioLogado.name}!`, 'success');
+                })
                 .catch((error) => {
                     console.error("Erro no login:", error.code);
                     
@@ -6680,7 +6671,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     btnSubmit.innerText = textoOriginal;
                     btnSubmit.disabled = false;
                 });
-        }); // <--- ADICIONE ESTA LINHA (Fecha o addEventListener do botão)
+        }); 
     }
     // ============================================================
     //  FIM DO CÓDIGO DE LOGIN
