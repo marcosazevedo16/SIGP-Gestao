@@ -5330,6 +5330,7 @@ function setupAuxiliaryListeners() {
         apisList = []; snap.forEach(d => { let i=d.data(); i.id=d.id; apisList.push(i); });
         if(document.querySelector('.tab-content.active')?.id === 'apis-list-section') renderApiList();
     });
+}
 
 function initializeApp() {
     try {
