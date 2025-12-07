@@ -3504,6 +3504,11 @@ input:disabled, select:disabled, textarea:disabled { background-color: rgba(0, 0
 /* 1. Exibir menu automaticamente no Hover (Apenas Desktop) */
 @media (min-width: 901px) { .settings-dropdown:hover .settings-menu { display: block !important;
         animation: fadeIn 0.2s ease-out; } }
+/* 2. Classe "Mágica": Força o menu a fechar mesmo com o mouse em cima */
+/* Isso é usado pelo JavaScript logo após o clique */
+.settings-dropdown.temp-hidden .settings-menu {
+    display: none !important;
+}
 
 /* 2. Cria uma "Ponte Invisível" */
 /* Isso preenche o espaço entre o botão e o menu para o mouse não "cair" */
