@@ -1284,10 +1284,27 @@ function saveMunicipality(e) {
     let promise;
 
     if (editingId) {
-        // ATUALIZAR (Update)
+        // 1. Busca o item antigo na memória (para comparar)
+        const oldItem = municipalities.find(x => x.id === editingId);
+        let detailsLog = `Município: ${data.name}`;
+
+        // 2. Compara e gera o texto de diferenças
+        if(oldItem) {
+            // Lista dos campos que queremos monitorar nas mudanças
+            const mapCampos = { 
+                status: 'Situação', 
+                manager: 'Gestor', 
+                contact: 'Contato', 
+                implantationDate: 'Implantação', 
+                lastVisit: 'Última Visita' 
+            };
+            const diff = detectChanges(oldItem, data, mapCampos);
+            if(diff) detailsLog += `. Alterações: [${diff}]`;
+        }
+
         promise = collection.doc(editingId).update(data);
-        // Mantemos o log local por enquanto até migrarmos a auditoria
-        logSystemAction('Edição', 'Municípios', `Atualizou município: ${data.name}`);
+        logSystemAction('Edição', 'Municípios', detailsLog);
+    }
     } else {
         // CRIAR NOVO (Add)
         // Adiciona data de criação
