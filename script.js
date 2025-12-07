@@ -1388,6 +1388,7 @@ function renderMunicipalities() {
             const nomeExibicao = displayUF ? `${m.name} - ${displayUF}` : m.name;
             // ------------------------------------
 
+            // ... resto do código anterior ...
             return `<tr>
                 <td class="text-primary-cell">${nomeExibicao}</td> <td class="module-tags-cell">${badges}</td>
                 <td style="font-size:12px;">${m.manager}</td>
@@ -1398,7 +1399,10 @@ function renderMunicipalities() {
                 <td style="font-size:11px;">${formatDate(m.lastVisit)}</td> 
                 <td style="font-size:11px;">${calculateDaysSince(m.lastVisit)}</td> <td><span class="${stCls}">${m.status}</span></td>
                 <td style="color:${corDataFim}; font-size:11px;">${dataFim}</td>
-                <td><button class="btn btn--sm" onclick="showMunicipalityModal(${m.id})">✏️</button><button class="btn btn--sm" onclick="deleteMunicipality(${m.id})">🗑️</button></td>
+                <td>
+                    <button class="btn btn--sm" onclick="showMunicipalityModal('${m.id}')">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteMunicipality('${m.id}')">🗑️</button>
+                </td>
             </tr>`;
         }).join('');
         
@@ -1485,21 +1489,24 @@ function updateMunicipalityCharts(data) {
     if(document.getElementById('inactive-municipalities')) document.getElementById('inactive-municipalities').textContent = data.filter(m => m.status !== 'Em uso').length;
 }
 
+// ============================================================
+// NOVA FUNÇÃO: EXCLUIR DO FIREBASE
+// ============================================================
 function deleteMunicipality(id) {
-    if (confirm('Excluir este município?')) {
-        const item = municipalities.find(x => x.id === id);
-        if(item) {
-            registerUndo(item, 'municipalities', renderMunicipalities);
-            
-            municipalities = municipalities.filter(x => x.id !== id);
-            salvarNoArmazenamento('municipalities', municipalities);
-            renderMunicipalities();
-            updateGlobalDropdowns();
-            
-            // --- AUDITORIA DETALHADA ---
-            const detalhes = `Nome: ${item.name}, Status: ${item.status}, Gestor: ${item.manager}`;
-            logSystemAction('Exclusão', 'Municípios', `Excluiu município. Dados anteriores: [${detalhes}]`);
-        }
+    if (confirm('Tem certeza que deseja excluir este município? Esta ação não pode ser desfeita.')) {
+        
+        // Deleta direto do banco de dados
+        db.collection('municipalities').doc(id).delete()
+        .then(() => {
+            console.log("Documento excluído com sucesso!");
+            showToast('Município excluído.', 'success');
+            // Nota: Não precisamos chamar renderMunicipalities() aqui, 
+            // pois o nosso "Ouvinte" vai perceber a exclusão e atualizar a tabela sozinho!
+        })
+        .catch((error) => {
+            console.error("Erro ao excluir:", error);
+            alert("Erro ao excluir: " + error.message);
+        });
     }
 }
 
