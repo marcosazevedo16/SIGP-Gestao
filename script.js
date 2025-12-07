@@ -3798,14 +3798,14 @@ function showUserModal(id = null) {
     m.classList.add('show');
 }
 // ============================================================
-// FUNÇÃO DE SALVAR USUÁRIO (CORRIGIDA E LIMPA)
+// FUNÇÃO DE SALVAR USUÁRIO (VERSÃO FINAL BLINDADA)
 // ============================================================
 window.saveUser = function(e) {
     e.preventDefault();
 
-    // 1. Pegar dados do formulário
+    // 1. Pegar dados
     const login = document.getElementById('user-login').value.trim().toUpperCase();
-    const nome = document.getElementById('user-name').value.trim(); 
+    const nome = document.getElementById('user-name').value.trim();
     const email = document.getElementById('user-email').value.trim();
     const senha = document.getElementById('user-password').value;
     const permissao = document.getElementById('user-permission').value;
@@ -3816,62 +3816,57 @@ window.saveUser = function(e) {
 
     // --- MODO EDIÇÃO ---
     if (typeof editingId !== 'undefined' && editingId !== null) {
-        
         db.collection("users").doc(editingId).update({
             login: login,
-            name: nome, // Corrigido para bater com a tabela
-            // role: permissao, 
+            name: nome, 
             status: status,
+            // role: permissao, // Se quiser permitir mudar permissão, descomente
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         })
         .then(() => {
-            alert("Usuário atualizado com sucesso!");
+            alert("Usuário atualizado!");
             finalizarSalvar();
         })
-        .catch((error) => {
-            console.error("Erro ao editar:", error);
-            alert("Erro: " + error.message);
-        });
-
+        .catch(err => alert("Erro ao editar: " + err.message));
     } 
-    // --- MODO CRIAÇÃO ---
+    // --- MODO CRIAÇÃO (Novo Usuário) ---
     else {
         if (!senha || senha.length < 6) {
-            alert("A senha deve ter no mínimo 6 caracteres.");
+            alert("Senha deve ter no mínimo 6 caracteres.");
             return;
         }
 
-        // TRUQUE PARA NÃO DESLOGAR O ADMIN
+        // TRUQUE DO APP TEMPORÁRIO (Com nome dinâmico para evitar cache)
         const config = firebase.app().options;
-        const tempAppName = "tempAppValora"; 
+        const tempAppName = "tempApp_" + new Date().getTime(); // <--- NOME ÚNICO AGORA
         const tempApp = firebase.initializeApp(config, tempAppName);
 
         tempApp.auth().createUserWithEmailAndPassword(email, senha)
             .then((cred) => {
                 const user = cred.user;
 
-                // Salva no Firestore Principal
+                // Salva no banco PRINCIPAL (db), mas com o ID do novo usuário
                 return db.collection("users").doc(user.uid).set({
                     login: login,
-                    name: nome, // Corrigido
+                    name: nome,
                     email: email,
-                    permission: permissao, // Corrigido
+                    permission: permissao, // Atenção: Verifique se seu código lê 'permission' ou 'role'
                     status: status,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             })
             .then(() => {
-                tempApp.delete(); // Limpa app temporário
+                tempApp.delete(); // Limpa a memória
                 alert(`Usuário ${login} criado com sucesso!`);
                 finalizarSalvar();
             })
             .catch((error) => {
-                tempApp.delete(); // Limpa app temporário em caso de erro
+                tempApp.delete(); // Garante que deleta mesmo com erro
+                console.error("Erro:", error);
                 
-                console.error("Erro ao cadastrar:", error);
                 let msg = error.message;
-                if (error.code === 'auth/email-already-in-use') msg = "Este e-mail já está em uso.";
+                if (error.code === 'auth/email-already-in-use') msg = "Este e-mail já existe.";
                 
                 if (errorDiv) {
                     errorDiv.innerText = msg;
@@ -3882,17 +3877,15 @@ window.saveUser = function(e) {
             });
     }
 
-    // --- Função Auxiliar Interna ---
     function finalizarSalvar() {
         if (typeof closeUserModal === 'function') closeUserModal();
         else document.getElementById('user-modal').classList.remove('show');
-
+        
         document.getElementById('user-form').reset();
         if (typeof editingId !== 'undefined') editingId = null;
-        
         if (typeof loadUsers === 'function') loadUsers(); 
     }
-}; 
+};
 // Fim da função saveUser (Não deve ter mais nada depois daqui relacionado a ela)
 
 function renderUsers() { 
