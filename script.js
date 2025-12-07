@@ -9166,3 +9166,80 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+// ============================================================
+// FUNÇÃO: ESQUECI MINHA SENHA (INTELIGENTE)
+// ============================================================
+window.handleForgotPassword = async function(e) {
+    e.preventDefault();
+
+    const inputVal = document.getElementById('forgot-input').value.trim();
+    const btnSend = document.getElementById('btn-forgot-send');
+    const errorDiv = document.getElementById('forgot-error');
+    
+    // Limpa estado anterior
+    errorDiv.style.display = 'none';
+    errorDiv.innerText = '';
+    
+    // Feedback visual
+    const originalText = btnSend.innerText;
+    btnSend.innerText = "Localizando...";
+    btnSend.disabled = true;
+
+    try {
+        let emailParaEnvio = inputVal;
+
+        // 1. VERIFICA SE É LOGIN (Se não tem @)
+        if (!inputVal.includes('@')) {
+            // Caso especial Admin hardcoded
+            if (inputVal.toUpperCase() === 'ADMIN') {
+                emailParaEnvio = 'admin@sigpsaude.com'; // Ou o e-mail real do admin
+            } else {
+                // Busca no Banco de Dados pelo Login
+                const querySnapshot = await db.collection('users')
+                    .where('login', '==', inputVal.toUpperCase())
+                    .limit(1)
+                    .get();
+
+                if (querySnapshot.empty) {
+                    throw { code: 'auth/user-not-found', message: 'Usuário não encontrado.' };
+                }
+
+                const userDoc = querySnapshot.docs[0].data();
+                if (!userDoc.email) {
+                    throw { code: 'custom/no-email', message: 'Este usuário não possui e-mail cadastrado.' };
+                }
+                emailParaEnvio = userDoc.email;
+            }
+        }
+
+        // 2. ENVIA O E-MAIL PELO FIREBASE
+        btnSend.innerText = "Enviando...";
+        await firebase.auth().sendPasswordResetEmail(emailParaEnvio);
+
+        // 3. SUCESSO
+        alert(`✅ Sucesso!\n\nUm link de redefinição foi enviado para: ${emailParaEnvio}\n\nVerifique sua caixa de entrada (e Spam).`);
+        closeForgotPasswordModal();
+        document.getElementById('forgot-password-form').reset();
+
+    } catch (error) {
+        console.error("Erro na recuperação:", error);
+        
+        let msg = "Erro ao enviar e-mail.";
+        
+        if (error.code === 'auth/user-not-found') {
+            msg = "Não encontramos nenhum cadastro com este E-mail ou Login.";
+        } else if (error.code === 'auth/invalid-email') {
+            msg = "O formato do e-mail é inválido.";
+        } else if (error.message) {
+            msg = error.message;
+        }
+
+        errorDiv.innerText = msg;
+        errorDiv.style.display = 'block';
+        errorDiv.style.color = '#C85250'; // Vermelho
+    } finally {
+        // Restaura o botão
+        btnSend.innerText = originalText;
+        btnSend.disabled = false;
+    }
+};
