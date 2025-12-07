@@ -8889,3 +8889,4 @@ window.addEventListener('load', function() {
         checkAuthentication();
     }
 });
+});
