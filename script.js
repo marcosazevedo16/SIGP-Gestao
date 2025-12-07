@@ -5056,6 +5056,35 @@ function setupMunicipalityListener() {
         showToast("Erro de conexão com o banco de dados.", "error");
     });
 }
+// ============================================================
+// NOVA FUNÇÃO: OUVINTE DE TREINAMENTOS
+// ============================================================
+function setupTaskListener() {
+    console.log("🎧 Iniciando ouvinte de Treinamentos...");
+    
+    db.collection('tasks').onSnapshot((snapshot) => {
+        tasks = []; // Limpa a memória
+        
+        snapshot.forEach((doc) => {
+            let t = doc.data();
+            t.id = doc.id; // Pega o ID do Firebase
+            tasks.push(t);
+        });
+        
+        console.log(`📦 Recebidos ${tasks.length} treinamentos.`);
+        
+        // Se a aba estiver aberta, atualiza a tabela
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.id === 'tarefas-section') {
+            renderTasks();
+        }
+        
+        updateDashboardStats();
+        
+    }, (error) => {
+        console.error("Erro ao buscar treinamentos:", error);
+    });
+}
 
 function initializeApp() {
     try {
@@ -5066,6 +5095,7 @@ function initializeApp() {
         setupDynamicFormFields();
         updateGlobalDropdowns();
         setupMunicipalityListener();
+        setupTaskListener();
         
         // Renderizações
         renderMunicipalities();
