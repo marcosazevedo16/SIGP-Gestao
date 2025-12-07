@@ -5431,6 +5431,35 @@ function setupColabInfoListener() {
         console.error("Erro ao buscar fichas:", error);
     });
 }
+// ============================================================
+// NOVA FUNÇÃO: OUVINTE DE AUDITORIA (LOGS)
+// ============================================================
+function setupAuditListener() {
+    console.log("🎧 Iniciando ouvinte de Auditoria...");
+    
+    // Busca os últimos 100 logs ordenados por data (do mais recente para o mais antigo)
+    db.collection('auditLogs')
+      .orderBy('createdAt', 'desc')
+      .limit(100) 
+      .onSnapshot((snapshot) => {
+        auditLogs = []; // Limpa memória
+        
+        snapshot.forEach((doc) => {
+            let log = doc.data();
+            log.id = doc.id;
+            auditLogs.push(log);
+        });
+        
+        // Se a aba de auditoria estiver aberta, atualiza a tabela
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.id === 'audit-section') {
+            renderAuditLogs();
+        }
+        
+    }, (error) => {
+        console.error("Erro ao buscar logs:", error);
+    });
+}
 
 function initializeApp() {
     try {
@@ -5449,6 +5478,7 @@ function initializeApp() {
         setupProductionListener();
         setupIntegrationListener();
         setupColabInfoListener();
+        setupAuditListener();
         
         // Renderizações
         renderMunicipalities();
@@ -5497,27 +5527,22 @@ function initializeApp() {
 
 // --- 21. SISTEMA DE AUDITORIA ---
 
-// Função central para registrar ações
+// ============================================================
+// FUNÇÃO: REGISTRAR LOG NO FIREBASE
+// ============================================================
 function logSystemAction(action, target, details) {
     const newLog = {
-        id: Date.now(), // ID único baseado no tempo
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(), // Mantemos string para compatibilidade visual
         user: currentUser ? currentUser.name : 'Sistema/Desconhecido',
-        action: action, // Ex: "Criação", "Edição", "Exclusão"
-        target: target, // Ex: "Município", "Treinamento"
-        details: details // Ex: "Cadastrou município Serro - MG"
+        action: action,
+        target: target,
+        details: details,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp() // Para ordenação correta no banco
     };
 
-    // Adiciona no início do array (mais recente primeiro)
-    auditLogs.unshift(newLog);
-
-    // LIMITE DE SEGURANÇA (Local-First):
-    // Mantém apenas os últimos 500 logs para não lotar a memória do navegador
-    if (auditLogs.length > 500) {
-        auditLogs = auditLogs.slice(0, 500);
-    }
-
-    salvarNoArmazenamento('auditLogs', auditLogs);
+    // Envia para a nuvem (sem bloquear a tela, roda em segundo plano)
+    db.collection('auditLogs').add(newLog)
+        .catch(err => console.error("Erro ao salvar log:", err));
 }
 
 // Navegação para Auditoria (Com Trava de Segurança)
