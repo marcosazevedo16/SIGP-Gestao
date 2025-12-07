@@ -8941,3 +8941,54 @@ window.addEventListener('load', function() {
         checkAuthentication();
     }
 });
+// ============================================================================
+// LÓGICA INTELIGENTE DE MENUS (HOVER + CLICK)
+// Substitua o bloco anterior no final do script.js por este
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- 1. CONFIGURAÇÃO PARA O MENU "CONFIGURAÇÕES" ---
+    const settingsContainer = document.getElementById('settings-dropdown-container');
+    
+    if (settingsContainer) {
+        // A) Quando clicar em qualquer item do menu (botões internos)
+        const menuItems = settingsContainer.querySelectorAll('.settings-menu-item');
+        
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                // Adiciona a classe que FORÇA o menu a sumir (vence o CSS hover)
+                settingsContainer.classList.add('temp-hidden');
+                
+                // Também remove a classe .show caso tenha sido aberto por clique/mobile
+                const menu = document.getElementById('settings-menu');
+                if(menu) menu.classList.remove('show');
+            });
+        });
+
+        // B) Quando o mouse sair da área (Reseta para o próximo hover funcionar)
+        settingsContainer.addEventListener('mouseleave', () => {
+            settingsContainer.classList.remove('temp-hidden');
+        });
+    }
+
+    // --- 2. FECHAR AO CLICAR FORA (GLOBAL) ---
+    document.addEventListener('click', function(event) {
+        // Configurações
+        const setMenu = document.getElementById('settings-menu');
+        if (setMenu && setMenu.classList.contains('show')) {
+            if (settingsContainer && !settingsContainer.contains(event.target)) {
+                setMenu.classList.remove('show');
+            }
+        }
+
+        // Notificações
+        const notifBtn = document.getElementById('notif-btn');
+        const notifMenu = document.getElementById('notification-menu');
+        if (notifMenu && notifMenu.classList.contains('show')) {
+            if (notifBtn && !notifBtn.contains(event.target) && !notifMenu.contains(event.target)) {
+                notifMenu.classList.remove('show');
+            }
+        }
+    });
+});
