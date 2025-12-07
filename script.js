@@ -1568,19 +1568,23 @@ function showTaskModal(id = null) {
     document.getElementById('task-modal').classList.add('show');
 }
 
+// ============================================================
+// NOVA FUNÇÃO: SALVAR TREINAMENTO NO FIREBASE
+// ============================================================
 function saveTask(e) {
     e.preventDefault();
     
+    // 1. Captura de dados (Datas)
     const dReq = document.getElementById('task-date-requested').value;
     const dPerf = document.getElementById('task-date-performed').value;
 
-    // --- VALIDAÇÃO DE DATA ---
+    // Validação de Data
     if (dPerf && dReq && dPerf < dReq) {
-        alert('🚫 ERRO DE DATA: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        alert('🚫 Erro: A Data de Realização não pode ser anterior à Solicitação.');
         return;
     }
-    // -------------------------
 
+    // 2. Prepara o objeto
     const data = {
         dateRequested: dReq,
         datePerformed: dPerf,
@@ -1591,22 +1595,46 @@ function saveTask(e) {
         trainedPosition: document.getElementById('task-trained-position').value,
         contact: document.getElementById('task-contact').value,
         status: document.getElementById('task-status').value,
-        observations: sanitizeInput(document.getElementById('task-observations').value)
+        observations: sanitizeInput(document.getElementById('task-observations').value),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
+    // 3. Feedback Visual
+    const btnSubmit = document.querySelector('#task-form button[type="submit"]');
+    const txtOriginal = btnSubmit.innerText;
+    btnSubmit.innerText = 'Salvando...';
+    btnSubmit.disabled = true;
+
+    // 4. Envia para o Firebase (Coleção 'tasks')
+    const collection = db.collection('tasks');
+    let promise;
+
     if (editingId) {
-        const i = tasks.findIndex(x => x.id === editingId);
-        if (i !== -1) tasks[i] = { ...tasks[i], ...data };
+        promise = collection.doc(editingId).update(data);
         logSystemAction('Edição', 'Treinamentos', `Município: ${data.municipality}`);
     } else {
-        tasks.push({ id: getNextId('task'), ...data });
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        promise = collection.add(data);
         logSystemAction('Criação', 'Treinamentos', `Município: ${data.municipality}`);
     }
-    
-    salvarNoArmazenamento('tasks', tasks);
-    document.getElementById('task-modal').classList.remove('show');
-    clearTaskFilters(); 
-    showToast('Treinamento salvo com sucesso!', 'success');
+
+    // 5. Finalização
+    promise.then(() => {
+        document.getElementById('task-modal').classList.remove('show');
+        showToast('Treinamento salvo na nuvem!', 'success');
+        
+        // Limpa formulário
+        clearTaskFilters(); 
+        editingId = null;
+    })
+    .catch((error) => {
+        console.error("Erro ao salvar treinamento:", error);
+        alert("Erro ao salvar: " + error.message);
+    })
+    .finally(() => {
+        btnSubmit.innerText = txtOriginal;
+        btnSubmit.disabled = false;
+    });
 }
 
 function getFilteredTasks() {
