@@ -3969,8 +3969,9 @@ function renderUsers() {
             <td class="text-primary-cell">${u.name}</td>
             <td>${u.email || '-'}</td> <td>${u.status}</td>
             <td>
-                <button class="btn btn--sm" onclick="showUserModal('${u.id}')">✏️</button>
-                <button class="btn btn--sm" onclick="deleteUser('${u.id}')">🗑️</button>
+                <button class="btn btn--sm" onclick="showUserModal('${u.id}')" title="Editar">✏️</button>
+                <button class="btn btn--sm" onclick="window.enviarEmailRedefinicao('${u.email}')" title="Enviar Redefinição de Senha">🔑</button>
+                <button class="btn btn--sm" onclick="deleteUser('${u.id}')" title="Excluir">🗑️</button>
             </td>
         </tr>`
     ).join(''); 
@@ -3992,6 +3993,28 @@ function deleteUser(id) {
         .catch(err => alert("Erro: " + err.message));
     }
 }
+window.enviarEmailRedefinicao = function(email) {
+    if (!email) {
+        alert("Este usuário não tem um e-mail cadastrado para recuperação.");
+        return;
+    }
+
+    if(!confirm(`Enviar link de redefinição de senha para ${email}?`)) return;
+
+    firebase.auth().sendPasswordResetEmail(email)
+        .then(() => {
+            alert(`✅ E-mail enviado para ${email}.\n\nPeça para o usuário verificar a caixa de entrada (e spam) para criar uma nova senha.`);
+        })
+        .catch((error) => {
+            console.error(error);
+            if (error.code === 'auth/user-not-found') {
+                alert("Erro: O e-mail cadastrado no banco não existe na Autenticação do Firebase.");
+            } else {
+                alert("Erro ao enviar e-mail: " + error.message);
+            }
+        });
+}
+
 function closeUserModal(){ document.getElementById('user-modal').classList.remove('show'); }
 
 // --- CARGOS ---
