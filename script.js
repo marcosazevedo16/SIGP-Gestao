@@ -1748,7 +1748,10 @@ function renderTasks() {
 
                 <td class="text-secondary-cell">${obs}</td>
                 <td><span class="task-status ${stCls}">${t.status}</span></td>
-                <td><button class="btn btn--sm" onclick="showTaskModal(${t.id})">✏️</button><button class="btn btn--sm" onclick="deleteTask(${t.id})">🗑️</button></td>
+                <td>
+                    <button class="btn btn--sm" onclick="showTaskModal('${t.id}')">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteTask('${t.id}')">🗑️</button>
+                </td>
             </tr>`;
         }).join('');
         
