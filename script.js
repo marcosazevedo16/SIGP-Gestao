@@ -8531,5 +8531,3 @@ window.addEventListener('load', function() {
         checkAuthentication();
     }
 });
-// Adicione isso na última linha vazia do arquivo:
-});
