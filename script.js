@@ -1245,9 +1245,13 @@ function showMunicipalityModal(id = null) {
     document.getElementById('municipality-modal').classList.add('show');
 }
 
+// ============================================================
+// NOVA FUNÇÃO: SALVAR MUNICÍPIO NO FIREBASE
+// ============================================================
 function saveMunicipality(e) {
     e.preventDefault();
     
+    // 1. Validações e Captura de Dados
     const rawValue = document.getElementById('municipality-name').value;
     if (!rawValue) { alert('Por favor, selecione um município.'); return; }
 
@@ -1257,40 +1261,22 @@ function saveMunicipality(e) {
 
     const status = document.getElementById('municipality-status').value;
     const mods = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
-
-    // --- VALIDAÇÃO DE DATAS ---
+    
+    // Datas
     const dtImpl = document.getElementById('municipality-implantation-date').value;
     const dtBlock = document.getElementById('municipality-date-blocked') ? document.getElementById('municipality-date-blocked').value : '';
     const dtStop = document.getElementById('municipality-date-stopped') ? document.getElementById('municipality-date-stopped').value : '';
 
+    // Validações de data
     if (dtImpl) {
-        if (dtBlock && dtBlock < dtImpl) {
-            alert('🚫 ERRO DE DATA: A "Data em que foi Bloqueado" não pode ser anterior à "Data de Implantação".');
-            return;
-        }
-        if (dtStop && dtStop < dtImpl) {
-            alert('🚫 ERRO DE DATA: A "Data em que Parou de Usar" não pode ser anterior à "Data de Implantação".');
-            return;
-        }
-    }
-    // --------------------------
-
-    const isDuplicate = municipalities.some(m => m.name === name && m.id !== editingId);
-    if (isDuplicate) {
-        alert(`🚫 Ação Bloqueada: O município "${name}" já consta na sua carteira.`);
-        return;
+        if (dtBlock && dtBlock < dtImpl) { alert('Erro: Bloqueio anterior à Implantação.'); return; }
+        if (dtStop && dtStop < dtImpl) { alert('Erro: Parada anterior à Implantação.'); return; }
     }
 
-    if (status === 'Em uso' && mods.length === 0) {
-        alert('Erro: Para status "Em Uso", selecione pelo menos um módulo.');
-        return;
-    }
+    if (status === 'Em uso' && mods.length === 0) { alert('Erro: Selecione pelo menos um módulo.'); return; }
+    if (status === 'Bloqueado' && !dtBlock) { alert('Erro: Preencha a data de bloqueio.'); return; }
 
-    if (status === 'Bloqueado' && !dtBlock) {
-        alert('Erro: Preencha a "Data em que foi Bloqueado".');
-        return;
-    }
-
+    // 2. Prepara o objeto para o Banco de Dados
     const data = {
         name: name,
         uf: uf,
@@ -1301,31 +1287,53 @@ function saveMunicipality(e) {
         lastVisit: document.getElementById('municipality-last-visit').value,
         modules: mods,
         dateBlocked: dtBlock,
-        dateStopped: dtStop
+        dateStopped: dtStop,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp() // Marca a hora da edição no servidor
     };
 
+    // 3. Feedback Visual (Muda o texto do botão para o usuário saber que está enviando)
+    const btnSubmit = document.querySelector('#municipality-form button[type="submit"]');
+    const txtOriginal = btnSubmit.innerText;
+    btnSubmit.innerText = 'Salvando na Nuvem...';
+    btnSubmit.disabled = true;
+
+    // 4. Lógica Firebase (Criar ou Atualizar)
+    const collection = db.collection('municipalities');
+    let promise;
+
     if (editingId) {
-        const i = municipalities.findIndex(x => x.id === editingId);
-        if (i !== -1) {
-            const oldMun = municipalities[i];
-            const mapCampos = { status: 'Situação', manager: 'Gestor', contact: 'Contato', implantationDate: 'Data Implantação', lastVisit: 'Última Visita' };
-            let detailsLog = detectChanges(oldMun, data, mapCampos);
-            const oldMods = (oldMun.modules || []).sort().join(', ');
-            const newMods = (data.modules || []).sort().join(', ');
-            if (oldMods !== newMods) detailsLog += `. Alterou Módulos de [${oldMods}] para [${newMods}]`;
-            municipalities[i] = { ...municipalities[i], ...data };
-            logSystemAction('Edição', 'Municípios', `Município: ${data.name}. ${detailsLog}`);
-        }
+        // ATUALIZAR (Update)
+        promise = collection.doc(editingId).update(data);
+        // Mantemos o log local por enquanto até migrarmos a auditoria
+        logSystemAction('Edição', 'Municípios', `Atualizou município: ${data.name}`);
     } else {
-        municipalities.push({ id: getNextId('mun'), ...data });
-        logSystemAction('Criação', 'Municípios', `Cadastrou o município: ${data.name} - ${data.uf} com status "${data.status}"`);
+        // CRIAR NOVO (Add)
+        // Adiciona data de criação
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        promise = collection.add(data);
+        logSystemAction('Criação', 'Municípios', `Cadastrou município: ${data.name}`);
     }
-    
-    salvarNoArmazenamento('municipalities', municipalities);
-    document.getElementById('municipality-modal').classList.remove('show');
-    renderMunicipalities();
-    updateGlobalDropdowns();
-    showToast('Município salvo com sucesso!', 'success');
+
+    // 5. Executa a promessa (Envia para o Google)
+    promise.then(() => {
+        document.getElementById('municipality-modal').classList.remove('show');
+        showToast('Sucesso! Dados salvos na nuvem.', 'success');
+        
+        // Limpa o formulário e variáveis
+        document.getElementById('municipality-form').reset();
+        editingId = null;
+        
+        // NOTA: A lista não vai atualizar sozinha ainda (faremos isso no próximo passo)
+    })
+    .catch((error) => {
+        console.error("Erro ao salvar:", error);
+        alert("Erro ao salvar no servidor: " + error.message);
+    })
+    .finally(() => {
+        // Restaura o botão ao estado normal
+        btnSubmit.innerText = txtOriginal;
+        btnSubmit.disabled = false;
+    });
 }
 function renderMunicipalities() {
     const fName = document.getElementById('filter-municipality-name') ? document.getElementById('filter-municipality-name').value : '';
