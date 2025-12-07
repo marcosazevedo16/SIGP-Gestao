@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGP Saúde - Definir Nova Senha</title>
+    
+    <link rel="stylesheet" href="style.css"> 
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+    <style>
+        /* Pequenos ajustes caso o style.css não carregue algo específico */
+        body { margin: 0; font-family: sans-serif; background-color: #f4f6f8; }
+        .reset-container {
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px;
+        }
+        .reset-box {
+            background: white; padding: 40px; border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%; max-width: 400px; text-align: center;
+        }
+        .success-message { color: green; font-weight: bold; margin-top: 15px; }
+        .error-message { color: #d32f2f; font-weight: bold; margin-top: 15px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="login-screen" style="display: flex; align-items: center; justify-content: center;">
+        
+        <div class="login-form-container" style="max-width: 450px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+            
+            <h2 class="login-form-title" style="margin-bottom: 10px;">Redefinir Senha</h2>
+            <p class="login-form-subtitle" id="status-text">Digite sua nova senha abaixo.</p>
+
+            <div id="loading-spinner" style="display: none; color: #666; margin: 20px 0;">
+                Verificando link de segurança...
+            </div>
+
+            <form id="reset-password-form" class="hidden">
+                <div class="form-group" style="margin-bottom: 15px; text-align: left;">
+                    <label class="form-label">Nova Senha</label>
+                    <input type="password" class="form-control" id="new-password" required placeholder="Mínimo 6 caracteres" minlength="6">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px; text-align: left;">
+                    <label class="form-label">Confirmar Senha</label>
+                    <input type="password" class="form-control" id="confirm-password" required placeholder="Confirme a senha">
+                </div>
+
+                <button type="submit" class="btn btn--primary btn--full-width login-btn" id="btn-save">Salvar Nova Senha</button>
+            </form>
+
+            <div id="message-area" style="margin-top: 15px;"></div>
+
+            <div id="back-to-login" class="hidden" style="margin-top: 20px;">
+                <a href="index.html" class="btn btn--secondary btn--full-width" style="text-decoration: none; display: inline-block; text-align: center;">Voltar para o Login</a>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // 1. CONFIGURAÇÃO FIREBASE (A MESMA DO SEU SCRIPT.JS)
+        const firebaseConfig = {
+            apiKey: "AIzaSyATTTu0WtcWC0p8irfTkbco-CfzPzZXqxs",
+            authDomain: "sigpgestao.firebaseapp.com",
+            projectId: "sigpgestao",
+            storageBucket: "sigpgestao.firebasestorage.app",
+            messagingSenderId: "225860756360",
+            appId: "1:225860756360:web:04a21a8ead9ae03fa5503d",
+            measurementId: "G-JWFFYZP83Z"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // 2. CAPTURA PARÂMETROS DA URL
+        // O Firebase envia algo como: meusite.com/redefinir-senha.html?mode=resetPassword&oobCode=XYZ123...
+        function getParameterByName(name) {
+            const url = window.location.href;
+            name = name.replace(/[\[\]]/g, '\\$&');
+            const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+            const results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }
+
+        const mode = getParameterByName('mode');
+        const actionCode = getParameterByName('oobCode'); // O Código Secreto
+
+        const form = document.getElementById('reset-password-form');
+        const statusText = document.getElementById('status-text');
+        const msgArea = document.getElementById('message-area');
+        const loading = document.getElementById('loading-spinner');
+        const backBtn = document.getElementById('back-to-login');
+
+        // 3. INICIALIZAÇÃO
+        window.addEventListener('DOMContentLoaded', () => {
+            if (mode === 'resetPassword' && actionCode) {
+                // Modo correto! Vamos verificar se o código é válido
+                verifyCode(actionCode);
+            } else {
+                // Link inválido ou acesso direto
+                showError("Link inválido ou expirado. Solicite uma nova redefinição.");
+            }
+        });
+
+        // 4. VERIFICA SE O LINK É VÁLIDO
+        function verifyCode(code) {
+            loading.style.display = 'block';
+            form.classList.add('hidden');
+
+            auth.verifyPasswordResetCode(code)
+                .then((email) => {
+                    // Código válido! Mostra o formulário
+                    loading.style.display = 'none';
+                    statusText.innerHTML = `Definindo senha para: <strong>${email}</strong>`;
+                    form.classList.remove('hidden');
+                })
+                .catch((error) => {
+                    loading.style.display = 'none';
+                    showError("Este link já foi usado ou expirou. Por favor, solicite um novo.");
+                    console.error(error);
+                });
+        }
+
+        // 5. SALVAR NOVA SENHA
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newPass = document.getElementById('new-password').value;
+            const confPass = document.getElementById('confirm-password').value;
+            const btnSave = document.getElementById('btn-save');
+
+            if (newPass.length < 6) {
+                showError("A senha deve ter no mínimo 6 caracteres.");
+                return;
+            }
+            if (newPass !== confPass) {
+                showError("As senhas não conferem.");
+                return;
+            }
+
+            btnSave.innerText = "Salvando...";
+            btnSave.disabled = true;
+            msgArea.innerText = "";
+
+            // Chama o Firebase para confirmar a mudança
+            auth.confirmPasswordReset(actionCode, newPass)
+                .then(() => {
+                    // SUCESSO!
+                    form.classList.add('hidden'); // Esconde formulário
+                    statusText.style.display = 'none';
+                    
+                    msgArea.innerHTML = `
+                        <div style="text-align: center;">
+                            <div style="font-size: 50px;">✅</div>
+                            <h3 style="color: #003d5c;">Senha Alterada!</h3>
+                            <p>Sua senha foi redefinida com sucesso.</p>
+                        </div>
+                    `;
+                    backBtn.classList.remove('hidden'); // Botão de voltar
+                })
+                .catch((error) => {
+                    btnSave.innerText = "Salvar Nova Senha";
+                    btnSave.disabled = false;
+                    showError("Erro ao salvar senha: " + error.message);
+                });
+        });
+
+        function showError(msg) {
+            msgArea.innerHTML = `<div class="error-message">❌ ${msg}</div>`;
+            backBtn.classList.remove('hidden'); // Mostra botão de voltar para a pessoa tentar de novo
+        }
+    </script>
+</body>
+</html>
