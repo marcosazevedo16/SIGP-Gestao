@@ -6615,9 +6615,25 @@ document.addEventListener('DOMContentLoaded', function() {
             // Envia para o Firebase (usando a variável emailInput tratada)
             auth.signInWithEmailAndPassword(emailInput, password)
                 .then((userCredential) => {
-                    console.log("Login realizado: ", userCredential.user.email);
-                    // Login com sucesso!
-                })
+    console.log("Login realizado: ", userCredential.user.email);
+    
+    // 1. Prepara os dados do usuário para o sistema
+    // Como você está usando o ADMIN fixo, vamos forçar os dados dele aqui
+    const usuarioLogado = {
+        id: 1,
+        login: 'ADMIN',
+        name: 'Administrador',
+        permission: 'Administrador',
+        status: 'Ativo'
+    };
+
+    // 2. Salva a sessão no navegador (localStorage)
+    // Isso é o que o seu sistema lê para saber que está logado!
+    localStorage.setItem('currentUser', JSON.stringify(usuarioLogado));
+    
+    // 3. Recarrega a página para entrar no Dashboard
+    window.location.reload();
+})
                 .catch((error) => {
                     console.error("Erro no login:", error.code);
                     
