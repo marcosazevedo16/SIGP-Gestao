@@ -3786,111 +3786,42 @@ function handleProductionFrequencyChange() {
     }
 }
 
-// ----------------------------------------------------------------------------
-// 18. VERSÕES E CADASTROS BÁSICOS
-// ----------------------------------------------------------------------------
-function showVersionModal(id = null) {
-    editingId = id;
-    document.getElementById('version-form').reset();
-    if (id) {
-        const v = systemVersions.find(function(x) { return x.id === id; });
-        document.getElementById('version-date').value = v.date;
-        document.getElementById('version-number').value = v.version;
-        document.getElementById('version-description').value = v.description;
-    }
-    document.getElementById('version-modal').classList.add('show');
-}
-
-function saveVersion(e) {
-    e.preventDefault();
-    const data = {
-        date: document.getElementById('version-date').value,
-        version: document.getElementById('version-number').value,
-        type: document.getElementById('version-type').value,
-        module: document.getElementById('version-module').value,
-        description: document.getElementById('version-description').value,
-        author: currentUser.name
-    };
-
-    if (editingId) {
-        const i = systemVersions.findIndex(function(x) { return x.id === editingId; });
-        systemVersions[i] = { ...systemVersions[i], ...data };
-    } else {
-        systemVersions.push({ id: getNextId('ver'), ...data });
-    }
-    salvarNoArmazenamento('systemVersions', systemVersions);
-    document.getElementById('version-modal').classList.remove('show');
-    renderVersions();
-    showToast('Salvo!');
-}
-
-function renderVersions() {
-    const c = document.getElementById('versions-table');
-    if (!c) return;
-    
-    if (systemVersions.length === 0) {
-        c.innerHTML = 'Vazio.';
-        return;
-    }
-    const rows = systemVersions.map(function(v) {
-        return '<tr><td>' + formatDate(v.date) + '</td><td>' + v.version + '</td><td>' + v.type + '</td><td>' + v.module + '</td><td>' + v.description + '</td><td><button class="btn btn--sm" onclick="showVersionModal(' + v.id + ')">✏️</button> <button class="btn btn--sm" onclick="deleteVersion(' + v.id + ')">🗑️</button></td></tr>';
-    }).join('');
-    c.innerHTML = '<table><thead><th>Data</th><th>Versão</th><th>Tipo</th><th>Módulo</th><th>Descrição</th><th>Ações</th></thead><tbody>' + rows + '</tbody></table>';
-}
-
-function deleteVersion(id) {
-    if (confirm('Excluir?')) {
-        systemVersions = systemVersions.filter(function(x) { return x.id !== id; });
-        salvarNoArmazenamento('systemVersions', systemVersions);
-        renderVersions();
-    }
-}
-
-function closeVersionModal() {
-    document.getElementById('version-modal').classList.remove('show');
-}
-
-// Users
+// --- USUÁRIOS ---
 function showUserModal(id = null) {
     const m = document.getElementById('user-modal');
     document.getElementById('user-form').reset();
     editingId = id;
-    
-    // CORREÇÃO 1: Garante que o campo login esteja SEMPRE habilitado, mesmo editando
-    document.getElementById('user-login').disabled = false;
+    document.getElementById('user-login').disabled = false; // Garante que destrava
 
     if (id) {
-        const u = users.find(x => x.id === id);
+        // Converte para String para garantir a comparação
+        const u = users.find(x => String(x.id) === String(id));
         if (u) {
             document.getElementById('user-login').value = u.login;
             document.getElementById('user-name').value = u.name;
             document.getElementById('user-email').value = u.email || ''; 
             document.getElementById('user-permission').value = u.permission;
             document.getElementById('user-status').value = u.status;
-            
-            // CORREÇÃO 2: Mostra máscara visual para indicar que existe senha
-            // O tipo "password" do input fará virar bolinhas/asteriscos visuais
+            // Máscara de senha (não enviamos a senha real para a tela)
             document.getElementById('user-password').value = '********'; 
             document.getElementById('user-password').required = false; 
         }
     } else {
-        document.getElementById('user-password').value = ''; // Limpa para novo usuário
-        document.getElementById('user-password').required = true; // Obrigatório se for novo
+        document.getElementById('user-password').value = ''; 
+        document.getElementById('user-password').required = true;
     }
     m.classList.add('show');
 }
+// ============================================================
+// 1. USUÁRIOS (FIREBASE)
+// ============================================================
 function saveUser(e) {
     e.preventDefault();
-    
-    // Sanitiza Login e transforma em maiúsculas
     const login = sanitizeInput(document.getElementById('user-login').value.trim().toUpperCase());
     
-    // Validação Duplicidade
-    // Verifica se existe outro usuário com esse login (excluindo o próprio id de edição)
-    const loginJaExiste = users.some(u => u.login === login && u.id !== editingId);
-    if (loginJaExiste) {
-        alert('Erro: Este Login já está sendo utilizado por outro usuário.');
-        return;
+    // Validação de Duplicidade (Local)
+    if (users.some(u => u.login === login && u.id !== editingId)) {
+        alert('Erro: Este Login já está sendo utilizado.'); return;
     }
 
     const data = {
@@ -3898,134 +3829,59 @@ function saveUser(e) {
         name: sanitizeInput(document.getElementById('user-name').value),
         email: sanitizeInput(document.getElementById('user-email').value),
         permission: document.getElementById('user-permission').value,
-        status: document.getElementById('user-status').value
+        status: document.getElementById('user-status').value,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    const passInput = document.getElementById('user-password').value;
+    const collection = db.collection('users');
+    let promise;
 
-    if (!editingId) {
-        // --- NOVO USUÁRIO ---
-        data.id = getNextId('user');
-        
-        // Gera hash da senha nova
-        data.salt = generateSalt();
-        data.passwordHash = hashPassword(passInput, data.salt);
-        
-        users.push(data);
-        logSystemAction('Criação', 'Usuários', `Criou usuário: ${data.login} (${data.permission})`);
-    
+    if (editingId) {
+        promise = collection.doc(editingId).update(data);
+        logSystemAction('Edição', 'Usuários', `Usuário: ${data.login}`);
     } else {
-        // --- EDIÇÃO ---
-        const i = users.findIndex(u => u.id === editingId);
-        if (i !== -1) {
-            const oldUser = users[i];
-
-            // Preserva credenciais antigas por padrão
-            data.salt = oldUser.salt;
-            data.passwordHash = oldUser.passwordHash;
-
-            // Lógica da Senha:
-            // Só altera se o campo NÃO estiver vazio E NÃO for a máscara "********"
-            if (passInput && passInput !== '********') {
-                data.salt = generateSalt();
-                data.passwordHash = hashPassword(passInput, data.salt);
-                // Adiciona aviso no log se a senha mudou
-                data._passwordChanged = true; 
-            }
-
-            // --- AUDITORIA DETALHADA PARA USUÁRIOS ---
-            const mapCampos = {
-                login: 'Login',
-                name: 'Nome',
-                email: 'E-mail',
-                permission: 'Permissão',
-                status: 'Status'
-            };
-
-            let detailsLog = detectChanges(oldUser, data, mapCampos);
-            
-            if (data._passwordChanged) {
-                detailsLog += detailsLog ? ". " : "";
-                detailsLog += "Alterou a Senha de Acesso";
-                delete data._passwordChanged; // Limpa flag interna
-            }
-
-            // Atualiza
-            users[i] = { ...oldUser, ...data };
-            
-            logSystemAction('Edição', 'Usuários', `Usuário: ${data.login}. ${detailsLog}`);
-        }
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        promise = collection.add(data);
+        logSystemAction('Criação', 'Usuários', `Criou usuário: ${data.login}`);
+        alert("⚠️ IMPORTANTE: Lembre-se de criar este mesmo usuário (E-mail/Senha) no Console do Firebase > Authentication para liberar o acesso.");
     }
     
-    salvarNoArmazenamento('users', users);
-    document.getElementById('user-modal').classList.remove('show');
-    renderUsers();
-    
-    // Se o usuário editou o próprio login, atualiza a sessão
-    if (currentUser && currentUser.id === editingId) {
-        // Atualiza os dados da sessão com o novo login/nome
-        currentUser.login = data.login;
-        currentUser.name = data.name;
-        currentUser.permission = data.permission;
-        salvarNoArmazenamento('currentUser', currentUser);
-        updateUserInterface(); // Atualiza o "Bem-vindo" no topo
-    }
-
-    showToast('Usuário salvo com sucesso!', 'success');
+    promise.then(() => {
+        document.getElementById('user-modal').classList.remove('show');
+        showToast('Usuário salvo!', 'success');
+        editingId = null;
+    }).catch(err => alert("Erro: " + err.message));
 }
 
 function renderUsers() { 
-    // 1. Captura os valores dos 3 filtros
-    const fName = document.getElementById('filter-user-name') ? document.getElementById('filter-user-name').value.toLowerCase() : '';
-    const fLogin = document.getElementById('filter-user-login') ? document.getElementById('filter-user-login').value.toLowerCase() : '';
-    const fStatus = document.getElementById('filter-user-status') ? document.getElementById('filter-user-status').value : '';
+    const fName = document.getElementById('filter-user-name')?.value.toLowerCase() || '';
+    const fLogin = document.getElementById('filter-user-login')?.value.toLowerCase() || '';
+    const fStatus = document.getElementById('filter-user-status')?.value || '';
 
-    // 2. Aplica a lógica de filtragem (Nome E Login E Status)
-    const filteredUsers = users.filter(u => {
-        // Filtro de Nome
+    const filtered = users.filter(u => {
         if (fName && !u.name.toLowerCase().includes(fName)) return false;
-        // Filtro de Login
         if (fLogin && !u.login.toLowerCase().includes(fLogin)) return false;
-        // Filtro de Status (Exato)
         if (fStatus && u.status !== fStatus) return false;
-        
         return true;
     });
 
     const c = document.getElementById('users-table'); 
-    
-    // --- ATUALIZAÇÃO DOS CONTADORES (Baseado no TOTAL DO SISTEMA) ---
     if (document.getElementById('total-users')) document.getElementById('total-users').textContent = users.length;
-    if (document.getElementById('active-users')) document.getElementById('active-users').textContent = users.filter(u => u.status === 'Ativo').length;
-    if (document.getElementById('inactive-users')) document.getElementById('inactive-users').textContent = users.filter(u => u.status !== 'Ativo').length;
     
-    // Exibe contador de resultados da busca
-    if (document.getElementById('users-total-display')) {
-        const display = document.getElementById('users-total-display');
-        display.style.display = 'block';
-        display.innerHTML = `<strong>${filteredUsers.length}</strong> usuário(s) encontrado(s)`;
-    }
-
-    // 3. Renderiza a tabela com os dados FILTRADOS
-    if (filteredUsers.length === 0) { 
-        c.innerHTML = '<div class="empty-state">Nenhum usuário encontrado com os filtros atuais.</div>'; 
-        return; 
-    } 
+    if (filtered.length === 0) { c.innerHTML = '<div class="empty-state">Vazio.</div>'; return; } 
     
-    // ... dentro do map em renderUsers ...
-const rows = filteredUsers.map(u => 
-    `<tr>
-        <td class="text-primary-cell">${u.login}</td>
-        <td class="text-primary-cell">${u.name}</td>
-        <td>${u.email || '-'}</td> <td>${u.status}</td>
-        <td>
-            <button class="btn btn--sm" onclick="showUserModal(${u.id})" title="Editar">✏️</button>
-            <button class="btn btn--sm" onclick="deleteUser(${u.id})" title="Excluir">🗑️</button>
-        </td>
-    </tr>`
-).join(''); 
-
-c.innerHTML = `<table><thead><th>Login</th><th>Nome</th><th>E-mail</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`; 
+    const rows = filtered.map(u => 
+        `<tr>
+            <td class="text-primary-cell">${u.login}</td>
+            <td class="text-primary-cell">${u.name}</td>
+            <td>${u.email || '-'}</td> <td>${u.status}</td>
+            <td>
+                <button class="btn btn--sm" onclick="showUserModal('${u.id}')">✏️</button>
+                <button class="btn btn--sm" onclick="deleteUser('${u.id}')">🗑️</button>
+            </td>
+        </tr>`
+    ).join(''); 
+    c.innerHTML = `<table><thead><th>Login</th><th>Nome</th><th>E-mail</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`; 
 }
 
 function clearUserFilters() {
@@ -4037,28 +3893,22 @@ function clearUserFilters() {
 
 // 8. USUÁRIOS (Admin)
 function deleteUser(id) { 
-    const u=users.find(x=>x.id===id); 
-    if(u.login==='ADMIN'){alert('Não pode excluir ADMIN');return;} 
     if(confirm('Excluir usuário?')){
-        registerUndo(u, 'users', renderUsers);
-        users=users.filter(x=>x.id!==id); 
-        salvarNoArmazenamento('users',users); 
-        renderUsers();
+        db.collection('users').doc(id).delete()
+        .then(() => showToast('Usuário excluído.', 'success'))
+        .catch(err => alert("Erro: " + err.message));
     }
 }
-function closeUserModal(){document.getElementById('user-modal').classList.remove('show');}
+function closeUserModal(){ document.getElementById('user-modal').classList.remove('show'); }
 
-// Cargos
-// 1. Função para Abrir o Modal (Agora carregando a descrição ao editar)
+// --- CARGOS ---
 function showCargoModal(id = null) {
     editingId = id;
     document.getElementById('cargo-form').reset();
-    
     if (id) {
-        const c = cargos.find(x => x.id === id);
+        const c = cargos.find(x => String(x.id) === String(id));
         if (c) {
             document.getElementById('cargo-name').value = c.name;
-            // Esta linha abaixo estava faltando para carregar a descrição existente:
             document.getElementById('cargo-description').value = c.description || ''; 
         }
     }
@@ -4066,91 +3916,104 @@ function showCargoModal(id = null) {
 }
 
 // 2. Função para Salvar (Agora gravando a descrição)
+// ============================================================
+// 2. CARGOS (FIREBASE)
+// ============================================================
 function saveCargo(e) {
     e.preventDefault();
     const data = {
         name: sanitizeInput(document.getElementById('cargo-name').value),
         description: sanitizeInput(document.getElementById('cargo-description').value)
     };
-    // ... (restante da função mantém igual, apenas com o logSystemAction adicionado se quiser)
+    
     if (editingId) {
-        const i = cargos.findIndex(x => x.id == editingId);
-        if (i !== -1) cargos[i] = { ...cargos[i], ...data };
+        db.collection('cargos').doc(editingId).update(data)
+        .then(() => { closeCargoModal(); showToast('Cargo atualizado!'); editingId = null; });
     } else {
-        cargos.push({ id: getNextId('cargo'), ...data });
+        db.collection('cargos').add(data)
+        .then(() => { closeCargoModal(); showToast('Cargo criado!'); });
     }
-    salvarNoArmazenamento('cargos', cargos);
-    document.getElementById('cargo-modal').classList.remove('show');
-    renderCargos();
-    updateGlobalDropdowns(); 
-    showToast('Cargo salvo com sucesso!', 'success');
 }
 
 function renderCargos() {
     const c = document.getElementById('cargos-table');
-    const countDiv = document.getElementById('cargos-total');
-    if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`Total de Cargos/Funções cadastrados: <strong>${cargos.length}</strong>`; }
-// --- NOVA LINHA: ORDENAÇÃO ALFABÉTICA ---
     cargos.sort((a, b) => a.name.localeCompare(b.name));
-    // ----------------------------------------
+    if(document.getElementById('cargos-total')) document.getElementById('cargos-total').innerHTML=`Total: <strong>${cargos.length}</strong>`;
+
     const r = cargos.map(x => 
         `<tr>
             <td class="text-primary-cell">${x.name}</td>
             <td class="text-secondary-cell">${x.description || '-'}</td> <td>
-                <button class="btn btn--sm" onclick="showCargoModal(${x.id})">✏️</button>
-                <button class="btn btn--sm" onclick="deleteCargo(${x.id})">🗑️</button>
+                <button class="btn btn--sm" onclick="showCargoModal('${x.id}')">✏️</button>
+                <button class="btn btn--sm" onclick="deleteCargo('${x.id}')">🗑️</button>
             </td>
         </tr>`
     ).join('');
-    
-    c.innerHTML = `<table><thead><th>Cargo/Função</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
+    c.innerHTML = `<table><thead><th>Cargo</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteCargo(id){ if(confirm('Excluir?')){ const i=cargos.find(x=>x.id===id); if(i) registerUndo(i,'cargos',renderCargos); cargos=cargos.filter(x=>x.id!==id); salvarNoArmazenamento('cargos',cargos); renderCargos(); }}
-function closeCargoModal(){document.getElementById('cargo-modal').classList.remove('show');}
+function deleteCargo(id){ 
+    if(confirm('Excluir?')) db.collection('cargos').doc(id).delete(); 
+}
+function closeCargoModal(){ document.getElementById('cargo-modal').classList.remove('show'); }
 
-// Orientadores
+// --- ORIENTADORES ---
 function showOrientadorModal(id=null){ 
     editingId=id; 
     document.getElementById('orientador-form').reset(); 
     if(id){
-        const o=orientadores.find(x=>x.id===id); 
-        document.getElementById('orientador-name').value=o.name; 
-        document.getElementById('orientador-contact').value=o.contact;
-        // NOVOS CAMPOS
-        document.getElementById('orientador-email').value = o.email || '';
-        document.getElementById('orientador-birthdate').value = o.birthDate || '';
+        const o=orientadores.find(x=> String(x.id) === String(id)); 
+        if(o) {
+            document.getElementById('orientador-name').value=o.name; 
+            document.getElementById('orientador-contact').value=o.contact;
+            document.getElementById('orientador-email').value = o.email || '';
+            document.getElementById('orientador-birthdate').value = o.birthDate || '';
+        }
     } 
     document.getElementById('orientador-modal').classList.add('show'); 
 }
 
 function renderOrientadores() {
     const c = document.getElementById('orientadores-table');
-    const countDiv = document.getElementById('orientadores-total');
-    if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`Total de Colaboradores cadastrados: <strong>${orientadores.length}</strong>`; }
-
+    if(document.getElementById('orientadores-total')) document.getElementById('orientadores-total').innerHTML=`Total: <strong>${orientadores.length}</strong>`;
+    
     const r = orientadores.map(x => 
         `<tr>
             <td class="text-primary-cell">${x.name}</td>
             <td class="text-secondary-cell">${x.email || '-'}</td> <td style="text-align:center;">${formatDate(x.birthDate)}</td> <td>${x.contact || '-'}</td>
             <td>
-                <button class="btn btn--sm" onclick="showOrientadorModal(${x.id})">✏️</button>
-                <button class="btn btn--sm" onclick="deleteOrientador(${x.id})">🗑️</button>
+                <button class="btn btn--sm" onclick="showOrientadorModal('${x.id}')">✏️</button>
+                <button class="btn btn--sm" onclick="deleteOrientador('${x.id}')">🗑️</button>
             </td>
         </tr>`
     ).join('');
-    
-    c.innerHTML = `<table><thead><th>Nome do Colaborador</th><th>E-mail</th><th style="text-align:center;">Data Nasc.</th><th>Contato</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
+    c.innerHTML = `<table><thead><th>Nome</th><th>E-mail</th><th>Data Nasc.</th><th>Contato</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
+}
+function deleteOrientador(id){ 
+    if(confirm('Excluir?')) db.collection('orientadores').doc(id).delete(); 
+}
+function closeOrientadorModal(){ document.getElementById('orientador-modal').classList.remove('show'); }
+
+// --- MÓDULOS ---
+function showModuloModal(id=null){ 
+    editingId=id; 
+    document.getElementById('modulo-form').reset(); 
+    if(id){
+        const m=modulos.find(x=> String(x.id) === String(id)); 
+        if(m) {
+            document.getElementById('modulo-name').value=m.name; 
+            document.getElementById('modulo-abbreviation').value=m.abbreviation || ''; 
+            document.getElementById('modulo-description').value=m.description||'';
+        }
+    } 
+    document.getElementById('modulo-modal').classList.add('show'); 
 }
 
-function deleteOrientador(id){ if(confirm('Excluir?')){ const i=orientadores.find(x=>x.id===id); if(i) registerUndo(i,'orientadores',renderOrientadores); orientadores=orientadores.filter(x=>x.id!==id); salvarNoArmazenamento('orientadores',orientadores); renderOrientadores(); }}
-function closeOrientadorModal(){document.getElementById('orientador-modal').classList.remove('show');}
-
-// Módulos
-function showModuloModal(id=null){ editingId=id; document.getElementById('modulo-form').reset(); const form=document.getElementById('modulo-form'); if(!document.getElementById('modulo-description')) { const div=document.createElement('div'); div.className='form-group'; div.innerHTML=`<label class="form-label">Descrição</label><textarea class="form-control" id="modulo-description"></textarea>`; form.insertBefore(div, form.querySelector('.modal-actions')); } if(id){const m=modulos.find(x=>x.id===id); document.getElementById('modulo-name').value=m.name; if(document.getElementById('modulo-abbreviation')) document.getElementById('modulo-abbreviation').value=m.abbreviation; if(document.getElementById('modulo-description')) document.getElementById('modulo-description').value=m.description||'';} document.getElementById('modulo-modal').classList.add('show'); }
+// ============================================================
+// 4. MÓDULOS (FIREBASE)
+// ============================================================
 function saveModulo(e) {
     e.preventDefault();
-    
     const data = {
         name: sanitizeInput(document.getElementById('modulo-name').value),
         abbreviation: sanitizeInput(document.getElementById('modulo-abbreviation').value),
@@ -4158,154 +4021,94 @@ function saveModulo(e) {
     };
 
     if (editingId) {
-        const i = modulos.findIndex(x => x.id === editingId);
-        
-        if (i !== -1) {
-            // --- 1. LÓGICA DE CASCATA (ATUALIZAR VÍNCULOS) ---
-            const oldName = modulos[i].name;
-            const newName = data.name;
-
-            // Se o nome mudou, vai em cada município e atualiza
-            if (oldName !== newName) {
-                let mudouAlgo = false;
-                
-                municipalities.forEach(mun => {
-                    if (mun.modules && mun.modules.includes(oldName)) {
-                        // Encontra o índice do módulo antigo e troca pelo novo
-                        const idx = mun.modules.indexOf(oldName);
-                        if (idx !== -1) {
-                            mun.modules[idx] = newName;
-                            mudouAlgo = true;
-                        }
-                    }
-                });
-
-                // Se houve mudança nos municípios, salva e atualiza a tela deles
-                if (mudouAlgo) {
-                    salvarNoArmazenamento('municipalities', municipalities);
-                    
-                    // Se a lista de municípios estiver visível, atualiza ela também
-                    const activeTab = document.querySelector('.tab-content.active');
-                    if (activeTab && activeTab.id === 'municipios-section') {
-                        renderMunicipalities();
-                    }
-                }
-            }
-            
-            // Atualiza o módulo em si
-            modulos[i] = { ...modulos[i], ...data };
-        }
+        db.collection('modulos').doc(editingId).update(data)
+        .then(() => { closeModuloModal(); showToast('Módulo atualizado!'); editingId = null; });
     } else {
-        modulos.push({ id: getNextId('mod'), ...data });
+        db.collection('modulos').add(data)
+        .then(() => { closeModuloModal(); showToast('Módulo criado!'); });
     }
-
-    salvarNoArmazenamento('modulos', modulos);
-    document.getElementById('modulo-modal').classList.remove('show');
-    
-    renderModulos();
-    
-    // --- 2. ATUALIZAÇÃO IMEDIATA DOS FILTROS ---
-    // Esta função reconstrói todos os dropdowns, incluindo o filtro da aba municípios
-    updateGlobalDropdowns();
-    
-    showToast('Módulo salvo com sucesso!', 'success');
 }
 function renderModulos() {
     const c = document.getElementById('modulos-table');
-    const countDiv = document.getElementById('modulos-total');
-    if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`Total de Módulos cadastrados: <strong>${modulos.length}</strong>`; }
-// --- NOVA LINHA: ORDENAÇÃO ALFABÉTICA ---
     modulos.sort((a, b) => a.name.localeCompare(b.name));
-    // ----------------------------------------
     const r = modulos.map(m => 
-        `<tr>
-            <td class="text-primary-cell">${m.name}</td>
-            <td style="text-align:center;">${m.abbreviation || '-'}</td>
-            <td class="text-secondary-cell">${m.description || '-'}</td> <td>
-                <button class="btn btn--sm" onclick="showModuloModal(${m.id})">✏️</button>
-                <button class="btn btn--sm" onclick="deleteModulo(${m.id})">🗑️</button>
-            </td>
-        </tr>`
+        `<tr><td class="text-primary-cell">${m.name}</td><td style="text-align:center;">${m.abbreviation||'-'}</td><td class="text-secondary-cell">${m.description||'-'}</td><td><button class="btn btn--sm" onclick="showModuloModal('${m.id}')">✏️</button><button class="btn btn--sm" onclick="deleteModulo('${m.id}')">🗑️</button></td></tr>`
     ).join('');
-    
-    c.innerHTML = `<table><thead><th>Módulo</th><th style="text-align:center;">Abrev.</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
+    c.innerHTML = `<table><thead><th>Módulo</th><th>Abrev.</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteModulo(id){ if(confirm('Excluir?')){ const i=modulos.find(x=>x.id===id); if(i) registerUndo(i,'modulos',renderModulos); modulos=modulos.filter(x=>x.id!==id); salvarNoArmazenamento('modulos',modulos); renderModulos(); }}
-function closeModuloModal(){document.getElementById('modulo-modal').classList.remove('show');}
+function deleteModulo(id){ if(confirm('Excluir?')) db.collection('modulos').doc(id).delete(); }
+function closeModuloModal(){ document.getElementById('modulo-modal').classList.remove('show'); }
 
-// Municípios Lista Mestra
-function showMunicipalityListModal(id=null){ editingId=id; document.getElementById('municipality-list-form').reset(); if(id){const m=municipalitiesList.find(x=>x.id===id); document.getElementById('municipality-list-name').value=m.name; document.getElementById('municipality-list-uf').value=m.uf;} document.getElementById('municipality-list-modal').classList.add('show'); }
-function saveMunicipalityList(e){ e.preventDefault(); const data={name:document.getElementById('municipality-list-name').value, uf:document.getElementById('municipality-list-uf').value}; if(editingId){const i=municipalitiesList.findIndex(x=>x.id===editingId); municipalitiesList[i]={...municipalitiesList[i],...data};}else{municipalitiesList.push({id:getNextId('munList'),...data});} salvarNoArmazenamento('municipalitiesList',municipalitiesList); document.getElementById('municipality-list-modal').classList.remove('show'); renderMunicipalityList(); updateGlobalDropdowns(); showToast('Salvo!'); }
+// --- LISTA MESTRA MUNICÍPIOS ---
+function showMunicipalityListModal(id=null){ 
+    editingId=id; 
+    document.getElementById('municipality-list-form').reset(); 
+    if(id){
+        const m=municipalitiesList.find(x=> String(x.id) === String(id)); 
+        if(m) {
+            document.getElementById('municipality-list-name').value=m.name; 
+            document.getElementById('municipality-list-uf').value=m.uf;
+        }
+    } 
+    document.getElementById('municipality-list-modal').classList.add('show'); 
+}
 
+function saveMunicipalityList(e){ 
+    e.preventDefault(); 
+    const data={name:document.getElementById('municipality-list-name').value, uf:document.getElementById('municipality-list-uf').value}; 
+    if(editingId){
+        db.collection('municipalitiesList').doc(editingId).update(data)
+        .then(()=>{ closeMunicipalityListModal(); showToast('Salvo!'); editingId=null; });
+    }else{
+        db.collection('municipalitiesList').add(data)
+        .then(()=>{ closeMunicipalityListModal(); showToast('Salvo!'); });
+    } 
+}
 function renderMunicipalityList() {
-    // Lógica do Novo Filtro
-    const filterInput = document.getElementById('filter-municipality-list-name');
-    const filterVal = filterInput ? filterInput.value.toLowerCase() : '';
-    
-    const filtered = municipalitiesList.filter(m => m.name.toLowerCase().includes(filterVal));
-    
-    // Ordena alfabeticamente
-    filtered.sort((a,b) => a.name.localeCompare(b.name));
-
+    const filterVal = document.getElementById('filter-municipality-list-name')?.value.toLowerCase() || '';
+    const filtered = municipalitiesList.filter(m => m.name.toLowerCase().includes(filterVal)).sort((a,b) => a.name.localeCompare(b.name));
     const c = document.getElementById('municipalities-list-table');
-    const countDiv = document.getElementById('municipalities-list-total');
     
-    if(countDiv) { 
-        countDiv.style.display = 'block'; 
-        countDiv.innerHTML = `Total de Municípios cadastrados: <strong>${filtered.length}</strong>`; 
-    }
-
-    if (filtered.length === 0) {
-        c.innerHTML = '<div class="empty-state">Nenhum município encontrado.</div>';
-        return;
-    }
+    if(document.getElementById('municipalities-list-total')) document.getElementById('municipalities-list-total').innerHTML = `Total: <strong>${filtered.length}</strong>`;
 
     const r = filtered.map(m => 
-        `<tr>
-            <td class="text-primary-cell">${m.name}</td>
-            <td>${m.uf}</td>
-            <td>
-                <button class="btn btn--sm" onclick="showMunicipalityListModal(${m.id})">✏️</button>
-                <button class="btn btn--sm" onclick="deleteMunicipalityList(${m.id})">🗑️</button>
-            </td>
-        </tr>`
+        `<tr><td class="text-primary-cell">${m.name}</td><td>${m.uf}</td><td><button class="btn btn--sm" onclick="showMunicipalityListModal('${m.id}')">✏️</button><button class="btn btn--sm" onclick="deleteMunicipalityList('${m.id}')">🗑️</button></td></tr>`
     ).join('');
     c.innerHTML = `<table><thead><th>Nome</th><th>UF</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteMunicipalityList(id){ if(confirm('Excluir?')){ const i=municipalitiesList.find(x=>x.id===id); if(i) registerUndo(i,'municipalitiesList',renderMunicipalityList); municipalitiesList=municipalitiesList.filter(x=>x.id!==id); salvarNoArmazenamento('municipalitiesList',municipalitiesList); renderMunicipalityList(); updateGlobalDropdowns(); }}
+function deleteMunicipalityList(id){ if(confirm('Excluir?')) db.collection('municipalitiesList').doc(id).delete(); }
 function closeMunicipalityListModal() { document.getElementById('municipality-list-modal').classList.remove('show'); }
 
-// Formas
-function showFormaApresentacaoModal(id=null){ editingId=id; document.getElementById('forma-apresentacao-form').reset(); if(id){const f=formasApresentacao.find(x=>x.id===id); document.getElementById('forma-apresentacao-name').value=f.name;} document.getElementById('forma-apresentacao-modal').classList.add('show'); }
-function saveFormaApresentacao(e){ e.preventDefault(); const data={name:document.getElementById('forma-apresentacao-name').value}; if(editingId){const i=formasApresentacao.findIndex(x=>x.id===editingId); formasApresentacao[i]={...formasApresentacao[i],...data};}else{formasApresentacao.push({id:getNextId('forma'),...data});} salvarNoArmazenamento('formasApresentacao',formasApresentacao); document.getElementById('forma-apresentacao-modal').classList.remove('show'); renderFormas(); }
+// --- FORMAS APRESENTAÇÃO ---
+function showFormaApresentacaoModal(id=null){ 
+    editingId=id; 
+    document.getElementById('forma-apresentacao-form').reset(); 
+    if(id){
+        const f=formasApresentacao.find(x=> String(x.id) === String(id)); 
+        if(f) document.getElementById('forma-apresentacao-name').value=f.name;
+    } 
+    document.getElementById('forma-apresentacao-modal').classList.add('show'); 
+}
 
+// ============================================================
+// 6. FORMAS DE APRESENTAÇÃO (FIREBASE)
+// ============================================================
+function saveFormaApresentacao(e){ 
+    e.preventDefault(); const data={name:document.getElementById('forma-apresentacao-name').value}; 
+    if(editingId){ db.collection('formasApresentacao').doc(editingId).update(data).then(()=>{ closeFormaApresentacaoModal(); editingId=null; }); }
+    else{ db.collection('formasApresentacao').add(data).then(()=>{ closeFormaApresentacaoModal(); }); } 
+}
 function renderFormas() {
     const c = document.getElementById('formas-apresentacao-table');
-    const countDiv = document.getElementById('formas-apresentacao-total');
-    if(countDiv) { countDiv.style.display='block'; countDiv.innerHTML=`<strong>${formasApresentacao.length}</strong> Formas cadastradas`; }
-
-    // --- NOVA LINHA: ORDENAÇÃO ALFABÉTICA ---
-    formasApresentacao.sort((a, b) => a.name.localeCompare(b.name));
-    // ----------------------------------------
-
-    const r = formasApresentacao.map(f => 
-        `<tr>
-            <td class="text-primary-cell">${f.name}</td>
-            <td>
-                <button class="btn btn--sm" onclick="showFormaApresentacaoModal(${f.id})">✏️</button>
-                <button class="btn btn--sm" onclick="deleteForma(${f.id})">🗑️</button>
-            </td>
-        </tr>`
-    ).join('');
-    
+    formasApresentacao.sort((a,b)=>a.name.localeCompare(b.name));
+    const r = formasApresentacao.map(f => `<tr><td class="text-primary-cell">${f.name}</td><td><button class="btn btn--sm" onclick="showFormaApresentacaoModal('${f.id}')">✏️</button><button class="btn btn--sm" onclick="deleteForma('${f.id}')">🗑️</button></td></tr>`).join('');
     c.innerHTML = `<table><thead><th>Forma</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteForma(id){ if(confirm('Excluir?')){ const i=formasApresentacao.find(x=>x.id===id); if(i) registerUndo(i,'formasApresentacao',renderFormas); formasApresentacao=formasApresentacao.filter(x=>x.id!==id); salvarNoArmazenamento('formasApresentacao',formasApresentacao); renderFormas(); }}
+function deleteForma(id){ if(confirm('Excluir?')) db.collection('formasApresentacao').doc(id).delete(); }
 function closeFormaApresentacaoModal() { document.getElementById('forma-apresentacao-modal').classList.remove('show'); }
-
 // ----------------------------------------------------------------------------
 // 19. BACKUP E RESTORE (COM PREVIEW COMPLETO)
 // ----------------------------------------------------------------------------
@@ -5163,83 +4966,30 @@ function populateFilterSelects() {
 }
 
 // 5. Salvar Colaborador (Com novos campos: Email e Nascimento)
+// ============================================================
+// 3. ORIENTADORES / COLABORADORES MESTRE (FIREBASE)
+// ============================================================
 function saveOrientador(e){ 
     e.preventDefault(); 
-    // Sanitiza Nome
     const name = sanitizeInput(document.getElementById('orientador-name').value.trim());
-
-    // Validação Duplicidade
-    const nomeJaExiste = orientadores.some(o => o.name.toLowerCase() === name.toLowerCase() && o.id !== editingId);
-    if (nomeJaExiste) {
-        alert('Erro: Já existe um colaborador cadastrado com este Nome.');
-        return;
+    if (orientadores.some(o => o.name.toLowerCase() === name.toLowerCase() && o.id !== editingId)) {
+        alert('Nome já existe.'); return;
     }
-    
     const data = {
         name: name, 
-        // SANITIZAÇÃO:
         contact: sanitizeInput(document.getElementById('orientador-contact').value),
         email: sanitizeInput(document.getElementById('orientador-email').value),
         birthDate: document.getElementById('orientador-birthdate').value
     }; 
     
     if(editingId){
-        const i = orientadores.findIndex(x => x.id === editingId); 
-        if (i !== -1) {
-            orientadores[i] = { ...orientadores[i], ...data };
-            logSystemAction('Edição', 'Colaboradores', `Atualizou: ${data.name}`);
-        }
+        db.collection('orientadores').doc(editingId).update(data)
+        .then(() => { closeOrientadorModal(); showToast('Salvo!'); editingId = null; });
     } else {
-        orientadores.push({ id: getNextId('orient'), ...data });
-        logSystemAction('Criação', 'Colaboradores', `Novo: ${data.name}`);
+        db.collection('orientadores').add(data)
+        .then(() => { closeOrientadorModal(); showToast('Salvo!'); });
     } 
-    
-    salvarNoArmazenamento('orientadores', orientadores); 
-    document.getElementById('orientador-modal').classList.remove('show'); 
-    renderOrientadores(); 
-    updateGlobalDropdowns(); 
-    showToast('Colaborador salvo com sucesso!', 'success');
 }
-// 6. Listar Colaboradores (Mostrando E-mail e Data de Nascimento)
-function renderOrientadores() {
-    const c = document.getElementById('orientadores-table');
-    
-    // Contador no topo
-    const countDiv = document.getElementById('orientadores-total');
-    if(countDiv) { 
-        countDiv.style.display = 'block'; 
-        countDiv.innerHTML = `Total de Colaboradores cadastrados: <strong>${orientadores.length}</strong>`; 
-    }
-
-    if (orientadores.length === 0) {
-        c.innerHTML = '<div class="empty-state">Nenhum colaborador cadastrado.</div>';
-        return;
-    }
-
-    const r = orientadores.map(x => 
-        `<tr>
-            <td class="text-primary-cell">${x.name}</td>
-            <td class="text-secondary-cell">${x.email || '-'}</td> <td style="text-align:center;">${formatDate(x.birthDate)}</td> <td>${x.contact || '-'}</td>
-            <td>
-                <button class="btn btn--sm" onclick="showOrientadorModal(${x.id})" title="Editar">✏️</button>
-                <button class="btn btn--sm" onclick="deleteOrientador(${x.id})" title="Excluir">🗑️</button>
-            </td>
-        </tr>`
-    ).join('');
-    
-    // Cabeçalho da tabela atualizado
-    c.innerHTML = `<table>
-        <thead>
-            <th>Nome do Colaborador</th>
-            <th>E-mail</th>
-            <th style="text-align:center;">Data Nasc.</th>
-            <th>Contato</th>
-            <th>Ações</th>
-        </thead>
-        <tbody>${r}</tbody>
-    </table>`;
-}
-
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE MUNICÍPIOS (Lê do Firebase em tempo real)
 // ============================================================
@@ -5531,6 +5281,55 @@ function setupAuditListener() {
         console.error("Erro ao buscar logs:", error);
     });
 }
+// --- LISTENERS AUXILIARES ---
+
+function setupAuxiliaryListeners() {
+    // 1. Usuários
+    db.collection('users').onSnapshot(snap => {
+        users = []; snap.forEach(d => { let i=d.data(); i.id=d.id; users.push(i); });
+        if(document.querySelector('.tab-content.active')?.id === 'usuarios-section') renderUsers();
+    });
+
+    // 2. Cargos
+    db.collection('cargos').onSnapshot(snap => {
+        cargos = []; snap.forEach(d => { let i=d.data(); i.id=d.id; cargos.push(i); });
+        if(document.querySelector('.tab-content.active')?.id === 'cargos-section') renderCargos();
+        updateGlobalDropdowns(); // Atualiza dropdowns de formulários
+    });
+
+    // 3. Orientadores (Colaboradores Mestre)
+    db.collection('orientadores').onSnapshot(snap => {
+        orientadores = []; snap.forEach(d => { let i=d.data(); i.id=d.id; orientadores.push(i); });
+        if(document.querySelector('.tab-content.active')?.id === 'orientadores-section') renderOrientadores();
+        updateGlobalDropdowns();
+    });
+
+    // 4. Módulos
+    db.collection('modulos').onSnapshot(snap => {
+        modulos = []; snap.forEach(d => { let i=d.data(); i.id=d.id; modulos.push(i); });
+        if(document.querySelector('.tab-content.active')?.id === 'modulos-section') renderModulos();
+        // Se a lista de municípios estiver visível, pode precisar re-renderizar para atualizar as tags
+        if(document.querySelector('.tab-content.active')?.id === 'municipios-section') renderMunicipalities();
+    });
+
+    // 5. Lista Mestra Municípios
+    db.collection('municipalitiesList').onSnapshot(snap => {
+        municipalitiesList = []; snap.forEach(d => { let i=d.data(); i.id=d.id; municipalitiesList.push(i); });
+        if(document.querySelector('.tab-content.active')?.id === 'municipalities-list-section') renderMunicipalityList();
+        updateGlobalDropdowns();
+    });
+
+    // 6. Formas Apresentação
+    db.collection('formasApresentacao').onSnapshot(snap => {
+        formasApresentacao = []; snap.forEach(d => { let i=d.data(); i.id=d.id; formasApresentacao.push(i); });
+        if(document.querySelector('.tab-content.active')?.id === 'formas-apresentacao-section') renderFormas();
+    });
+
+    // 7. APIs
+    db.collection('apisList').onSnapshot(snap => {
+        apisList = []; snap.forEach(d => { let i=d.data(); i.id=d.id; apisList.push(i); });
+        if(document.querySelector('.tab-content.active')?.id === 'apis-list-section') renderApiList();
+    });
 
 function initializeApp() {
     try {
@@ -5550,6 +5349,7 @@ function initializeApp() {
         setupIntegrationListener();
         setupColabInfoListener();
         setupAuditListener();
+        setupAuxiliaryListeners();
         
         // Renderizações
         renderMunicipalities();
@@ -5558,8 +5358,7 @@ function initializeApp() {
         renderDemands();
         renderVisits();
         renderProductions();
-        renderPresentations();
-        renderVersions();    
+        renderPresentations();    
         
         // Renderizações opcionais (se existirem no código)
         if (typeof renderCollaboratorInfos === 'function') renderCollaboratorInfos();
@@ -6200,86 +5999,12 @@ function sanitizeInput(input) {
 
     return sanitized.trim();
 }
-
-// ----------------------------------------------------------------------------
-// XX. CADASTRO MESTRE DE APIS (Configurações)
-// ----------------------------------------------------------------------------
-function showApiListModal(id = null) {
-    editingId = id;
-    document.getElementById('api-list-form').reset();
-    
-    if (id) {
-        // Correção: Garante comparação correta (x.id == id)
-        const a = apisList.find(x => x.id == id);
-        if (a) {
-            document.getElementById('api-list-name').value = a.name;
-            document.getElementById('api-list-description').value = a.description;
-        }
-    }
-    document.getElementById('api-list-modal').classList.add('show');
-}
-
-function saveApiList(e) {
-    e.preventDefault();
-    const data = {
-        name: sanitizeInput(document.getElementById('api-list-name').value),
-        description: sanitizeInput(document.getElementById('api-list-description').value)
-    };
-
-    if(editingId) {
-        const i = apisList.findIndex(x => x.id === editingId);
-        if(i !== -1) apisList[i] = { ...apisList[i], ...data };
-    } else {
-        apisList.push({ id: getNextId('api'), ...data });
-    }
-    salvarNoArmazenamento('apisList', apisList);
-    document.getElementById('api-list-modal').classList.remove('show');
-    renderApiList();
-    showToast('API salva com sucesso!', 'success');
-}
-
-function renderApiList() {
-    const c = document.getElementById('apis-list-table');
-    const countDiv = document.getElementById('apis-list-total');
-    
-    // Ordena alfabeticamente
-    apisList.sort((a,b) => a.name.localeCompare(b.name));
-
-    if(countDiv) {
-        countDiv.style.display = 'block';
-        countDiv.innerHTML = `Total de APIs cadastradas: <strong>${apisList.length}</strong>`;
-    }
-
-    const r = apisList.map(a => 
-        `<tr>
-            <td class="text-primary-cell">${a.name}</td>
-            <td class="text-secondary-cell">${a.description}</td>
-            <td>
-                <button class="btn btn--sm" onclick="showApiListModal(${a.id})">✏️</button>
-                <button class="btn btn--sm" onclick="deleteApiList(${a.id})">🗑️</button>
-            </td>
-        </tr>`
-    ).join('');
-    
-    c.innerHTML = `<table><thead><th>API</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
-}
-
-function deleteApiList(id) {
-    if(confirm('Excluir esta API?')) {
-        apisList = apisList.filter(x => x.id !== id);
-        salvarNoArmazenamento('apisList', apisList);
-        renderApiList();
-    }
-}
-function closeApiListModal() { document.getElementById('api-list-modal').classList.remove('show'); }
-// ----------------------------------------------------------------------------
-// XX. CADASTRO MESTRE DE APIS (Configurações)
-// ----------------------------------------------------------------------------
+// --- APIS ---
 function showApiListModal(id=null) {
     editingId = id;
     document.getElementById('api-list-form').reset();
     if(id) {
-        const a = apisList.find(x => x.id === id);
+        const a = apisList.find(x => String(x.id) === String(id));
         if(a) {
             document.getElementById('api-list-name').value = a.name;
             document.getElementById('api-list-description').value = a.description;
@@ -6288,55 +6013,25 @@ function showApiListModal(id=null) {
     document.getElementById('api-list-modal').classList.add('show');
 }
 
+// ============================================================
+// 7. LISTA DE APIS (FIREBASE)
+// ============================================================
 function saveApiList(e) {
     e.preventDefault();
-    const data = {
-        name: sanitizeInput(document.getElementById('api-list-name').value),
-        description: sanitizeInput(document.getElementById('api-list-description').value)
-    };
-
-    if(editingId) {
-        const i = apisList.findIndex(x => x.id === editingId);
-        if(i !== -1) apisList[i] = { ...apisList[i], ...data };
-    } else {
-        apisList.push({ id: getNextId('api'), ...data });
-    }
-    salvarNoArmazenamento('apisList', apisList);
-    document.getElementById('api-list-modal').classList.remove('show');
-    renderApiList();
-    showToast('API salva com sucesso!', 'success');
+    const data = { name: sanitizeInput(document.getElementById('api-list-name').value), description: sanitizeInput(document.getElementById('api-list-description').value) };
+    if(editingId) { db.collection('apisList').doc(editingId).update(data).then(()=>{ closeApiListModal(); editingId=null; }); } 
+    else { db.collection('apisList').add(data).then(()=>{ closeApiListModal(); }); }
 }
 
 function renderApiList() {
     const c = document.getElementById('apis-list-table');
-    const countDiv = document.getElementById('apis-list-total');
-    
-    // Ordena alfabeticamente
-    apisList.sort((a,b) => a.name.localeCompare(b.name));
-
-    if(countDiv) {
-        countDiv.style.display = 'block';
-        countDiv.innerHTML = `Total de APIs cadastradas: <strong>${apisList.length}</strong>`;
-    }
-
-    const r = apisList.map(a => 
-        `<tr>
-            <td class="text-primary-cell">${a.name}</td>
-            <td class="text-secondary-cell">${a.description}</td>
-            <td>
-                <button class="btn btn--sm" onclick="showApiListModal(${a.id})">✏️</button>
-                <button class="btn btn--sm" onclick="deleteApiList(${a.id})">🗑️</button>
-            </td>
-        </tr>`
-    ).join('');
-    
+    apisList.sort((a,b)=>a.name.localeCompare(b.name));
+    const r = apisList.map(a => `<tr><td class="text-primary-cell">${a.name}</td><td class="text-secondary-cell">${a.description}</td><td><button class="btn btn--sm" onclick="showApiListModal('${a.id}')">✏️</button><button class="btn btn--sm" onclick="deleteApiList('${a.id}')">🗑️</button></td></tr>`).join('');
     c.innerHTML = `<table><thead><th>API</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteApiList(id){ if(confirm('Excluir?')){ const i=apisList.find(x=>x.id===id); if(i) registerUndo(i,'apisList',renderApiList); apisList=apisList.filter(x=>x.id!==id); salvarNoArmazenamento('apisList',apisList); renderApiList(); updateGlobalDropdowns(); }}
-
-function closeApiListModal() { document.getElementById('api-list-modal').classList.remove('show'); }
-// ----------------------------------------------------------------------------
+function deleteApiList(id){ if(confirm('Excluir?')) db.collection('apisList').doc(id).delete(); }
+function closeApiListModal() { document.getElementById('api-list-modal').classList.remove('show'); }// ----------------------------------------------------------------------------
 // XX. GERENCIAMENTO DE INTEGRAÇÕES (Aba Principal)
 // ----------------------------------------------------------------------------
 
@@ -7624,65 +7319,75 @@ function showUndoToast(message, undoCallback) {
 }
 
 // 3. Ação de Restaurar (Quando clica no botão)
+// ============================================================
+// FUNÇÃO DESFAZER (100% FIREBASE - SEM LOCAL STORAGE)
+// ============================================================
 function confirmUndo() {
     if (!undoState) return;
 
     const { item, listName, renderFunction } = undoState;
+    const toast = document.getElementById('toast');
 
-    // REINSERE O ITEM NA LISTA CORRETA (Memória RAM)
-    switch(listName) {
-        case 'municipalities': municipalities.push(item); break;
-        case 'tasks': tasks.push(item); break;
-        case 'requests': requests.push(item); break;
-        case 'demands': demands.push(item); break;
-        case 'visits': visits.push(item); break;
-        case 'productions': productions.push(item); break;
-        case 'presentations': presentations.push(item); break;
+    // Mapeamento Completo: Todas as listas do sistema apontam para coleções no Firebase
+    const firebaseMap = {
+        // Módulos Principais
+        'municipalities': 'municipalities',
+        'tasks': 'tasks',
+        'requests': 'requests',
+        'demands': 'demands',
+        'visits': 'visits',
+        'productions': 'productions',
+        'presentations': 'presentations',
+        'integrations': 'integrations',
+        'collaboratorInfos': 'collaboratorInfos',
         
-        // Configurações e Outros
-        case 'users': users.push(item); break;
-        case 'cargos': cargos.push(item); break;
-        case 'orientadores': orientadores.push(item); break;
-        case 'modulos': modulos.push(item); break;
-        case 'municipalitiesList': municipalitiesList.push(item); break;
-        case 'formasApresentacao': formasApresentacao.push(item); break;
-        case 'apisList': apisList.push(item); break;
-        
-        // Novas Abas
-        case 'integrations': integrations.push(item); break;
-        case 'collaboratorInfos': collaboratorInfos.push(item); break;
+        // Módulos de Configuração (Agora também na nuvem)
+        'users': 'users',
+        'cargos': 'cargos',
+        'orientadores': 'orientadores',
+        'modulos': 'modulos',
+        'municipalitiesList': 'municipalitiesList',
+        'formasApresentacao': 'formasApresentacao',
+        'apisList': 'apisList',
+        'systemVersions': 'systemVersions'
+    };
+
+    // Segurança: Se a lista não estiver no mapa, paramos aqui
+    if (!firebaseMap[listName]) {
+        console.warn(`A lista '${listName}' não está mapeada para o Firebase. Desfazer cancelado.`);
+        undoState = null;
+        if(toast) toast.classList.remove('show');
+        return;
     }
 
-    // SALVA NO LOCALSTORAGE (Persistência)
-    if (listName === 'municipalities') salvarNoArmazenamento('municipalities', municipalities);
-    else if (listName === 'tasks') salvarNoArmazenamento('tasks', tasks);
-    else if (listName === 'requests') salvarNoArmazenamento('requests', requests);
-    else if (listName === 'demands') salvarNoArmazenamento('demands', demands);
-    else if (listName === 'visits') salvarNoArmazenamento('visits', visits);
-    else if (listName === 'productions') salvarNoArmazenamento('productions', productions);
-    else if (listName === 'presentations') salvarNoArmazenamento('presentations', presentations);
+    const collectionName = firebaseMap[listName];
+    const docId = String(item.id); // Garante que o ID seja string para o Firebase
     
-    else if (listName === 'users') salvarNoArmazenamento('users', users);
-    else if (listName === 'cargos') salvarNoArmazenamento('cargos', cargos);
-    else if (listName === 'orientadores') salvarNoArmazenamento('orientadores', orientadores);
-    else if (listName === 'modulos') salvarNoArmazenamento('modulos', modulos);
-    else if (listName === 'municipalitiesList') salvarNoArmazenamento('municipalitiesList', municipalitiesList);
-    else if (listName === 'formasApresentacao') salvarNoArmazenamento('formasApresentacao', formasApresentacao);
-    else if (listName === 'apisList') salvarNoArmazenamento('apisList', apisList);
-    
-    else if (listName === 'integrations') salvarNoArmazenamento('integrations', integrations);
-    else if (listName === 'collaboratorInfos') salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
+    // Remove o ID de dentro do objeto (pois ele será a chave do documento)
+    const dataToRestore = { ...item };
+    delete dataToRestore.id; 
 
-    // Atualiza a Tela
-    if (typeof renderFunction === 'function') renderFunction();
-    updateGlobalDropdowns();
+    // RESTAURA NA NUVEM
+    // Usa .set() para forçar a criação com o ID antigo exato
+    db.collection(collectionName).doc(docId).set(dataToRestore)
+        .then(() => {
+            console.log(`♻️ Item restaurado na nuvem: ${collectionName}/${docId}`);
+            
+            // Registra a ação na auditoria
+            logSystemAction('Restauração', listName, `Desfez exclusão do item ID: ${docId}`);
+            
+            if(toast) {
+                toast.innerHTML = '✅ Item restaurado com sucesso!';
+                // O ouvinte (listener) detectará a mudança e atualizará a tela automaticamente
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            }
+        })
+        .catch(err => {
+            console.error("Erro ao restaurar:", err);
+            alert("Não foi possível desfazer a ação: " + err.message);
+        });
 
-    // Feedback visual
-    const toast = document.getElementById('toast');
-    toast.innerHTML = '✅ Ação desfeita com sucesso!';
-    setTimeout(() => toast.classList.remove('show'), 3000);
-    
-    // Limpa estado
+    // Limpa o estado temporário
     undoState = null;
     clearTimeout(undoTimeout);
 }
