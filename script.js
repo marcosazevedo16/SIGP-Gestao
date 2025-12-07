@@ -6615,17 +6615,37 @@ document.addEventListener('DOMContentLoaded', function() {
             // Envia para o Firebase (usando a variável emailInput tratada)
             auth.signInWithEmailAndPassword(emailInput, password)
                 .then((userCredential) => {
-    console.log("Login realizado: ", userCredential.user.email);
-    
-    // 1. Prepara os dados do usuário para o sistema
-    // Como você está usando o ADMIN fixo, vamos forçar os dados dele aqui
-    const usuarioLogado = {
-        id: 1,
-        login: 'ADMIN',
-        name: 'Administrador',
-        permission: 'Administrador',
-        status: 'Ativo'
-    };
+                console.log("Login realizado: ", userCredential.user.email);
+                
+                // 1. Cria o objeto do usuário
+                const usuarioLogado = {
+                    id: 1,
+                    login: 'ADMIN',
+                    name: 'Administrador',
+                    permission: 'Administrador',
+                    status: 'Ativo'
+                };
+                
+                // 2. Atualiza a variável GLOBAL (para o sistema saber que logou AGORA)
+                currentUser = usuarioLogado;
+                isAuthenticated = true;
+
+                // 3. Salva no DISCO (para garantir que o F5 funcione depois)
+                localStorage.setItem('currentUser', JSON.stringify(usuarioLogado));
+                localStorage.setItem('lastActivityTime', Date.now().toString());
+                
+                // 4. Mágica Visual: Troca a tela instantaneamente sem recarregar
+                document.getElementById('login-screen').classList.remove('active');
+                document.getElementById('main-app').classList.add('active');
+                
+                // 5. Inicia o sistema manualmente
+                updateUserInterface();
+                initializeApp();
+                initializeInactivityTracking();
+                
+                // Feedback
+                showToast(`Bem-vindo, ${usuarioLogado.name}!`, 'success');
+            })
 
     // 2. Salva a sessão no navegador (localStorage)
     // Isso é o que o seu sistema lê para saber que está logado!
