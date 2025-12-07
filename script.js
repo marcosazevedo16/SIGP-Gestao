@@ -3797,45 +3797,110 @@ function showUserModal(id = null) {
     }
     m.classList.add('show');
 }
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { getFirestore, doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+
+// Configurações
+const auth = getAuth();
+const db = getFirestore();
+
 // ============================================================
-// 1. USUÁRIOS (FIREBASE)
+// 1. FUNÇÃO SALVAR USUÁRIO (Criação Automática + Edição)
 // ============================================================
-function saveUser(e) {
+window.saveUser = async function(e) {
     e.preventDefault();
-    const login = sanitizeInput(document.getElementById('user-login').value.trim().toUpperCase());
-    
-    // Validação de Duplicidade (Local)
-    if (users.some(u => u.login === login && u.id !== editingId)) {
-        alert('Erro: Este Login já está sendo utilizado.'); return;
+
+    // 1. Pegar dados do formulário
+    const login = document.getElementById('user-login').value.trim().toUpperCase();
+    const nome = document.getElementById('user-name').value.trim();
+    const email = document.getElementById('user-email').value.trim();
+    const senha = document.getElementById('user-password').value; // Pode estar vazia na edição
+    const permissao = document.getElementById('user-permission').value;
+    const status = document.getElementById('user-status').value;
+
+    const errorDiv = document.getElementById('user-error');
+    if (errorDiv) errorDiv.style.display = 'none'; // Limpa erros visuais
+
+    try {
+        // ============================================================
+        // CENÁRIO A: EDIÇÃO (Já existe um ID sendo editado)
+        // ============================================================
+        if (typeof editingId !== 'undefined' && editingId !== null) {
+            
+            // Na edição, atualizamos apenas os dados do banco (Firestore).
+            // Nota: Não atualizamos a senha aqui. Para trocar senha, o usuário usa o "Esqueci minha senha".
+            
+            const userRef = doc(db, "users", editingId);
+            
+            await updateDoc(userRef, {
+                login: login,
+                nome: nome,
+                // email: email, // Evitamos mudar o email aqui para não dessincronizar do Auth sem re-login
+                role: permissao,
+                status: status,
+                updatedAt: serverTimestamp() // Atualiza data de modificação
+            });
+
+            // Se você tiver a função de log, pode manter:
+            // logSystemAction('Edição', 'Usuários', `Editou usuário: ${login}`);
+            
+            alert("Dados do usuário atualizados com sucesso!");
+
+        } 
+        // ============================================================
+        // CENÁRIO B: CRIAÇÃO (Novo Usuário)
+        // ============================================================
+        else {
+            // Validação de senha obrigatória apenas na criação
+            if (!senha || senha.length < 6) {
+                alert("Para novos usuários, a senha deve ter no mínimo 6 caracteres.");
+                return;
+            }
+
+            // 1. Cria a autenticação no Firebase (o "Core" do usuário)
+            const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+            const user = userCredential.user;
+
+            // 2. Salva os dados no Banco de Dados usando o MESMO ID do Auth
+            await setDoc(doc(db, "users", user.uid), {
+                login: login,
+                nome: nome,
+                email: email,
+                role: permissao,
+                status: status,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+
+            // logSystemAction('Criação', 'Usuários', `Criou usuário: ${login}`);
+            alert(`Usuário ${login} criado com sucesso! O acesso já está liberado.`);
+        }
+
+        // ============================================================
+        // FINALIZAÇÃO (Limpeza)
+        // ============================================================
+        
+        // Fecha o modal (função que você já tem)
+        if (typeof closeUserModal === 'function') closeUserModal();
+        else document.getElementById('user-modal').style.display = 'none';
+
+        // Reseta o formulário e a variável de edição
+        document.getElementById('user-form').reset();
+        if (typeof editingId !== 'undefined') editingId = null;
+
+        // Se tiver função para atualizar a tabela, chame aqui:
+        // loadUsers(); 
+
+    } catch (error) {
+        console.error("Erro ao salvar:", error);
+        
+        let msg = error.message;
+        if (error.code === 'auth/email-already-in-use') msg = "Este e-mail já está em uso por outro usuário.";
+        if (error.code === 'auth/weak-password') msg = "A senha é muito fraca.";
+        if (error.code === 'auth/invalid-email') msg = "O formato do e-mail é inválido.";
+
+        alert("Erro: " + msg);
     }
-
-    const data = {
-        login: login,
-        name: sanitizeInput(document.getElementById('user-name').value),
-        email: sanitizeInput(document.getElementById('user-email').value),
-        permission: document.getElementById('user-permission').value,
-        status: document.getElementById('user-status').value,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    const collection = db.collection('users');
-    let promise;
-
-    if (editingId) {
-        promise = collection.doc(editingId).update(data);
-        logSystemAction('Edição', 'Usuários', `Usuário: ${data.login}`);
-    } else {
-        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-        promise = collection.add(data);
-        logSystemAction('Criação', 'Usuários', `Criou usuário: ${data.login}`);
-        alert("⚠️ IMPORTANTE: Lembre-se de criar este mesmo usuário (E-mail/Senha) no Console do Firebase > Authentication para liberar o acesso.");
-    }
-    
-    promise.then(() => {
-        document.getElementById('user-modal').classList.remove('show');
-        showToast('Usuário salvo!', 'success');
-        editingId = null;
-    }).catch(err => alert("Erro: " + err.message));
 }
 
 function renderUsers() { 
