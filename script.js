@@ -7019,7 +7019,7 @@ document.addEventListener('DOMContentLoaded', function() {
             else if (id.includes('audit')) renderAuditLogs();
             
         }, 400)); // Espera 400ms após a última digitação
-    });
+   }
 
     // 👇 ADICIONE ESTA LINHA AQUI 👇
 });
@@ -8888,5 +8888,4 @@ window.addEventListener('load', function() {
     if (!isAuthenticated) {
         checkAuthentication();
     }
-});
 });
