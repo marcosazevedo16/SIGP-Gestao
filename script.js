@@ -2307,6 +2307,9 @@ function showPresentationModal(id = null) {
 }
 
 // Função Salvar: Validação Rigorosa
+// ============================================================
+// NOVA FUNÇÃO: SALVAR APRESENTAÇÃO NO FIREBASE
+// ============================================================
 function savePresentation(e) {
     e.preventDefault();
     const status = document.getElementById('presentation-status').value;
@@ -2321,7 +2324,6 @@ function savePresentation(e) {
         alert('🚫 ERRO DE DATA: A Data de Realização não pode ser anterior à Data de Solicitação.');
         return;
     }
-    // -------------------------
 
     if (status === 'Realizada') {
         if (!dateReal) { alert('Data de Realização obrigatória.'); return; }
@@ -2341,19 +2343,42 @@ function savePresentation(e) {
         description: desc,
         dateRealizacao: dateReal,
         orientadores: orientadoresSel,
-        forms: formasSel
+        forms: formasSel,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
+    // Feedback Visual
+    const btnSubmit = document.querySelector('#presentation-form button[type="submit"]');
+    const txtOriginal = btnSubmit.innerText;
+    btnSubmit.innerText = 'Salvando...';
+    btnSubmit.disabled = true;
+
+    const collection = db.collection('presentations');
+    let promise;
+
     if (editingId) {
-        const i = presentations.findIndex(function(x) { return x.id === editingId; });
-        presentations[i] = { ...presentations[i], ...data };
+        promise = collection.doc(editingId).update(data);
+        logSystemAction('Edição', 'Apresentações', `Para: ${data.municipality}`);
     } else {
-        presentations.push({ id: getNextId('pres'), ...data });
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        promise = collection.add(data);
+        logSystemAction('Criação', 'Apresentações', `Para: ${data.municipality}`);
     }
-    salvarNoArmazenamento('presentations', presentations);
-    document.getElementById('presentation-modal').classList.remove('show');
-    clearPresentationFilters(); 
-    showToast('Apresentação salva!', 'success');
+
+    promise.then(() => {
+        document.getElementById('presentation-modal').classList.remove('show');
+        showToast('Apresentação salva na nuvem!', 'success');
+        clearPresentationFilters();
+        editingId = null;
+    })
+    .catch((error) => {
+        console.error("Erro ao salvar:", error);
+        alert("Erro ao salvar: " + error.message);
+    })
+    .finally(() => {
+        btnSubmit.innerText = txtOriginal;
+        btnSubmit.disabled = false;
+    });
 }
 function getFilteredPresentations() {
     const fMun = document.getElementById('filter-presentation-municipality')?.value;
@@ -2423,8 +2448,8 @@ function renderPresentations() {
                 <td style="text-align:center;">${formatDate(p.dateRealizacao)}</td>
                 <td><span class="task-status ${stCls}">${p.status}</span></td>
                 <td>
-                    <button class="btn btn--sm" onclick="showPresentationModal(${p.id})">✏️</button>
-                    <button class="btn btn--sm" onclick="deletePresentation(${p.id})">🗑️</button>
+                    <button class="btn btn--sm" onclick="showPresentationModal('${p.id}')">✏️</button>
+                    <button class="btn btn--sm" onclick="deletePresentation('${p.id}')">🗑️</button>
                 </td>
             </tr>`;
         }).join('');
@@ -2517,16 +2542,19 @@ function generatePresentationsPDF() {
 }
 
 // 6. APRESENTAÇÕES
+// ============================================================
+// NOVA FUNÇÃO: EXCLUIR APRESENTAÇÃO DO FIREBASE
+// ============================================================
 function deletePresentation(id) {
-    if (confirm('Excluir apresentação?')) {
-        const item = presentations.find(x => x.id === id);
-        if(item) {
-            registerUndo(item, 'presentations', renderPresentations); // Registra Undo
-            presentations = presentations.filter(x => x.id !== id);
-            salvarNoArmazenamento('presentations', presentations);
-            renderPresentations();
-            logSystemAction('Exclusão', 'Apresentações', `Apresentação excluída: ${item.municipality}`);
-        }
+    if (confirm('Excluir esta apresentação?')) {
+        db.collection('presentations').doc(id).delete()
+        .then(() => {
+            showToast('Apresentação excluída.', 'success');
+        })
+        .catch((error) => {
+            console.error("Erro ao excluir:", error);
+            alert("Erro ao excluir: " + error.message);
+        });
     }
 }
 
@@ -5146,6 +5174,34 @@ function setupRequestListener() {
         console.error("Erro ao buscar solicitações:", error);
     });
 }
+// ============================================================
+// NOVA FUNÇÃO: OUVINTE DE APRESENTAÇÕES
+// ============================================================
+function setupPresentationListener() {
+    console.log("🎧 Iniciando ouvinte de Apresentações...");
+    
+    db.collection('presentations').onSnapshot((snapshot) => {
+        presentations = []; // Limpa memória
+        
+        snapshot.forEach((doc) => {
+            let p = doc.data();
+            p.id = doc.id; // ID do Firebase
+            presentations.push(p);
+        });
+        
+        console.log(`📦 Recebidas ${presentations.length} apresentações.`);
+        
+        // Atualiza a tela se estiver na aba correta
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.id === 'apresentacoes-section') {
+            renderPresentations();
+        }
+        updateDashboardStats();
+        
+    }, (error) => {
+        console.error("Erro ao buscar apresentações:", error);
+    });
+}
 
 function initializeApp() {
     try {
@@ -5158,6 +5214,7 @@ function initializeApp() {
         setupMunicipalityListener();
         setupTaskListener();
         setupRequestListener();
+        setupPresentationListener();
         
         // Renderizações
         renderMunicipalities();
