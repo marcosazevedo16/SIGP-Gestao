@@ -1084,28 +1084,86 @@ function closeChangePasswordModal() {
     document.getElementById('change-password-modal').classList.remove('show');
 }
 
+// ============================================================
+// FUNÇÃO: ALTERAR SENHA DO USUÁRIO LOGADO
+// ============================================================
 function handleChangePassword(e) {
     e.preventDefault();
-    const n = document.getElementById('new-password').value;
-    const c = document.getElementById('confirm-password').value;
-    
-    if (n !== c || n.length < 4) {
-        alert('Senhas não conferem ou muito curtas.');
+
+    // 1. Pegar os valores dos campos
+    const currentPass = document.getElementById('current-password').value;
+    const newPass = document.getElementById('new-password').value;
+    const confirmPass = document.getElementById('confirm-password').value;
+    const errorDiv = document.getElementById('change-password-error'); 
+
+    if(errorDiv) errorDiv.style.display = 'none';
+
+    // 2. Validações Básicas
+    if (newPass !== confirmPass) {
+        alert("A nova senha e a confirmação não conferem.");
         return;
     }
+    if (newPass.length < 6) {
+        alert("A nova senha deve ter no mínimo 6 caracteres.");
+        return;
+    }
+
+    const user = firebase.auth().currentUser;
+    const btnSubmit = document.querySelector('#change-password-form button[type="submit"]');
+    const txtOriginal = btnSubmit.innerText;
     
-    const idx = users.findIndex(function(u) { return u.id === currentUser.id; });
-    if (idx !== -1) {
-        users[idx].salt = generateSalt();
-        users[idx].passwordHash = hashPassword(n, users[idx].salt);
-        users[idx].mustChangePassword = false;
-        
-        salvarNoArmazenamento('users', users);
-        currentUser = users[idx];
-        salvarNoArmazenamento('currentUser', currentUser);
-        
-        closeChangePasswordModal();
-        showToast('Senha alterada com sucesso!');
+    if (user) {
+        btnSubmit.innerText = "Atualizando...";
+        btnSubmit.disabled = true;
+
+        // 3. Credencial para reautenticação (Obrigatório pelo Firebase)
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPass);
+
+        // 4. Fluxo de Troca
+        user.reauthenticateWithCredential(credential)
+            .then(() => {
+                // Senha atual ok! Atualiza para a nova.
+                return user.updatePassword(newPass);
+            })
+            .then(() => {
+                // 5. Sucesso! Agora atualizamos o Firestore para tirar a flag de "Trocar Senha" se houver
+                // Nota: Não precisamos salvar hash manual no banco, o Auth já cuida disso.
+                
+                // Se quiser manter consistência de dados extras:
+                if(currentUser && currentUser.id) {
+                    return db.collection('users').doc(currentUser.id).update({
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        mustChangePassword: false 
+                    });
+                }
+            })
+            .then(() => {
+                alert("Sucesso! Senha alterada. Por favor, entre novamente.");
+                closeChangePasswordModal();
+                handleLogout(); // Força logout para validar a nova senha
+            })
+            .catch((error) => {
+                console.error("Erro ao mudar senha:", error);
+                let msg = "Erro ao atualizar senha.";
+                
+                if (error.code === 'auth/wrong-password') {
+                    msg = "A senha ATUAL digitada está incorreta.";
+                } else if (error.code === 'auth/weak-password') {
+                    msg = "A nova senha é muito fraca.";
+                } else if (error.code === 'auth/too-many-requests') {
+                    msg = "Muitas tentativas. Tente mais tarde.";
+                }
+
+                alert(msg);
+            })
+            .finally(() => {
+                btnSubmit.innerText = txtOriginal;
+                btnSubmit.disabled = false;
+                document.getElementById('change-password-form').reset();
+            });
+    } else {
+        alert("Erro: Sessão inválida. Faça login novamente.");
+        handleLogout();
     }
 }
 
