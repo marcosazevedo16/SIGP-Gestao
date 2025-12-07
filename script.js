@@ -1273,7 +1273,7 @@ function saveMunicipality(e) {
         updatedAt: firebase.firestore.FieldValue.serverTimestamp() // Marca a hora da edição no servidor
     };
 
-    // 3. Feedback Visual (Muda o texto do botão para o usuário saber que está enviando)
+    // 3. Feedback Visual
     const btnSubmit = document.querySelector('#municipality-form button[type="submit"]');
     const txtOriginal = btnSubmit.innerText;
     btnSubmit.innerText = 'Salvando na Nuvem...';
@@ -1290,7 +1290,6 @@ function saveMunicipality(e) {
 
         // 2. Compara e gera o texto de diferenças
         if(oldItem) {
-            // Lista dos campos que queremos monitorar nas mudanças
             const mapCampos = { 
                 status: 'Situação', 
                 manager: 'Gestor', 
@@ -1304,10 +1303,8 @@ function saveMunicipality(e) {
 
         promise = collection.doc(editingId).update(data);
         logSystemAction('Edição', 'Municípios', detailsLog);
-    }
     } else {
         // CRIAR NOVO (Add)
-        // Adiciona data de criação
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         promise = collection.add(data);
         logSystemAction('Criação', 'Municípios', `Cadastrou município: ${data.name}`);
@@ -1321,8 +1318,6 @@ function saveMunicipality(e) {
         // Limpa o formulário e variáveis
         document.getElementById('municipality-form').reset();
         editingId = null;
-        
-        // NOTA: A lista não vai atualizar sozinha ainda (faremos isso no próximo passo)
     })
     .catch((error) => {
         console.error("Erro ao salvar:", error);
@@ -1609,14 +1604,23 @@ function saveTask(e) {
     let promise;
 
     if (editingId) {
+        // Auditoria Detalhada
+        const oldItem = tasks.find(x => x.id === editingId);
+        let detailsLog = `Município: ${data.municipality}`;
+        
+        if (oldItem) {
+            const map = { status: 'Status', datePerformed: 'Data Realização', performedBy: 'Responsável', trainedName: 'Profissional' };
+            const diff = detectChanges(oldItem, data, map);
+            if (diff) detailsLog += `. Alterações: [${diff}]`;
+        }
+
         promise = collection.doc(editingId).update(data);
-        logSystemAction('Edição', 'Treinamentos', `Município: ${data.municipality}`);
+        logSystemAction('Edição', 'Treinamentos', detailsLog);
     } else {
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         promise = collection.add(data);
-        logSystemAction('Criação', 'Treinamentos', `Município: ${data.municipality}`);
+        logSystemAction('Criação', 'Treinamentos', `Município: ${data.municipality} | Responsável: ${data.performedBy}`);
     }
-
     // 5. Finalização
     promise.then(() => {
         document.getElementById('task-modal').classList.remove('show');
@@ -1949,12 +1953,21 @@ function saveRequest(e) {
     let promise;
 
     if (editingId) {
+        const oldItem = requests.find(x => x.id === editingId);
+        let detailsLog = `Para: ${data.municipality}`;
+        
+        if (oldItem) {
+            const map = { status: 'Status', dateRealization: 'Data Realização', justification: 'Justificativa' };
+            const diff = detectChanges(oldItem, data, map);
+            if (diff) detailsLog += `. Alterações: [${diff}]`;
+        }
+
         promise = collection.doc(editingId).update(data);
-        logSystemAction('Edição', 'Solicitações', `Para: ${data.municipality}`);
+        logSystemAction('Edição', 'Solicitações', detailsLog);
     } else {
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         promise = collection.add(data);
-        logSystemAction('Criação', 'Solicitações', `Para: ${data.municipality}`);
+        logSystemAction('Criação', 'Solicitações', `Para: ${data.municipality} | Solicitante: ${data.requester}`);
     }
 
     promise.then(() => {
@@ -2357,8 +2370,23 @@ function savePresentation(e) {
     let promise;
 
     if (editingId) {
+        const oldItem = presentations.find(x => x.id === editingId);
+        let detailsLog = `Para: ${data.municipality}`;
+        
+        if (oldItem) {
+            const map = { status: 'Status', dateRealizacao: 'Data Realização' };
+            const diff = detectChanges(oldItem, data, map);
+            
+            // Comparação especial para Arrays (Orientadores/Formas)
+            const oldOrient = (oldItem.orientadores || []).sort().join(',');
+            const newOrient = (data.orientadores || []).sort().join(',');
+            if (oldOrient !== newOrient) detailsLog += `. Orientadores mudaram`;
+
+            if (diff) detailsLog += `. Alterações: [${diff}]`;
+        }
+
         promise = collection.doc(editingId).update(data);
-        logSystemAction('Edição', 'Apresentações', `Para: ${data.municipality}`);
+        logSystemAction('Edição', 'Apresentações', detailsLog);
     } else {
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         promise = collection.add(data);
@@ -2715,12 +2743,21 @@ function saveDemand(e) {
     let promise;
 
     if (editingId) {
+        const oldItem = demands.find(x => String(x.id) === String(editingId));
+        let detailsLog = `Desc: ${data.description.substring(0,20)}...`;
+        
+        if (oldItem) {
+            const map = { status: 'Status', priority: 'Prioridade', dateRealization: 'Data Realização' };
+            const diff = detectChanges(oldItem, data, map);
+            if (diff) detailsLog += `. Alterações: [${diff}]`;
+        }
+
         promise = collection.doc(editingId).update(data);
-        logSystemAction('Edição', 'Demandas', `Desc: ${data.description.substring(0,20)}...`);
+        logSystemAction('Edição', 'Demandas', detailsLog);
     } else {
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         promise = collection.add(data);
-        logSystemAction('Criação', 'Demandas', `Desc: ${data.description.substring(0,20)}...`);
+        logSystemAction('Criação', 'Demandas', `Desc: ${data.description.substring(0,20)}... | Prioridade: ${data.priority}`);
     }
 
     promise.then(() => {
@@ -3082,14 +3119,22 @@ function saveVisit(e) {
     let promise;
 
     if (editingId) {
+        const oldItem = visits.find(x => x.id === editingId);
+        let detailsLog = `Para: ${data.municipality}`;
+        
+        if (oldItem) {
+            const map = { status: 'Status', dateRealization: 'Data Realização', reason: 'Motivo' };
+            const diff = detectChanges(oldItem, data, map);
+            if (diff) detailsLog += `. Alterações: [${diff}]`;
+        }
+
         promise = collection.doc(editingId).update(data);
-        logSystemAction('Edição', 'Visitas', `Para: ${data.municipality}`);
+        logSystemAction('Edição', 'Visitas', detailsLog);
     } else {
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         promise = collection.add(data);
-        logSystemAction('Criação', 'Visitas', `Para: ${data.municipality}`);
+        logSystemAction('Criação', 'Visitas', `Para: ${data.municipality} | Solicitante: ${data.applicant}`);
     }
-
     promise.then(() => {
         document.getElementById('visit-modal').classList.remove('show');
         showToast('Visita salva na nuvem!', 'success');
@@ -3432,8 +3477,17 @@ function saveProduction(e) {
     let promise;
 
     if (editingId) {
+        const oldItem = productions.find(x => x.id === editingId);
+        let detailsLog = `Para: ${data.municipality}`;
+        
+        if (oldItem) {
+            const map = { status: 'Status', frequency: 'Frequência', sendDate: 'Data Envio', releaseDate: 'Data Liberação' };
+            const diff = detectChanges(oldItem, data, map);
+            if (diff) detailsLog += `. Alterações: [${diff}]`;
+        }
+
         promise = collection.doc(editingId).update(data);
-        logSystemAction('Edição', 'Produção', `Para: ${data.municipality} | Frequência: ${data.frequency}`);
+        logSystemAction('Edição', 'Produção', detailsLog);
     } else {
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         promise = collection.add(data);
@@ -6403,12 +6457,21 @@ function saveIntegration(e) {
     let promise;
 
     if(editingId) {
+        const oldItem = integrations.find(x => x.id === editingId);
+        let detailsLog = `Município: ${data.municipality}`;
+        
+        if (oldItem) {
+            const map = { expirationDate: 'Vencimento', responsible: 'Responsável' };
+            const diff = detectChanges(oldItem, data, map);
+            if (diff) detailsLog += `. Alterações: [${diff}]`;
+        }
+
         promise = collection.doc(editingId).update(data);
-        logSystemAction('Edição', 'Integrações', `Município: ${data.municipality}`);
+        logSystemAction('Edição', 'Integrações', detailsLog);
     } else {
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         promise = collection.add(data);
-        logSystemAction('Criação', 'Integrações', `Município: ${data.municipality}`);
+        logSystemAction('Criação', 'Integrações', `Município: ${data.municipality} | Vencimento: ${formatDate(data.expirationDate)}`);
     }
 
     promise.then(() => {
@@ -6824,12 +6887,22 @@ function saveColabInfo(e) {
     let promise;
 
     if (editingId) {
+        // Note: x.id == editingId serve para pegar tanto string quanto number se houver mistura
+        const oldItem = collaboratorInfos.find(x => x.id == editingId); 
+        let detailsLog = `Colaborador: ${data.name}`;
+        
+        if (oldItem) {
+            const map = { status: 'Situação', terminationDate: 'Data Desligamento', lastVacationEnd: 'Últimas Férias' };
+            const diff = detectChanges(oldItem, data, map);
+            if (diff) detailsLog += `. Alterações: [${diff}]`;
+        }
+
         promise = collection.doc(editingId).update(data);
-        logSystemAction('Edição', 'Colaboradores Info', `Atualizou: ${data.name}`);
+        logSystemAction('Edição', 'Colaboradores Info', detailsLog);
     } else {
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         promise = collection.add(data);
-        logSystemAction('Criação', 'Colaboradores Info', `Novo: ${data.name}`);
+        logSystemAction('Criação', 'Colaboradores Info', `Novo: ${data.name} | Status: ${data.status}`);
     }
 
     promise.then(() => {
