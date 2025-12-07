@@ -2579,7 +2579,9 @@ function clearPresentationFilters() {
 // ----------------------------------------------------------------------------
 // 15. DEMANDAS (Item 5)
 // ----------------------------------------------------------------------------
-// Função Visual: Controla campos e obrigatoriedade
+// ============================================================
+// FUNÇÃO VISUAL: CONTROLA CAMPOS DA DEMANDA (Realizada/Inviável)
+// ============================================================
 function handleDemandStatusChange() {
     const statusEl = document.getElementById('demand-status');
     if (!statusEl) return;
@@ -2609,10 +2611,15 @@ function handleDemandStatusChange() {
         if(inpJust) inpJust.required = true;
     }
 }
+
+// ============================================================
+// FUNÇÃO: ABRIR MODAL DE DEMANDA (CORRIGIDA)
+// ============================================================
 function showDemandModal(id = null) {
     editingId = id;
-    document.getElementById('demand-form').reset();
-    form.noValidate = true;
+    const form = document.getElementById('demand-form');
+    form.reset();
+    form.noValidate = true; // Evita o erro de "invalid form control"
 
     // 1. Reseta o contador de caracteres visualmente
     if(document.getElementById('demand-char-counter')) {
@@ -2621,7 +2628,8 @@ function showDemandModal(id = null) {
 
     // 2. Preenchimento em caso de Edição
     if (id) {
-        const d = demands.find(x => x.id === id);
+        // Busca o item pelo ID (convertendo para String para garantir)
+        const d = demands.find(x => String(x.id) === String(id));
         if (d) {
             document.getElementById('demand-date').value = d.date;
             document.getElementById('demand-description').value = d.description;
@@ -3364,6 +3372,9 @@ function showProductionModal(id = null) {
     document.getElementById('production-modal').classList.add('show');
 }
 
+// ============================================================
+// NOVA FUNÇÃO: SALVAR PRODUÇÃO NO FIREBASE
+// ============================================================
 function saveProduction(e) {
     e.preventDefault();
     const freq = document.getElementById('production-frequency').value;
@@ -3387,29 +3398,46 @@ function saveProduction(e) {
         status: document.getElementById('production-status').value,
         releaseDate: document.getElementById('production-release-date').value,
         sendDate: sendDateVal,
-        
-        // SANITIZAÇÃO AQUI:
         contact: sanitizeInput(document.getElementById('production-contact').value),
         competence: sanitizeInput(document.getElementById('production-competence').value),
         period: period,
         professional: sanitizeInput(document.getElementById('production-professional').value),
-        observations: sanitizeInput(document.getElementById('production-observations').value)
+        observations: sanitizeInput(document.getElementById('production-observations').value),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
+    // Feedback Visual
+    const btnSubmit = document.querySelector('#production-form button[type="submit"]');
+    const txtOriginal = btnSubmit.innerText;
+    btnSubmit.innerText = 'Salvando...';
+    btnSubmit.disabled = true;
+
+    const collection = db.collection('productions');
+    let promise;
+
     if (editingId) {
-        const i = productions.findIndex(x => x.id === editingId);
-        if (i !== -1) productions[i] = { ...productions[i], ...data };
+        promise = collection.doc(editingId).update(data);
+        logSystemAction('Edição', 'Produção', `Para: ${data.municipality} | Frequência: ${data.frequency}`);
     } else {
-        productions.push({ id: getNextId('prod'), ...data });
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        promise = collection.add(data);
+        logSystemAction('Criação', 'Produção', `Para: ${data.municipality} | Frequência: ${data.frequency}`);
     }
-    
-    salvarNoArmazenamento('productions', productions);
-    document.getElementById('production-modal').classList.remove('show');
-    clearProductionFilters();
-    
-    // AUDITORIA
-    logSystemAction(editingId ? 'Edição' : 'Criação', 'Produção', `Para: ${data.municipality} | Frequência: ${data.frequency}`);
-    showToast('Envio salvo com sucesso!', 'success');
+
+    promise.then(() => {
+        document.getElementById('production-modal').classList.remove('show');
+        showToast('Envio salvo na nuvem!', 'success');
+        clearProductionFilters();
+        editingId = null;
+    })
+    .catch((error) => {
+        console.error("Erro ao salvar:", error);
+        alert("Erro ao salvar: " + error.message);
+    })
+    .finally(() => {
+        btnSubmit.innerText = txtOriginal;
+        btnSubmit.disabled = false;
+    });
 }
 
 function getFilteredProductions() {
@@ -3516,8 +3544,8 @@ function renderProductions() {
                 <td style="text-align:center;">${formatDate(p.sendDate)}</td>
                 <td class="text-secondary-cell">${p.observations || '-'}</td>
                 <td style="text-align:center;">
-                    <button class="btn btn--sm" onclick="showProductionModal(${p.id})" title="Editar">✏️</button>
-                    <button class="btn btn--sm" onclick="deleteProduction(${p.id})" title="Excluir">🗑️</button>
+                    <button class="btn btn--sm" onclick="showProductionModal('${p.id}')" title="Editar">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteProduction('${p.id}')" title="Excluir">🗑️</button>
                 </td>
             </tr>`;
         }).join('');
@@ -3598,16 +3626,19 @@ function generateProductionsPDF() {
 }
 
 // 5. PRODUÇÃO
+// ============================================================
+// NOVA FUNÇÃO: EXCLUIR PRODUÇÃO DO FIREBASE
+// ============================================================
 function deleteProduction(id) {
-    if (confirm('Excluir envio?')) {
-        const item = productions.find(x => x.id === id);
-        if(item) {
-            registerUndo(item, 'productions', renderProductions); // Registra Undo
-            productions = productions.filter(x => x.id !== id);
-            salvarNoArmazenamento('productions', productions);
-            renderProductions();
-            logSystemAction('Exclusão', 'Produção', `Envio excluído: ${item.municipality}`);
-        }
+    if (confirm('Excluir este registro de envio?')) {
+        db.collection('productions').doc(id).delete()
+        .then(() => {
+            showToast('Registro excluído.', 'success');
+        })
+        .catch((error) => {
+            console.error("Erro ao excluir:", error);
+            alert("Erro ao excluir: " + error.message);
+        });
     }
 }
 
@@ -5316,6 +5347,91 @@ function setupVisitListener() {
         console.error("Erro ao buscar visitas:", error);
     });
 }
+// ============================================================
+// NOVA FUNÇÃO: OUVINTE DE PRODUÇÃO
+// ============================================================
+function setupProductionListener() {
+    console.log("🎧 Iniciando ouvinte de Produção...");
+    
+    db.collection('productions').onSnapshot((snapshot) => {
+        productions = []; // Limpa memória
+        
+        snapshot.forEach((doc) => {
+            let p = doc.data();
+            p.id = doc.id; // ID do Firebase
+            productions.push(p);
+        });
+        
+        console.log(`📦 Recebidos ${productions.length} registros de produção.`);
+        
+        // Atualiza a tela se estiver na aba correta
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.id === 'producao-section') {
+            renderProductions();
+        }
+        updateDashboardStats();
+        
+    }, (error) => {
+        console.error("Erro ao buscar produção:", error);
+    });
+}
+// ============================================================
+// NOVA FUNÇÃO: OUVINTE DE INTEGRAÇÕES
+// ============================================================
+function setupIntegrationListener() {
+    console.log("🎧 Iniciando ouvinte de Integrações...");
+    
+    db.collection('integrations').onSnapshot((snapshot) => {
+        integrations = []; // Limpa memória
+        
+        snapshot.forEach((doc) => {
+            let i = doc.data();
+            i.id = doc.id; // ID do Firebase
+            integrations.push(i);
+        });
+        
+        console.log(`📦 Recebidas ${integrations.length} integrações.`);
+        
+        // Atualiza a tela se estiver na aba correta
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.id === 'apis-section') {
+            renderIntegrations();
+        }
+        
+        // Atualiza notificações (certificados vencendo)
+        checkSystemNotifications();
+        
+    }, (error) => {
+        console.error("Erro ao buscar integrações:", error);
+    });
+}
+// ============================================================
+// NOVA FUNÇÃO: OUVINTE DE COLABORADORES (RH)
+// ============================================================
+function setupColabInfoListener() {
+    console.log("🎧 Iniciando ouvinte de RH/Colaboradores...");
+    
+    db.collection('collaboratorInfos').onSnapshot((snapshot) => {
+        collaboratorInfos = []; // Limpa memória
+        
+        snapshot.forEach((doc) => {
+            let c = doc.data();
+            c.id = doc.id; // ID do Firebase
+            collaboratorInfos.push(c);
+        });
+        
+        console.log(`📦 Recebidas ${collaboratorInfos.length} fichas de colaboradores.`);
+        
+        // Atualiza a tela se estiver na aba correta
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.id === 'info-colaboradores-section') {
+            renderCollaboratorInfos();
+        }
+        
+    }, (error) => {
+        console.error("Erro ao buscar fichas:", error);
+    });
+}
 
 function initializeApp() {
     try {
@@ -5331,6 +5447,9 @@ function initializeApp() {
         setupPresentationListener();
         setupDemandListener();
         setupVisitListener();
+        setupProductionListener();
+        setupIntegrationListener();
+        setupColabInfoListener();
         
         // Renderizações
         renderMunicipalities();
@@ -6200,6 +6319,9 @@ function showIntegrationModal(id=null) {
     document.getElementById('integration-modal').classList.add('show');
 }
 
+// ============================================================
+// NOVA FUNÇÃO: SALVAR INTEGRAÇÃO NO FIREBASE
+// ============================================================
 function saveIntegration(e) {
     e.preventDefault();
     
@@ -6213,7 +6335,7 @@ function saveIntegration(e) {
     if (!resp) { alert('O campo Responsável pelo Certificado é obrigatório.'); return; }
     if (!munName) { alert('Selecione um município.'); return; }
 
-    // Validação de Duplicidade
+    // Validação de Duplicidade (checa na lista local que o ouvinte mantém atualizada)
     const isDuplicate = integrations.some(i => i.municipality === munName && i.id !== editingId);
     if (isDuplicate) {
         alert(`🚫 Erro: O município "${munName}" já possui uma integração cadastrada!\n\nPor favor, edite o registro existente na lista.`);
@@ -6224,26 +6346,45 @@ function saveIntegration(e) {
         municipality: munName,
         expirationDate: document.getElementById('integration-expiration').value,
         responsible: resp,
-        contact: sanitizeInput(document.getElementById('integration-contact').value), // <--- NOVO
+        contact: sanitizeInput(document.getElementById('integration-contact').value),
         apis: apisSel,
-        observation: sanitizeInput(document.getElementById('integration-observation').value)
+        observation: sanitizeInput(document.getElementById('integration-observation').value),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
+    // Feedback Visual
+    const btnSubmit = document.querySelector('#integration-form button[type="submit"]');
+    const txtOriginal = btnSubmit.innerText;
+    btnSubmit.innerText = 'Salvando...';
+    btnSubmit.disabled = true;
+
+    const collection = db.collection('integrations');
+    let promise;
+
     if(editingId) {
-        const i = integrations.findIndex(x => x.id === editingId);
-        if(i !== -1) integrations[i] = { ...integrations[i], ...data };
+        promise = collection.doc(editingId).update(data);
+        logSystemAction('Edição', 'Integrações', `Município: ${data.municipality}`);
     } else {
-        integrations.push({ id: getNextId('integration'), ...data });
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        promise = collection.add(data);
+        logSystemAction('Criação', 'Integrações', `Município: ${data.municipality}`);
     }
 
-    salvarNoArmazenamento('integrations', integrations);
-    document.getElementById('integration-modal').classList.remove('show');
-    clearIntegrationFilters();
-    
-    logSystemAction(editingId ? 'Edição' : 'Criação', 'Integrações', `Município: ${data.municipality} | Resp: ${data.responsible}`);
-    showToast('Integração salva com sucesso!', 'success');
+    promise.then(() => {
+        document.getElementById('integration-modal').classList.remove('show');
+        showToast('Integração salva na nuvem!', 'success');
+        clearIntegrationFilters();
+        editingId = null;
+    })
+    .catch((error) => {
+        console.error("Erro ao salvar:", error);
+        alert("Erro ao salvar: " + error.message);
+    })
+    .finally(() => {
+        btnSubmit.innerText = txtOriginal;
+        btnSubmit.disabled = false;
+    });
 }
-
 // --- GERENCIAMENTO DE INTEGRAÇÕES (ABA PRINCIPAL) CORRIGIDO ---
 
 function renderIntegrations() {
@@ -6318,8 +6459,8 @@ function renderIntegrations() {
                 
                 <td>
                     <div style="display:flex; justify-content:center; gap:5px;">
-                        <button class="btn btn--sm" onclick="showIntegrationModal(${i.id})">✏️</button>
-                        <button class="btn btn--sm" onclick="deleteIntegration(${i.id})">🗑️</button>
+                        <button class="btn btn--sm" onclick="showIntegrationModal('${i.id}')">✏️</button>
+                        <button class="btn btn--sm" onclick="deleteIntegration('${i.id}')">🗑️</button>
                     </div>
                 </td>
             </tr>`;
@@ -6442,20 +6583,19 @@ function showIntegrationModal(id = null) {
 }
 
 // CORREÇÃO: Exclusão de Integração
+// ============================================================
+// NOVA FUNÇÃO: EXCLUIR INTEGRAÇÃO DO FIREBASE
+// ============================================================
 function deleteIntegration(id) {
     if(confirm('Excluir esta integração?')) {
-        const item = integrations.find(x => x.id == id);
-        if(item) {
-            // 1. Registra o Undo
-            registerUndo(item, 'integrations', renderIntegrations);
-            
-            // 2. Exclui
-            integrations = integrations.filter(x => x.id != id);
-            salvarNoArmazenamento('integrations', integrations);
-            renderIntegrations();
-            
-            logSystemAction('Exclusão', 'Integrações', `Integração ID: ${id}`);
-        }
+        db.collection('integrations').doc(id).delete()
+        .then(() => {
+            showToast('Integração excluída.', 'success');
+        })
+        .catch((error) => {
+            console.error("Erro ao excluir:", error);
+            alert("Erro ao excluir: " + error.message);
+        });
     }
 }
 
@@ -6593,6 +6733,9 @@ function showColabInfoModal(id = null) {
     handleColabStatusChange();
     document.getElementById('colab-info-modal').classList.add('show');
 }
+// ============================================================
+// NOVA FUNÇÃO: SALVAR FICHA DE COLABORADOR NO FIREBASE
+// ============================================================
 function saveColabInfo(e) {
     e.preventDefault();
     const status = document.getElementById('colab-info-status').value;
@@ -6604,18 +6747,18 @@ function saveColabInfo(e) {
     // --- VALIDAÇÃO DE DATA ---
     if (admDate) {
         if (termDate && termDate < admDate) {
-            alert('🚫 ERRO DE DATA: A Data de Desligamento não pode ser anterior à Admissão.');
+            alert('🚫 ERRO: A Data de Desligamento não pode ser anterior à Admissão.');
             return;
         }
         if (feriasDate && feriasDate < admDate) {
-            alert('🚫 ERRO DE DATA: A Data das Férias não pode ser anterior à Admissão.');
+            alert('🚫 ERRO: A Data das Férias não pode ser anterior à Admissão.');
             return;
         }
     }
-    // -------------------------
 
     if (status === 'Desligado da Empresa' && !termDate) { alert('Data de Desligamento obrigatória.'); return; }
 
+    // Validação de Duplicidade (Checagem local na lista atualizada pelo ouvinte)
     if (!editingId && collaboratorInfos.some(c => c.name === name)) {
         if (!confirm(`Já existe uma ficha para "${name}". Criar outra?`)) return;
     }
@@ -6626,24 +6769,42 @@ function saveColabInfo(e) {
         status: status,
         terminationDate: termDate,
         lastVacationEnd: feriasDate,
-        observation: sanitizeInput(document.getElementById('colab-info-obs').value)
+        observation: sanitizeInput(document.getElementById('colab-info-obs').value),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
+    // Feedback Visual
+    const btnSubmit = document.querySelector('#colab-info-form button[type="submit"]');
+    const txtOriginal = btnSubmit.innerText;
+    btnSubmit.innerText = 'Salvando...';
+    btnSubmit.disabled = true;
+
+    const collection = db.collection('collaboratorInfos');
+    let promise;
+
     if (editingId) {
-        const i = collaboratorInfos.findIndex(x => x.id == editingId);
-        if (i !== -1) {
-            collaboratorInfos[i] = { ...collaboratorInfos[i], ...data };
-            logSystemAction('Edição', 'Colaboradores Info', `Atualizou: ${data.name}`);
-        }
+        promise = collection.doc(editingId).update(data);
+        logSystemAction('Edição', 'Colaboradores Info', `Atualizou: ${data.name}`);
     } else {
-        collaboratorInfos.push({ id: getNextId('colabInfo'), ...data });
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        promise = collection.add(data);
         logSystemAction('Criação', 'Colaboradores Info', `Novo: ${data.name}`);
     }
 
-    salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
-    document.getElementById('colab-info-modal').classList.remove('show');
-    renderCollaboratorInfos();
-    showToast('Ficha salva!', 'success');
+    promise.then(() => {
+        document.getElementById('colab-info-modal').classList.remove('show');
+        showToast('Ficha salva na nuvem!', 'success');
+        clearColabInfoFilters();
+        editingId = null;
+    })
+    .catch((error) => {
+        console.error("Erro ao salvar:", error);
+        alert("Erro ao salvar: " + error.message);
+    })
+    .finally(() => {
+        btnSubmit.innerText = txtOriginal;
+        btnSubmit.disabled = false;
+    });
 }
 function renderCollaboratorInfos() {
     // 1. Filtros
@@ -6695,10 +6856,10 @@ function renderCollaboratorInfos() {
                 <td>${serviceTime}</td>
                 <td>${formatDate(c.lastVacationEnd)}</td>
                 <td style="color:#C85250; font-weight:500;">${timeSinceVacation}</td>
-                <td class="text-secondary-cell">${c.observation ? (c.observation.length > 20 ? c.observation.substr(0,20)+'...' : c.observation) : '-'}</td>
+               <td class="text-secondary-cell">${c.observation ? (c.observation.length > 20 ? c.observation.substr(0,20)+'...' : c.observation) : '-'}</td>
                 <td>
-                    <button class="btn btn--sm" onclick="showColabInfoModal(${c.id})">✏️</button>
-                    <button class="btn btn--sm" onclick="deleteColabInfo(${c.id})">🗑️</button>
+                    <button class="btn btn--sm" onclick="showColabInfoModal('${c.id}')">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteColabInfo('${c.id}')">🗑️</button>
                 </td>
             </tr>`;
         }).join('');
@@ -6740,8 +6901,8 @@ function renderCollaboratorInfos() {
                 <td style="font-weight:bold;">${serviceTime}</td>
                 <td class="text-secondary-cell">${c.observation ? (c.observation.length > 20 ? c.observation.substr(0,20)+'...' : c.observation) : '-'}</td>
                 <td>
-                    <button class="btn btn--sm" onclick="showColabInfoModal(${c.id})">✏️</button>
-                    <button class="btn btn--sm" onclick="deleteColabInfo(${c.id})">🗑️</button>
+                    <button class="btn btn--sm" onclick="showColabInfoModal('${c.id}')">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteColabInfo('${c.id}')">🗑️</button>
                 </td>
             </tr>`;
         }).join('');
@@ -6841,18 +7002,19 @@ function updateColabCharts(data) {
     }
 }
 
+// ============================================================
+// NOVA FUNÇÃO: EXCLUIR FICHA DO FIREBASE
+// ============================================================
 function deleteColabInfo(id) {
-    if(confirm('Excluir esta ficha?')) {
-        const item = collaboratorInfos.find(x => x.id == id); // Use == por segurança
-        if(item) {
-            // 1. Registra o Undo
-            registerUndo(item, 'collaboratorInfos', renderCollaboratorInfos);
-            
-            // 2. Exclui
-            collaboratorInfos = collaboratorInfos.filter(x => x.id != id);
-            salvarNoArmazenamento('collaboratorInfos', collaboratorInfos);
-            renderCollaboratorInfos();
-        }
+    if(confirm('Excluir esta ficha permanentemente?')) {
+        db.collection('collaboratorInfos').doc(id).delete()
+        .then(() => {
+            showToast('Ficha excluída.', 'success');
+        })
+        .catch((error) => {
+            console.error("Erro ao excluir:", error);
+            alert("Erro ao excluir: " + error.message);
+        });
     }
 }
 
