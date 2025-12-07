@@ -7018,7 +7018,7 @@ document.addEventListener('DOMContentLoaded', function() {
             else if (id.includes('user')) renderUsers();
             else if (id.includes('audit')) renderAuditLogs();
             
-        }, 400))); // Espera 400ms após a última digitação
+        }, 400)); // Espera 400ms após a última digitação
    });
 
     // 👇 ADICIONE ESTA LINHA AQUI 👇
