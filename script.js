@@ -4985,6 +4985,43 @@ function renderOrientadores() {
     </table>`;
 }
 
+// ============================================================
+// NOVA FUNÇÃO: OUVINTE DE MUNICÍPIOS (Lê do Firebase em tempo real)
+// ============================================================
+function setupMunicipalityListener() {
+    console.log("🎧 Iniciando ouvinte de Municípios...");
+    
+    // Conecta na coleção 'municipalities'
+    db.collection('municipalities').onSnapshot((snapshot) => {
+        // Limpa a lista da memória para não duplicar
+        municipalities = []; 
+        
+        snapshot.forEach((doc) => {
+            // Pega os dados do documento
+            let mun = doc.data();
+            // Importante: O ID agora vem do documento do Firebase (é um código de letras e números)
+            mun.id = doc.id; 
+            municipalities.push(mun);
+        });
+        
+        console.log(`📦 Recebidos ${municipalities.length} municípios do Firebase.`);
+        
+        // Se a aba de municípios estiver ativa, atualiza a tabela visualmente
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.id === 'municipios-section') {
+            renderMunicipalities();
+        }
+        
+        // Atualiza os gráficos e os selects dos outros formulários
+        updateGlobalDropdowns();
+        updateDashboardStats(); 
+        
+    }, (error) => {
+        console.error("Erro ao buscar municípios:", error);
+        showToast("Erro de conexão com o banco de dados.", "error");
+    });
+}
+
 function initializeApp() {
     try {
         updateUserInterface();
@@ -4992,7 +5029,8 @@ function initializeApp() {
         initializeTabs();
         applyMasks();
         setupDynamicFormFields();
-        updateGlobalDropdowns();    
+        updateGlobalDropdowns();
+        setupMunicipalityListener();
         
         // Renderizações
         renderMunicipalities();
