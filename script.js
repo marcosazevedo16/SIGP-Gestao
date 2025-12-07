@@ -576,24 +576,6 @@ function setupDynamicFormFields() {
         const actions = formReq.querySelector('.modal-actions');
         formReq.insertBefore(div, actions);
     }
-
-    // 3. Demandas: Data Realização e Justificativa
-    const formDem = document.getElementById('demand-form');
-    if (formDem && !document.getElementById('demand-date-realization')) {
-        const div = document.createElement('div');
-        div.innerHTML = `
-            <div class="form-group" id="group-demand-date-realization" style="display:none;">
-                <label class="form-label">Data de Realização*</label>
-                <input type="date" class="form-control" id="demand-date-realization">
-            </div>
-            <div class="form-group" id="group-demand-justification" style="display:none;">
-                <label class="form-label">Justificativa (Máx 150)</label>
-                <textarea class="form-control" id="demand-justification" maxlength="150"></textarea>
-            </div>`;
-        const actions = formDem.querySelector('.modal-actions');
-        formDem.insertBefore(div, actions);
-    }
-
     // 4. Visitas: Data Realização e Justificativa
     const formVis = document.getElementById('visit-form');
     if (formVis && !document.getElementById('visit-date-realization')) {
@@ -2588,15 +2570,17 @@ function handleDemandStatusChange() {
     
     const status = statusEl.value;
     
-    // Grupos (Divs)
+    // Grupos (Divs) - O ID do grupo no seu HTML parece ser 'group-demand-justification' mesmo, isso ok.
     const grpReal = document.getElementById('group-demand-realization-date');
     const grpJust = document.getElementById('group-demand-justification');
     
-    // Inputs (para required)
+    // Inputs (para required - opcional agora que usamos noValidate, mas bom manter referência correta)
     const inpReal = document.getElementById('demand-realization-date');
-    const inpJust = document.getElementById('demand-justification');
+    
+    // CORREÇÃO AQUI: Usando o ID 'demand-justification-reply'
+    const inpJust = document.getElementById('demand-justification-reply');
 
-    // RESET: Esconde tudo e remove required
+    // RESET
     if(grpReal) grpReal.style.display = 'none';
     if(grpJust) grpJust.style.display = 'none';
     if(inpReal) inpReal.required = false;
@@ -2611,7 +2595,6 @@ function handleDemandStatusChange() {
         if(inpJust) inpJust.required = true;
     }
 }
-
 // ============================================================
 // FUNÇÃO: ABRIR MODAL DE DEMANDA (CORRIGIDA)
 // ============================================================
@@ -2619,16 +2602,13 @@ function showDemandModal(id = null) {
     editingId = id;
     const form = document.getElementById('demand-form');
     form.reset();
-    form.noValidate = true; // Evita o erro de "invalid form control"
+    form.noValidate = true;
 
-    // 1. Reseta o contador de caracteres visualmente
     if(document.getElementById('demand-char-counter')) {
         document.getElementById('demand-char-counter').textContent = '0 / 250';
     }
 
-    // 2. Preenchimento em caso de Edição
     if (id) {
-        // Busca o item pelo ID (convertendo para String para garantir)
         const d = demands.find(x => String(x.id) === String(id));
         if (d) {
             document.getElementById('demand-date').value = d.date;
@@ -2636,26 +2616,23 @@ function showDemandModal(id = null) {
             document.getElementById('demand-priority').value = d.priority;
             document.getElementById('demand-status').value = d.status;
 
-            // Atualiza o contador com o tamanho da descrição atual
             if(document.getElementById('demand-char-counter')) {
                 const tamanhoAtual = d.description ? d.description.length : 0;
                 document.getElementById('demand-char-counter').textContent = tamanhoAtual + ' / 250';
             }
 
-            // Campos condicionais (Data Realização e Justificativa)
             if(document.getElementById('demand-realization-date')) {
                 document.getElementById('demand-realization-date').value = d.dateRealization || '';
             }
-            if(document.getElementById('demand-justification')) {
-                document.getElementById('demand-justification').value = d.justification || '';
+            
+            // CORREÇÃO AQUI: Usando o ID 'demand-justification-reply'
+            if(document.getElementById('demand-justification-reply')) {
+                document.getElementById('demand-justification-reply').value = d.justification || '';
             }
         }
     }
 
-    // 3. Ajusta a visibilidade dos campos com base no status carregado
     handleDemandStatusChange();
-    
-    // 4. Abre o modal
     document.getElementById('demand-modal').classList.add('show');
 }
 
@@ -2670,32 +2647,28 @@ function saveDemand(e) {
     const dateReal = document.getElementById('demand-realization-date').value;
     const dateSol = document.getElementById('demand-date').value;
     
-    // Captura Descrição e Justificativa (Raw Values)
+    // Captura Descrição e Justificativa (USANDO O ID CORRETO DO HTML)
     const rawDesc = document.getElementById('demand-description').value;
-    const rawJustif = document.getElementById('demand-justification').value;
+    // CORREÇÃO AQUI: Mudamos de 'demand-justification' para 'demand-justification-reply'
+    const rawJustif = document.getElementById('demand-justification-reply').value; 
 
-    // 2. Validações Manuais (Obrigatórias por causa do noValidate)
-    
-    // Validação da Descrição (Novo)
+    // 2. Validações Manuais
     if (!rawDesc || rawDesc.trim() === '') {
         alert('O campo Descrição da Demanda é obrigatório.');
         return;
     }
 
-    // Validação de Datas
     if (dateReal && dateSol && dateReal < dateSol) {
         alert('🚫 ERRO: A Data de Realização não pode ser anterior à Data de Solicitação.');
         return;
     }
 
-    // Validações Condicionais de Status
     if (status === 'Realizada' && !dateReal) { 
         alert('Para status "Realizada", a Data de Realização é obrigatória.'); 
         return; 
     }
     
     if (status === 'Inviável') {
-        // Verifica se tem texto na justificativa
         if (!rawJustif || rawJustif.trim() === '') {
             alert('Para status "Inviável", a Justificativa é obrigatória.'); 
             return; 
