@@ -2858,23 +2858,32 @@
 <div id="forgot-password-modal" class="modal">
     <div class="modal-content" style="max-width: 450px;">
         <div class="modal-header">
-            <h3>🔐 Recuperação de Acesso</h3>
+            <h3>🔐 Recuperar Senha</h3>
             <button class="close-btn" onclick="closeForgotPasswordModal()">&times;</button>
         </div>
-        <div style="padding: 24px; text-align: center;">
-            <div style="font-size: 48px; margin-bottom: 16px;">👨‍💻</div>
-            <p style="font-size: 16px; line-height: 1.5; color: var(--color-text);">
-                Para recuperar seu acesso, entre em contato com o <strong>Administrador do Sistema</strong> ou solicite o reset presencialmente.
-            </p>
-            <p style="font-size: 13px; color: var(--color-text-secondary); margin-top: 16px;">
-                Por motivos de segurança, a redefinição de senha deve ser realizada internamente.
-            </p>
-        </div>
-        <div class="modal-actions">
-            <button type="button" class="btn btn--primary btn--full-width" onclick="closeForgotPasswordModal()">Entendi</button>
+        
+        <form id="forgot-password-form" onsubmit="handleForgotPassword(event)">
+            <div style="padding: 24px;">
+                <p style="margin-bottom: 15px; color: var(--color-text);">
+                    Digite seu <strong>E-mail</strong> ou seu <strong>Nome de Usuário</strong> (Login).
+                    Enviaremos um link para você redefinir sua senha.
+                </p>
+                
+                <div class="form-group">
+                    <label class="form-label">E-mail ou Login</label>
+                    <input type="text" class="form-control" id="forgot-input" required placeholder="Ex: felipe@email.com ou FELIPE">
+                </div>
+
+                <div id="forgot-error" class="error-message" style="display:none; margin-top:10px;"></div>
             </div>
-        </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeForgotPasswordModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary" id="btn-forgot-send">Enviar Link</button>
+            </div>
+        </form>
     </div>
+</div>
 <div id="report-preview-modal" class="modal">
     <div class="modal-content report-preview-content">
         <div class="modal-header">
