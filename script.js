@@ -2649,6 +2649,9 @@ function showDemandModal(id = null) {
     document.getElementById('demand-modal').classList.add('show');
 }
 
+// ============================================================
+// NOVA FUNÇÃO: SALVAR DEMANDA NO FIREBASE
+// ============================================================
 function saveDemand(e) {
     e.preventDefault();
     const status = document.getElementById('demand-status').value;
@@ -2658,10 +2661,9 @@ function saveDemand(e) {
 
     // --- VALIDAÇÃO DE DATA ---
     if (dateReal && dateSol && dateReal < dateSol) {
-        alert('🚫 ERRO DE DATA: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        alert('🚫 ERRO: A Data de Realização não pode ser anterior à Data de Solicitação.');
         return;
     }
-    // -------------------------
 
     if (status === 'Realizada' && !dateReal) { alert('Para status "Realizada", a Data de Realização é obrigatória.'); return; }
     if (status === 'Inviável' && !justif) { alert('Para status "Inviável", a Justificativa é obrigatória.'); return; }
@@ -2673,20 +2675,42 @@ function saveDemand(e) {
         priority: document.getElementById('demand-priority').value,
         status: status,
         dateRealization: dateReal,
-        user: currentUser.name
+        user: currentUser.name,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
+    // Feedback Visual
+    const btnSubmit = document.querySelector('#demand-form button[type="submit"]');
+    const txtOriginal = btnSubmit.innerText;
+    btnSubmit.innerText = 'Salvando...';
+    btnSubmit.disabled = true;
+
+    const collection = db.collection('demands');
+    let promise;
+
     if (editingId) {
-        const i = demands.findIndex(x => x.id === editingId);
-        if (i !== -1) demands[i] = { ...demands[i], ...data };
+        promise = collection.doc(editingId).update(data);
+        logSystemAction('Edição', 'Demandas', `Desc: ${data.description.substring(0,20)}...`);
     } else {
-        demands.push({ id: getNextId('dem'), ...data });
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        promise = collection.add(data);
+        logSystemAction('Criação', 'Demandas', `Desc: ${data.description.substring(0,20)}...`);
     }
-    salvarNoArmazenamento('demands', demands);
-    document.getElementById('demand-modal').classList.remove('show');
-    clearDemandFilters();
-    logSystemAction(editingId ? 'Edição' : 'Criação', 'Demandas', `Desc: ${data.description.substring(0,20)}...`);
-    showToast('Demanda salva!', 'success');
+
+    promise.then(() => {
+        document.getElementById('demand-modal').classList.remove('show');
+        showToast('Demanda salva na nuvem!', 'success');
+        clearDemandFilters();
+        editingId = null;
+    })
+    .catch((error) => {
+        console.error("Erro ao salvar:", error);
+        alert("Erro ao salvar: " + error.message);
+    })
+    .finally(() => {
+        btnSubmit.innerText = txtOriginal;
+        btnSubmit.disabled = false;
+    });
 }
 function getFilteredDemands() {
     const fStatus = document.getElementById('filter-demand-status')?.value;
@@ -2761,8 +2785,8 @@ function renderDemands() {
                 <td style="text-align:center;">${formatDate(d.dateRealization)}</td>
                 <td>${d.justification || '-'}</td>
                 <td>
-                    <button class="btn btn--sm" onclick="showDemandModal(${d.id})" title="Editar">✏️</button>
-                    <button class="btn btn--sm" onclick="deleteDemand(${d.id})" title="Excluir">🗑️</button>
+                    <button class="btn btn--sm" onclick="showDemandModal('${d.id}')" title="Editar">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteDemand('${d.id}')" title="Excluir">🗑️</button>
                 </td>
             </tr>`;
         }).join('');
@@ -2866,16 +2890,19 @@ function generateDemandsPDF() {
 }
 
 // 3. DEMANDAS
+// ============================================================
+// NOVA FUNÇÃO: EXCLUIR DEMANDA DO FIREBASE
+// ============================================================
 function deleteDemand(id) {
-    if (confirm('Excluir demanda?')) {
-        const item = demands.find(x => x.id === id);
-        if(item) {
-            registerUndo(item, 'demands', renderDemands); // Registra Undo
-            demands = demands.filter(x => x.id !== id);
-            salvarNoArmazenamento('demands', demands);
-            renderDemands();
-            logSystemAction('Exclusão', 'Demandas', `Demanda excluída (ID ${id})`);
-        }
+    if (confirm('Tem certeza que deseja excluir esta demanda?')) {
+        db.collection('demands').doc(id).delete()
+        .then(() => {
+            showToast('Demanda excluída.', 'success');
+        })
+        .catch((error) => {
+            console.error("Erro ao excluir:", error);
+            alert("Erro ao excluir: " + error.message);
+        });
     }
 }
 
@@ -5202,6 +5229,34 @@ function setupPresentationListener() {
         console.error("Erro ao buscar apresentações:", error);
     });
 }
+// ============================================================
+// NOVA FUNÇÃO: OUVINTE DE DEMANDAS
+// ============================================================
+function setupDemandListener() {
+    console.log("🎧 Iniciando ouvinte de Demandas...");
+    
+    db.collection('demands').onSnapshot((snapshot) => {
+        demands = []; // Limpa memória
+        
+        snapshot.forEach((doc) => {
+            let d = doc.data();
+            d.id = doc.id; // ID do Firebase
+            demands.push(d);
+        });
+        
+        console.log(`📦 Recebidas ${demands.length} demandas.`);
+        
+        // Atualiza se a aba estiver ativa
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.id === 'demandas-section') {
+            renderDemands();
+        }
+        updateDashboardStats();
+        
+    }, (error) => {
+        console.error("Erro ao buscar demandas:", error);
+    });
+}
 
 function initializeApp() {
     try {
@@ -5215,6 +5270,7 @@ function initializeApp() {
         setupTaskListener();
         setupRequestListener();
         setupPresentationListener();
+        setupDemandListener();
         
         // Renderizações
         renderMunicipalities();
