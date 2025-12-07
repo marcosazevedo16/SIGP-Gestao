@@ -1491,11 +1491,13 @@ function deleteMunicipality(id) {
     if (confirm('Tem certeza que deseja excluir este município?')) {
         const item = municipalities.find(x => x.id === id);
         if (item) {
-            registerUndo(item, 'municipalities', renderMunicipalities); // 1. Registra Undo
+            // Mostra o botão DESFAZER imediatamente
+            registerUndo(item, 'municipalities', renderMunicipalities); 
             
-            db.collection('municipalities').doc(id).delete() // 2. Deleta na Nuvem
+            // Deleta na nuvem (silenciosamente, sem mostrar nova mensagem para não matar o botão)
+            db.collection('municipalities').doc(id).delete()
                 .then(() => {
-                    showToast('Município excluído. (Clique em DESFAZER para recuperar)', 'success');
+                    console.log('Município excluído na nuvem.');
                     logSystemAction('Exclusão', 'Municípios', `Excluiu: ${item.name}`);
                 })
                 .catch(err => alert("Erro ao excluir: " + err.message));
@@ -1803,14 +1805,13 @@ function deleteTask(id) {
             
             db.collection('tasks').doc(id).delete()
                 .then(() => {
-                    showToast('Treinamento excluído.', 'success');
+                    console.log('Treinamento excluído na nuvem.');
                     logSystemAction('Exclusão', 'Treinamentos', `Excluiu treinamento de: ${item.municipality}`);
                 })
                 .catch(err => alert("Erro ao excluir: " + err.message));
         }
     }
 }
-
 function closeTaskModal() {
     document.getElementById('task-modal').classList.remove('show');
 }
@@ -2182,7 +2183,6 @@ function deleteRequest(id) {
             registerUndo(item, 'requests', renderRequests);
             
             db.collection('requests').doc(id).delete()
-                .then(() => showToast('Solicitação excluída.', 'success'))
                 .catch(err => alert("Erro: " + err.message));
         }
     }
@@ -2578,7 +2578,6 @@ function deletePresentation(id) {
             registerUndo(item, 'presentations', renderPresentations);
             
             db.collection('presentations').doc(id).delete()
-                .then(() => showToast('Apresentação excluída.', 'success'))
                 .catch(err => alert("Erro: " + err.message));
         }
     }
@@ -2958,7 +2957,6 @@ function deleteDemand(id) {
             registerUndo(item, 'demands', renderDemands);
             
             db.collection('demands').doc(id).delete()
-                .then(() => showToast('Demanda excluída.', 'success'))
                 .catch(err => alert("Erro: " + err.message));
         }
     }
@@ -3344,7 +3342,6 @@ function deleteVisit(id) {
             registerUndo(item, 'visits', renderVisits);
             
             db.collection('visits').doc(id).delete()
-                .then(() => showToast('Visita excluída.', 'success'))
                 .catch(err => alert("Erro: " + err.message));
         }
     }
@@ -3695,7 +3692,6 @@ function deleteProduction(id) {
             registerUndo(item, 'productions', renderProductions);
             
             db.collection('productions').doc(id).delete()
-                .then(() => showToast('Registro excluído.', 'success'))
                 .catch(err => alert("Erro: " + err.message));
         }
     }
@@ -3880,12 +3876,9 @@ function clearUserFilters() {
     renderUsers();
 }
 
-// 10. USUÁRIOS DO SISTEMA
+// 10. USUÁRIOS DO SISTEMA (Mantém mensagem normal, sem Undo por segurança)
 function deleteUser(id) { 
     if(confirm('Excluir usuário?')){
-        // Obs: Usuários deletados geralmente não têm Undo por segurança, 
-        // mas se quiser adicionar, siga o padrão acima.
-        // Aqui mantivemos o padrão direto pois envolve acesso.
         db.collection('users').doc(id).delete()
         .then(() => showToast('Usuário excluído.', 'success'))
         .catch(err => alert("Erro: " + err.message));
@@ -3950,7 +3943,7 @@ function deleteCargo(id){
         const item = cargos.find(x => x.id === id);
         if(item) {
             registerUndo(item, 'cargos', renderCargos);
-            db.collection('cargos').doc(id).delete().then(()=> showToast('Excluído', 'success'));
+            db.collection('cargos').doc(id).delete();
         }
     }
 }
@@ -3994,7 +3987,7 @@ function deleteOrientador(id){
         const item = orientadores.find(x => x.id === id);
         if(item) {
             registerUndo(item, 'orientadores', renderOrientadores);
-            db.collection('orientadores').doc(id).delete().then(()=> showToast('Excluído', 'success'));
+            db.collection('orientadores').doc(id).delete();
         }
     }
 }
@@ -4049,11 +4042,10 @@ function deleteModulo(id){
         const item = modulos.find(x => x.id === id);
         if(item) {
             registerUndo(item, 'modulos', renderModulos);
-            db.collection('modulos').doc(id).delete().then(()=> showToast('Excluído', 'success'));
+            db.collection('modulos').doc(id).delete();
         }
     }
 }
-
 function closeModuloModal(){ document.getElementById('modulo-modal').classList.remove('show'); }
 
 // --- LISTA MESTRA MUNICÍPIOS ---
@@ -4100,7 +4092,7 @@ function deleteMunicipalityList(id){
         const item = municipalitiesList.find(x => x.id === id);
         if(item) {
             registerUndo(item, 'municipalitiesList', renderMunicipalityList);
-            db.collection('municipalitiesList').doc(id).delete().then(()=> showToast('Excluído', 'success'));
+            db.collection('municipalitiesList').doc(id).delete();
         }
     }
 }
@@ -4139,7 +4131,7 @@ function deleteForma(id){
         const item = formasApresentacao.find(x => x.id === id);
         if(item) {
             registerUndo(item, 'formasApresentacao', renderFormas);
-            db.collection('formasApresentacao').doc(id).delete().then(()=> showToast('Excluído', 'success'));
+            db.collection('formasApresentacao').doc(id).delete();
         }
     }
 }
@@ -6093,7 +6085,7 @@ function deleteApiList(id){
         const item = apisList.find(x => x.id === id);
         if(item) {
             registerUndo(item, 'apisList', renderApiList);
-            db.collection('apisList').doc(id).delete().then(()=> showToast('Excluído', 'success'));
+            db.collection('apisList').doc(id).delete();
         }
     }
 }
@@ -6456,7 +6448,6 @@ function deleteIntegration(id) {
             registerUndo(item, 'integrations', renderIntegrations);
             
             db.collection('integrations').doc(id).delete()
-                .then(() => showToast('Integração excluída.', 'success'))
                 .catch(err => alert("Erro: " + err.message));
         }
     }
@@ -6884,7 +6875,6 @@ function deleteColabInfo(id) {
             registerUndo(item, 'collaboratorInfos', renderCollaboratorInfos);
             
             db.collection('collaboratorInfos').doc(id).delete()
-                .then(() => showToast('Ficha excluída.', 'success'))
                 .catch(err => alert("Erro: " + err.message));
         }
     }
