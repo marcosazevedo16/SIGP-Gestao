@@ -6584,11 +6584,19 @@ document.addEventListener('DOMContentLoaded', function() {
     if (loginForm) {
         console.log("Formulário de login detectado. Ativando escuta...");
 
-        loginForm.addEventListener('submit', (e) => {
+       loginForm.addEventListener('submit', (e) => {
             e.preventDefault(); 
             
-            const email = document.getElementById('login-username').value;
+            // Pega o valor digitado
+            let emailInput = document.getElementById('login-username').value.trim();
             const password = document.getElementById('login-password').value;
+            
+            // --- TRUQUE PARA ACEITAR "ADMIN" ---
+            // Se o usuário digitou "ADMIN", convertemos para o e-mail cadastrado no Firebase
+            if (emailInput.toUpperCase() === 'ADMIN') {
+                emailInput = 'admin@sigpsaude.com';
+            }
+            // -----------------------------------
             
             const btnSubmit = loginForm.querySelector('button[type="submit"]');
             const errorDiv = document.getElementById('login-error'); 
@@ -6604,11 +6612,11 @@ document.addEventListener('DOMContentLoaded', function() {
             btnSubmit.innerText = "Verificando...";
             btnSubmit.disabled = true;
 
-            // Envia para o Firebase
-            auth.signInWithEmailAndPassword(email, password)
+            // Envia para o Firebase (usando a variável emailInput tratada)
+            auth.signInWithEmailAndPassword(emailInput, password)
                 .then((userCredential) => {
                     console.log("Login realizado: ", userCredential.user.email);
-                    // Sucesso! O onAuthStateChanged (que configuraremos a seguir) fará o resto.
+                    // Login com sucesso!
                 })
                 .catch((error) => {
                     console.error("Erro no login:", error.code);
@@ -6637,7 +6645,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     btnSubmit.disabled = false;
                 });
         });
-    }
     // ============================================================
     //  FIM DO CÓDIGO DE LOGIN
     // ============================================================
