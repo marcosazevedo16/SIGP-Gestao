@@ -1496,35 +1496,72 @@ tbody tr:hover { background-color: var(--color-bg-1); }
 @media (max-width: 768px) { .checkbox-grid { /* No celular, volta para 2 colunas para ficar clicável */
         grid-template-columns: repeat(2, 1fr); } }
 
-/* Toast Notification */
+/* ==========================================================================
+   TOAST NOTIFICATION (CORRIGIDO PARA O BOTÃO DESFAZER)
+   ========================================================================== */
 
-.toast { visibility: hidden;
-  position: fixed;
-  bottom: var(--space-32);
-  right: var(--space-32);
-  background-color: var(--color-slate-900);
-  color: var(--color-white);
-  padding: var(--space-16) var(--space-24);
-  border-radius: var(--radius-base);
-  box-shadow: var(--shadow-lg);
-  z-index: 2000;
-  font-size: var(--font-size-base);
-  max-width: 400px; }
+.toast {
+    visibility: hidden;
+    position: fixed;
+    bottom: var(--space-32);
+    right: var(--space-32);
+    background-color: var(--color-slate-900);
+    color: var(--color-white);
+    padding: var(--space-16) var(--space-24);
+    border-radius: var(--radius-base);
+    box-shadow: var(--shadow-lg);
+    z-index: 2000;
+    font-size: var(--font-size-base);
+    max-width: 400px;
+    
+    /* Configuração da Animação Suave (Transition) */
+    opacity: 0;
+    transform: translateX(100%); /* Começa escondido na direita */
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
 
-.toast.show { visibility: visible;
-  animation: toastSlide 0.5s, toastFadeOut 0.5s 2.5s; }
+.toast.show {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(0); /* Desliza para a posição original */
+    /* IMPORTANTE: Removemos a animação automática de saída aqui */
+}
 
-@keyframes toastSlide { from { transform: translateX(100%);
-    opacity: 0; }
-  to { transform: translateX(0);
-    opacity: 1; } }
-
-@keyframes toastFadeOut { from { opacity: 1; }
-  to { opacity: 0; } }
-
+/* Tipos de Toast */
 .toast.success { background-color: var(--color-success); }
-
 .toast.error { background-color: var(--color-error); }
+.toast.info { background-color: var(--color-info); }
+
+/* --- Estilos do Botão Desfazer (NOVO) --- */
+.toast-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    width: 100%;
+}
+
+.btn-undo {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #ffffff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    margin-left: 10px;
+}
+
+.btn-undo:hover {
+    background-color: #ffffff;
+    color: #333;
+    border-color: #ffffff;
+}
 
 /* Footer */
 
