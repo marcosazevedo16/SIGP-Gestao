@@ -3798,14 +3798,14 @@ function showUserModal(id = null) {
     m.classList.add('show');
 }
 // ============================================================
-// FUNÇÃO DE SALVAR USUÁRIO (CORRIGIDA)
+// FUNÇÃO DE SALVAR USUÁRIO (CORRIGIDA E LIMPA)
 // ============================================================
 window.saveUser = function(e) {
     e.preventDefault();
 
     // 1. Pegar dados do formulário
     const login = document.getElementById('user-login').value.trim().toUpperCase();
-    const nome = document.getElementById('user-name').value.trim(); // ID correto do seu HTML
+    const nome = document.getElementById('user-name').value.trim(); 
     const email = document.getElementById('user-email').value.trim();
     const senha = document.getElementById('user-password').value;
     const permissao = document.getElementById('user-permission').value;
@@ -3814,13 +3814,13 @@ window.saveUser = function(e) {
     const errorDiv = document.getElementById('user-error');
     if (errorDiv) errorDiv.style.display = 'none';
 
-    // Se estivermos no modo EDIÇÃO (Atualizar usuário existente)
+    // --- MODO EDIÇÃO ---
     if (typeof editingId !== 'undefined' && editingId !== null) {
         
         db.collection("users").doc(editingId).update({
             login: login,
-            name: nome, // <--- CORRIGIDO: Agora salva como 'name' para bater com sua tabela
-            // role: permissao, // Descomente se quiser editar permissão
+            name: nome, // Corrigido para bater com a tabela
+            // role: permissao, 
             status: status,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         })
@@ -3834,18 +3834,15 @@ window.saveUser = function(e) {
         });
 
     } 
-    // Se estivermos no modo CRIAÇÃO (Novo Usuário)
+    // --- MODO CRIAÇÃO ---
     else {
         if (!senha || senha.length < 6) {
             alert("A senha deve ter no mínimo 6 caracteres.");
             return;
         }
 
-        /* TRUQUE PARA NÃO DESLOGAR O ADMIN:
-           Criamos uma "app secundária" temporária apenas para criar o usuário novo.
-           Assim, o 'auth' principal continua logado como Admin.
-        */
-        const config = firebase.app().options; // Pega a configuração atual do seu projeto
+        // TRUQUE PARA NÃO DESLOGAR O ADMIN
+        const config = firebase.app().options;
         const tempAppName = "tempAppValora"; 
         const tempApp = firebase.initializeApp(config, tempAppName);
 
@@ -3853,27 +3850,24 @@ window.saveUser = function(e) {
             .then((cred) => {
                 const user = cred.user;
 
-                // Agora salvamos no Firestore usando o banco PRINCIPAL (db), não o tempApp
+                // Salva no Firestore Principal
                 return db.collection("users").doc(user.uid).set({
                     login: login,
-                    name: nome, // <--- CORRIGIDO: Salvando como 'name'
+                    name: nome, // Corrigido
                     email: email,
-                    permission: permissao, // Salvando como 'permission' (conforme seu código antigo)
+                    permission: permissao, // Corrigido
                     status: status,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             })
             .then(() => {
-                // Deletamos o app temporário para limpar a memória
-                tempApp.delete();
-                
+                tempApp.delete(); // Limpa app temporário
                 alert(`Usuário ${login} criado com sucesso!`);
                 finalizarSalvar();
             })
             .catch((error) => {
-                // Se der erro, deletamos o app temporário também
-                tempApp.delete();
+                tempApp.delete(); // Limpa app temporário em caso de erro
                 
                 console.error("Erro ao cadastrar:", error);
                 let msg = error.message;
@@ -3888,7 +3882,7 @@ window.saveUser = function(e) {
             });
     }
 
-    // Função para limpar e fechar o modal
+    // --- Função Auxiliar Interna ---
     function finalizarSalvar() {
         if (typeof closeUserModal === 'function') closeUserModal();
         else document.getElementById('user-modal').classList.remove('show');
@@ -3896,38 +3890,10 @@ window.saveUser = function(e) {
         document.getElementById('user-form').reset();
         if (typeof editingId !== 'undefined') editingId = null;
         
-        // Recarrega a tabela para mostrar o novo usuário e trazer o Admin de volta (se necessário)
         if (typeof loadUsers === 'function') loadUsers(); 
     }
-};
-    // --- Funções Auxiliares para limpar o código ---
-    
-    function finalizarSalvar() {
-        if (typeof closeUserModal === 'function') closeUserModal();
-        else document.getElementById('user-modal').style.display = 'none';
-
-        document.getElementById('user-form').reset();
-        if (typeof editingId !== 'undefined') editingId = null;
-        
-        // Se tiver uma função que recarrega a tabela, chame aqui (ex: loadUsers())
-        if (typeof loadUsers === 'function') loadUsers(); 
-    }
-
-    function lidarComErro(error) {
-        console.error("Erro:", error);
-        let msg = error.message;
-        if (error.code === 'auth/email-already-in-use') msg = "Este e-mail já está em uso.";
-        if (error.code === 'auth/weak-password') msg = "A senha é muito fraca.";
-        if (error.code === 'auth/invalid-email') msg = "E-mail inválido.";
-        
-        if (errorDiv) {
-            errorDiv.innerText = msg;
-            errorDiv.style.display = 'block';
-        } else {
-            alert("Erro: " + msg);
-        }
-    }
-}
+}; 
+// Fim da função saveUser (Não deve ter mais nada depois daqui relacionado a ela)
 
 function renderUsers() { 
     const fName = document.getElementById('filter-user-name')?.value.toLowerCase() || '';
