@@ -6644,6 +6644,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     btnSubmit.innerText = textoOriginal;
                     btnSubmit.disabled = false;
                 });
+        }); // <--- ADICIONE ESTA LINHA (Fecha o addEventListener do botão)
+    }
     // ============================================================
     //  FIM DO CÓDIGO DE LOGIN
     // ============================================================
