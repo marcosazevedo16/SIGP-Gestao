@@ -1860,6 +1860,7 @@ function showRequestModal(id = null) {
     editingId = id;
     const form = document.getElementById('request-form');
     form.reset();
+    form.noValidate = true;
 
     // 1. Configura o listener de status
     const statusSel = document.getElementById('request-status');
@@ -2611,6 +2612,7 @@ function handleDemandStatusChange() {
 function showDemandModal(id = null) {
     editingId = id;
     document.getElementById('demand-form').reset();
+    form.noValidate = true;
 
     // 1. Reseta o contador de caracteres visualmente
     if(document.getElementById('demand-char-counter')) {
@@ -2957,7 +2959,9 @@ function handleVisitStatusChange() {
 }
 function showVisitModal(id = null) {
     editingId = id;
+    const form = document.getElementById('visit-form');
     document.getElementById('visit-form').reset();
+    form.noValidate = true;
     
     // 1. Reseta contadores visuais
     if(document.getElementById('visit-reason-counter')) 
@@ -3015,6 +3019,9 @@ function showVisitModal(id = null) {
     document.getElementById('visit-modal').classList.add('show');
 }
 
+// ============================================================
+// NOVA FUNÇÃO: SALVAR VISITA NO FIREBASE
+// ============================================================
 function saveVisit(e) {
     e.preventDefault();
     const status = document.getElementById('visit-status').value;
@@ -3023,10 +3030,9 @@ function saveVisit(e) {
 
     // --- VALIDAÇÃO DE DATA ---
     if (dateReal && dateSol && dateReal < dateSol) {
-        alert('🚫 ERRO DE DATA: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        alert('🚫 ERRO: A Data de Realização não pode ser anterior à Data de Solicitação.');
         return;
     }
-    // -------------------------
 
     if (status === 'Realizada' && !dateReal) { alert('Data de Realização obrigatória.'); return; }
     if (status === 'Cancelada' && !document.getElementById('visit-justification').value) { alert('Justificativa obrigatória.'); return; }
@@ -3038,20 +3044,42 @@ function saveVisit(e) {
         reason: sanitizeInput(document.getElementById('visit-reason').value),
         justification: sanitizeInput(document.getElementById('visit-justification').value),
         status: status,
-        dateRealization: dateReal
+        dateRealization: dateReal,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
+    // Feedback Visual
+    const btnSubmit = document.querySelector('#visit-form button[type="submit"]');
+    const txtOriginal = btnSubmit.innerText;
+    btnSubmit.innerText = 'Salvando...';
+    btnSubmit.disabled = true;
+
+    const collection = db.collection('visits');
+    let promise;
+
     if (editingId) {
-        const i = visits.findIndex(x => x.id === editingId);
-        visits[i] = { ...visits[i], ...data };
+        promise = collection.doc(editingId).update(data);
+        logSystemAction('Edição', 'Visitas', `Para: ${data.municipality}`);
     } else {
-        visits.push({ id: getNextId('visit'), ...data });
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        promise = collection.add(data);
+        logSystemAction('Criação', 'Visitas', `Para: ${data.municipality}`);
     }
-    salvarNoArmazenamento('visits', visits);
-    document.getElementById('visit-modal').classList.remove('show');
-    clearVisitFilters(); 
-    logSystemAction(editingId ? 'Edição' : 'Criação', 'Visitas', `Para: ${data.municipality}`);
-    showToast('Visita salva!', 'success');
+
+    promise.then(() => {
+        document.getElementById('visit-modal').classList.remove('show');
+        showToast('Visita salva na nuvem!', 'success');
+        clearVisitFilters(); 
+        editingId = null;
+    })
+    .catch((error) => {
+        console.error("Erro ao salvar:", error);
+        alert("Erro ao salvar: " + error.message);
+    })
+    .finally(() => {
+        btnSubmit.innerText = txtOriginal;
+        btnSubmit.disabled = false;
+    });
 }
 
 function getFilteredVisits() {
@@ -3151,8 +3179,8 @@ function renderVisits() {
                 <td style="text-align:center;">${formatDate(v.dateRealization)}</td>
                 <td class="text-secondary-cell">${justif}</td>
                 <td style="text-align:center;">
-                    <button class="btn btn--sm" onclick="showVisitModal(${v.id})" title="Editar">✏️</button>
-                    <button class="btn btn--sm" onclick="deleteVisit(${v.id})" title="Excluir">🗑️</button>
+                    <button class="btn btn--sm" onclick="showVisitModal('${v.id}')" title="Editar">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteVisit('${v.id}')" title="Excluir">🗑️</button>
                 </td>
             </tr>`;
         }).join('');
@@ -3245,16 +3273,19 @@ function generateVisitsPDF() {
 }
 
 // 4. VISITAS
+// ============================================================
+// NOVA FUNÇÃO: EXCLUIR VISITA DO FIREBASE
+// ============================================================
 function deleteVisit(id) {
-    if (confirm('Excluir visita?')) {
-        const item = visits.find(x => x.id === id);
-        if(item) {
-            registerUndo(item, 'visits', renderVisits); // Registra Undo
-            visits = visits.filter(x => x.id !== id);
-            salvarNoArmazenamento('visits', visits);
-            renderVisits();
-            logSystemAction('Exclusão', 'Visitas', `Visita excluída: ${item.municipality}`);
-        }
+    if (confirm('Excluir esta visita permanentemente?')) {
+        db.collection('visits').doc(id).delete()
+        .then(() => {
+            showToast('Visita excluída.', 'success');
+        })
+        .catch((error) => {
+            console.error("Erro ao excluir:", error);
+            alert("Erro ao excluir: " + error.message);
+        });
     }
 }
 
@@ -5257,6 +5288,34 @@ function setupDemandListener() {
         console.error("Erro ao buscar demandas:", error);
     });
 }
+// ============================================================
+// NOVA FUNÇÃO: OUVINTE DE VISITAS
+// ============================================================
+function setupVisitListener() {
+    console.log("🎧 Iniciando ouvinte de Visitas...");
+    
+    db.collection('visits').onSnapshot((snapshot) => {
+        visits = []; // Limpa memória
+        
+        snapshot.forEach((doc) => {
+            let v = doc.data();
+            v.id = doc.id; // ID do Firebase
+            visits.push(v);
+        });
+        
+        console.log(`📦 Recebidas ${visits.length} visitas.`);
+        
+        // Atualiza a tela se estiver na aba correta
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.id === 'visitas-section') {
+            renderVisits();
+        }
+        updateDashboardStats();
+        
+    }, (error) => {
+        console.error("Erro ao buscar visitas:", error);
+    });
+}
 
 function initializeApp() {
     try {
@@ -5271,6 +5330,7 @@ function initializeApp() {
         setupRequestListener();
         setupPresentationListener();
         setupDemandListener();
+        setupVisitListener();
         
         // Renderizações
         renderMunicipalities();
