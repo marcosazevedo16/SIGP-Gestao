@@ -3798,14 +3798,14 @@ function showUserModal(id = null) {
     m.classList.add('show');
 }
 // ============================================================
-// 1. FUNÇÃO SALVAR USUÁRIO (Versão Compatível - Sem Imports)
+// FUNÇÃO DE SALVAR USUÁRIO (CORRIGIDA)
 // ============================================================
 window.saveUser = function(e) {
     e.preventDefault();
 
     // 1. Pegar dados do formulário
     const login = document.getElementById('user-login').value.trim().toUpperCase();
-    const nome = document.getElementById('user-name').value.trim();
+    const nome = document.getElementById('user-name').value.trim(); // ID correto do seu HTML
     const email = document.getElementById('user-email').value.trim();
     const senha = document.getElementById('user-password').value;
     const permissao = document.getElementById('user-permission').value;
@@ -3814,69 +3814,92 @@ window.saveUser = function(e) {
     const errorDiv = document.getElementById('user-error');
     if (errorDiv) errorDiv.style.display = 'none';
 
-    // Se certifique que 'db' e 'auth' estão definidos globalmente.
-    // Se não estiverem, descomente as linhas abaixo:
-    // const auth = firebase.auth();
-    // const db = firebase.firestore();
-
-    // ============================================================
-    // CENÁRIO A: EDIÇÃO (Já existe um ID sendo editado)
-    // ============================================================
+    // Se estivermos no modo EDIÇÃO (Atualizar usuário existente)
     if (typeof editingId !== 'undefined' && editingId !== null) {
         
-        // Atualiza apenas no Firestore
         db.collection("users").doc(editingId).update({
             login: login,
-            nome: nome,
-            // email: email, // Não mudamos email na edição para não quebrar login
-            role: permissao,
+            name: nome, // <--- CORRIGIDO: Agora salva como 'name' para bater com sua tabela
+            // role: permissao, // Descomente se quiser editar permissão
             status: status,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         })
         .then(() => {
-            alert("Dados do usuário atualizados com sucesso!");
+            alert("Usuário atualizado com sucesso!");
             finalizarSalvar();
         })
         .catch((error) => {
-            lidarComErro(error);
+            console.error("Erro ao editar:", error);
+            alert("Erro: " + error.message);
         });
 
     } 
-    // ============================================================
-    // CENÁRIO B: CRIAÇÃO (Novo Usuário)
-    // ============================================================
+    // Se estivermos no modo CRIAÇÃO (Novo Usuário)
     else {
-        // Validação de senha
         if (!senha || senha.length < 6) {
-            alert("Para novos usuários, a senha deve ter no mínimo 6 caracteres.");
+            alert("A senha deve ter no mínimo 6 caracteres.");
             return;
         }
 
-        // 1. Cria a autenticação no Firebase
-        firebase.auth().createUserWithEmailAndPassword(email, senha)
-            .then((userCredential) => {
-                const user = userCredential.user;
+        /* TRUQUE PARA NÃO DESLOGAR O ADMIN:
+           Criamos uma "app secundária" temporária apenas para criar o usuário novo.
+           Assim, o 'auth' principal continua logado como Admin.
+        */
+        const config = firebase.app().options; // Pega a configuração atual do seu projeto
+        const tempAppName = "tempAppValora"; 
+        const tempApp = firebase.initializeApp(config, tempAppName);
 
-                // 2. Salva no Firestore usando o UID do Auth
+        tempApp.auth().createUserWithEmailAndPassword(email, senha)
+            .then((cred) => {
+                const user = cred.user;
+
+                // Agora salvamos no Firestore usando o banco PRINCIPAL (db), não o tempApp
                 return db.collection("users").doc(user.uid).set({
                     login: login,
-                    nome: nome,
+                    name: nome, // <--- CORRIGIDO: Salvando como 'name'
                     email: email,
-                    role: permissao,
+                    permission: permissao, // Salvando como 'permission' (conforme seu código antigo)
                     status: status,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             })
             .then(() => {
-                alert(`Usuário ${login} criado com sucesso! O acesso já está liberado.`);
+                // Deletamos o app temporário para limpar a memória
+                tempApp.delete();
+                
+                alert(`Usuário ${login} criado com sucesso!`);
                 finalizarSalvar();
             })
             .catch((error) => {
-                lidarComErro(error);
+                // Se der erro, deletamos o app temporário também
+                tempApp.delete();
+                
+                console.error("Erro ao cadastrar:", error);
+                let msg = error.message;
+                if (error.code === 'auth/email-already-in-use') msg = "Este e-mail já está em uso.";
+                
+                if (errorDiv) {
+                    errorDiv.innerText = msg;
+                    errorDiv.style.display = 'block';
+                } else {
+                    alert("Erro: " + msg);
+                }
             });
     }
 
+    // Função para limpar e fechar o modal
+    function finalizarSalvar() {
+        if (typeof closeUserModal === 'function') closeUserModal();
+        else document.getElementById('user-modal').classList.remove('show');
+
+        document.getElementById('user-form').reset();
+        if (typeof editingId !== 'undefined') editingId = null;
+        
+        // Recarrega a tabela para mostrar o novo usuário e trazer o Admin de volta (se necessário)
+        if (typeof loadUsers === 'function') loadUsers(); 
+    }
+};
     // --- Funções Auxiliares para limpar o código ---
     
     function finalizarSalvar() {
