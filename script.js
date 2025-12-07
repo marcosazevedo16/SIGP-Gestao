@@ -6675,6 +6675,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 400)); // Espera 400ms após a última digitação
     });
 
+    // 👇 ADICIONE ESTA LINHA AQUI 👇
+});
+
 // SEGURANÇA: Sincronização de Bloqueio entre Abas (Cross-Tab)
 function initCrossTabRateLimit() {
     window.addEventListener('storage', (event) => {
