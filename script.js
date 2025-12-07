@@ -1486,21 +1486,20 @@ function updateMunicipalityCharts(data) {
 // ============================================================
 // NOVA FUNÇÃO: EXCLUIR DO FIREBASE
 // ============================================================
+// 1. MUNICÍPIOS
 function deleteMunicipality(id) {
-    if (confirm('Tem certeza que deseja excluir este município? Esta ação não pode ser desfeita.')) {
-        
-        // Deleta direto do banco de dados
-        db.collection('municipalities').doc(id).delete()
-        .then(() => {
-            console.log("Documento excluído com sucesso!");
-            showToast('Município excluído.', 'success');
-            // Nota: Não precisamos chamar renderMunicipalities() aqui, 
-            // pois o nosso "Ouvinte" vai perceber a exclusão e atualizar a tabela sozinho!
-        })
-        .catch((error) => {
-            console.error("Erro ao excluir:", error);
-            alert("Erro ao excluir: " + error.message);
-        });
+    if (confirm('Tem certeza que deseja excluir este município?')) {
+        const item = municipalities.find(x => x.id === id);
+        if (item) {
+            registerUndo(item, 'municipalities', renderMunicipalities); // 1. Registra Undo
+            
+            db.collection('municipalities').doc(id).delete() // 2. Deleta na Nuvem
+                .then(() => {
+                    showToast('Município excluído. (Clique em DESFAZER para recuperar)', 'success');
+                    logSystemAction('Exclusão', 'Municípios', `Excluiu: ${item.name}`);
+                })
+                .catch(err => alert("Erro ao excluir: " + err.message));
+        }
     }
 }
 
@@ -1795,16 +1794,19 @@ function generateTasksPDF() {
     downloadPDF('Relatório Treinamentos', headers, rows);
 }
 
-// 1. TREINAMENTOS
+// 2. TREINAMENTOS
 function deleteTask(id) {
     if (confirm('Excluir este treinamento?')) {
         const item = tasks.find(x => x.id === id);
-        if(item) {
-            registerUndo(item, 'tasks', renderTasks); // Registra Undo
-            tasks = tasks.filter(x => x.id !== id);
-            salvarNoArmazenamento('tasks', tasks);
-            renderTasks();
-            logSystemAction('Exclusão', 'Treinamentos', `Treinamento excluído: ${item.municipality}`);
+        if (item) {
+            registerUndo(item, 'tasks', renderTasks);
+            
+            db.collection('tasks').doc(id).delete()
+                .then(() => {
+                    showToast('Treinamento excluído.', 'success');
+                    logSystemAction('Exclusão', 'Treinamentos', `Excluiu treinamento de: ${item.municipality}`);
+                })
+                .catch(err => alert("Erro ao excluir: " + err.message));
         }
     }
 }
@@ -2169,21 +2171,20 @@ function generateRequestsPDF() {
     });
     downloadPDF('Relatório Solicitações', headers, rows);
 }
-
-// 2. SOLICITAÇÕES
 // ============================================================
 // NOVA FUNÇÃO: EXCLUIR SOLICITAÇÃO DO FIREBASE
 // ============================================================
+// 3. SOLICITAÇÕES
 function deleteRequest(id) {
-    if (confirm('Excluir esta solicitação permanentemente?')) {
-        db.collection('requests').doc(id).delete()
-        .then(() => {
-            showToast('Solicitação excluída.', 'success');
-        })
-        .catch((error) => {
-            console.error("Erro ao excluir:", error);
-            alert("Erro ao excluir: " + error.message);
-        });
+    if (confirm('Excluir esta solicitação?')) {
+        const item = requests.find(x => x.id === id);
+        if (item) {
+            registerUndo(item, 'requests', renderRequests);
+            
+            db.collection('requests').doc(id).delete()
+                .then(() => showToast('Solicitação excluída.', 'success'))
+                .catch(err => alert("Erro: " + err.message));
+        }
     }
 }
 
@@ -2569,20 +2570,17 @@ function generatePresentationsPDF() {
     downloadPDF('Relatório Apresentações', headers, rows);
 }
 
-// 6. APRESENTAÇÕES
-// ============================================================
-// NOVA FUNÇÃO: EXCLUIR APRESENTAÇÃO DO FIREBASE
-// ============================================================
+// 4. APRESENTAÇÕES
 function deletePresentation(id) {
     if (confirm('Excluir esta apresentação?')) {
-        db.collection('presentations').doc(id).delete()
-        .then(() => {
-            showToast('Apresentação excluída.', 'success');
-        })
-        .catch((error) => {
-            console.error("Erro ao excluir:", error);
-            alert("Erro ao excluir: " + error.message);
-        });
+        const item = presentations.find(x => x.id === id);
+        if (item) {
+            registerUndo(item, 'presentations', renderPresentations);
+            
+            db.collection('presentations').doc(id).delete()
+                .then(() => showToast('Apresentação excluída.', 'success'))
+                .catch(err => alert("Erro: " + err.message));
+        }
     }
 }
 
@@ -2952,20 +2950,17 @@ function generateDemandsPDF() {
     downloadPDF('Relatório Demandas', headers, rows);
 }
 
-// 3. DEMANDAS
-// ============================================================
-// NOVA FUNÇÃO: EXCLUIR DEMANDA DO FIREBASE
-// ============================================================
+// 5. DEMANDAS
 function deleteDemand(id) {
-    if (confirm('Tem certeza que deseja excluir esta demanda?')) {
-        db.collection('demands').doc(id).delete()
-        .then(() => {
-            showToast('Demanda excluída.', 'success');
-        })
-        .catch((error) => {
-            console.error("Erro ao excluir:", error);
-            alert("Erro ao excluir: " + error.message);
-        });
+    if (confirm('Excluir esta demanda?')) {
+        const item = demands.find(x => x.id === id);
+        if (item) {
+            registerUndo(item, 'demands', renderDemands);
+            
+            db.collection('demands').doc(id).delete()
+                .then(() => showToast('Demanda excluída.', 'success'))
+                .catch(err => alert("Erro: " + err.message));
+        }
     }
 }
 
@@ -3341,20 +3336,17 @@ function generateVisitsPDF() {
     downloadPDF('Relatório Visitas', headers, rows);
 }
 
-// 4. VISITAS
-// ============================================================
-// NOVA FUNÇÃO: EXCLUIR VISITA DO FIREBASE
-// ============================================================
+// 6. VISITAS
 function deleteVisit(id) {
-    if (confirm('Excluir esta visita permanentemente?')) {
-        db.collection('visits').doc(id).delete()
-        .then(() => {
-            showToast('Visita excluída.', 'success');
-        })
-        .catch((error) => {
-            console.error("Erro ao excluir:", error);
-            alert("Erro ao excluir: " + error.message);
-        });
+    if (confirm('Excluir esta visita?')) {
+        const item = visits.find(x => x.id === id);
+        if (item) {
+            registerUndo(item, 'visits', renderVisits);
+            
+            db.collection('visits').doc(id).delete()
+                .then(() => showToast('Visita excluída.', 'success'))
+                .catch(err => alert("Erro: " + err.message));
+        }
     }
 }
 
@@ -3695,20 +3687,17 @@ function generateProductionsPDF() {
     downloadPDF('Relatório Produção', headers, rows);
 }
 
-// 5. PRODUÇÃO
-// ============================================================
-// NOVA FUNÇÃO: EXCLUIR PRODUÇÃO DO FIREBASE
-// ============================================================
+// 7. PRODUÇÃO
 function deleteProduction(id) {
     if (confirm('Excluir este registro de envio?')) {
-        db.collection('productions').doc(id).delete()
-        .then(() => {
-            showToast('Registro excluído.', 'success');
-        })
-        .catch((error) => {
-            console.error("Erro ao excluir:", error);
-            alert("Erro ao excluir: " + error.message);
-        });
+        const item = productions.find(x => x.id === id);
+        if (item) {
+            registerUndo(item, 'productions', renderProductions);
+            
+            db.collection('productions').doc(id).delete()
+                .then(() => showToast('Registro excluído.', 'success'))
+                .catch(err => alert("Erro: " + err.message));
+        }
     }
 }
 
@@ -3891,9 +3880,12 @@ function clearUserFilters() {
     renderUsers();
 }
 
-// 8. USUÁRIOS (Admin)
+// 10. USUÁRIOS DO SISTEMA
 function deleteUser(id) { 
     if(confirm('Excluir usuário?')){
+        // Obs: Usuários deletados geralmente não têm Undo por segurança, 
+        // mas se quiser adicionar, siga o padrão acima.
+        // Aqui mantivemos o padrão direto pois envolve acesso.
         db.collection('users').doc(id).delete()
         .then(() => showToast('Usuário excluído.', 'success'))
         .catch(err => alert("Erro: " + err.message));
@@ -3952,8 +3944,15 @@ function renderCargos() {
     c.innerHTML = `<table><thead><th>Cargo</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
+// 13. CARGOS (Configuração)
 function deleteCargo(id){ 
-    if(confirm('Excluir?')) db.collection('cargos').doc(id).delete(); 
+    if(confirm('Excluir Cargo?')) {
+        const item = cargos.find(x => x.id === id);
+        if(item) {
+            registerUndo(item, 'cargos', renderCargos);
+            db.collection('cargos').doc(id).delete().then(()=> showToast('Excluído', 'success'));
+        }
+    }
 }
 function closeCargoModal(){ document.getElementById('cargo-modal').classList.remove('show'); }
 
@@ -3989,8 +3988,15 @@ function renderOrientadores() {
     ).join('');
     c.innerHTML = `<table><thead><th>Nome</th><th>E-mail</th><th>Data Nasc.</th><th>Contato</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
+// 12. COLABORADORES MESTRE (Configuração)
 function deleteOrientador(id){ 
-    if(confirm('Excluir?')) db.collection('orientadores').doc(id).delete(); 
+    if(confirm('Excluir Colaborador?')) {
+        const item = orientadores.find(x => x.id === id);
+        if(item) {
+            registerUndo(item, 'orientadores', renderOrientadores);
+            db.collection('orientadores').doc(id).delete().then(()=> showToast('Excluído', 'success'));
+        }
+    }
 }
 function closeOrientadorModal(){ document.getElementById('orientador-modal').classList.remove('show'); }
 
@@ -4037,7 +4043,17 @@ function renderModulos() {
     c.innerHTML = `<table><thead><th>Módulo</th><th>Abrev.</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteModulo(id){ if(confirm('Excluir?')) db.collection('modulos').doc(id).delete(); }
+// 14. MÓDULOS (Configuração)
+function deleteModulo(id){ 
+    if(confirm('Excluir Módulo?')) {
+        const item = modulos.find(x => x.id === id);
+        if(item) {
+            registerUndo(item, 'modulos', renderModulos);
+            db.collection('modulos').doc(id).delete().then(()=> showToast('Excluído', 'success'));
+        }
+    }
+}
+
 function closeModuloModal(){ document.getElementById('modulo-modal').classList.remove('show'); }
 
 // --- LISTA MESTRA MUNICÍPIOS ---
@@ -4078,7 +4094,17 @@ function renderMunicipalityList() {
     c.innerHTML = `<table><thead><th>Nome</th><th>UF</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteMunicipalityList(id){ if(confirm('Excluir?')) db.collection('municipalitiesList').doc(id).delete(); }
+// 15. LISTA MESTRA MUNICÍPIOS (Configuração)
+function deleteMunicipalityList(id){ 
+    if(confirm('Excluir da Lista Mestra?')) {
+        const item = municipalitiesList.find(x => x.id === id);
+        if(item) {
+            registerUndo(item, 'municipalitiesList', renderMunicipalityList);
+            db.collection('municipalitiesList').doc(id).delete().then(()=> showToast('Excluído', 'success'));
+        }
+    }
+}
+
 function closeMunicipalityListModal() { document.getElementById('municipality-list-modal').classList.remove('show'); }
 
 // --- FORMAS APRESENTAÇÃO ---
@@ -4107,7 +4133,17 @@ function renderFormas() {
     c.innerHTML = `<table><thead><th>Forma</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteForma(id){ if(confirm('Excluir?')) db.collection('formasApresentacao').doc(id).delete(); }
+// 16. FORMAS APRESENTAÇÃO (Configuração)
+function deleteForma(id){ 
+    if(confirm('Excluir Forma?')) {
+        const item = formasApresentacao.find(x => x.id === id);
+        if(item) {
+            registerUndo(item, 'formasApresentacao', renderFormas);
+            db.collection('formasApresentacao').doc(id).delete().then(()=> showToast('Excluído', 'success'));
+        }
+    }
+}
+
 function closeFormaApresentacaoModal() { document.getElementById('forma-apresentacao-modal').classList.remove('show'); }
 // ----------------------------------------------------------------------------
 // 19. BACKUP E RESTORE (COM PREVIEW COMPLETO)
@@ -5284,9 +5320,30 @@ function setupAuditListener() {
 // --- LISTENERS AUXILIARES ---
 
 function setupAuxiliaryListeners() {
-    // 1. Usuários
+    // 1. Usuários (COM PROTEÇÃO: Se o banco estiver vazio, mostra o ADMIN local)
     db.collection('users').onSnapshot(snap => {
-        users = []; snap.forEach(d => { let i=d.data(); i.id=d.id; users.push(i); });
+        const cloudUsers = [];
+        snap.forEach(d => { 
+            let i = d.data(); 
+            i.id = d.id; 
+            cloudUsers.push(i); 
+        });
+
+        // CORREÇÃO: Se não houver usuários na nuvem, usa o Admin Local
+        if (cloudUsers.length === 0) {
+            console.log("⚠️ Banco vazio. Usando Admin Local.");
+            // Tenta recuperar do localStorage ou usa o padrão
+            const localUsers = recuperarDoArmazenamento('users');
+            if (localUsers && localUsers.length > 0) {
+                users = localUsers;
+            } else {
+                users = DADOS_PADRAO.users;
+            }
+        } else {
+            // Se tem usuários na nuvem, usa eles
+            users = cloudUsers;
+        }
+
         if(document.querySelector('.tab-content.active')?.id === 'usuarios-section') renderUsers();
     });
 
@@ -5294,7 +5351,7 @@ function setupAuxiliaryListeners() {
     db.collection('cargos').onSnapshot(snap => {
         cargos = []; snap.forEach(d => { let i=d.data(); i.id=d.id; cargos.push(i); });
         if(document.querySelector('.tab-content.active')?.id === 'cargos-section') renderCargos();
-        updateGlobalDropdowns(); // Atualiza dropdowns de formulários
+        updateGlobalDropdowns(); 
     });
 
     // 3. Orientadores (Colaboradores Mestre)
@@ -5308,7 +5365,6 @@ function setupAuxiliaryListeners() {
     db.collection('modulos').onSnapshot(snap => {
         modulos = []; snap.forEach(d => { let i=d.data(); i.id=d.id; modulos.push(i); });
         if(document.querySelector('.tab-content.active')?.id === 'modulos-section') renderModulos();
-        // Se a lista de municípios estiver visível, pode precisar re-renderizar para atualizar as tags
         if(document.querySelector('.tab-content.active')?.id === 'municipios-section') renderMunicipalities();
     });
 
@@ -6031,7 +6087,17 @@ function renderApiList() {
     c.innerHTML = `<table><thead><th>API</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
 
-function deleteApiList(id){ if(confirm('Excluir?')) db.collection('apisList').doc(id).delete(); }
+// 11. APIs (Lista de Configuração)
+function deleteApiList(id){ 
+    if(confirm('Excluir API?')) {
+        const item = apisList.find(x => x.id === id);
+        if(item) {
+            registerUndo(item, 'apisList', renderApiList);
+            db.collection('apisList').doc(id).delete().then(()=> showToast('Excluído', 'success'));
+        }
+    }
+}
+
 function closeApiListModal() { document.getElementById('api-list-modal').classList.remove('show'); }// ----------------------------------------------------------------------------
 // XX. GERENCIAMENTO DE INTEGRAÇÕES (Aba Principal)
 // ----------------------------------------------------------------------------
@@ -6382,20 +6448,17 @@ function showIntegrationModal(id = null) {
     document.getElementById('integration-modal').classList.add('show');
 }
 
-// CORREÇÃO: Exclusão de Integração
-// ============================================================
-// NOVA FUNÇÃO: EXCLUIR INTEGRAÇÃO DO FIREBASE
-// ============================================================
+// 8. INTEGRAÇÕES
 function deleteIntegration(id) {
     if(confirm('Excluir esta integração?')) {
-        db.collection('integrations').doc(id).delete()
-        .then(() => {
-            showToast('Integração excluída.', 'success');
-        })
-        .catch((error) => {
-            console.error("Erro ao excluir:", error);
-            alert("Erro ao excluir: " + error.message);
-        });
+        const item = integrations.find(x => x.id === id);
+        if (item) {
+            registerUndo(item, 'integrations', renderIntegrations);
+            
+            db.collection('integrations').doc(id).delete()
+                .then(() => showToast('Integração excluída.', 'success'))
+                .catch(err => alert("Erro: " + err.message));
+        }
     }
 }
 
@@ -6812,22 +6875,20 @@ function updateColabCharts(data) {
     }
 }
 
-// ============================================================
-// NOVA FUNÇÃO: EXCLUIR FICHA DO FIREBASE
-// ============================================================
+// 9. COLABORADORES (RH/FICHAS)
 function deleteColabInfo(id) {
     if(confirm('Excluir esta ficha permanentemente?')) {
-        db.collection('collaboratorInfos').doc(id).delete()
-        .then(() => {
-            showToast('Ficha excluída.', 'success');
-        })
-        .catch((error) => {
-            console.error("Erro ao excluir:", error);
-            alert("Erro ao excluir: " + error.message);
-        });
+        // Nota: == id para garantir comparação segura (string vs number)
+        const item = collaboratorInfos.find(x => x.id == id);
+        if (item) {
+            registerUndo(item, 'collaboratorInfos', renderCollaboratorInfos);
+            
+            db.collection('collaboratorInfos').doc(id).delete()
+                .then(() => showToast('Ficha excluída.', 'success'))
+                .catch(err => alert("Erro: " + err.message));
+        }
     }
 }
-
 function closeColabInfoModal() { document.getElementById('colab-info-modal').classList.remove('show'); }
 
 function clearColabInfoFilters() {
