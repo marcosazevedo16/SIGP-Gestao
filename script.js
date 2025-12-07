@@ -1904,6 +1904,9 @@ function showRequestModal(id = null) {
     
     document.getElementById('request-modal').classList.add('show');
 }
+// ============================================================
+// NOVA FUNÇÃO: SALVAR SOLICITAÇÃO NO FIREBASE
+// ============================================================
 function saveRequest(e) {
     e.preventDefault();
     const status = document.getElementById('request-status').value;
@@ -1912,10 +1915,9 @@ function saveRequest(e) {
 
     // --- VALIDAÇÃO DE DATA ---
     if (dReal && dSol && dReal < dSol) {
-        alert('🚫 ERRO DE DATA: A Data de Realização não pode ser anterior à Data de Solicitação.');
+        alert('🚫 ERRO: A Data de Realização não pode ser anterior à Data de Solicitação.');
         return;
     }
-    // -------------------------
     
     if (status === 'Realizado' && !dReal) {
         alert('Data de Realização é obrigatória.'); return;
@@ -1933,20 +1935,42 @@ function saveRequest(e) {
         justification: sanitizeInput(document.getElementById('request-justification').value),
         status: status,
         dateRealization: dReal,
-        user: currentUser.name
+        user: currentUser.name,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
+    // Feedback Visual
+    const btnSubmit = document.querySelector('#request-form button[type="submit"]');
+    const txtOriginal = btnSubmit.innerText;
+    btnSubmit.innerText = 'Salvando...';
+    btnSubmit.disabled = true;
+
+    const collection = db.collection('requests');
+    let promise;
+
     if (editingId) {
-        const i = requests.findIndex(x => x.id === editingId);
-        if (i !== -1) requests[i] = { ...requests[i], ...data };
+        promise = collection.doc(editingId).update(data);
+        logSystemAction('Edição', 'Solicitações', `Para: ${data.municipality}`);
     } else {
-        requests.push({ id: getNextId('req'), ...data });
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        promise = collection.add(data);
+        logSystemAction('Criação', 'Solicitações', `Para: ${data.municipality}`);
     }
-    salvarNoArmazenamento('requests', requests);
-    document.getElementById('request-modal').classList.remove('show');
-    renderRequests();
-    logSystemAction(editingId ? 'Edição' : 'Criação', 'Solicitações', `Para: ${data.municipality}`);
-    showToast('Salvo!');
+
+    promise.then(() => {
+        document.getElementById('request-modal').classList.remove('show');
+        showToast('Solicitação salva na nuvem!', 'success');
+        clearRequestFilters();
+        editingId = null;
+    })
+    .catch((error) => {
+        console.error("Erro ao salvar:", error);
+        alert("Erro ao salvar: " + error.message);
+    })
+    .finally(() => {
+        btnSubmit.innerText = txtOriginal;
+        btnSubmit.disabled = false;
+    });
 }
 function getFilteredRequests() {
     const fMun = document.getElementById('filter-request-municipality')?.value;
@@ -2041,8 +2065,11 @@ function renderRequests() {
                 <td>${x.user || '-'}</td>
                 <td style="text-align:center;"><span class="task-status ${stCls}">${x.status}</span></td>
                 <td style="text-align:center;">${formatDate(x.dateRealization)}</td>
-                <td class="text-secondary-cell">${just}</td>
-                <td><button class="btn btn--sm" onclick="showRequestModal(${x.id})">✏️</button><button class="btn btn--sm" onclick="deleteRequest(${x.id})">🗑️</button></td>
+               <td class="text-secondary-cell">${just}</td>
+                <td>
+                    <button class="btn btn--sm" onclick="showRequestModal('${x.id}')">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteRequest('${x.id}')">🗑️</button>
+                </td>
             </tr>`;
         }).join('');
         c.innerHTML = `<table><thead><th>Município</th><th>Data Solicitação</th><th>Solicitante</th><th>Contato</th><th>Descrição</th><th>Usuário que Registrou a Solicitação</th><th style="text-align:center;">Status</th><th style="text-align:center;">Data Realização</th><th>Justificativa</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
@@ -2131,16 +2158,19 @@ function generateRequestsPDF() {
 }
 
 // 2. SOLICITAÇÕES
+// ============================================================
+// NOVA FUNÇÃO: EXCLUIR SOLICITAÇÃO DO FIREBASE
+// ============================================================
 function deleteRequest(id) {
-    if (confirm('Excluir solicitação?')) {
-        const item = requests.find(x => x.id === id);
-        if(item) {
-            registerUndo(item, 'requests', renderRequests); // Registra Undo
-            requests = requests.filter(x => x.id !== id);
-            salvarNoArmazenamento('requests', requests);
-            renderRequests();
-            logSystemAction('Exclusão', 'Solicitações', `Solicitação excluída: ${item.municipality}`);
-        }
+    if (confirm('Excluir esta solicitação permanentemente?')) {
+        db.collection('requests').doc(id).delete()
+        .then(() => {
+            showToast('Solicitação excluída.', 'success');
+        })
+        .catch((error) => {
+            console.error("Erro ao excluir:", error);
+            alert("Erro ao excluir: " + error.message);
+        });
     }
 }
 
@@ -5088,6 +5118,34 @@ function setupTaskListener() {
         console.error("Erro ao buscar treinamentos:", error);
     });
 }
+// ============================================================
+// NOVA FUNÇÃO: OUVINTE DE SOLICITAÇÕES
+// ============================================================
+function setupRequestListener() {
+    console.log("🎧 Iniciando ouvinte de Solicitações...");
+    
+    db.collection('requests').onSnapshot((snapshot) => {
+        requests = []; // Limpa memória
+        
+        snapshot.forEach((doc) => {
+            let r = doc.data();
+            r.id = doc.id; // ID do Firebase
+            requests.push(r);
+        });
+        
+        console.log(`📦 Recebidas ${requests.length} solicitações.`);
+        
+        // Atualiza a tela se estiver na aba correta
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.id === 'solicitacoes-section') {
+            renderRequests();
+        }
+        updateDashboardStats();
+        
+    }, (error) => {
+        console.error("Erro ao buscar solicitações:", error);
+    });
+}
 
 function initializeApp() {
     try {
@@ -5099,6 +5157,7 @@ function initializeApp() {
         updateGlobalDropdowns();
         setupMunicipalityListener();
         setupTaskListener();
+        setupRequestListener();
         
         // Renderizações
         renderMunicipalities();
