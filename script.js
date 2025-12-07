@@ -7000,96 +7000,139 @@ function debounce(func, wait) {
 document.addEventListener('DOMContentLoaded', function() {
  const loginForm = document.getElementById('login-form');
 
-    if (loginForm) {
+   if (loginForm) {
         console.log("Formulário de login detectado. Ativando escuta...");
 
-        loginForm.addEventListener('submit', (e) => {
+        loginForm.addEventListener('submit', async (e) => { // Note o 'async' aqui
             e.preventDefault(); 
             
             // Pega o valor digitado
-            let emailInput = document.getElementById('login-username').value.trim();
+            let userInput = document.getElementById('login-username').value.trim();
             const password = document.getElementById('login-password').value;
-            
-            // --- TRUQUE PARA ACEITAR "ADMIN" ---
-            if (emailInput.toUpperCase() === 'ADMIN') {
-                emailInput = 'admin@sigpsaude.com';
-            }
-            // -----------------------------------
-            
             const btnSubmit = loginForm.querySelector('button[type="submit"]');
             const errorDiv = document.getElementById('login-error'); 
-            
+            const textoOriginal = btnSubmit.innerText;
+
             // Limpa erros anteriores
             if(errorDiv) {
                 errorDiv.style.display = 'none';
                 errorDiv.innerText = '';
             }
             
-            // Feedback visual no botão
-            const textoOriginal = btnSubmit.innerText;
-            btnSubmit.innerText = "Verificando...";
+            // Feedback visual
+            btnSubmit.innerText = "Buscando usuário...";
             btnSubmit.disabled = true;
 
-            // Envia para o Firebase
-            auth.signInWithEmailAndPassword(emailInput, password)
-                .then((userCredential) => {
-                    console.log("Login realizado: ", userCredential.user.email);
-                    
-                    // 1. Cria o objeto do usuário
-                    const usuarioLogado = {
-                        id: 1,
-                        login: 'ADMIN',
-                        name: 'Administrador',
-                        permission: 'Administrador',
-                        status: 'Ativo'
-                    };
-                    
-                    // 2. Atualiza a variável GLOBAL
-                    currentUser = usuarioLogado;
-                    isAuthenticated = true;
+            try {
+                let emailFinal = userInput;
 
-                    // 3. Salva no DISCO
-                    localStorage.setItem('currentUser', JSON.stringify(usuarioLogado));
-                    localStorage.setItem('lastActivityTime', Date.now().toString());
+                // --- LÓGICA DE TRADUÇÃO (LOGIN -> EMAIL) ---
+                // Se NÃO tem @, assumimos que é um Nome de Usuário
+                if (!userInput.includes('@')) {
                     
-                    // 4. Mágica Visual: Troca a tela instantaneamente
-                    document.getElementById('login-screen').classList.remove('active');
-                    document.getElementById('main-app').classList.add('active');
-                    
-                    // 5. Inicia o sistema
-                    updateUserInterface();
-                    initializeApp();
-                    initializeInactivityTracking();
-                    
-                    // Feedback final
-                    showToast(`Bem-vindo, ${usuarioLogado.name}!`, 'success');
-                })
-                .catch((error) => {
-                    console.error("Erro no login:", error.code);
-                    
-                    let mensagemErro = "Falha ao entrar.";
-                    if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
-                        mensagemErro = "Usuário ou senha incorretos.";
-                    } else if (error.code === 'auth/wrong-password') {
-                        mensagemErro = "Senha incorreta.";
-                    } else if (error.code === 'auth/too-many-requests') {
-                        mensagemErro = "Muitas tentativas. Aguarde um momento.";
+                    // 1. Tratamento Especial para o ADMIN hardcoded (Segurança extra)
+                    if (userInput.toUpperCase() === 'ADMIN') {
+                        emailFinal = 'admin@sigpsaude.com';
+                    } 
+                    else {
+                        // 2. Busca no Banco de Dados pelo Login
+                        console.log(`Buscando e-mail para o login: ${userInput.toUpperCase()}`);
+                        
+                        const querySnapshot = await db.collection('users')
+                            .where('login', '==', userInput.toUpperCase())
+                            .limit(1) // Pega apenas 1
+                            .get();
+
+                        if (querySnapshot.empty) {
+                            // Se não achou ninguém com esse login, lançamos erro simulado
+                            throw { code: 'auth/user-not-found-custom' };
+                        }
+
+                        // Achou! Pega o e-mail do documento encontrado
+                        const userDoc = querySnapshot.docs[0].data();
+                        emailFinal = userDoc.email;
+                        console.log(`Login ${userInput} corresponde ao e-mail: ${emailFinal}`);
                     }
-                    
-                    if(errorDiv) {
-                        errorDiv.innerText = mensagemErro;
-                        errorDiv.style.display = 'block';
-                        errorDiv.style.color = '#ff4444';
-                        errorDiv.style.marginTop = '10px';
-                        errorDiv.style.textAlign = 'center';
-                    } else {
-                        alert(mensagemErro);
-                    }
-                    
-                    // Restaura o botão
-                    btnSubmit.innerText = textoOriginal;
-                    btnSubmit.disabled = false;
-                });
+                }
+
+                // --- AGORA FAZ O LOGIN NO FIREBASE COM O E-MAIL DESCOBERTO ---
+                btnSubmit.innerText = "Verificando senha...";
+                
+                const userCredential = await auth.signInWithEmailAndPassword(emailFinal, password);
+                console.log("Login realizado: ", userCredential.user.email);
+                
+                // 1. Recupera dados completos do usuário para a sessão
+                // (Opcional: busca dados atualizados do banco para garantir permissões)
+                let dadosUsuario = {
+                    id: userCredential.user.uid,
+                    email: userCredential.user.email,
+                    name: 'Usuário', // Provisório até carregar
+                    permission: 'Usuário Normal',
+                    login: userInput.toUpperCase()
+                };
+
+                // Tenta pegar o nome e permissão reais do banco agora
+                const userDetails = await db.collection('users').doc(userCredential.user.uid).get();
+                if (userDetails.exists) {
+                    const d = userDetails.data();
+                    dadosUsuario.name = d.name || d.nome; // Suporta os dois formatos
+                    dadosUsuario.permission = d.permission || d.role || 'Usuário Normal';
+                    dadosUsuario.status = d.status || 'Ativo';
+                    dadosUsuario.login = d.login;
+                }
+
+                // Verifica se está ativo
+                if (dadosUsuario.status === 'Inativo') {
+                    throw { code: 'auth/user-disabled' };
+                }
+
+                // 2. Atualiza Variáveis Globais e Sessão
+                currentUser = dadosUsuario;
+                isAuthenticated = true;
+                localStorage.setItem('currentUser', JSON.stringify(dadosUsuario));
+                localStorage.setItem('lastActivityTime', Date.now().toString());
+                
+                // 3. Troca de Tela
+                document.getElementById('login-screen').classList.remove('active');
+                document.getElementById('main-app').classList.add('active');
+                
+                // 4. Inicia Sistema
+                updateUserInterface();
+                initializeApp();
+                initializeInactivityTracking();
+                
+                showToast(`Bem-vindo, ${dadosUsuario.name}!`, 'success');
+
+            } catch (error) {
+                console.error("Erro no login:", error);
+                
+                let mensagemErro = "Falha ao entrar.";
+                
+                // Tratamento de Erros
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/user-not-found-custom' || error.code === 'auth/invalid-email') {
+                    mensagemErro = "Usuário não encontrado.";
+                } else if (error.code === 'auth/wrong-password') {
+                    mensagemErro = "Senha incorreta.";
+                } else if (error.code === 'auth/user-disabled') {
+                    mensagemErro = "Este usuário está desativado.";
+                } else if (error.code === 'auth/too-many-requests') {
+                    mensagemErro = "Muitas tentativas. Aguarde um momento.";
+                }
+                
+                if(errorDiv) {
+                    errorDiv.innerText = mensagemErro;
+                    errorDiv.style.display = 'block';
+                    errorDiv.style.color = '#ff4444';
+                    errorDiv.style.marginTop = '10px';
+                    errorDiv.style.textAlign = 'center';
+                } else {
+                    alert(mensagemErro);
+                }
+                
+                // Restaura o botão
+                btnSubmit.innerText = textoOriginal;
+                btnSubmit.disabled = false;
+            }
         }); 
     }
     // ============================================================
