@@ -1113,6 +1113,11 @@ function showAppScreen(log) {
         
         // ✅ RESTAURA A ABA ATIVA
         restoreActiveTab();
+
+        // ----------------------------------------------------
+        // 🛠️ NOVO: REMOVE O ESTADO 'loading' DO <body>
+        // ----------------------------------------------------
+        document.body.classList.remove('loading'); 
     }
 }
 
@@ -1125,6 +1130,8 @@ function showLoginScreen(log) {
     // Mostra a tela de login
     document.getElementById('login-screen').classList.add('active');
     document.getElementById('main-app').classList.remove('active');
+ // ✅ AQUI: REMOVE A CLASSE DE CARREGAMENTO
+    document.body.classList.remove('loading');
 }
 // ============================================================
 // FUNÇÃO DE LOGOUT (CORRIGIDA COM FIREBASE)
