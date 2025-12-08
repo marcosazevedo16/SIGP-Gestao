@@ -11,7 +11,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
-appLogger.log("🔥 Firebase Iniciado!");
 // ============================================================
 // SISTEMA DE LOG CENTRALIZADO (Para Debug/Produção)
 // ============================================================
@@ -22,15 +21,20 @@ const appLogger = {
     // 1. Logs de rotina (Apenas se IS_DEVELOPMENT for true)
     log: function(message) {
         if (IS_DEVELOPMENT) {
-            appLogger.log(`[SIGP DEV]: ${message}`);
+            // CORREÇÃO: Chamando o console.log real, não a própria função!
+            console.log(`[SIGP DEV]: ${message}`);
         }
     },
     // 2. Erros críticos devem aparecer sempre (mesmo em produção)
     error: function(message) {
-        appLogger.error(`[SIGP ERROR]: ${message}`);
+        // CORREÇÃO: Chamando o console.error real
+        console.error(`[SIGP ERROR]: ${message}`);
     }
 };
 // ============================================================
+
+// AGORA SIM, O PRIMEIRO LOG PODE SER CHAMADO DEPOIS DA DEFINIÇÃO:
+appLogger.log("🔥 Firebase Iniciado!");
 // ============================================================================
 // SIGP SAÚDE v26.0 - VERSÃO FINAL(SEM COMPACTAÇÃO)
 // Todas as funcionalidades + Ajustes de Layout + Backup Completo
