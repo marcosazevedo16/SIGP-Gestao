@@ -1126,16 +1126,29 @@ function showLoginScreen(log) {
     document.getElementById('login-screen').classList.add('active');
     document.getElementById('main-app').classList.remove('active');
 }
+// ============================================================
+// FUNÇÃO DE LOGOUT (CORRIGIDA COM FIREBASE)
+// ============================================================
 function handleLogout() {
-    // Removemos a verificação 'confirm'
-    // O sistema agora limpa o usuário e recarrega a página imediatamente
-    localStorage.removeItem('currentUser');
-    
-    // Se você implementou o módulo de segurança anteriormente, 
-    // pode descomentar a linha abaixo para parar o timer de inatividade:
-    // if (typeof disableInactivityTracking === 'function') disableInactivityTracking();
+    // 1. **CRÍTICO:** Manda o Firebase destruir o token da sessão
+    firebase.auth().signOut()
+        .then(() => {
+            // Sucesso! O token foi destruído na nuvem.
+            
+            // 2. Limpa o cache local
+            localStorage.removeItem('currentUser');
+            
+            // 3. Recarrega a página (que agora vai para o showLoginScreen)
+            location.reload();
+        })
+        .catch((error) => {
+            // Se houver erro, apenas limpa e força o reload de qualquer forma
+            console.error("Erro ao fazer logout no Firebase:", error);
+            localStorage.removeItem('currentUser');
+            location.reload();
+        });
 
-    location.reload();
+    // Nota: Removi o código antigo que estava dentro dessa função
 }
 
 // Modal de Troca de Senha
