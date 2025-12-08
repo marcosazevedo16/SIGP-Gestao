@@ -11,7 +11,26 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
-console.log("🔥 Firebase Iniciado!");
+appLogger.log("🔥 Firebase Iniciado!");
+// ============================================================
+// SISTEMA DE LOG CENTRALIZADO (Para Debug/Produção)
+// ============================================================
+// MUDAR PARA false ANTES DE FAZER O DEPLOY FINAL NO NETLIFY
+const IS_DEVELOPMENT = true; 
+
+const appLogger = {
+    // 1. Logs de rotina (Apenas se IS_DEVELOPMENT for true)
+    log: function(message) {
+        if (IS_DEVELOPMENT) {
+            appLogger.log(`[SIGP DEV]: ${message}`);
+        }
+    },
+    // 2. Erros críticos devem aparecer sempre (mesmo em produção)
+    error: function(message) {
+        appLogger.error(`[SIGP ERROR]: ${message}`);
+    }
+};
+// ============================================================
 // ============================================================================
 // SIGP SAÚDE v26.0 - VERSÃO FINAL(SEM COMPACTAÇÃO)
 // Todas as funcionalidades + Ajustes de Layout + Backup Completo
@@ -21,11 +40,11 @@ console.log("🔥 Firebase Iniciado!");
 // 1. VERIFICAÇÃO DE SEGURANÇA
 // ----------------------------------------------------------------------------
 if (typeof CryptoJS === 'undefined') {
-    console.error('Erro Crítico: CryptoJS não encontrado.');
+    appLogger.error('Erro Crítico: CryptoJS não encontrado.');
     alert('ERRO CRÍTICO: A biblioteca CryptoJS não foi carregada. Verifique sua conexão ou o cabeçalho do HTML.');
     throw new Error('CryptoJS is missing');
 } else {
-    console.log('Segurança: CryptoJS carregado com sucesso.');
+    appLogger.log('Segurança: CryptoJS carregado com sucesso.');
 }
 // ----------------------------------------------------------------------------
 // 2. CONFIGURAÇÕES GERAIS E VARIÁVEIS DE ESTADO
@@ -131,9 +150,9 @@ function salvarNoArmazenamento(chave, dados) {
     try {
         const dadosJSON = JSON.stringify(dados);
         localStorage.setItem(chave, dadosJSON);
-        console.log(`Dados salvos em '${chave}' com sucesso.`);
+        appLogger.log(`Dados salvos em '${chave}' com sucesso.`);
     } catch (erro) {
-        console.error('Erro ao salvar no localStorage:', erro);
+        appLogger.error('Erro ao salvar no localStorage:', erro);
         if (erro.name === 'QuotaExceededError') {
             alert('⚠️ Espaço de armazenamento do navegador cheio! Por favor, faça um backup e limpe dados antigos.');
         }
@@ -154,7 +173,7 @@ function recuperarDoArmazenamento(chave, valorPadrao = null) {
 
     } catch (erro) {
         // SE DER ERRO (JSON CORROMPIDO):
-        console.error(`💥 Erro Crítico ao ler '${chave}':`, erro);
+        appLogger.error(`💥 Erro Crítico ao ler '${chave}':`, erro);
         
         // 1. Avisa o usuário (para ele não achar que os dados sumiram do nada)
         alert(`⚠️ ATENÇÃO: Os dados de "${chave}" estão corrompidos e impediam o sistema de abrir.\n\nEles foram resetados automaticamente para o padrão para recuperar o acesso.`);
@@ -651,7 +670,7 @@ if (users.length > 0 && users[0].login === 'ADMIN' && !users[0].passwordHash) {
     
     // Salva
     salvarNoArmazenamento('users', users);
-    console.log('🔒 Senha do ADMIN configurada para: saude2025');
+    appLogger.log('🔒 Senha do ADMIN configurada para: saude2025');
 }
 
 let currentUser = recuperarDoArmazenamento('currentUser');
@@ -995,7 +1014,7 @@ function handleLogin(e) {
 }
 
 function checkAuthentication() {
-    console.log('🔍 Autenticação: Verificando sessão...');
+    appLogger.log('🔍 Autenticação: Verificando sessão...');
     
     // 1. TENTA RECUPERAR A SESSÃO DO DISCO (DIRETO, SEM DESERIALIZAÇÃO PROBLEMÁTICA)
     const sessionData = localStorage.getItem('currentUser');
@@ -1018,10 +1037,10 @@ function checkAuthentication() {
                 const now = Date.now().toString();
                 localStorage.setItem('lastActivityTime', now);
                 isAuthenticated = true;
-                console.log('✅ Sessão válida. Usuário: ' + currentUser.name);
+                appLogger.log('✅ Sessão válida. Usuário: ' + currentUser.name);
             }
         } catch (e) {
-            console.error('❌ Sessão corrompida:', e);
+            appLogger.error('❌ Sessão corrompida:', e);
             localStorage.removeItem('currentUser');
             currentUser = null;
             isAuthenticated = false;
@@ -1029,7 +1048,7 @@ function checkAuthentication() {
     } else {
         currentUser = null;
         isAuthenticated = false;
-        console.log('ℹ️ Nenhuma sessão encontrada.');
+        appLogger.log('ℹ️ Nenhuma sessão encontrada.');
     }
     
     // 2. DECISÃO: Logado ou não?
@@ -1044,7 +1063,7 @@ function checkAuthentication() {
                 initializeApp();
             }
         } catch (err) {
-            console.error('❌ Erro ao inicializar app:', err);
+            appLogger.error('❌ Erro ao inicializar app:', err);
         }
         
         // Liga o monitor de inatividade com um pequeno delay seguro
@@ -1059,7 +1078,7 @@ function checkAuthentication() {
         // Sem sessão = vai pro login
         document.getElementById('login-screen').classList.add('active');
         document.getElementById('main-app').classList.remove('active');
-        console.log('🔐 Redirecionando para tela de login...');
+        appLogger.log('🔐 Redirecionando para tela de login...');
     }
 }
 
@@ -1143,7 +1162,7 @@ function handleChangePassword(e) {
                 handleLogout(); // Força logout para validar a nova senha
             })
             .catch((error) => {
-                console.error("Erro ao mudar senha:", error);
+                appLogger.error("Erro ao mudar senha:", error);
                 let msg = "Erro ao atualizar senha.";
                 
                 if (error.code === 'auth/wrong-password') {
@@ -1378,7 +1397,7 @@ function saveMunicipality(e) {
         editingId = null;
     })
     .catch((error) => {
-        console.error("Erro ao salvar:", error);
+        appLogger.error("Erro ao salvar:", error);
         alert("Erro ao salvar no servidor: " + error.message);
     })
     .finally(() => {
@@ -1555,7 +1574,7 @@ function deleteMunicipality(id) {
             // Deleta na nuvem (silenciosamente, sem mostrar nova mensagem para não matar o botão)
             db.collection('municipalities').doc(id).delete()
                 .then(() => {
-                    console.log('Município excluído na nuvem.');
+                    appLogger.log('Município excluído na nuvem.');
                     logSystemAction('Exclusão', 'Municípios', `Excluiu: ${item.name}`);
                 })
                 .catch(err => alert("Erro ao excluir: " + err.message));
@@ -1690,7 +1709,7 @@ function saveTask(e) {
         editingId = null;
     })
     .catch((error) => {
-        console.error("Erro ao salvar treinamento:", error);
+        appLogger.error("Erro ao salvar treinamento:", error);
         alert("Erro ao salvar: " + error.message);
     })
     .finally(() => {
@@ -1863,7 +1882,7 @@ function deleteTask(id) {
             
             db.collection('tasks').doc(id).delete()
                 .then(() => {
-                    console.log('Treinamento excluído na nuvem.');
+                    appLogger.log('Treinamento excluído na nuvem.');
                     logSystemAction('Exclusão', 'Treinamentos', `Excluiu treinamento de: ${item.municipality}`);
                 })
                 .catch(err => alert("Erro ao excluir: " + err.message));
@@ -2038,7 +2057,7 @@ function saveRequest(e) {
         editingId = null;
     })
     .catch((error) => {
-        console.error("Erro ao salvar:", error);
+        appLogger.error("Erro ao salvar:", error);
         alert("Erro ao salvar: " + error.message);
     })
     .finally(() => {
@@ -2459,7 +2478,7 @@ function savePresentation(e) {
         editingId = null;
     })
     .catch((error) => {
-        console.error("Erro ao salvar:", error);
+        appLogger.error("Erro ao salvar:", error);
         alert("Erro ao salvar: " + error.message);
     })
     .finally(() => {
@@ -2822,7 +2841,7 @@ function saveDemand(e) {
         editingId = null;
     })
     .catch((error) => {
-        console.error("Erro ao salvar:", error);
+        appLogger.error("Erro ao salvar:", error);
         alert("Erro ao salvar: " + error.message);
     })
     .finally(() => {
@@ -3193,7 +3212,7 @@ function saveVisit(e) {
         editingId = null;
     })
     .catch((error) => {
-        console.error("Erro ao salvar:", error);
+        appLogger.error("Erro ao salvar:", error);
         alert("Erro ao salvar: " + error.message);
     })
     .finally(() => {
@@ -3548,7 +3567,7 @@ function saveProduction(e) {
         editingId = null;
     })
     .catch((error) => {
-        console.error("Erro ao salvar:", error);
+        appLogger.error("Erro ao salvar:", error);
         alert("Erro ao salvar: " + error.message);
     })
     .finally(() => {
@@ -3921,7 +3940,7 @@ window.saveUser = function(e) {
             })
             .catch((error) => {
                 tempApp.delete(); // Garante que deleta mesmo com erro
-                console.error("Erro:", error);
+                appLogger.error("Erro:", error);
                 
                 let msg = error.message;
                 if (error.code === 'auth/email-already-in-use') msg = "Este e-mail já existe.";
@@ -4006,7 +4025,7 @@ window.enviarEmailRedefinicao = function(email) {
             alert(`✅ E-mail enviado para ${email}.\n\nPeça para o usuário verificar a caixa de entrada (e spam) para criar uma nova senha.`);
         })
         .catch((error) => {
-            console.error(error);
+            appLogger.error(error);
             if (error.code === 'auth/user-not-found') {
                 alert("Erro: O e-mail cadastrado no banco não existe na Autenticação do Firebase.");
             } else {
@@ -4420,7 +4439,7 @@ function handleBackupFileSelect(event) {
             document.getElementById('restore-confirm-modal').classList.add('show');
             
         } catch (err) { 
-            console.error(err);
+            appLogger.error(err);
             alert('Erro ao ler o arquivo. Verifique se é um backup válido.'); 
         }
     };
@@ -4535,7 +4554,7 @@ function confirmRestore() {
     try {
         initializeApp();
     } catch (e) {
-        console.error("Erro ao reinicializar após restore:", e);
+        appLogger.error("Erro ao reinicializar após restore:", e);
     }
     
     closeRestoreConfirmModal();
@@ -5153,7 +5172,7 @@ function saveOrientador(e){
 // NOVA FUNÇÃO: OUVINTE DE MUNICÍPIOS (Lê do Firebase em tempo real)
 // ============================================================
 function setupMunicipalityListener() {
-    console.log("🎧 Iniciando ouvinte de Municípios...");
+    appLogger.log("🎧 Iniciando ouvinte de Municípios...");
     
     // Conecta na coleção 'municipalities'
     db.collection('municipalities').onSnapshot((snapshot) => {
@@ -5168,7 +5187,7 @@ function setupMunicipalityListener() {
             municipalities.push(mun);
         });
         
-        console.log(`📦 Recebidos ${municipalities.length} municípios do Firebase.`);
+        appLogger.log(`📦 Recebidos ${municipalities.length} municípios do Firebase.`);
         
         // Se a aba de municípios estiver ativa, atualiza a tabela visualmente
         const activeTab = document.querySelector('.tab-content.active');
@@ -5181,7 +5200,7 @@ function setupMunicipalityListener() {
         updateDashboardStats(); 
         
     }, (error) => {
-        console.error("Erro ao buscar municípios:", error);
+        appLogger.error("Erro ao buscar municípios:", error);
         showToast("Erro de conexão com o banco de dados.", "error");
     });
 }
@@ -5189,7 +5208,7 @@ function setupMunicipalityListener() {
 // NOVA FUNÇÃO: OUVINTE DE TREINAMENTOS
 // ============================================================
 function setupTaskListener() {
-    console.log("🎧 Iniciando ouvinte de Treinamentos...");
+    appLogger.log("🎧 Iniciando ouvinte de Treinamentos...");
     
     db.collection('tasks').onSnapshot((snapshot) => {
         tasks = []; // Limpa a memória
@@ -5200,7 +5219,7 @@ function setupTaskListener() {
             tasks.push(t);
         });
         
-        console.log(`📦 Recebidos ${tasks.length} treinamentos.`);
+        appLogger.log(`📦 Recebidos ${tasks.length} treinamentos.`);
         
         // Se a aba estiver aberta, atualiza a tabela
         const activeTab = document.querySelector('.tab-content.active');
@@ -5211,14 +5230,14 @@ function setupTaskListener() {
         updateDashboardStats();
         
     }, (error) => {
-        console.error("Erro ao buscar treinamentos:", error);
+        appLogger.error("Erro ao buscar treinamentos:", error);
     });
 }
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE SOLICITAÇÕES
 // ============================================================
 function setupRequestListener() {
-    console.log("🎧 Iniciando ouvinte de Solicitações...");
+    appLogger.log("🎧 Iniciando ouvinte de Solicitações...");
     
     db.collection('requests').onSnapshot((snapshot) => {
         requests = []; // Limpa memória
@@ -5229,7 +5248,7 @@ function setupRequestListener() {
             requests.push(r);
         });
         
-        console.log(`📦 Recebidas ${requests.length} solicitações.`);
+        appLogger.log(`📦 Recebidas ${requests.length} solicitações.`);
         
         // Atualiza a tela se estiver na aba correta
         const activeTab = document.querySelector('.tab-content.active');
@@ -5239,14 +5258,14 @@ function setupRequestListener() {
         updateDashboardStats();
         
     }, (error) => {
-        console.error("Erro ao buscar solicitações:", error);
+        appLogger.error("Erro ao buscar solicitações:", error);
     });
 }
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE APRESENTAÇÕES
 // ============================================================
 function setupPresentationListener() {
-    console.log("🎧 Iniciando ouvinte de Apresentações...");
+    appLogger.log("🎧 Iniciando ouvinte de Apresentações...");
     
     db.collection('presentations').onSnapshot((snapshot) => {
         presentations = []; // Limpa memória
@@ -5257,7 +5276,7 @@ function setupPresentationListener() {
             presentations.push(p);
         });
         
-        console.log(`📦 Recebidas ${presentations.length} apresentações.`);
+        appLogger.log(`📦 Recebidas ${presentations.length} apresentações.`);
         
         // Atualiza a tela se estiver na aba correta
         const activeTab = document.querySelector('.tab-content.active');
@@ -5267,14 +5286,14 @@ function setupPresentationListener() {
         updateDashboardStats();
         
     }, (error) => {
-        console.error("Erro ao buscar apresentações:", error);
+        appLogger.error("Erro ao buscar apresentações:", error);
     });
 }
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE DEMANDAS
 // ============================================================
 function setupDemandListener() {
-    console.log("🎧 Iniciando ouvinte de Demandas...");
+    appLogger.log("🎧 Iniciando ouvinte de Demandas...");
     
     db.collection('demands').onSnapshot((snapshot) => {
         demands = []; // Limpa memória
@@ -5285,7 +5304,7 @@ function setupDemandListener() {
             demands.push(d);
         });
         
-        console.log(`📦 Recebidas ${demands.length} demandas.`);
+        appLogger.log(`📦 Recebidas ${demands.length} demandas.`);
         
         // Atualiza se a aba estiver ativa
         const activeTab = document.querySelector('.tab-content.active');
@@ -5295,14 +5314,14 @@ function setupDemandListener() {
         updateDashboardStats();
         
     }, (error) => {
-        console.error("Erro ao buscar demandas:", error);
+        appLogger.error("Erro ao buscar demandas:", error);
     });
 }
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE VISITAS
 // ============================================================
 function setupVisitListener() {
-    console.log("🎧 Iniciando ouvinte de Visitas...");
+    appLogger.log("🎧 Iniciando ouvinte de Visitas...");
     
     db.collection('visits').onSnapshot((snapshot) => {
         visits = []; // Limpa memória
@@ -5313,7 +5332,7 @@ function setupVisitListener() {
             visits.push(v);
         });
         
-        console.log(`📦 Recebidas ${visits.length} visitas.`);
+        appLogger.log(`📦 Recebidas ${visits.length} visitas.`);
         
         // Atualiza a tela se estiver na aba correta
         const activeTab = document.querySelector('.tab-content.active');
@@ -5323,14 +5342,14 @@ function setupVisitListener() {
         updateDashboardStats();
         
     }, (error) => {
-        console.error("Erro ao buscar visitas:", error);
+        appLogger.error("Erro ao buscar visitas:", error);
     });
 }
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE PRODUÇÃO
 // ============================================================
 function setupProductionListener() {
-    console.log("🎧 Iniciando ouvinte de Produção...");
+    appLogger.log("🎧 Iniciando ouvinte de Produção...");
     
     db.collection('productions').onSnapshot((snapshot) => {
         productions = []; // Limpa memória
@@ -5341,7 +5360,7 @@ function setupProductionListener() {
             productions.push(p);
         });
         
-        console.log(`📦 Recebidos ${productions.length} registros de produção.`);
+        appLogger.log(`📦 Recebidos ${productions.length} registros de produção.`);
         
         // Atualiza a tela se estiver na aba correta
         const activeTab = document.querySelector('.tab-content.active');
@@ -5351,14 +5370,14 @@ function setupProductionListener() {
         updateDashboardStats();
         
     }, (error) => {
-        console.error("Erro ao buscar produção:", error);
+        appLogger.error("Erro ao buscar produção:", error);
     });
 }
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE INTEGRAÇÕES
 // ============================================================
 function setupIntegrationListener() {
-    console.log("🎧 Iniciando ouvinte de Integrações...");
+    appLogger.log("🎧 Iniciando ouvinte de Integrações...");
     
     db.collection('integrations').onSnapshot((snapshot) => {
         integrations = []; // Limpa memória
@@ -5369,7 +5388,7 @@ function setupIntegrationListener() {
             integrations.push(i);
         });
         
-        console.log(`📦 Recebidas ${integrations.length} integrações.`);
+        appLogger.log(`📦 Recebidas ${integrations.length} integrações.`);
         
         // Atualiza a tela se estiver na aba correta
         const activeTab = document.querySelector('.tab-content.active');
@@ -5381,14 +5400,14 @@ function setupIntegrationListener() {
         checkSystemNotifications();
         
     }, (error) => {
-        console.error("Erro ao buscar integrações:", error);
+        appLogger.error("Erro ao buscar integrações:", error);
     });
 }
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE COLABORADORES (RH)
 // ============================================================
 function setupColabInfoListener() {
-    console.log("🎧 Iniciando ouvinte de RH/Colaboradores...");
+    appLogger.log("🎧 Iniciando ouvinte de RH/Colaboradores...");
     
     db.collection('collaboratorInfos').onSnapshot((snapshot) => {
         collaboratorInfos = []; // Limpa memória
@@ -5399,7 +5418,7 @@ function setupColabInfoListener() {
             collaboratorInfos.push(c);
         });
         
-        console.log(`📦 Recebidas ${collaboratorInfos.length} fichas de colaboradores.`);
+        appLogger.log(`📦 Recebidas ${collaboratorInfos.length} fichas de colaboradores.`);
         
         // Atualiza a tela se estiver na aba correta
         const activeTab = document.querySelector('.tab-content.active');
@@ -5408,14 +5427,14 @@ function setupColabInfoListener() {
         }
         
     }, (error) => {
-        console.error("Erro ao buscar fichas:", error);
+        appLogger.error("Erro ao buscar fichas:", error);
     });
 }
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE AUDITORIA (LOGS)
 // ============================================================
 function setupAuditListener() {
-    console.log("🎧 Iniciando ouvinte de Auditoria...");
+    appLogger.log("🎧 Iniciando ouvinte de Auditoria...");
     
     // Busca os últimos 100 logs ordenados por data (do mais recente para o mais antigo)
     db.collection('auditLogs')
@@ -5437,7 +5456,7 @@ function setupAuditListener() {
         }
         
     }, (error) => {
-        console.error("Erro ao buscar logs:", error);
+        appLogger.error("Erro ao buscar logs:", error);
     });
 }
 // --- LISTENERS AUXILIARES ---
@@ -5454,7 +5473,7 @@ function setupAuxiliaryListeners() {
 
         // CORREÇÃO: Se não houver usuários na nuvem, usa o Admin Local
         if (cloudUsers.length === 0) {
-            console.log("⚠️ Banco vazio. Usando Admin Local.");
+            appLogger.log("⚠️ Banco vazio. Usando Admin Local.");
             // Tenta recuperar do localStorage ou usa o padrão
             const localUsers = recuperarDoArmazenamento('users');
             if (localUsers && localUsers.length > 0) {
@@ -5571,7 +5590,7 @@ function initializeApp() {
         if (overlay) overlay.onclick = toggleMobileMenu;
 
     } catch (error) {
-        console.error("Erro na inicialização:", error);
+        appLogger.error("Erro na inicialização:", error);
     }
 }
 
@@ -5592,7 +5611,7 @@ function logSystemAction(action, target, details) {
 
     // Envia para a nuvem (sem bloquear a tela, roda em segundo plano)
     db.collection('auditLogs').add(newLog)
-        .catch(err => console.error("Erro ao salvar log:", err));
+        .catch(err => appLogger.error("Erro ao salvar log:", err));
 }
 
 // Navegação para Auditoria (Com Trava de Segurança)
@@ -5775,7 +5794,7 @@ function exportAuditCSV() {
         
         // Salva a lista corrigida
         salvarNoArmazenamento('presentations', presentations);
-        console.log("IDs de apresentações corrigidos e reordenados com sucesso.");
+        appLogger.log("IDs de apresentações corrigidos e reordenados com sucesso.");
     }
 })();
 
@@ -5845,7 +5864,7 @@ function handlePresentationCSVImport(event) {
         
         // Salva a lista corrigida
         salvarNoArmazenamento('productions', productions);
-        console.log("IDs de produção corrigidos e reordenados com sucesso.");
+        appLogger.log("IDs de produção corrigidos e reordenados com sucesso.");
     }
 })();
 
@@ -5891,7 +5910,7 @@ window.addEventListener('storage', function(e) {
     // Se a chave não for uma das nossas ou se o valor for nulo (limpeza), ignoramos ou recarregamos tudo
     if (!e.key || !e.newValue) return;
 
-    console.log(`🔄 Sincronizando dados externos: ${e.key}`);
+    appLogger.log(`🔄 Sincronizando dados externos: ${e.key}`);
 
     // Atualiza a variável local correspondente com o dado novo vindo da outra aba
     try {
@@ -5928,7 +5947,7 @@ window.addEventListener('storage', function(e) {
         }
 
     } catch (err) {
-        console.error("Erro ao sincronizar aba:", err);
+        appLogger.error("Erro ao sincronizar aba:", err);
     }
 });
 
@@ -6366,7 +6385,7 @@ function saveIntegration(e) {
         editingId = null;
     })
     .catch((error) => {
-        console.error("Erro ao salvar:", error);
+        appLogger.error("Erro ao salvar:", error);
         alert("Erro ao salvar: " + error.message);
     })
     .finally(() => {
@@ -6793,7 +6812,7 @@ function saveColabInfo(e) {
         editingId = null;
     })
     .catch((error) => {
-        console.error("Erro ao salvar:", error);
+        appLogger.error("Erro ao salvar:", error);
         alert("Erro ao salvar: " + error.message);
     })
     .finally(() => {
@@ -7082,7 +7101,7 @@ document.addEventListener('DOMContentLoaded', function() {
  const loginForm = document.getElementById('login-form');
 
    if (loginForm) {
-        console.log("Formulário de login detectado. Ativando escuta...");
+        appLogger.log("Formulário de login detectado. Ativando escuta...");
 
         loginForm.addEventListener('submit', async (e) => { // Note o 'async' aqui
             e.preventDefault(); 
@@ -7117,7 +7136,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     } 
                     else {
                         // 2. Busca no Banco de Dados pelo Login
-                        console.log(`Buscando e-mail para o login: ${userInput.toUpperCase()}`);
+                        appLogger.log(`Buscando e-mail para o login: ${userInput.toUpperCase()}`);
                         
                         const querySnapshot = await db.collection('users')
                             .where('login', '==', userInput.toUpperCase())
@@ -7132,7 +7151,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Achou! Pega o e-mail do documento encontrado
                         const userDoc = querySnapshot.docs[0].data();
                         emailFinal = userDoc.email;
-                        console.log(`Login ${userInput} corresponde ao e-mail: ${emailFinal}`);
+                        appLogger.log(`Login ${userInput} corresponde ao e-mail: ${emailFinal}`);
                     }
                 }
 
@@ -7140,7 +7159,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnSubmit.innerText = "Verificando senha...";
                 
                 const userCredential = await auth.signInWithEmailAndPassword(emailFinal, password);
-                console.log("Login realizado: ", userCredential.user.email);
+                appLogger.log("Login realizado: ", userCredential.user.email);
                 
                 // 1. Recupera dados completos do usuário para a sessão
                 // (Opcional: busca dados atualizados do banco para garantir permissões)
@@ -7185,7 +7204,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showToast(`Bem-vindo, ${dadosUsuario.name}!`, 'success');
 
             } catch (error) {
-                console.error("Erro no login:", error);
+                appLogger.error("Erro no login:", error);
                 
                 let mensagemErro = "Falha ao entrar.";
                 
@@ -7219,7 +7238,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================================
     //  FIM DO CÓDIGO DE LOGIN
     // ============================================================
-    console.log('✅ DOMContentLoaded disparado. Verificando autenticação...');
+    appLogger.log('✅ DOMContentLoaded disparado. Verificando autenticação...');
     checkAuthentication();
     // Seleciona todos os inputs de texto dentro das áreas de filtro
     const filterInputs = document.querySelectorAll('.filters-section input[type="text"]');
@@ -7597,7 +7616,7 @@ function confirmUndo() {
     // Usa .set() para forçar a criação com o ID antigo exato
     db.collection(collectionName).doc(docId).set(dataToRestore)
         .then(() => {
-            console.log(`♻️ Item restaurado na nuvem: ${collectionName}/${docId}`);
+            appLogger.log(`♻️ Item restaurado na nuvem: ${collectionName}/${docId}`);
             
             // Registra a ação na auditoria
             logSystemAction('Restauração', listName, `Desfez exclusão do item ID: ${docId}`);
@@ -7609,7 +7628,7 @@ function confirmUndo() {
             }
         })
         .catch(err => {
-            console.error("Erro ao restaurar:", err);
+            appLogger.error("Erro ao restaurar:", err);
             alert("Não foi possível desfazer a ação: " + err.message);
         });
 
@@ -7630,7 +7649,7 @@ function showForgotPasswordModal(e) {
     if (modal) {
         modal.classList.add('show');
     } else {
-        console.error("Erro: O modal 'forgot-password-modal' não foi encontrado no HTML.");
+        appLogger.error("Erro: O modal 'forgot-password-modal' não foi encontrado no HTML.");
     }
 }
 
@@ -7968,7 +7987,7 @@ function generateReportPreview() {
         modalEl.classList.add('show');
 
     } catch (err) {
-        console.error(err); alert('Erro: ' + err.message);
+        appLogger.error(err); alert('Erro: ' + err.message);
     } finally {
         if(btnGerar) { btnGerar.innerHTML = textoOriginal; btnGerar.disabled = false; }
     }
@@ -8172,7 +8191,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const modal = document.getElementById(id);
         if (modal) {
             document.body.appendChild(modal);
-            console.log(`🔧 FIX: Modal '${id}' movido para a raiz do documento.`);
+            appLogger.log(`🔧 FIX: Modal '${id}' movido para a raiz do documento.`);
         }
     });
 });
@@ -9090,7 +9109,7 @@ function restoreActiveTab() {
             refreshCurrentTab(lastTab + '-section');
         }, 100);
         
-        console.log(`✅ Aba restaurada: ${lastTab}`);
+        appLogger.log(`✅ Aba restaurada: ${lastTab}`);
     }
 }
 
@@ -9101,14 +9120,14 @@ document.addEventListener('click', function(e) {
     if (btn) {
         const tabName = btn.getAttribute('data-tab');
         localStorage.setItem('lastActiveTab', tabName);
-        console.log(`💾 Aba salva: ${tabName}`);
+        appLogger.log(`💾 Aba salva: ${tabName}`);
     }
 });
 
 
 // 3. Listener de carregamento da página (Garante que a checagem rode)
 window.addEventListener('load', function() {
-    // console.log('✅ Página carregada. Verificando autenticação...');
+    // appLogger.log('✅ Página carregada. Verificando autenticação...');
     // A função checkAuthentication já é chamada no DOMContentLoaded, 
     // mas isso serve como redundância segura.
     if (!isAuthenticated) {
@@ -9222,7 +9241,7 @@ window.handleForgotPassword = async function(e) {
         document.getElementById('forgot-password-form').reset();
 
     } catch (error) {
-        console.error("Erro na recuperação:", error);
+        appLogger.error("Erro na recuperação:", error);
         
         let msg = "Erro ao enviar e-mail.";
         
