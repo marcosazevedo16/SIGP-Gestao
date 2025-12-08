@@ -1016,47 +1016,83 @@ function handleLogin(e) {
         alert(`⚠️ Senha incorreta. Você tem mais ${restantes} tentativas antes do bloqueio.`);
     }
 }
-
+// ============================================================
+// FUNÇÃO DE AUTENTICAÇÃO (CORRIGIDA COM FIREBASE LISTENER)
+// ============================================================
 function checkAuthentication() {
-    appLogger.log('🔍 Autenticação: Verificando sessão...');
     
-    // 1. TENTA RECUPERAR A SESSÃO DO DISCO (DIRETO, SEM DESERIALIZAÇÃO PROBLEMÁTICA)
-    const sessionData = localStorage.getItem('currentUser');
-    
-    if (sessionData) {
-        try {
-            currentUser = JSON.parse(sessionData);
+    // Este listener roda UMA VEZ ao carregar a página e sempre que o estado do token muda.
+    // Ele é mais confiável que verificar apenas o localStorage.
+    firebase.auth().onIdTokenChanged(user => {
+        
+        // Se o logger ainda não tiver carregado (caso esta função seja chamada muito cedo)
+        const log = typeof appLogger !== 'undefined' ? appLogger.log : console.log;
+        const error = typeof appLogger !== 'undefined' ? appLogger.error : console.error;
+        
+        log('🔍 Autenticação: Verificando token de sessão...');
+        
+        // 1. O Firebase encontrou um usuário logado (Token válido)
+        if (user) {
             
-            // ✅ VALIDAÇÃO CRÍTICA: Verifica se o usuário ainda existe no banco de dados
-            const userStillExists = users.find(u => u.id === currentUser.id);
+            // Aqui é onde garantimos que os dados do Firestore/LocalStorage sejam carregados
+            // O ideal é buscar os dados atualizados do Firestore para garantir a permissão.
             
-            if (!userStillExists) {
-                console.warn('⚠️ Usuário da sessão não encontrado no banco de dados. Forçando logout.');
-                localStorage.removeItem('currentUser');
-                currentUser = null;
-                isAuthenticated = false;
-            } else {
-                // ✅ Usuário válido! Atualiza o lastActivityTime AGORA para evitar que o timer de inatividade
-                // te deslogue imediatamente após o F5.
-                const now = Date.now().toString();
-                localStorage.setItem('lastActivityTime', now);
-                isAuthenticated = true;
-                appLogger.log('✅ Sessão válida. Usuário: ' + currentUser.name);
-            }
-        } catch (e) {
-            appLogger.error('❌ Sessão corrompida:', e);
-            localStorage.removeItem('currentUser');
-            currentUser = null;
-            isAuthenticated = false;
+            // Buscamos os dados completos do usuário no Firestore (name, permission)
+            db.collection('users').doc(user.uid).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        
+                        // Define o currentUser com os dados da nuvem
+                        currentUser = {
+                            id: user.uid,
+                            email: user.email,
+                            login: userData.login,
+                            name: userData.name,
+                            permission: userData.permission,
+                            status: userData.status
+                        };
+
+                        // Se o usuário estiver inativo no banco, forçamos o logout
+                        if (userData.status === 'Inativo') {
+                            log('⚠️ Usuário inativo no banco. Forçando logout.');
+                            return firebase.auth().signOut();
+                        }
+                        
+                        // Sessão VÁLIDA: Salva e mostra o App
+                        salvarNoArmazenamento('currentUser', currentUser);
+                        localStorage.setItem('lastActivityTime', Date.now().toString()); // Para o timer
+                        isAuthenticated = true;
+                        
+                        showAppScreen(log); // Chama a função que mostra o app
+                        
+                    } else {
+                        // Usuário logado no Auth, mas sem documento no Firestore (deve ser deletado)
+                        error('❌ Usuário logado sem documento no Firestore. Forçando logout.');
+                        firebase.auth().signOut();
+                    }
+                })
+                .catch(e => {
+                    error('❌ Erro ao buscar dados do Firestore:', e);
+                    firebase.auth().signOut(); // Sai por segurança
+                });
+            
+        } else {
+            // 2. Não há token (Logout ou Inatividade)
+            log('ℹ️ Nenhuma sessão válida encontrada no Firebase.');
+            showLoginScreen(log);
         }
-    } else {
-        currentUser = null;
-        isAuthenticated = false;
-        appLogger.log('ℹ️ Nenhuma sessão encontrada.');
-    }
-    
-    // 2. DECISÃO: Logado ou não?
+    });
+}
+
+// ----------------------------------------------------
+// FUNÇÕES AUXILIARES DE TROCA DE TELA
+// ----------------------------------------------------
+
+function showAppScreen(log) {
     if (isAuthenticated && currentUser) {
+        log('✅ Sessão válida. Usuário: ' + currentUser.name + '. Mostrando tela principal.');
+        
         // ✅ Mostra a tela principal
         document.getElementById('login-screen').classList.remove('active');
         document.getElementById('main-app').classList.add('active');
@@ -1067,7 +1103,7 @@ function checkAuthentication() {
                 initializeApp();
             }
         } catch (err) {
-            appLogger.error('❌ Erro ao inicializar app:', err);
+            error('❌ Erro ao inicializar app:', err);
         }
         
         // Liga o monitor de inatividade com um pequeno delay seguro
@@ -1075,17 +1111,21 @@ function checkAuthentication() {
             setTimeout(initializeInactivityTracking, 100);
         }
         
-        // ✅ RESTAURA A ABA ATIVA - Correção visual do F5
+        // ✅ RESTAURA A ABA ATIVA
         restoreActiveTab();
-        
-    } else {
-        // Sem sessão = vai pro login
-        document.getElementById('login-screen').classList.add('active');
-        document.getElementById('main-app').classList.remove('active');
-        appLogger.log('🔐 Redirecionando para tela de login...');
     }
 }
 
+function showLoginScreen(log) {
+    log('🔐 Redirecionando para tela de login...');
+    currentUser = null;
+    isAuthenticated = false;
+    localStorage.removeItem('currentUser'); // Limpa dados locais
+    
+    // Mostra a tela de login
+    document.getElementById('login-screen').classList.add('active');
+    document.getElementById('main-app').classList.remove('active');
+}
 function handleLogout() {
     // Removemos a verificação 'confirm'
     // O sistema agora limpa o usuário e recarrega a página imediatamente
