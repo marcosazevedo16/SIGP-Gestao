@@ -1,51 +1,28 @@
-// CONFIGURAÇÃO FIREBASE
-const firebaseConfig = {
- apiKey: "AIzaSyATTTu0WtcWC0p8irfTkbco-CfzPzZXqxs",
-    authDomain: "sigpgestao.firebaseapp.com",
-    projectId: "sigpgestao",
-    storageBucket: "sigpgestao.firebasestorage.app",
-    messagingSenderId: "225860756360",
-    appId: "1:225860756360:web:04a21a8ead9ae03fa5503d",
-    measurementId: "G-JWFFYZP83Z"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
-// ============================================================
-// SISTEMA DE LOG CENTRALIZADO (Para Debug/Produção)
-// ============================================================
-// MUDAR PARA false ANTES DE FAZER O DEPLOY FINAL NO NETLIFY
-const IS_DEVELOPMENT = true; 
-
-const appLogger = {
-    // 1. Logs de rotina (Apenas se IS_DEVELOPMENT for true)
-    log: function(message) {
-        if (IS_DEVELOPMENT) {
-            // CORREÇÃO: Chamando o console.log real, não a própria função!
-            console.log(`[SIGP DEV]: ${message}`);
-        }
-    },
-    // 2. Erros críticos devem aparecer sempre (mesmo em produção)
-    error: function(message) {
-        // CORREÇÃO: Chamando o console.error real
-        console.error(`[SIGP ERROR]: ${message}`);
-    }
-};
-// ============================================================
-
-// AGORA SIM, O PRIMEIRO LOG PODE SER CHAMADO DEPOIS DA DEFINIÇÃO:
-appLogger.log("🔥 Firebase Iniciado!");
 // ============================================================================
-// SIGP SAÚDE v26.0 - VERSÃO FINAL(SEM COMPACTAÇÃO)
-// Todas as funcionalidades + Ajustes de Layout + Backup Completo
+// SIGP SAÚDE v26.0 - VERSÃO MODULARIZADA
 // ============================================================================
 
-// ----------------------------------------------------------------------------
-// 1. VERIFICAÇÃO DE SEGURANÇA
-// ----------------------------------------------------------------------------
+// 1. IMPORTAÇÕES (Conectando com o módulo Auth)
+// 1. IMPORTAÇÕES
+import { db, auth, appLogger, currentUser } from './auth.js';
+import { 
+    formatDate, calculateTimeInUse, calculateDaysSince, getDaysDiff, calcDateDiffString,
+    formatPhoneNumber, formatCompetencia, formatPeriodo, sanitizeInput,
+    showToast, downloadXLSX, downloadPDF, downloadCSV
+} from './utils.js';
+
+// NOTA: Como estamos usando módulos, precisamos expor funções ao HTML manualmente
+// ou refatorar para adicionar EventListeners via JS. Faremos a exposição global 
+// no index.js para funções como 'handleLogout'.
+
+// ============================================================================
+// FIM DAS IMPORTAÇÕES
+// ============================================================================
+
+// Mantenha a verificação do CryptoJS
 if (typeof CryptoJS === 'undefined') {
     appLogger.error('Erro Crítico: CryptoJS não encontrado.');
-    alert('ERRO CRÍTICO: A biblioteca CryptoJS não foi carregada. Verifique sua conexão ou o cabeçalho do HTML.');
+    alert('ERRO CRÍTICO: A biblioteca CryptoJS não foi carregada.');
     throw new Error('CryptoJS is missing');
 } else {
     appLogger.log('Segurança: CryptoJS carregado com sucesso.');
@@ -133,22 +110,6 @@ function toggleMobileMenu() {
 // 4. FUNÇÕES UTILITÁRIAS (CORE)
 // ----------------------------------------------------------------------------
 
-function generateSalt() {
-    return CryptoJS.lib.WordArray.random(SALT_LENGTH).toString();
-}
-
-function hashPassword(password, salt) {
-    // 1. Primeira passada
-    let hash = CryptoJS.SHA256(salt + password).toString();
-    
-    // 2. Loop de reforço (PBKDF2-like) - 1000 iterações
-    for (let i = 0; i < 1000; i++) {
-        hash = CryptoJS.SHA256(hash + salt).toString();
-    }
-    
-    return hash;
-}
-
 // Função de Salvamento com Tratamento de Erro de Cota
 function salvarNoArmazenamento(chave, dados) {
     try {
@@ -192,126 +153,6 @@ function recuperarDoArmazenamento(chave, valorPadrao = null) {
 
 function deletarDoArmazenamento(chave) {
     localStorage.removeItem(chave);
-}
-
-function formatDate(dateString) {
-    if (!dateString) {
-        return '-';
-    }
-    // Converte YYYY-MM-DD para DD/MM/YYYY
-    const partes = dateString.split('-');
-    if (partes.length === 3) {
-        return `${partes[2]}/${partes[1]}/${partes[0]}`;
-    }
-    return dateString;
-}
-
-function calculateTimeInUse(dateString) {
-    if (!dateString) return '-';
-    
-    const start = new Date(dateString);
-    const now = new Date();
-    
-    start.setHours(0,0,0,0);
-    now.setHours(0,0,0,0);
-
-    let years = now.getFullYear() - start.getFullYear();
-    let months = now.getMonth() - start.getMonth();
-    let days = now.getDate() - start.getDate();
-
-    if (days < 0) {
-        months--;
-        // Pega o último dia do mês anterior
-        const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-        days += prevMonth.getDate();
-    }
-    if (months < 0) {
-        years--;
-        months += 12;
-    }
-
-    // --- NOVA LÓGICA DE EXIBIÇÃO (Compacta) ---
-    
-    // Se tiver menos de 1 mês (0 anos e 0 meses)
-    if (years === 0 && months === 0) {
-        return "Menos de um mês";
-    }
-
-    let parts = [];
-    if (years > 0) parts.push(`${years} ano(s)`);
-    if (months > 0) parts.push(`${months} mês(es)`);
-    
-    // Ignoramos os dias para economizar espaço
-    
-    return parts.join(' e ');
-}
-// Cálculo de Dias desde a última visita (PDF Item 15)
-function calculateDaysSince(dateString) {
-    if (!dateString) {
-        return '-';
-    }
-    
-    const last = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - last);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    
-    return `${diffDays} dias`;
-}
-
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    if (!toast) {
-        return;
-    }
-    
-    toast.textContent = message;
-    
-    // Resetar classes para animação
-    toast.className = 'toast';
-    void toast.offsetWidth; // Força reflow
-    
-    toast.classList.add(type);
-    toast.classList.add('show');
-    
-    setTimeout(function() {
-        toast.classList.remove('show');
-    }, 3000);
-}
-
-// ============================================================================
-// FASE 3 - EXPORTAÇÃO AVANÇADA PARA EXCEL (.xlsx)
-// ============================================================================
-
-// 1. Função Genérica (A Mágica do Excel)
-function downloadXLSX(filename, headers, rows, sheetName = "Dados") {
-    // Verifica se a biblioteca foi carregada no HTML
-    if (typeof XLSX === 'undefined') {
-        alert('Erro: A biblioteca Excel (SheetJS) não carregou. Verifique se adicionou a linha do CDN no index.html.');
-        return;
-    }
-
-    // Prepara os dados
-    const data = [headers, ...rows];
-
-    // Cria a Planilha
-    const ws = XLSX.utils.aoa_to_sheet(data);
-
-    // Ajuste Automático de Largura das Colunas
-    const colWidths = headers.map((h, i) => {
-        let maxWidth = h.length;
-        rows.forEach(row => {
-            const cellValue = row[i] ? String(row[i]) : "";
-            if (cellValue.length > maxWidth) maxWidth = cellValue.length;
-        });
-        return { wch: maxWidth + 5 }; // +5 de respiro
-    });
-    ws['!cols'] = colWidths;
-
-    // Cria o Arquivo e Salva
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, sheetName);
-    XLSX.writeFile(wb, filename + ".xlsx");
 }
 
 // 2. Exportar MUNICÍPIOS (Aba Clientes)
@@ -386,81 +227,9 @@ function exportIntegrationsExcel() {
     downloadXLSX("Relatorio_Integracoes_APIs", headers, rows, "Integrações");
 }
 
-function downloadPDF(title, headers, rows) {
-    if (!window.jspdf) {
-        alert('Biblioteca PDF não carregada. Verifique sua internet.');
-        return;
-    }
-    
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'landscape' });
-    
-    doc.setFontSize(18);
-    doc.text(title, 14, 22);
-    
-    doc.setFontSize(10);
-    doc.text(`Gerado em: ${new Date().toLocaleString()}`, 14, 30);
-
-    if (doc.autoTable) {
-        doc.autoTable({
-            head: [headers],
-            body: rows,
-            startY: 35,
-            styles: { fontSize: 8, cellPadding: 2 },
-            headStyles: { fillColor: [0, 61, 92] }
-        });
-    } else {
-        // Fallback se o plugin autoTable falhar
-        let y = 40;
-        rows.forEach(row => {
-            if (y > 180) {
-                doc.addPage();
-                y = 20;
-            }
-            doc.text(row.join(' | ').substring(0, 120), 14, y);
-            y += 7;
-        });
-    }
-    
-    doc.save(`${title}.pdf`);
-}
-
 // ----------------------------------------------------------------------------
 // 6. MÁSCARAS E FORMATAÇÃO DE INPUTS
 // ----------------------------------------------------------------------------
-
-function formatPhoneNumber(value) {
-    let v = value.replace(/\D/g, "");
-    v = v.substring(0, 11);
-    v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
-    v = v.replace(/(\d)(\d{4})$/, "$1-$2");
-    return v;
-}
-
-function formatCompetencia(value) {
-    let v = value.replace(/\D/g, "");
-    v = v.substring(0, 6);
-    if (v.length > 2) {
-        v = v.replace(/^(\d{2})(\d)/, "$1/$2");
-    }
-    return v;
-}
-
-function formatPeriodo(value) {
-    let v = value.replace(/\D/g, "");
-    v = v.substring(0, 8);
-    
-    if (v.length > 2) {
-        v = v.replace(/^(\d{2})(\d)/, "$1/$2");
-    }
-    if (v.length > 4) {
-        v = v.replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2 à $3");
-    }
-    if (v.length > 6) {
-        v = v.replace(/ à (\d{2})(\d)/, " à $1/$2");
-    }
-    return v;
-}
 
 function applyMasks() {
     // 1. Máscaras de Telefone
@@ -665,20 +434,6 @@ const DADOS_PADRAO = {
 // Carrega usuários
 let users = recuperarDoArmazenamento('users', DADOS_PADRAO.users);
 
-// CORREÇÃO DE LOGIN: Se o ADMIN estiver sem senha (null), define 'saude2025'
-if (users.length > 0 && users[0].login === 'ADMIN' && !users[0].passwordHash) {
-    // Gera segurança
-    users[0].salt = generateSalt();
-    // Define a senha padrão
-    users[0].passwordHash = hashPassword('saude2025', users[0].salt);
-    
-    // Salva
-    salvarNoArmazenamento('users', users);
-    appLogger.log('🔒 Senha do ADMIN configurada para: saude2025');
-}
-
-let currentUser = recuperarDoArmazenamento('currentUser');
-let isAuthenticated = !!currentUser;
 let currentTheme = recuperarDoArmazenamento('theme', 'light');
 let editingId = null;
 
@@ -959,203 +714,6 @@ function openTab(sectionId) {
     if (sidebarBtn) {
         sidebarBtn.classList.add('active');
     }
-}
-// ----------------------------------------------------------------------------
-// 10. AUTENTICAÇÃO
-// ----------------------------------------------------------------------------
-function handleLogin(e) {
-    e.preventDefault();
-    const login = document.getElementById('login-username').value.trim().toUpperCase();
-    const pass = document.getElementById('login-password').value;
-    
-    // 1. Verifica se está bloqueado (Rate Limit)
-    try {
-        checkLoginAttempts(login);
-    } catch (erro) {
-        alert(erro.message);
-        return;
-    }
-
-    const user = users.find(function(u) {
-        return u.login === login && u.status === 'Ativo';
-    });
-
-    if (user) {
-        const hashedPassword = hashPassword(pass, user.salt);
-        if (hashedPassword === user.passwordHash) {
-            // SUCESSO
-            currentUser = user;
-            isAuthenticated = true;
-            
-            // Reseta tentativas falhas
-            resetLoginAttempts(login);
-            
-            // Log de Auditoria
-            logSystemAction('Login', 'Acesso', 'Usuário realizou login no sistema');
-            
-            salvarNoArmazenamento('currentUser', currentUser);
-            
-            checkAuthentication();
-            initializeApp();
-            
-            // Inicia monitoramento de inatividade
-            initializeInactivityTracking();
-            
-            showToast(`Bem-vindo, ${user.name}!`, 'success');
-            return;
-        }
-    }
-    
-    // FALHA
-    recordFailedAttempt(login);
-    document.getElementById('login-error').textContent = 'Login ou senha incorretos.';
-    
-    // Mostra tentativas restantes se estiver quase bloqueando
-    if (loginAttempts[login] && loginAttempts[login].count > 2) {
-        const restantes = MAX_LOGIN_ATTEMPTS - loginAttempts[login].count;
-        alert(`⚠️ Senha incorreta. Você tem mais ${restantes} tentativas antes do bloqueio.`);
-    }
-}
-// ============================================================
-// FUNÇÃO DE AUTENTICAÇÃO (CORRIGIDA COM FIREBASE LISTENER)
-// ============================================================
-function checkAuthentication() {
-    
-    // Este listener roda UMA VEZ ao carregar a página e sempre que o estado do token muda.
-    // Ele é mais confiável que verificar apenas o localStorage.
-    firebase.auth().onIdTokenChanged(user => {
-        
-        // Se o logger ainda não tiver carregado (caso esta função seja chamada muito cedo)
-        const log = typeof appLogger !== 'undefined' ? appLogger.log : console.log;
-        const error = typeof appLogger !== 'undefined' ? appLogger.error : console.error;
-        
-        log('🔍 Autenticação: Verificando token de sessão...');
-        
-        // 1. O Firebase encontrou um usuário logado (Token válido)
-        if (user) {
-            
-            // Aqui é onde garantimos que os dados do Firestore/LocalStorage sejam carregados
-            // O ideal é buscar os dados atualizados do Firestore para garantir a permissão.
-            
-            // Buscamos os dados completos do usuário no Firestore (name, permission)
-            db.collection('users').doc(user.uid).get()
-                .then(doc => {
-                    if (doc.exists) {
-                        const userData = doc.data();
-                        
-                        // Define o currentUser com os dados da nuvem
-                        currentUser = {
-                            id: user.uid,
-                            email: user.email,
-                            login: userData.login,
-                            name: userData.name,
-                            permission: userData.permission,
-                            status: userData.status
-                        };
-
-                        // Se o usuário estiver inativo no banco, forçamos o logout
-                        if (userData.status === 'Inativo') {
-                            log('⚠️ Usuário inativo no banco. Forçando logout.');
-                            return firebase.auth().signOut();
-                        }
-                        
-                        // Sessão VÁLIDA: Salva e mostra o App
-                        salvarNoArmazenamento('currentUser', currentUser);
-                        localStorage.setItem('lastActivityTime', Date.now().toString()); // Para o timer
-                        isAuthenticated = true;
-                        
-                        showAppScreen(log); // Chama a função que mostra o app
-                        
-                    } else {
-                        // Usuário logado no Auth, mas sem documento no Firestore (deve ser deletado)
-                        error('❌ Usuário logado sem documento no Firestore. Forçando logout.');
-                        firebase.auth().signOut();
-                    }
-                })
-                .catch(e => {
-                    error('❌ Erro ao buscar dados do Firestore:', e);
-                    firebase.auth().signOut(); // Sai por segurança
-                });
-            
-        } else {
-            // 2. Não há token (Logout ou Inatividade)
-            log('ℹ️ Nenhuma sessão válida encontrada no Firebase.');
-            showLoginScreen(log);
-        }
-    });
-}
-
-// ----------------------------------------------------
-// FUNÇÕES AUXILIARES DE TROCA DE TELA
-// ----------------------------------------------------
-
-function showAppScreen(log) {
-    if (isAuthenticated && currentUser) {
-        log('✅ Sessão válida. Usuário: ' + currentUser.name + '. Mostrando tela principal.');
-        
-        // ✅ Mostra a tela principal
-        document.getElementById('login-screen').classList.remove('active');
-        document.getElementById('main-app').classList.add('active');
-        
-        // Inicializa o sistema (Tabelas, Gráficos)
-        try {
-            if (typeof initializeApp === 'function') {
-                initializeApp();
-            }
-        } catch (err) {
-            error('❌ Erro ao inicializar app:', err);
-        }
-        
-        // Liga o monitor de inatividade com um pequeno delay seguro
-        if (typeof initializeInactivityTracking === 'function') {
-            setTimeout(initializeInactivityTracking, 100);
-        }
-        
-        // ✅ RESTAURA A ABA ATIVA
-        restoreActiveTab();
-
-        // ----------------------------------------------------
-        // 🛠️ NOVO: REMOVE O ESTADO 'loading' DO <body>
-        // ----------------------------------------------------
-        document.body.classList.remove('loading'); 
-    }
-}
-
-function showLoginScreen(log) {
-    log('🔐 Redirecionando para tela de login...');
-    currentUser = null;
-    isAuthenticated = false;
-    localStorage.removeItem('currentUser'); // Limpa dados locais
-    
-    // Mostra a tela de login
-    document.getElementById('login-screen').classList.add('active');
-    document.getElementById('main-app').classList.remove('active');
- // ✅ AQUI: REMOVE A CLASSE DE CARREGAMENTO
-    document.body.classList.remove('loading');
-}
-// ============================================================
-// FUNÇÃO DE LOGOUT (CORRIGIDA COM FIREBASE)
-// ============================================================
-function handleLogout() {
-    // 1. **CRÍTICO:** Manda o Firebase destruir o token da sessão
-    firebase.auth().signOut()
-        .then(() => {
-            // Sucesso! O token foi destruído na nuvem.
-            
-            // 2. Limpa o cache local
-            localStorage.removeItem('currentUser');
-            
-            // 3. Recarrega a página (que agora vai para o showLoginScreen)
-            location.reload();
-        })
-        .catch((error) => {
-            // Se houver erro, apenas limpa e força o reload de qualquer forma
-            console.error("Erro ao fazer logout no Firebase:", error);
-            localStorage.removeItem('currentUser');
-            location.reload();
-        });
-
-    // Nota: Removi o código antigo que estava dentro dessa função
 }
 
 // Modal de Troca de Senha
@@ -1558,6 +1116,195 @@ function renderMunicipalities() {
     }
     updateMunicipalityCharts(filtered);
 }
+// ============================================================
+// FUNÇÃO FALTANTE: GERAR PDF DE MUNICÍPIOS
+// ============================================================
+function generateMunicipalitiesPDF() {
+    // 1. Recaptura os filtros da tela para garantir que o PDF seja igual à tabela
+    const fName = document.getElementById('filter-municipality-name') ? document.getElementById('filter-municipality-name').value : '';
+    const fStatus = document.getElementById('filter-municipality-status') ? document.getElementById('filter-municipality-status').value : '';
+    const fMod = document.getElementById('filter-municipality-module') ? document.getElementById('filter-municipality-module').value : '';
+    const fGest = document.getElementById('filter-municipality-manager') ? document.getElementById('filter-municipality-manager').value.toLowerCase() : '';
+
+    // 2. Filtra os dados
+    let data = municipalities.filter(m => {
+        if (fName && m.name !== fName) return false;
+        if (fStatus && m.status !== fStatus) return false;
+        if (fMod && !m.modules.includes(fMod)) return false;
+        if (fGest && !m.manager.toLowerCase().includes(fGest)) return false;
+        return true;
+    }).sort((a,b) => a.name.localeCompare(b.name));
+
+    if (data.length === 0) {
+        alert("Nenhum registro para gerar PDF.");
+        return;
+    }
+
+    // 3. Define as colunas e gera o PDF
+    const headers = ['Município', 'UF', 'Status', 'Gestor', 'Contato', 'Implantação', 'Última Visita'];
+    const rows = data.map(m => [
+        m.name,
+        m.uf || '',
+        m.status,
+        m.manager,
+        m.contact,
+        formatDate(m.implantationDate),
+        formatDate(m.lastVisit)
+    ]);
+
+    downloadPDF('Relatório de Municípios', headers, rows);
+}
+// ============================================================
+// FUNÇÕES FALTANTES: IMPORTAÇÃO CSV (MUNICÍPIOS)
+// ============================================================
+
+function triggerCSVImport() {
+    const input = document.getElementById('csv-import-input');
+    if(input) input.click();
+}
+
+function handleCSVImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        let count = 0;
+
+        // Pula a primeira linha (cabeçalho) e percorre o resto
+        // Assumindo formato CSV: Nome;UF
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line) {
+                const cols = line.split(';'); // Usa ponto e vírgula como separador
+                
+                if (cols.length >= 1) {
+                    // Cria o objeto para salvar no Firebase
+                    const novoMunicipio = {
+                        name: cols[0] ? cols[0].trim() : 'Sem Nome',
+                        uf: cols[1] ? cols[1].trim() : '',
+                        status: 'Em uso', // Padrão
+                        manager: '',
+                        contact: '',
+                        implantationDate: '',
+                        lastVisit: '',
+                        modules: [],
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    // Salva direto na coleção do Firebase
+                    db.collection('municipalities').add(novoMunicipio)
+                        .catch(err => console.error("Erro ao importar linha " + i, err));
+                    
+                    count++;
+                }
+            }
+        }
+        
+        alert(`Processo iniciado! ${count} municípios estão sendo enviados para a nuvem.`);
+        event.target.value = ''; // Limpa o input para permitir nova seleção
+    };
+    reader.readAsText(file);
+}
+// ============================================================
+// FUNÇÕES FALTANTES: IMPORTAÇÕES CSV (TREINAMENTOS, SOLICITAÇÕES, APRESENTAÇÕES)
+// ============================================================
+
+// --- 1. IMPORTAÇÃO DE TREINAMENTOS ---
+function triggerTrainingCSVImport() {
+    const input = document.getElementById('training-csv-import-input');
+    if(input) input.click();
+}
+
+function handleTrainingCSVImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        let count = 0;
+
+        // Formato esperado: Município;DataSol;Solicitante;Colaborador;Status
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line) {
+                const cols = line.split(';');
+                if (cols.length >= 1) {
+                    const newTask = {
+                        municipality: cols[0] ? cols[0].trim() : '',
+                        dateRequested: cols[1] ? cols[1].trim() : '',
+                        requestedBy: cols[2] ? cols[2].trim() : '',
+                        performedBy: cols[3] ? cols[3].trim() : '',
+                        status: cols[4] ? cols[4].trim() : 'Pendente',
+                        // Campos opcionais vazios
+                        trainedName: '',
+                        trainedPosition: '',
+                        contact: '',
+                        datePerformed: '',
+                        observations: '',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    db.collection('tasks').add(newTask);
+                    count++;
+                }
+            }
+        }
+        alert(`${count} treinamentos importados!`);
+        event.target.value = '';
+    };
+    reader.readAsText(file);
+}
+
+// --- 2. IMPORTAÇÃO DE SOLICITAÇÕES ---
+function triggerRequestCSVImport() {
+    const input = document.getElementById('request-csv-import-input');
+    if(input) input.click();
+}
+
+function handleRequestCSVImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        let count = 0;
+
+        // Formato esperado: Município;Data;Solicitante;Contato;Descrição
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line) {
+                const cols = line.split(';');
+                if (cols.length >= 1) {
+                    const newReq = {
+                        municipality: cols[0] ? cols[0].trim() : '',
+                        date: cols[1] ? cols[1].trim() : '',
+                        requester: cols[2] ? cols[2].trim() : '',
+                        contact: cols[3] ? cols[3].trim() : '',
+                        description: cols[4] ? cols[4].trim() : '',
+                        status: 'Pendente',
+                        justification: '',
+                        dateRealization: '',
+                        user: currentUser ? currentUser.name : 'Importado',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    db.collection('requests').add(newReq);
+                    count++;
+                }
+            }
+        }
+        alert(`${count} solicitações importadas!`);
+        event.target.value = '';
+    };
+    reader.readAsText(file);
+}
+
+// --- 3. IMPORTAÇÃO DE APRESENTAÇÕES ---
 
 function updateMunicipalityCharts(data) {
     // 1. Gráfico de Status (Pizza)
@@ -1917,15 +1664,6 @@ function renderTasks() {
             <tbody>${rows}</tbody>
         </table>`;
     }
-}
-
-function exportTasksCSV() {
-    const data = getFilteredTasks();
-    const headers = ['Município', 'Data Solicitação', 'Data Realização', 'Solicitante', 'Orientador', 'Profissional', 'Cargo', 'Contato', 'Status'];
-    const rows = data.map(function(t) { 
-        return [t.municipality, formatDate(t.dateRequested), formatDate(t.datePerformed), t.requestedBy, t.performedBy, t.trainedName, t.trainedPosition, t.contact, t.status]; 
-    });
-    downloadCSV('treinamentos.csv', headers, rows);
 }
 
 function generateTasksPDF() {
@@ -2294,15 +2032,6 @@ function updateRequestCharts(data) {
         chartSolReq.destroy();
         chartSolReq = null;
     }
-}
-
-function exportRequestsCSV() {
-    const data = getFilteredRequests();
-    const headers = ['Município', 'Data Solicitação', 'Data Realização', 'Solicitante', 'Contato', 'Descrição', 'Status', 'Usuário'];
-    const rows = data.map(function(r) { 
-        return [r.municipality, formatDate(r.date), formatDate(r.dateRealization), r.requester, r.contact, r.description, r.status, r.user]; 
-    });
-    downloadCSV('solicitacoes.csv', headers, rows);
 }
 
 function generateRequestsPDF() {
@@ -2697,13 +2426,6 @@ function updatePresentationCharts(data) {
     }
 }
 
-function exportPresentationsCSV() {
-    const data = getFilteredPresentations();
-    const headers = ['Município', 'Data', 'Solicitante', 'Status', 'Orientadores', 'Formas', 'Descrição'];
-    const rows = data.map(function(p) { return [p.municipality, formatDate(p.dateSolicitacao), p.requester, p.status, p.orientadores, p.forms, p.description]; });
-    downloadCSV('apresentacoes.csv', headers, rows);
-}
-
 function generatePresentationsPDF() {
     const data = getFilteredPresentations();
     const headers = ['Município', 'Data', 'Solicitante', 'Status', 'Orientadores'];
@@ -3070,15 +2792,6 @@ function updateDemandCharts(data) {
             }
         });
     }
-}
-
-function exportDemandsCSV() {
-    const data = getFilteredDemands();
-    const headers = ['Data', 'Prioridade', 'Status', 'Descrição', 'Usuário', 'Realização'];
-    const rows = data.map(function(d) { 
-        return [formatDate(d.date), d.priority, d.status, d.description, d.user, formatDate(d.dateRealization)]; 
-    });
-    downloadCSV('demandas.csv', headers, rows);
 }
 
 function generateDemandsPDF() {
@@ -3461,13 +3174,6 @@ function updateVisitCharts(data) {
     }
 }
 
-function exportVisitsCSV() {
-    const data = getFilteredVisits();
-    const headers = ['Município', 'Data', 'Solicitante', 'Status', 'Motivo'];
-    const rows = data.map(function(v) { return [v.municipality, formatDate(v.date), v.applicant, v.status, v.reason]; });
-    downloadCSV('visitas.csv', headers, rows);
-}
-
 function generateVisitsPDF() {
     const data = getFilteredVisits();
     const headers = ['Município', 'Data', 'Solicitante', 'Status'];
@@ -3811,12 +3517,7 @@ function updateProductionCharts(data) {
         });
     }
 }
-function exportProductionsCSV() {
-    const data = getFilteredProductions();
-    const headers = ['Município', 'Competência', 'Período', 'Status'];
-    const rows = data.map(function(p) { return [p.municipality, p.competence, p.period, p.status]; });
-    downloadCSV('producao.csv', headers, rows);
-}
+
 
 function generateProductionsPDF() {
     const data = getFilteredProductions();
@@ -5835,12 +5536,6 @@ function clearAuditLogs() {
     }
 }
 
-function exportAuditCSV() {
-    const headers = ['DataHora', 'Usuario', 'Acao', 'Alvo', 'Detalhes'];
-    const rows = auditLogs.map(l => [l.timestamp, l.user, l.action, l.target, l.details]);
-    downloadCSV('auditoria_sistema.csv', headers, rows);
-}
-
 // --- BLOCO DE CORREÇÃO AUTOMÁTICA DE IDs (Pode manter no arquivo) ---
 (function autoFixPresentationIds() {
     // Verifica se existem apresentações
@@ -6243,25 +5938,6 @@ function startLocalTimer() {
     }, INACTIVITY_LIMIT);
 }
 
-// CORREÇÃO: Sanitização XSS Robusta (Fase 2)
-function sanitizeInput(input) {
-    if (typeof input !== 'string') return '';
-    
-    // Usa o próprio navegador para converter HTML em texto seguro
-    const textarea = document.createElement('textarea');
-    textarea.textContent = input;
-    let sanitized = textarea.innerHTML;
-
-    // Remove tags perigosas específicas e event handlers
-    sanitized = sanitized
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/on\w+\s*=\s*["']?[^"']*["']?/gi, '') // Remove onmouseover, onclick, etc
-        .replace(/<iframe [^>]*>[\s\S]*?<\/iframe>/gi, '')
-        .replace(/<object[^>]*>[\s\S]*?<\/object>/gi, '')
-        .replace(/<embed [^>]*>/gi, '');
-
-    return sanitized.trim();
-}
 // --- APIS ---
 function showApiListModal(id=null) {
     editingId = id;
@@ -6310,77 +5986,6 @@ function closeApiListModal() { document.getElementById('api-list-modal').classLi
 
 // Variável para gráfico
 let chartInstanceApis = null;
-
-// Helper: Calcula diferença de dias
-// CORREÇÃO: Cálculo de dias preciso (Ignora fuso horário e horas)
-function getDaysDiff(dateString) {
-    if (!dateString) return null;
-
-    // Data Alvo (Vencimento)
-    const parts = dateString.split('-'); // Quebra "2025-11-29"
-    // Cria data localmente: Ano, Mês (0-indexado), Dia, 12h (Meio dia para evitar bug de verão)
-    const targetDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
-
-    // Data Hoje (Sistema)
-    const today = new Date();
-    today.setHours(12, 0, 0, 0); // Também seta para meio dia
-
-    // Diferença em milissegundos
-    const diffTime = targetDate.getTime() - today.getTime();
-    
-    // Converte para dias e arredonda
-    const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
-
-    return diffDays;
-}
-
-function showIntegrationModal(id=null) {
-    editingId = id;
-    document.getElementById('integration-form').reset();
-    if(document.getElementById('integration-char-counter')) {
-        document.getElementById('integration-char-counter').textContent = '0 / 250';
-    }
-
-    // 1. Popula Municípios
-    const munSelect = document.getElementById('integration-municipality');
-    if(munSelect) {
-        const sortedList = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
-        munSelect.innerHTML = '<option value="">Selecione o município</option>' + 
-                              sortedList.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
-    }
-
-    // 2. Popula Checkboxes de APIs (da lista mestra)
-    const divApi = document.getElementById('integration-api-checkboxes');
-    if(divApi) {
-        if(apisList.length > 0) {
-            divApi.innerHTML = apisList.map(a => `<label><input type="checkbox" value="${a.name}" class="api-check"> ${a.name}</label>`).join('');
-        } else {
-            divApi.innerHTML = '<span style="font-size:11px; color:red;">Nenhuma API cadastrada em configurações.</span>';
-        }
-    }
-
-    // 3. Edição
-    if(id) {
-        const int = integrations.find(x => x.id === id);
-        if(int) {
-            document.getElementById('integration-municipality').value = int.municipality;
-            document.getElementById('integration-expiration').value = int.expirationDate;
-            document.getElementById('integration-observation').value = int.observation || '';
-            
-            // Marca checkboxes
-            if(int.apis) {
-                document.querySelectorAll('.api-check').forEach(cb => {
-                    cb.checked = int.apis.includes(cb.value);
-                });
-            }
-            // Contador
-            if(document.getElementById('integration-char-counter')) {
-                document.getElementById('integration-char-counter').textContent = (int.observation ? int.observation.length : 0) + ' / 250';
-            }
-        }
-    }
-    document.getElementById('integration-modal').classList.add('show');
-}
 
 // ============================================================
 // NOVA FUNÇÃO: SALVAR INTEGRAÇÃO NO FIREBASE
@@ -6688,42 +6293,6 @@ function clearIntegrationFilters() {
 // Variáveis de Gráficos
 let chartColabTime = null;
 let chartColabHires = null;
-
-// Função Auxiliar: Calcula diferença exata (Anos, Meses, Dias)
-function calcDateDiffString(startDateStr, endDateStr = null) {
-    if(!startDateStr) return '-';
-    
-    const start = new Date(startDateStr);
-    const end = endDateStr ? new Date(endDateStr) : new Date(); // Se não tiver fim, usa hoje
-    
-    // Zera horas
-    start.setHours(0,0,0,0);
-    end.setHours(0,0,0,0);
-
-    if(end < start) return "Data futura ou inválida";
-
-    let years = end.getFullYear() - start.getFullYear();
-    let months = end.getMonth() - start.getMonth();
-    let days = end.getDate() - start.getDate();
-
-    if (days < 0) {
-        months--;
-        // Dias no mês anterior
-        const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
-        days += prevMonth.getDate();
-    }
-    if (months < 0) {
-        years--;
-        months += 12;
-    }
-
-    const parts = [];
-    if(years > 0) parts.push(`${years} ano(s)`);
-    if(months > 0) parts.push(`${months} mês(es)`);
-    if(days > 0) parts.push(`${days} dia(s)`);
-    
-    return parts.length > 0 ? parts.join(', ') : '0 dias';
-}
 
 function handleColabStatusChange() {
     const status = document.getElementById('colab-info-status').value;
@@ -7302,8 +6871,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================================
     //  FIM DO CÓDIGO DE LOGIN
     // ============================================================
-    appLogger.log('✅ DOMContentLoaded disparado. Verificando autenticação...');
-    checkAuthentication();
+   
     // Seleciona todos os inputs de texto dentro das áreas de filtro
     const filterInputs = document.querySelectorAll('.filters-section input[type="text"]');
     
@@ -9188,16 +8756,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-
-// 3. Listener de carregamento da página (Garante que a checagem rode)
-window.addEventListener('load', function() {
-    // appLogger.log('✅ Página carregada. Verificando autenticação...');
-    // A função checkAuthentication já é chamada no DOMContentLoaded, 
-    // mas isso serve como redundância segura.
-    if (!isAuthenticated) {
-        checkAuthentication();
-    }
-});
 // ============================================================================
 // LÓGICA INTELIGENTE DE MENUS (HOVER + CLICK)
 // Substitua o bloco anterior no final do script.js por este
@@ -9326,3 +8884,204 @@ window.handleForgotPassword = async function(e) {
         btnSend.disabled = false;
     }
 };
+// ============================================================
+// PASSO 13: EXPOR FUNÇÕES AO HTML (GLOBAL SCOPE)
+// Necessário porque módulos são privados por padrão
+// ============================================================
+
+// 1. Inicialização e Navegação
+window.initializeApp = initializeApp; // <--- CRÍTICO: O auth.js chama isso!
+window.toggleMobileMenu = toggleMobileMenu;
+window.toggleTheme = toggleTheme;
+window.toggleSettings = toggleSettings;
+window.toggleNotifications = toggleNotifications;
+window.navigateToHome = navigateToHome;
+window.openTab = openTab;
+
+// 2. Funções de Municípios
+window.showMunicipalityModal = showMunicipalityModal;
+window.saveMunicipality = saveMunicipality;
+window.closeMunicipalityModal = closeMunicipalityModal;
+window.deleteMunicipality = deleteMunicipality;
+window.renderMunicipalities = renderMunicipalities;
+window.handleMunicipalityStatusChange = handleMunicipalityStatusChange;
+window.clearMunicipalityFilters = clearMunicipalityFilters;
+
+// 3. Funções de Treinamentos (Tarefas)
+window.showTaskModal = showTaskModal;
+window.saveTask = saveTask;
+window.closeTaskModal = closeTaskModal;
+window.deleteTask = deleteTask;
+window.renderTasks = renderTasks;
+window.clearTaskFilters = clearTaskFilters;
+
+// 4. Funções de Solicitações
+window.showRequestModal = showRequestModal;
+window.saveRequest = saveRequest;
+window.closeRequestModal = closeRequestModal;
+window.deleteRequest = deleteRequest;
+window.renderRequests = renderRequests;
+window.clearRequestFilters = clearRequestFilters;
+window.handleRequestStatusChange = handleRequestStatusChange;
+
+// 5. Funções de Demandas
+window.showDemandModal = showDemandModal;
+window.saveDemand = saveDemand;
+window.closeDemandModal = closeDemandModal;
+window.deleteDemand = deleteDemand;
+window.renderDemands = renderDemands;
+window.clearDemandFilters = clearDemandFilters;
+window.handleDemandStatusChange = handleDemandStatusChange;
+
+// 6. Funções de Visitas
+window.showVisitModal = showVisitModal;
+window.saveVisit = saveVisit;
+window.closeVisitModal = closeVisitModal;
+window.deleteVisit = deleteVisit;
+window.renderVisits = renderVisits;
+window.clearVisitFilters = clearVisitFilters;
+window.handleVisitStatusChange = handleVisitStatusChange;
+
+// 7. Funções de Produção
+window.showProductionModal = showProductionModal;
+window.saveProduction = saveProduction;
+window.closeProductionModal = closeProductionModal;
+window.deleteProduction = deleteProduction;
+window.renderProductions = renderProductions;
+window.clearProductionFilters = clearProductionFilters;
+window.handleProductionFrequencyChange = handleProductionFrequencyChange;
+
+// 8. Funções de Apresentações
+window.showPresentationModal = showPresentationModal;
+window.savePresentation = savePresentation;
+window.closePresentationModal = closePresentationModal;
+window.deletePresentation = deletePresentation;
+window.renderPresentations = renderPresentations;
+window.clearPresentationFilters = clearPresentationFilters;
+window.handlePresentationStatusChange = handlePresentationStatusChange;
+
+// 9. Funções de Integrações (APIs)
+window.showIntegrationModal = showIntegrationModal;
+window.saveIntegration = saveIntegration;
+window.closeIntegrationModal = closeIntegrationModal;
+window.deleteIntegration = deleteIntegration;
+window.renderIntegrations = renderIntegrations;
+window.clearIntegrationFilters = clearIntegrationFilters;
+
+// 10. Funções de Colaboradores (RH)
+window.showColabInfoModal = showColabInfoModal;
+window.saveColabInfo = saveColabInfo;
+window.closeColabInfoModal = closeColabInfoModal;
+window.deleteColabInfo = deleteColabInfo;
+window.renderCollaboratorInfos = renderCollaboratorInfos;
+window.clearColabInfoFilters = clearColabInfoFilters;
+window.handleColabStatusChange = handleColabStatusChange;
+window.handleCollaboratorSelection = handleCollaboratorSelection;
+
+// 11. Funções de Configuração (Menus)
+window.navigateToUserManagement = navigateToUserManagement;
+window.navigateToCargoManagement = navigateToCargoManagement;
+window.navigateToOrientadorManagement = navigateToOrientadorManagement;
+window.navigateToModuloManagement = navigateToModuloManagement;
+window.navigateToMunicipalityListManagement = navigateToMunicipalityListManagement;
+window.navigateToFormaApresentacaoManagement = navigateToFormaApresentacaoManagement;
+window.navigateToApiListManagement = navigateToApiListManagement;
+window.navigateToBackupManagement = navigateToBackupManagement;
+window.navigateToAudit = navigateToAudit;
+
+// 12. Modais de Configuração
+window.showUserModal = showUserModal;
+if(typeof saveUser !== 'undefined') window.saveUser = saveUser; 
+window.closeUserModal = closeUserModal;
+window.deleteUser = deleteUser;
+window.clearUserFilters = clearUserFilters;
+window.enviarEmailRedefinicao = enviarEmailRedefinicao;
+
+window.showCargoModal = showCargoModal;
+window.saveCargo = saveCargo;
+window.closeCargoModal = closeCargoModal;
+window.deleteCargo = deleteCargo;
+
+window.showOrientadorModal = showOrientadorModal;
+window.saveOrientador = saveOrientador;
+window.closeOrientadorModal = closeOrientadorModal;
+window.deleteOrientador = deleteOrientador;
+
+window.showModuloModal = showModuloModal;
+window.saveModulo = saveModulo;
+window.closeModuloModal = closeModuloModal;
+window.deleteModulo = deleteModulo;
+
+window.showMunicipalityListModal = showMunicipalityListModal;
+window.saveMunicipalityList = saveMunicipalityList;
+window.closeMunicipalityListModal = closeMunicipalityListModal;
+window.deleteMunicipalityList = deleteMunicipalityList;
+
+window.showFormaApresentacaoModal = showFormaApresentacaoModal;
+window.saveFormaApresentacao = saveFormaApresentacao;
+window.closeFormaApresentacaoModal = closeFormaApresentacaoModal;
+window.deleteForma = deleteForma;
+
+window.showApiListModal = showApiListModal;
+window.saveApiList = saveApiList;
+window.closeApiListModal = closeApiListModal;
+window.deleteApiList = deleteApiList;
+
+// 13. Backup e Auditoria
+window.createBackup = createBackup;
+window.triggerRestoreBackup = triggerRestoreBackup;
+window.handleBackupFileSelect = handleBackupFileSelect;
+window.closeRestoreConfirmModal = closeRestoreConfirmModal;
+window.confirmRestore = confirmRestore;
+window.clearAuditFilters = clearAuditFilters;
+window.clearAuditLogs = clearAuditLogs;
+
+// 14. Relatórios e Exportação
+window.updateReportFiltersUI = updateReportFiltersUI;
+window.clearReportFilters = clearReportFilters;
+window.exportReportToExcel = exportReportToExcel;
+window.generateReportPreview = generateReportPreview;
+window.closeReportPreview = closeReportPreview;
+window.printReport = printReport;
+
+// Exportações CSV/Excel (Botões das tabelas)
+window.exportMunicipalitiesCSV = exportMunicipalitiesCSV;
+window.generateMunicipalitiesPDF = generateMunicipalitiesPDF;
+window.exportTasksCSV = exportTasksCSV;
+window.generateTasksPDF = generateTasksPDF;
+window.exportRequestsCSV = exportRequestsCSV;
+window.generateRequestsPDF = generateRequestsPDF;
+window.exportDemandsCSV = exportDemandsCSV;
+window.generateDemandsPDF = generateDemandsPDF;
+window.exportVisitsCSV = exportVisitsCSV;
+window.generateVisitsPDF = generateVisitsPDF;
+window.exportProductionsCSV = exportProductionsCSV;
+window.generateProductionsPDF = generateProductionsPDF;
+window.exportPresentationsCSV = exportPresentationsCSV;
+window.generatePresentationsPDF = generatePresentationsPDF;
+window.exportIntegrationsExcel = exportIntegrationsExcel;
+window.exportColabInfoExcel = exportColabInfoExcel;
+window.exportAuditCSV = exportAuditCSV;
+window.generateAuditPDF = generateAuditPDF;
+
+// Importação CSV
+window.triggerCSVImport = triggerCSVImport;
+window.handleCSVImport = handleCSVImport;
+window.triggerTrainingCSVImport = triggerTrainingCSVImport;
+window.handleTrainingCSVImport = handleTrainingCSVImport;
+window.triggerRequestCSVImport = triggerRequestCSVImport;
+window.handleRequestCSVImport = handleRequestCSVImport;
+window.triggerPresentationCSVImport = triggerPresentationCSVImport;
+window.handlePresentationCSVImport = handlePresentationCSVImport;
+
+// Recuperação de Senha
+window.showForgotPasswordModal = showForgotPasswordModal;
+window.closeForgotPasswordModal = closeForgotPasswordModal;
+window.handleForgotPassword = handleForgotPassword;
+window.showChangePasswordModal = showChangePasswordModal;
+window.closeChangePasswordModal = closeChangePasswordModal;
+window.handleChangePassword = handleChangePassword;
+window.confirmUndo = confirmUndo;
+
+// Validação de Data (Usada no HTML onchange)
+if(typeof validateDateRange !== 'undefined') window.validateDateRange = validateDateRange;
