@@ -914,6 +914,9 @@ function showMunicipalityModal(id = null) {
     } else {
         handleMunicipalityStatusChange();
     }
+    document.getElementById('municipality-modal').classList.add('show');
+
+}
 
 // ============================================================
 // NOVA FUNÇÃO: SALVAR MUNICÍPIO NO FIREBASE
