@@ -875,35 +875,29 @@ function showMunicipalityModal(id = null) {
         }
     }
     
-    // 3. Se for Edição, preenche os dados
+   // 3. Se for Edição, preenche os dados
     if (id) {
         const m = municipalities.find(function(x) { return x.id === id; });
         if (m) {
-            // Reconstrói o valor esperado "Nome|UF"
+            // ... (Lógica do Dropdown continua igual) ...
             const valToSelect = `${m.name}|${m.uf}`;
-            
-            // Verifica se a opção existe, senão cria temporariamente para não perder a seleção visual
-            let exists = false;
-            for (let i = 0; i < munSelect.options.length; i++) {
-                if (munSelect.options[i].value === valToSelect) {
-                    exists = true;
-                    break;
-                }
-            }
-            if (!exists) {
-                const opt = document.createElement('option');
-                opt.value = valToSelect;
-                opt.textContent = m.uf ? `${m.name} - ${m.uf}` : m.name;
-                munSelect.appendChild(opt);
-            }
+            // ... (Verificação se existe option) ...
             munSelect.value = valToSelect;
 
+            // 1. PRIMEIRO: Define o Status
             document.getElementById('municipality-status').value = m.status;
+            
+            // 2. SEGUNDO: Chama a função para mostrar/esconder os campos AGORA
+            // (Antes de preencher os valores das datas)
+            handleMunicipalityStatusChange(); 
+
+            // 3. TERCEIRO: Preenche os dados
             document.getElementById('municipality-manager').value = m.manager;
             document.getElementById('municipality-contact').value = m.contact;
             document.getElementById('municipality-implantation-date').value = m.implantationDate;
             document.getElementById('municipality-last-visit').value = m.lastVisit;
             
+            // Agora sim, preenche as datas (elas não serão mais apagadas)
             if(document.getElementById('municipality-date-blocked')) {
                 document.getElementById('municipality-date-blocked').value = m.dateBlocked || '';
             }
@@ -916,15 +910,10 @@ function showMunicipalityModal(id = null) {
                     cb.checked = m.modules.includes(cb.value);
                 });
             }
-            
-            handleMunicipalityStatusChange();
         }
     } else {
         handleMunicipalityStatusChange();
     }
-    
-    document.getElementById('municipality-modal').classList.add('show');
-}
 
 // ============================================================
 // NOVA FUNÇÃO: SALVAR MUNICÍPIO NO FIREBASE
