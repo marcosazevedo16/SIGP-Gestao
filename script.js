@@ -5989,59 +5989,70 @@ function resetLoginAttempts(login) {
 }
 
 // ============================================================================
-// 24. SISTEMA DE SEGURANÇA: LOGOUT POR INATIVIDADE (CORRIGIDO)
+// 24. SISTEMA DE SEGURANÇA: LOGOUT POR INATIVIDADE (VERSÃO BLINDADA)
 // ============================================================================
 
 let inactivityInterval;
-const INACTIVITY_LIMIT_MS = 1 * 60 * 1000; // 15 Minutos
+// CONFIGURAÇÃO DE TEMPO:
+// Para teste: 1 * 60 * 1000 (1 minuto)
+// Para produção: 15 * 60 * 1000 (15 minutos)
+const INACTIVITY_LIMIT_MS = 1 * 60 * 1000; 
+
+// Função de atualização de atividade (definida fora para não duplicar listeners)
+function refreshActivityTime() {
+    const now = Date.now();
+    const lastSaved = parseInt(localStorage.getItem('lastActivityTime') || 0);
+    // Só grava no banco se passou 5 segundos da última vez (Proteção de performance)
+    if (now - lastSaved > 5000) { 
+        localStorage.setItem('lastActivityTime', now.toString());
+    }
+}
 
 function initializeInactivityTracking() {
-    // Só ativa se tiver usuário logado
-    if (!currentUser) return;
-
-    // 1. Marca o horário inicial
+    // 1. Garante o horário inicial assim que carrega
     localStorage.setItem('lastActivityTime', Date.now().toString());
 
-    // 2. Adiciona os "ouvintes" com proteção de performance (Throttle)
+    // 2. Adiciona os ouvintes (Mouse, Teclado, Toque)
     const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
     events.forEach(evt => {
-        document.addEventListener(evt, () => {
-            const now = Date.now();
-            const lastSaved = parseInt(localStorage.getItem('lastActivityTime') || 0);
-            
-            // OTIMIZAÇÃO: Só grava no banco se passou 5 segundos da última vez
-            // Isso evita travar o navegador com excesso de escritas
-            if (now - lastSaved > 5000) { 
-                localStorage.setItem('lastActivityTime', now.toString());
-            }
-        });
+        // Remove anteriores para não duplicar
+        document.removeEventListener(evt, refreshActivityTime); 
+        // Adiciona novo
+        document.addEventListener(evt, refreshActivityTime);
     });
 
-    // 3. Inicia o "Guarda" que verifica o relógio a cada 1 minuto
+    // 3. Inicia o "Guarda" que verifica o tempo a cada 10 segundos
     if (inactivityInterval) clearInterval(inactivityInterval);
-    inactivityInterval = setInterval(checkInactivity, 60000); 
+    inactivityInterval = setInterval(checkInactivity, 10000); 
     
-    appLogger.log("🛡️ Monitoramento de inatividade iniciado (Ciclo: 1 min).");
+    console.log(`🛡️ Monitoramento iniciado. Limite: ${INACTIVITY_LIMIT_MS/1000} segundos.`);
 }
 
 function checkInactivity() {
-    // Recupera a última vez que o usuário mexeu (de qualquer aba)
+    // Verifica se tem sessão salva no navegador (mais seguro que variável volátil)
+    const sessionData = localStorage.getItem('currentUser');
+    if (!sessionData) return; // Se não tem usuário, não faz nada
+
+    // Cálculos
     const lastActivity = parseInt(localStorage.getItem('lastActivityTime') || Date.now());
     const now = Date.now();
     const diff = now - lastActivity;
 
-    // Se a diferença for maior que o limite (15 min)
+    // Log para você acompanhar no F12 (Pode remover depois)
+    console.log(`⏱️ Inativo há: ${(diff/1000).toFixed(0)}s / Limite: ${INACTIVITY_LIMIT_MS/1000}s`);
+
+    // Se estourou o tempo
     if (diff >= INACTIVITY_LIMIT_MS) {
-        appLogger.warn(`Sessão expirada. Inativo por ${(diff/60000).toFixed(1)} minutos.`);
+        console.warn("⚠️ TEMPO ESGOTADO. Executando logout...");
         
         clearInterval(inactivityInterval);
         
-        // Limpa a sessão
+        // Limpeza Completa
         localStorage.removeItem('currentUser');
+        if (typeof currentUser !== 'undefined') currentUser = null;
         isAuthenticated = false;
-        currentUser = null;
 
-        alert('⏱️ Sua sessão expirou por inatividade.\n\nPor segurança, faça login novamente.');
+        alert('⏱️ Sessão expirada por inatividade (Teste 1 min).\n\nPor favor, faça login novamente.');
         location.reload(); 
     }
 }
