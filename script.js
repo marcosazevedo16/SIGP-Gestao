@@ -5451,9 +5451,7 @@ function initializeApp() {
         initializeDashboardCharts();
         checkSystemNotifications();
         initOfflineDetection();
-        // 👇 ADICIONE ESTA LINHA AQUI 👇
-        initializeInactivityTracking(); 
-        // 👆 ISSO GARANTE QUE O TIMER INICIE AO DAR F5
+        initializeInactivityTracking();
         
         // Tenta aplicar segurança de datas
         try { if (typeof enforceDateSecurity === 'function') enforceDateSecurity(); } catch (e) {}
@@ -5992,47 +5990,55 @@ function resetLoginAttempts(login) {
 }
 
 // ============================================================================
-// 24. SISTEMA DE SEGURANÇA: LOGOUT POR INATIVIDADE (CORRIGIDO v3)
+// 24. SISTEMA DE SEGURANÇA: LOGOUT POR INATIVIDADE (CORRIGIDO E OTIMIZADO)
 // ============================================================================
 
-let inactivityInterval;
+let inactivityInterval = null; // Inicializada corretamente
+let lastInactivityWarningTime = 0; // Controle para não spammar avisos
+
 // ⚠️ MODO TESTE: 1 minuto (60.000 ms).
-// Para produção, mude para: 15 * 60 * 1000
+// Para produção (15 min), mude para: 15 * 60 * 1000
 const INACTIVITY_LIMIT_MS = 1 * 60 * 1000; 
 
 // Função auxiliar para atualizar o tempo (fora para não duplicar listeners)
 function refreshActivityTime() {
     const now = Date.now();
     const lastSaved = parseInt(localStorage.getItem('lastActivityTime') || 0);
-    // Proteção: Só grava se passou 5 segundos desde a última gravação
+    // Proteção: Só grava se passou 5 segundos desde a última gravação (otimização)
     if (now - lastSaved > 5000) { 
         localStorage.setItem('lastActivityTime', now.toString());
+        // Reseta o aviso para que possa avisar novamente na próxima inatividade
+        lastInactivityWarningTime = 0; 
     }
 }
 
 function initializeInactivityTracking() {
-    console.log("🚀 Monitoramento de Inatividade: ATIVADO");
-
     // 1. Reseta o relógio assim que a função é chamada
     localStorage.setItem('lastActivityTime', Date.now().toString());
+    lastInactivityWarningTime = 0;
 
-    // 2. Adiciona os ouvintes de atividade
+    // 2. Adiciona os ouvintes de atividade (Remove anteriores para evitar duplicação)
     const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
     events.forEach(evt => {
-        document.removeEventListener(evt, refreshActivityTime); // Limpa anteriores
-        document.addEventListener(evt, refreshActivityTime);    // Adiciona novo
+        document.removeEventListener(evt, refreshActivityTime); 
+        document.addEventListener(evt, refreshActivityTime);    
     });
 
-    // 3. Inicia o "Guarda" que verifica a cada 5 segundos
+    // 3. Garante que o intervalo anterior seja limpo antes de criar um novo
     if (inactivityInterval) clearInterval(inactivityInterval);
+    
+    // 4. Inicia o "Guarda" que verifica a cada 5 segundos
     inactivityInterval = setInterval(checkInactivity, 5000); 
+    
+    // Log para confirmar que iniciou (Apenas DEV)
+    // console.log("🚀 Monitoramento de Inatividade: INICIADO"); 
 }
 
 function checkInactivity() {
-    // 1. Verifica se existe sessão salva no navegador (mais confiável que a variável volátil)
+    // 1. Verifica se existe sessão salva no navegador
     const sessionUser = localStorage.getItem('currentUser');
     
-    // Se não tem usuário salvo no LocalStorage, não precisa monitorar (já está deslogado)
+    // Se não tem usuário salvo, não precisa monitorar (já está deslogado)
     if (!sessionUser) return;
 
     // 2. Cálculos matemáticos
@@ -6040,20 +6046,28 @@ function checkInactivity() {
     const now = Date.now();
     const diff = now - lastActivity;
 
-    // Debug no Console (Aperte F12 para ver contando)
-    console.log(`⏱️ Tempo inativo: ${(diff/1000).toFixed(0)}s / Limite: ${INACTIVITY_LIMIT_MS/1000}s`);
+    // 3. AVISO: Faltam 30 segundos para o logout (Lógica de Alerta)
+    // Se o tempo inativo for maior que (Limite - 30seg) E ainda não estourou o limite
+    const warningThreshold = INACTIVITY_LIMIT_MS - (30 * 1000); 
+    
+    if (diff >= warningThreshold && diff < INACTIVITY_LIMIT_MS) {
+        // Só avisa se ainda não avisou nesta rodada
+        if (lastInactivityWarningTime === 0) {
+            showToast('⚠️ Atenção: Você será deslogado em breve por inatividade!', 'warning');
+            lastInactivityWarningTime = now; // Marca que já avisou
+        }
+    }
 
-    // 3. Verifica se estourou o tempo
+    // 4. Verifica se estourou o tempo (LOGOUT)
     if (diff >= INACTIVITY_LIMIT_MS) {
-        console.warn("⚠️ TEMPO ESGOTADO. Encerrando sessão...");
-        
         // Para o loop
         clearInterval(inactivityInterval);
+        inactivityInterval = null;
         
         // Limpa tudo
         localStorage.removeItem('currentUser');
         if (typeof currentUser !== 'undefined') currentUser = null;
-        isAuthenticated = false;
+        // isAuthenticated = false; // Removido pois é read-only no módulo, o reload resolve
 
         // Alerta e Reload
         alert('🛑 SESSÃO EXPIRADA!\n\nVocê ficou inativo por muito tempo.\nPor favor, faça login novamente.');
