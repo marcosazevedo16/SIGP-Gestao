@@ -34,6 +34,9 @@ const SALT_LENGTH = 32; // Aumentado para 32 caracteres (Segurança Máxima)
 // --- PAGINAÇÃO ---
 const ITEMS_PER_PAGE = 10; // Quantos itens por página
 let currentPage = 1;       // Página atual
+// --- CONTROLE DE PAGINAÇÃO (LISTA MESTRA MUNICÍPIOS) ---
+let munListPage = 1;
+const MUN_LIST_ITEMS_PER_PAGE = 25;
 
 // Carrega logs ou inicia vazio
 let auditLogs = recuperarDoArmazenamento('auditLogs', []);
@@ -3829,8 +3832,15 @@ function saveCargo(e) {
 
 function renderCargos() {
     const c = document.getElementById('cargos-table');
+    const totalDiv = document.getElementById('cargos-total');
+    
     cargos.sort((a, b) => a.name.localeCompare(b.name));
-    if(document.getElementById('cargos-total')) document.getElementById('cargos-total').innerHTML=`Total: <strong>${cargos.length}</strong>`;
+    
+    // CORREÇÃO: Torna o elemento visível além de atualizar o texto
+    if(totalDiv) {
+        totalDiv.style.display = 'block'; 
+        totalDiv.innerHTML = `Total: <strong>${cargos.length}</strong> cargos cadastrados`;
+    }
 
     const r = cargos.map(x => 
         `<tr>
@@ -3874,7 +3884,13 @@ function showOrientadorModal(id=null){
 
 function renderOrientadores() {
     const c = document.getElementById('orientadores-table');
-    if(document.getElementById('orientadores-total')) document.getElementById('orientadores-total').innerHTML=`Total: <strong>${orientadores.length}</strong>`;
+    const totalDiv = document.getElementById('orientadores-total');
+
+    // CORREÇÃO: Torna visível
+    if(totalDiv) {
+        totalDiv.style.display = 'block';
+        totalDiv.innerHTML = `Total: <strong>${orientadores.length}</strong> colaboradores cadastrados`;
+    }
     
     const r = orientadores.map(x => 
         `<tr>
@@ -3936,7 +3952,16 @@ function saveModulo(e) {
 }
 function renderModulos() {
     const c = document.getElementById('modulos-table');
+    const totalDiv = document.getElementById('modulos-total');
+
     modulos.sort((a, b) => a.name.localeCompare(b.name));
+    
+    // CORREÇÃO: Torna visível
+    if(totalDiv) {
+        totalDiv.style.display = 'block';
+        totalDiv.innerHTML = `Total: <strong>${modulos.length}</strong> módulos cadastrados`;
+    }
+
     const r = modulos.map(m => 
         `<tr><td class="text-primary-cell">${m.name}</td><td style="text-align:center;">${m.abbreviation||'-'}</td><td class="text-secondary-cell">${m.description||'-'}</td><td><button class="btn btn--sm" onclick="showModuloModal('${m.id}')">✏️</button><button class="btn btn--sm" onclick="deleteModulo('${m.id}')">🗑️</button></td></tr>`
     ).join('');
@@ -3969,28 +3994,119 @@ function showMunicipalityListModal(id=null){
     document.getElementById('municipality-list-modal').classList.add('show'); 
 }
 
-function saveMunicipalityList(e){ 
+// ============================================================
+// LISTA MESTRA MUNICÍPIOS (Configurações) - ATUALIZADO
+// ============================================================
+
+// 1. Salvar com Validação de Duplicidade
+function saveMunicipalityList(e) { 
     e.preventDefault(); 
-    const data={name:document.getElementById('municipality-list-name').value, uf:document.getElementById('municipality-list-uf').value}; 
-    if(editingId){
+    
+    const nameInput = document.getElementById('municipality-list-name').value.trim();
+    const ufInput = document.getElementById('municipality-list-uf').value;
+    
+    // Validação de Duplicidade (Nome + UF)
+    // Verifica se já existe algum item com mesmo nome E mesma UF, excluindo o próprio ID se for edição
+    const isDuplicate = municipalitiesList.some(m => 
+        m.name.toLowerCase() === nameInput.toLowerCase() && 
+        m.uf === ufInput && 
+        m.id !== editingId
+    );
+
+    if (isDuplicate) {
+        alert('🚫 Erro: Este município já está cadastrado nesta UF.');
+        return;
+    }
+
+    const data = { name: nameInput, uf: ufInput }; 
+    
+    if (editingId) {
         db.collection('municipalitiesList').doc(editingId).update(data)
-        .then(()=>{ closeMunicipalityListModal(); showToast('Salvo!'); editingId=null; });
-    }else{
+        .then(() => { 
+            closeMunicipalityListModal(); 
+            showToast('Município atualizado na Lista Mestra!'); 
+            editingId = null; 
+        })
+        .catch(err => alert("Erro ao atualizar: " + err.message));
+    } else {
         db.collection('municipalitiesList').add(data)
-        .then(()=>{ closeMunicipalityListModal(); showToast('Salvo!'); });
+        .then(() => { 
+            closeMunicipalityListModal(); 
+            showToast('Município adicionado à Lista Mestra!'); 
+        })
+        .catch(err => alert("Erro ao salvar: " + err.message));
     } 
 }
+// 2. Renderizar com Paginação e Contador
 function renderMunicipalityList() {
     const filterVal = document.getElementById('filter-municipality-list-name')?.value.toLowerCase() || '';
-    const filtered = municipalitiesList.filter(m => m.name.toLowerCase().includes(filterVal)).sort((a,b) => a.name.localeCompare(b.name));
     const c = document.getElementById('municipalities-list-table');
-    
-    if(document.getElementById('municipalities-list-total')) document.getElementById('municipalities-list-total').innerHTML = `Total: <strong>${filtered.length}</strong>`;
+    const countDiv = document.getElementById('municipalities-list-total'); // Certifique-se que este ID existe no HTML
 
-    const r = filtered.map(m => 
-        `<tr><td class="text-primary-cell">${m.name}</td><td>${m.uf}</td><td><button class="btn btn--sm" onclick="showMunicipalityListModal('${m.id}')">✏️</button><button class="btn btn--sm" onclick="deleteMunicipalityList('${m.id}')">🗑️</button></td></tr>`
+    // Filtragem
+    let filtered = municipalitiesList.filter(m => 
+        m.name.toLowerCase().includes(filterVal)
+    ).sort((a,b) => a.name.localeCompare(b.name));
+
+    // Contador de Resultados
+    if(countDiv) {
+        countDiv.style.display = 'block';
+        countDiv.innerHTML = `Total: <strong>${filtered.length}</strong> registros encontrados`;
+    }
+
+    // Lógica de Paginação
+    const totalPages = Math.ceil(filtered.length / MUN_LIST_ITEMS_PER_PAGE);
+    
+    // Se a página atual for maior que o total de páginas (ex: filtro reduziu itens), volta pra 1
+    if (munListPage > totalPages && totalPages > 0) munListPage = 1;
+    if (munListPage < 1) munListPage = 1;
+
+    const startIndex = (munListPage - 1) * MUN_LIST_ITEMS_PER_PAGE;
+    const endIndex = startIndex + MUN_LIST_ITEMS_PER_PAGE;
+    const paginatedData = filtered.slice(startIndex, endIndex);
+
+    if (filtered.length === 0) {
+        c.innerHTML = '<div class="empty-state">Nenhum município encontrado.</div>';
+        return;
+    }
+
+    // Gera Tabela
+    const rows = paginatedData.map(m => 
+        `<tr>
+            <td class="text-primary-cell">${m.name}</td>
+            <td>${m.uf}</td>
+            <td>
+                <button class="btn btn--sm" onclick="showMunicipalityListModal('${m.id}')">✏️</button>
+                <button class="btn btn--sm" onclick="deleteMunicipalityList('${m.id}')">🗑️</button>
+            </td>
+        </tr>`
     ).join('');
-    c.innerHTML = `<table><thead><th>Nome</th><th>UF</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
+
+    // Controles de Paginação HTML
+    let paginationHTML = '';
+    if (totalPages > 1) {
+        paginationHTML = `
+        <div class="pagination-controls" style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top:15px;">
+            <button class="btn btn--sm btn--secondary" 
+                onclick="changeMunicipalityListPage(-1)" 
+                ${munListPage === 1 ? 'disabled' : ''}>
+                ⬅️ Anterior
+            </button>
+            <span style="font-size:13px;">Página <strong>${munListPage}</strong> de <strong>${totalPages}</strong></span>
+            <button class="btn btn--sm btn--secondary" 
+                onclick="changeMunicipalityListPage(1)" 
+                ${munListPage === totalPages ? 'disabled' : ''}>
+                Próximo ➡️
+            </button>
+        </div>`;
+    }
+
+    c.innerHTML = `<table><thead><th>Nome</th><th>UF</th><th>Ações</th></thead><tbody>${rows}</tbody></table>${paginationHTML}`;
+}
+// 3. Função Auxiliar para mudar de página
+function changeMunicipalityListPage(delta) {
+    munListPage += delta;
+    renderMunicipalityList();
 }
 
 // 15. LISTA MESTRA MUNICÍPIOS (Configuração)
@@ -4027,7 +4143,16 @@ function saveFormaApresentacao(e){
 }
 function renderFormas() {
     const c = document.getElementById('formas-apresentacao-table');
+    const totalDiv = document.getElementById('formas-apresentacao-total');
+
     formasApresentacao.sort((a,b)=>a.name.localeCompare(b.name));
+    
+    // CORREÇÃO: Torna visível
+    if(totalDiv) {
+        totalDiv.style.display = 'block';
+        totalDiv.innerHTML = `Total: <strong>${formasApresentacao.length}</strong> formas cadastradas`;
+    }
+
     const r = formasApresentacao.map(f => `<tr><td class="text-primary-cell">${f.name}</td><td><button class="btn btn--sm" onclick="showFormaApresentacaoModal('${f.id}')">✏️</button><button class="btn btn--sm" onclick="deleteForma('${f.id}')">🗑️</button></td></tr>`).join('');
     c.innerHTML = `<table><thead><th>Forma</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
@@ -5956,7 +6081,16 @@ function saveApiList(e) {
 
 function renderApiList() {
     const c = document.getElementById('apis-list-table');
+    const totalDiv = document.getElementById('apis-list-total');
+
     apisList.sort((a,b)=>a.name.localeCompare(b.name));
+    
+    // CORREÇÃO: Torna visível
+    if(totalDiv) {
+        totalDiv.style.display = 'block';
+        totalDiv.innerHTML = `Total: <strong>${apisList.length}</strong> APIs cadastradas`;
+    }
+
     const r = apisList.map(a => `<tr><td class="text-primary-cell">${a.name}</td><td class="text-secondary-cell">${a.description}</td><td><button class="btn btn--sm" onclick="showApiListModal('${a.id}')">✏️</button><button class="btn btn--sm" onclick="deleteApiList('${a.id}')">🗑️</button></td></tr>`).join('');
     c.innerHTML = `<table><thead><th>API</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
 }
@@ -9074,6 +9208,8 @@ window.showChangePasswordModal = showChangePasswordModal;
 window.closeChangePasswordModal = closeChangePasswordModal;
 window.handleChangePassword = handleChangePassword;
 window.confirmUndo = confirmUndo;
+
+window.changeMunicipalityListPage = changeMunicipalityListPage;
 
 // Validação de Data (Usada no HTML onchange)
 if(typeof validateDateRange !== 'undefined') window.validateDateRange = validateDateRange;
