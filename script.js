@@ -5993,7 +5993,7 @@ function resetLoginAttempts(login) {
 // ============================================================================
 
 let inactivityInterval;
-const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 Minutos
+const INACTIVITY_LIMIT_MS = 1 * 60 * 1000; // 15 Minutos
 
 function initializeInactivityTracking() {
     // Só ativa se tiver usuário logado
