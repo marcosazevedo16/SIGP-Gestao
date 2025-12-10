@@ -4120,3 +4120,24 @@ body.loading::after {
     color: var(--color-primary);
     font-size: 16px;
 }
+/* =========================================
+   EFEITO HOVER UNIVERSAL (Correção de Contraste)
+   ========================================= */
+
+/* 1. TEMA CLARO (Padrão) */
+/* Usa preto com 5% de opacidade -> Vira um cinza suave */
+table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    color: inherit !important;
+}
+
+/* 2. TEMA ESCURO (Tenta adivinhar todos os nomes possíveis) */
+/* Usa branco com 10% de opacidade -> Clareia o fundo escuro suavemente */
+body.dark-mode table tbody tr:hover,
+body.dark table tbody tr:hover,
+body.dark-theme table tbody tr:hover,
+body[data-theme='dark'] table tbody tr:hover,
+html.dark-mode body table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
