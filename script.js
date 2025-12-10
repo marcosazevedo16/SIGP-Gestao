@@ -5451,6 +5451,9 @@ function initializeApp() {
         initializeDashboardCharts();
         checkSystemNotifications();
         initOfflineDetection();
+        // 👇 ADICIONE ESTA LINHA AQUI 👇
+        initializeInactivityTracking(); 
+        // 👆 ISSO GARANTE QUE O TIMER INICIE AO DAR F5
         
         // Tenta aplicar segurança de datas
         try { if (typeof enforceDateSecurity === 'function') enforceDateSecurity(); } catch (e) {}
