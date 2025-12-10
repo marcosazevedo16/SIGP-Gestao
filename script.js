@@ -2303,7 +2303,8 @@ function getFilteredPresentations() {
         return true;
     });
 
-    return filtered.sort((a,b) => new Date(a.dateSolicitacao) - new Date(b.dateSolicitacao));
+    // ALTERAÇÃO AQUI: Ordenação alfabética por Município
+    return filtered.sort((a, b) => a.municipality.localeCompare(b.municipality));
 }
 
 function renderPresentations() {
@@ -5987,72 +5988,62 @@ function resetLoginAttempts(login) {
     }
 }
 
-// --- VARIÁVEIS GLOBAIS DE CONTROLE DE SESSÃO ---
-let inactivityTimeout;
-const INACTIVITY_MINUTES = 15;
-let isPageLoading = true; // O ESCUDO CONTRA LOGOUT NO F5
+// ============================================================================
+// 24. SISTEMA DE SEGURANÇA: LOGOUT POR INATIVIDADE (CORRIGIDO)
+// ============================================================================
+
+let inactivityInterval;
+const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 Minutos
 
 function initializeInactivityTracking() {
-    // 1. Remove o escudo após 2 segundos (protege contra logout no F5)
-    setTimeout(() => {
-        isPageLoading = false;
-    }, 2000);
-    
-    // Eventos que resetam o timer (atividade do usuário)
-    document.addEventListener('mousemove', resetInactivityTimer);
-    document.addEventListener('keypress', resetInactivityTimer);
-    document.addEventListener('click', resetInactivityTimer);
-    document.addEventListener('scroll', resetInactivityTimer);
-    
-    // ✅ CORRETO: Usa addEventListener, não window.onload
-    window.addEventListener('load', resetInactivityTimer);
-    
-    // Monitora se outra aba foi usada
-    window.addEventListener('storage', (e) => {
-        if (e.key === 'lastActivityTime') {
-            startLocalTimer();
-        }
-    });
-    
-    // Inicia o ciclo
-    resetInactivityTimer();
-}
-
-
-function resetInactivityTimer() {
+    // Só ativa se tiver usuário logado
     if (!currentUser) return;
-    // Atualiza o relógio para "AGORA"
+
+    // 1. Marca o horário inicial
     localStorage.setItem('lastActivityTime', Date.now().toString());
-    startLocalTimer();
+
+    // 2. Adiciona os "ouvintes" com proteção de performance (Throttle)
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach(evt => {
+        document.addEventListener(evt, () => {
+            const now = Date.now();
+            const lastSaved = parseInt(localStorage.getItem('lastActivityTime') || 0);
+            
+            // OTIMIZAÇÃO: Só grava no banco se passou 5 segundos da última vez
+            // Isso evita travar o navegador com excesso de escritas
+            if (now - lastSaved > 5000) { 
+                localStorage.setItem('lastActivityTime', now.toString());
+            }
+        });
+    });
+
+    // 3. Inicia o "Guarda" que verifica o relógio a cada 1 minuto
+    if (inactivityInterval) clearInterval(inactivityInterval);
+    inactivityInterval = setInterval(checkInactivity, 60000); 
+    
+    appLogger.log("🛡️ Monitoramento de inatividade iniciado (Ciclo: 1 min).");
 }
 
-function startLocalTimer() {
-    clearTimeout(inactivityTimeout);
-    
-    // TEMPO DE INATIVIDADE (15 Minutos)
-    const INACTIVITY_LIMIT = 15 * 60 * 1000; 
+function checkInactivity() {
+    // Recupera a última vez que o usuário mexeu (de qualquer aba)
+    const lastActivity = parseInt(localStorage.getItem('lastActivityTime') || Date.now());
+    const now = Date.now();
+    const diff = now - lastActivity;
 
-    inactivityTimeout = setTimeout(() => {
-        // --- A MÁGICA ---
-        // Se a página acabou de carregar (F5), NUNCA desloga.
-        if (isPageLoading) {
-            return; 
-        }
-
-        const lastActivity = parseInt(localStorage.getItem('lastActivityTime') || 0);
-        const now = Date.now();
+    // Se a diferença for maior que o limite (15 min)
+    if (diff >= INACTIVITY_LIMIT_MS) {
+        appLogger.warn(`Sessão expirada. Inativo por ${(diff/60000).toFixed(1)} minutos.`);
         
-        // Verifica se realmente passou o tempo
-        if (now - lastActivity < INACTIVITY_LIMIT) {
-            startLocalTimer(); // Falso alarme, reinicia
-        } else {
-            // Realmente inativo
-            console.warn("Sessão expirada.");
-            alert('⏱️ Sessão expirada por inatividade.');
-            localStorage.removeItem('currentUser');
-            location.reload();
-        }
-    }, INACTIVITY_LIMIT);
+        clearInterval(inactivityInterval);
+        
+        // Limpa a sessão
+        localStorage.removeItem('currentUser');
+        isAuthenticated = false;
+        currentUser = null;
+
+        alert('⏱️ Sua sessão expirou por inatividade.\n\nPor segurança, faça login novamente.');
+        location.reload(); 
+    }
 }
 
 // --- APIS ---
