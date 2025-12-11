@@ -1023,12 +1023,26 @@ function saveMunicipality(e) {
         btnSubmit.disabled = false;
     });
 }
+/* =================================================================================
+   PAGINAÇÃO E RENDERIZAÇÃO DE MUNICÍPIOS (UNIFICADO)
+   ================================================================================= */
+
+// Variáveis Globais de Controle
+var _municipiosFiltrados = []; // Guarda a lista JÁ FILTRADA para paginar
+var _paginacaoAtual = 1;
+var _itensPorPagina = 15;
+
 function renderMunicipalities() {
+    console.log("🔄 Renderizando municípios com filtros e paginação...");
+
+    // 1. CAPTURA DOS FILTROS (Da sua função original)
     const fName = document.getElementById('filter-municipality-name') ? document.getElementById('filter-municipality-name').value : '';
     const fStatus = document.getElementById('filter-municipality-status') ? document.getElementById('filter-municipality-status').value : '';
     const fMod = document.getElementById('filter-municipality-module') ? document.getElementById('filter-municipality-module').value : '';
     const fGest = document.getElementById('filter-municipality-manager') ? document.getElementById('filter-municipality-manager').value.toLowerCase() : '';
 
+    // 2. APLICAÇÃO DOS FILTROS (Lógica original)
+    // Usa a lista global 'municipalities' que já existe no seu sistema
     let filtered = municipalities.filter(m => {
         if (fName && m.name !== fName) return false;
         if (fStatus && m.status !== fStatus) return false;
@@ -1037,16 +1051,50 @@ function renderMunicipalities() {
         return true;
     }).sort((a,b) => a.name.localeCompare(b.name));
 
-    const c = document.getElementById('municipalities-table');
+    // 3. ATUALIZA CONTADORES DE RESULTADO (Da sua função original)
     if(document.getElementById('municipalities-results-count')) {
         document.getElementById('municipalities-results-count').style.display = 'block';
         document.getElementById('municipalities-results-count').innerHTML = `<strong>${filtered.length}</strong> município(s) no total`;
     }
 
-    if (filtered.length === 0) {
+    // 4. PREPARA A PAGINAÇÃO
+    _municipiosFiltrados = filtered; // Salva o resultado filtrado para o paginador usar
+    // _paginacaoAtual = 1; // Opcional: Voltar pra pág 1 sempre que filtrar (recomendado descomentar)
+
+    // 5. CHAMA O DESENHISTA DA TABELA
+    atualizarTabelaPaginada();
+    
+    // 6. ATUALIZA GRÁFICOS (Da sua função original)
+    if (typeof updateMunicipalityCharts === 'function') {
+        updateMunicipalityCharts(filtered);
+    }
+}
+
+// --- FUNÇÕES AUXILIARES DE PAGINAÇÃO (Mantenha ou adicione se não tiver) ---
+
+function atualizarTabelaPaginada() {
+    const c = document.getElementById('municipalities-table');
+    if (!c) return;
+
+    // Cálculos
+    const totalItens = _municipiosFiltrados.length;
+    const totalPaginas = Math.ceil(totalItens / _itensPorPagina);
+    
+    // Ajuste de limites
+    if (_paginacaoAtual > totalPaginas && totalPaginas > 0) _paginacaoAtual = totalPaginas;
+    if (_paginacaoAtual < 1) _paginacaoAtual = 1;
+
+    // Fatiamento
+    const inicio = (_paginacaoAtual - 1) * _itensPorPagina;
+    const fim = inicio + _itensPorPagina;
+    const itensParaMostrar = _municipiosFiltrados.slice(inicio, fim);
+
+    // Renderização HTML
+    if (itensParaMostrar.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhum município encontrado.</div>';
     } else {
-        const rows = filtered.map(m => {
+        // Gera as linhas usando SEU LAYOUT ORIGINAL
+        const rows = itensParaMostrar.map(m => {
             let dataFim = '-', corDataFim = 'inherit';
             if (m.status === 'Bloqueado' && m.dateBlocked) { dataFim = formatDate(m.dateBlocked); corDataFim = '#C85250'; }
             else if (m.status === 'Parou de usar' && m.dateStopped) { dataFim = formatDate(m.dateStopped); corDataFim = '#E68161'; }
@@ -1061,31 +1109,25 @@ function renderMunicipalities() {
             if (m.status === 'Em uso') stCls += ' completed'; 
             else if (m.status === 'Bloqueado') stCls += ' cancelled'; 
             else if (m.status === 'Parou de usar') stCls += ' pending';
+            else if (m.status === 'Não Implantado') stCls += ' not-implanted'; // ✅ Nova Classe
 
-            // --- CORREÇÃO DE EXIBIÇÃO DO NOME ---
-            // 1. Tenta usar a UF salva no próprio registro (novo padrão)
             let displayUF = m.uf; 
-            
-            // 2. Se não tiver (registro antigo), tenta buscar na lista mestra pelo nome
             if (!displayUF && typeof municipalitiesList !== 'undefined') {
                 const match = municipalitiesList.find(ml => ml.name === m.name);
                 if (match) displayUF = match.uf;
             }
-
-            // 3. Monta a string final
             const nomeExibicao = displayUF ? `${m.name} - ${displayUF}` : m.name;
-            // ------------------------------------
 
-            // ... resto do código anterior ...
             return `<tr>
-                <td class="text-primary-cell">${nomeExibicao}</td> <td class="module-tags-cell">${badges}</td>
+                <td class="text-primary-cell">${nomeExibicao}</td> 
+                <td class="module-tags-cell">${badges}</td>
                 <td style="font-size:12px;">${m.manager}</td>
                 <td>${m.contact}</td>
-                
                 <td>${formatDate(m.implantationDate)}</td>
                 <td style="font-size:11px;">${calculateTimeInUse(m.implantationDate)}</td> 
                 <td style="font-size:11px;">${formatDate(m.lastVisit)}</td> 
-                <td style="font-size:11px;">${calculateDaysSince(m.lastVisit)}</td> <td><span class="${stCls}">${m.status}</span></td>
+                <td style="font-size:11px;">${calculateDaysSince(m.lastVisit)}</td> 
+                <td><span class="${stCls}">${m.status}</span></td>
                 <td style="color:${corDataFim}; font-size:11px;">${dataFim}</td>
                 <td>
                     <button class="btn btn--sm" onclick="showMunicipalityModal('${m.id}')">✏️</button>
@@ -1094,7 +1136,7 @@ function renderMunicipalities() {
             </tr>`;
         }).join('');
         
-        // Cabeçalho da Tabela
+        // Injeta a tabela
         c.innerHTML = `<table><thead>
             <th>Município</th>
             <th>Módulos Em Uso</th>
@@ -1109,8 +1151,63 @@ function renderMunicipalities() {
             <th>Ações</th>
         </thead><tbody>${rows}</tbody></table>`;
     }
-    updateMunicipalityCharts(filtered);
+
+    // Atualiza os botões de paginação
+    renderizarControlesPaginacao(totalPaginas);
 }
+
+// Funções de Controle (Anterior/Próximo)
+function renderizarControlesPaginacao(totalPaginas) {
+    const container = document.getElementById('municipiosPagination');
+    if (!container) return;
+
+    // Se não tiver páginas pra mostrar (0 resultados), esconde ou limpa
+    if (totalPaginas <= 1) {
+        container.innerHTML = '';
+        return; 
+    }
+
+    let html = '';
+    html += `<button onclick="mudarPagina(${_paginacaoAtual - 1})" ${ _paginacaoAtual === 1 ? 'disabled' : '' }>Anterior</button>`;
+
+    // Lógica simplificada de botões (1 ... 5 6 7 ... 10)
+    let startPage = Math.max(1, _paginacaoAtual - 2);
+    let endPage = Math.min(totalPaginas, _paginacaoAtual + 2);
+
+    if (startPage > 1) {
+        html += `<button onclick="mudarPagina(1)">1</button>`;
+        if (startPage > 2) html += `<span>...</span>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button onclick="mudarPagina(${i})" class="${i === _paginacaoAtual ? 'active' : ''}">${i}</button>`;
+    }
+
+    if (endPage < totalPaginas) {
+        if (endPage < totalPaginas - 1) html += `<span>...</span>`;
+        html += `<button onclick="mudarPagina(${totalPaginas})">${totalPaginas}</button>`;
+    }
+
+    html += `<button onclick="mudarPagina(${_paginacaoAtual + 1})" ${ _paginacaoAtual === totalPaginas ? 'disabled' : '' }>Próximo</button>`;
+    
+    // Texto de apoio
+    html += `<span style="margin-left:15px; font-size:0.9em; color:#666;">
+             Pág ${_paginacaoAtual} de ${totalPaginas} 
+             (${_municipiosFiltrados.length} registros)</span>`;
+
+    container.innerHTML = html;
+}
+
+window.mudarQtdPorPagina = function(valor) {
+    _itensPorPagina = parseInt(valor);
+    _paginacaoAtual = 1; 
+    atualizarTabelaPaginada();
+};
+
+window.mudarPagina = function(novaPagina) {
+    _paginacaoAtual = novaPagina;
+    atualizarTabelaPaginada();
+};
 // ============================================================
 // FUNÇÃO FALTANTE: GERAR PDF DE MUNICÍPIOS
 // ============================================================
@@ -5308,6 +5405,7 @@ function setupColabInfoListener() {
         if (activeTab && activeTab.id === 'info-colaboradores-section') {
             renderCollaboratorInfos();
         }
+        checkSystemNotifications();
         
     }, (error) => {
         appLogger.error("Erro ao buscar fichas:", error);
@@ -5384,6 +5482,7 @@ function setupAuxiliaryListeners() {
         orientadores = []; snap.forEach(d => { let i=d.data(); i.id=d.id; orientadores.push(i); });
         if(document.querySelector('.tab-content.active')?.id === 'orientadores-section') renderOrientadores();
         updateGlobalDropdowns();
+        checkSystemNotifications();
     });
 
     // 4. Módulos
@@ -5414,13 +5513,43 @@ function setupAuxiliaryListeners() {
 }
 
 function initializeApp() {
+    // 1. A PORTARIA DE SEGURANÇA (Verifica se tem usuário)
+    const usuarioSalvo = localStorage.getItem('currentUser');
+    
+    // Se NÃO tiver usuário logado:
+    if (!usuarioSalvo || usuarioSalvo === "null" || usuarioSalvo === "undefined") {
+        
+        // Esconde o Painel Principal (Garantia visual)
+        const mainApp = document.getElementById('main-app'); 
+        if (mainApp) { 
+            mainApp.classList.remove('active'); 
+            mainApp.style.display = 'none'; 
+        }
+
+        // Garante que a tela de login esteja visível
+        // (O aviso de inatividade será tratado pelo showLoginScreen no auth.js)
+        const loginScreen = document.getElementById('login-screen');
+        if (loginScreen) { 
+            loginScreen.classList.add('active'); 
+            loginScreen.style.display = 'block'; 
+        } 
+        
+        return; // OBRIGATÓRIO: Impede que o resto do código rode
+    }
+
+    // 2. Se chegou aqui, o usuário existe. Carrega o sistema normalmente.
+    console.log("✅ Acesso permitido. Iniciando App...");
+    
     try {
+        // Configurações visuais iniciais
         updateUserInterface();
         initializeTheme();
         initializeTabs();
         applyMasks();
         setupDynamicFormFields();
         updateGlobalDropdowns();
+
+        // Inicializa os ouvintes de eventos (Listeners)
         setupMunicipalityListener();
         setupTaskListener();
         setupRequestListener();
@@ -5433,7 +5562,7 @@ function initializeApp() {
         setupAuditListener();
         setupAuxiliaryListeners();
         
-        // Renderizações
+        // Renderiza as tabelas e dados
         renderMunicipalities();
         renderTasks();
         renderRequests();
@@ -5442,42 +5571,48 @@ function initializeApp() {
         renderProductions();
         renderPresentations();    
         
-        // Renderizações opcionais (se existirem no código)
+        // Renderizações opcionais (verifica se existem antes de chamar)
         if (typeof renderCollaboratorInfos === 'function') renderCollaboratorInfos();
         if (typeof renderIntegrations === 'function') renderIntegrations();
         if (typeof renderApiList === 'function') renderApiList();
 
+        // Dashboard e utilitários
         updateDashboardStats();
         initializeDashboardCharts();
         checkSystemNotifications();
         initOfflineDetection();
-        initializeInactivityTracking();
         
-        // Tenta aplicar segurança de datas
+        // ✅ Inicia o monitoramento de inatividade
+        if (typeof initializeInactivityTracking === 'function') {
+            initializeInactivityTracking();
+        }
+        
+        // Segurança de datas (se houver)
         try { if (typeof enforceDateSecurity === 'function') enforceDateSecurity(); } catch (e) {}
 
-        // --- RESTAURAÇÃO DA ABA (O Pulo do Gato) ---
+        // Restaura a última aba acessada
         const lastTab = localStorage.getItem('lastActiveTab');
         const tabBtn = lastTab ? document.querySelector(`.sidebar-btn[data-tab="${lastTab}"]`) : null;
 
         if (lastTab && tabBtn) {
-            // Se tinha aba salva, clica nela
             tabBtn.click();
         } else {
-            // Se não, vai pro Dashboard
             navigateToHome();
         }
-        // --------------------------------------------
 
-        // Listener Menu Mobile
+        // Menu mobile
         const overlay = document.querySelector('.sidebar-overlay');
         if (overlay) overlay.onclick = toggleMobileMenu;
 
     } catch (error) {
-        appLogger.error("Erro na inicialização:", error);
+        // Log de erro
+        if (typeof appLogger !== 'undefined') {
+            appLogger.error("Erro na inicialização:", error);
+        } else {
+            console.error("Erro na inicialização:", error);
+        }
     }
 }
-
 // --- 21. SISTEMA DE AUDITORIA ---
 
 // ============================================================
@@ -5943,7 +6078,7 @@ document.addEventListener('keydown', function(e) {
 
 // --- A. RATE LIMITING (Proteção contra Força Bruta) ---
 const MAX_LOGIN_ATTEMPTS = 5;
-const LOGIN_LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutos
+const LOGIN_LOCKOUT_TIME = 1 * 60 * 1000; // 1 minuto
 
 function checkLoginAttempts(login) {
     const now = Date.now();
@@ -5986,109 +6121,6 @@ function resetLoginAttempts(login) {
     if (loginAttempts[login]) {
         loginAttempts[login] = { count: 0, timestamp: Date.now(), locked: false };
         salvarNoArmazenamento('loginAttempts', loginAttempts);
-    }
-}
-
-// ============================================================================
-// 24. SISTEMA DE SEGURANÇA: LOGOUT POR INATIVIDADE (CORRIGIDO E OTIMIZADO)
-// ============================================================================
-
-// Sistema de Inatividade
-let inactivityInterval = null;
-let lastInactivityWarningTime = 0;
-let avisoPendente = false; // <--- A TRAVA DE SEGURANÇA
-const INACTIVITY_LIMIT_MS = 1 * 60 * 1000; // 15 Minutos
-// Função chamada pelo botão "Sim, estou aqui" do Modal
-function confirmarPresenca() {
-    avisoPendente = false; // <--- DESTRAVA
-    localStorage.setItem('lastActivityTime', Date.now().toString()); // Reseta o tempo
-    
-    // Fecha o modal
-    const modal = document.getElementById('modalAvisoInatividade');
-    if(modal) {
-        modal.style.display = 'none';
-        modal.classList.remove('show');
-    }
-}
-
-function refreshActivityTime() {
-    // SE O AVISO ESTIVER NA TELA, IGNORA O MOUSE!
-    if (avisoPendente) return; 
-
-    const now = Date.now();
-    const lastSaved = parseInt(localStorage.getItem('lastActivityTime') || 0);
-    
-    // Proteção de 5s para não sobrecarregar
-    if (now - lastSaved > 5000) {
-        localStorage.setItem('lastActivityTime', now.toString());
-    }
-}
-
-/**
- * FUNÇÃO: Inicializa o Monitoramento de Inatividade
- * - Registra listeners para ações do usuário (mouse, teclado, toque)
- * - Inicia o intervalo de verificação a cada 5 segundos
- */
-function initializeInactivityTracking() {
-    console.log('✅ Monitoramento de Inatividade ATIVADO');
-    
-    // 1. Reseta o cronômetro visual e a memória
-    localStorage.setItem('lastActivityTime', Date.now().toString());
-    avisoPendente = false; // Garante que começa destravado
-    
-    // 2. Remove listeners anteriores (evita duplicação se chamar 2x)
-    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
-    events.forEach(evt => {
-        document.removeEventListener(evt, refreshActivityTime);
-    });
-    
-    // 3. Adiciona os novos listeners
-    // Nota: 'refreshActivityTime' é aquela função com a trava que te mandei antes
-    events.forEach(evt => {
-        document.addEventListener(evt, refreshActivityTime);
-    });
-    
-    // 4. Limpa qualquer intervalo anterior para não acumular
-    if (inactivityInterval !== null) {
-        clearInterval(inactivityInterval);
-    }
-    
-    // 5. Inicia o novo verificador (roda a função checkInactivity a cada 5 segundos)
-    inactivityInterval = setInterval(checkInactivity, 5000);
-}
-
-function checkInactivity() {
-    const sessionUser = localStorage.getItem('currentUser');
-    if (!sessionUser) return;
-    
-    const lastActivity = parseInt(localStorage.getItem('lastActivityTime') || Date.now());
-    const now = Date.now();
-    const diff = now - lastActivity;
-    
-    // Define quando o aviso deve aparecer (ex: 1 minuto antes do fim)
-    const warningThreshold = INACTIVITY_LIMIT_MS - (60 * 1000); 
-    
-    // --- LÓGICA DO AVISO ---
-    if (diff >= warningThreshold && diff < INACTIVITY_LIMIT_MS) {
-        if (!avisoPendente) {
-            avisoPendente = true; // <--- ATIVA A TRAVA
-            
-            // Aqui você deve abrir o SEU MODAL (que bloqueia a tela), não apenas um Toast
-            // Exemplo: $('#modalAvisoInatividade').modal('show');
-            const modal = document.getElementById('modalAvisoInatividade');
-            if(modal) {
-                modal.style.display = 'block'; 
-                modal.classList.add('show');
-            }
-            
-            console.warn(`⚠️ INATIVIDADE: Trava ativada. Aguardando clique do usuário.`);
-        }
-    }
-    
-    // --- LÓGICA DO LOGOUT ---
-    if (diff >= INACTIVITY_LIMIT_MS) {
-        console.error('🔴 TEMPO ESGOTADO. Logout forçado.');
-        logoutUser(); // Sua função de logout
     }
 }
 
@@ -7087,64 +7119,118 @@ function initCrossTabRateLimit() {
     });
 }
 // ============================================================================
-// FASE 3: SISTEMA DE NOTIFICAÇÕES INTELIGENTES
+// FASE 3: SISTEMA DE NOTIFICAÇÕES INTELIGENTES (ATUALIZADO)
 // ============================================================================
 
 let notifications = [];
 
 function checkSystemNotifications() {
     notifications = []; // Limpa e recalcula
+    
+    // Configurações de Data de Hoje (Zerando horas para comparação precisa)
     const today = new Date();
     today.setHours(0,0,0,0);
-
-    // 1. INTEGRAÇÕES: Certificados Vencendo (Regra: < 30 dias)
+    
+    // 1. INTEGRAÇÕES: Certificados Vencendo
     if (typeof integrations !== 'undefined') {
         integrations.forEach(i => {
             if (i.expirationDate) {
                 const diff = getDaysDiff(i.expirationDate);
-                
                 if (diff < 0) {
-                    addNotification('danger', 'Certificado Vencido', 
-                        `O certificado de <strong>${i.municipality}</strong> venceu há ${Math.abs(diff)} dias.`, 'apis-section');
+                    addNotification('danger', 'Certificado Vencido', `O certificado de <strong>${i.municipality}</strong> venceu há ${Math.abs(diff)} dias.`, 'apis-section');
                 } else if (diff <= 15) {
-                    addNotification('danger', 'Vence em Breve', 
-                        `O certificado de <strong>${i.municipality}</strong> vence em ${diff} dias.`, 'apis-section');
+                    addNotification('danger', 'Vence em Breve', `O certificado de <strong>${i.municipality}</strong> vence em ${diff} dias.`, 'apis-section');
                 } else if (diff <= 30) {
-                    addNotification('warning', 'Atenção Preventiva', 
-                        `Renovar certificado de <strong>${i.municipality}</strong> (30 dias).`, 'apis-section');
+                    addNotification('warning', 'Atenção Preventiva', `Renovar certificado de <strong>${i.municipality}</strong> (30 dias).`, 'apis-section');
                 }
             }
         });
     }
 
-    // 2. TREINAMENTOS: Pendentes há muito tempo (Regra: > 7 dias sem data realizada)
+    // 2. TREINAMENTOS: Pendentes há muito tempo
     if (typeof tasks !== 'undefined') {
         tasks.forEach(t => {
             if (t.status === 'Pendente' && t.dateRequested) {
                 const reqDate = new Date(t.dateRequested);
                 const diffTime = Math.abs(today - reqDate);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                
                 if (diffDays > 15) {
-                    addNotification('warning', 'Treinamento Atrasado', 
-                        `Solicitação de <strong>${t.municipality}</strong> pendente há ${diffDays} dias.`, 'tarefas-section');
+                    addNotification('warning', 'Treinamento Atrasado', `Solicitação de <strong>${t.municipality}</strong> pendente há ${diffDays} dias.`, 'tarefas-section');
                 }
             }
         });
     }
 
-    // 3. BACKUP: Lembrar se não fez backup hoje (Opcional)
-    // Pode ser implementado verificando auditLogs
+    // 3. ANIVERSARIANTES (Hoje + Próximos 5 dias)
+    if (typeof collaboratorInfos !== 'undefined' && typeof orientadores !== 'undefined') {
+        
+        collaboratorInfos.forEach(fichaRH => {
+            // Regra 1: Verifica se está Ativo
+            if (fichaRH.status === 'Ativo na Empresa') {
+                
+                // Regra 2: Busca a data de nascimento no cadastro Mestre
+                const cadastroMestre = orientadores.find(o => o.name === fichaRH.name);
+                
+                if (cadastroMestre && cadastroMestre.birthDate) {
+                    // Quebra a data de nascimento original (YYYY-MM-DD)
+                    const parts = cadastroMestre.birthDate.split('-');
+                    if(parts.length === 3) {
+                        const bMonth = parseInt(parts[1]) - 1; // Mês no JS começa em 0 (Jan = 0)
+                        const bDay = parseInt(parts[2]);
+
+                        // Cria a data do aniversário DESTE ANO
+                        const nextBday = new Date(today.getFullYear(), bMonth, bDay);
+                        
+                        // Correção para virada de ano: Se o aniversário já passou este ano, ignora
+                        // (Se quisesse avisar em Dezembro sobre Janeiro, a lógica seria mais complexa, 
+                        // mas para 5 dias essa lógica simples funciona bem em 98% dos casos)
+                        
+                        // Calcula a diferença em dias
+                        const diffTime = nextBday - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                        // CENÁRIO A: É Hoje!
+                        if (diffDays === 0) {
+                            addNotification('birthday', 'Feliz Aniversário! 🎂', 
+                                `Hoje é dia de festa para <strong>${fichaRH.name}</strong>!`, 'info-colaboradores-section');
+                        }
+                        
+                        // CENÁRIO B: Próximos 5 dias
+                        else if (diffDays > 0 && diffDays <= 5) {
+                            // Formata a data para mostrar "25/12"
+                            const diaFmt = String(bDay).padStart(2, '0');
+                            const mesFmt = String(bMonth + 1).padStart(2, '0');
+                            
+                            addNotification('warning', 'Aniversário Chegando! 🎈', 
+                                `<strong>${fichaRH.name}</strong> fará aniversário em ${diffDays} dia(s) (${diaFmt}/${mesFmt}).`, 'info-colaboradores-section');
+                        }
+                    }
+                }
+            }
+        });
+    }
 
     updateNotificationUI();
 }
 
 function addNotification(type, title, desc, targetTab) {
     let icon = 'ℹ️';
-    if (type === 'warning') icon = '⚠️';
-    if (type === 'danger') icon = '🚨';
+    let cssClass = 'notif-info';
 
-    notifications.push({ type, title, desc, targetTab, icon });
+    if (type === 'warning') {
+        icon = '⚠️';
+        cssClass = 'notif-warning';
+    }
+    if (type === 'danger') {
+        icon = '🚨';
+        cssClass = 'notif-danger';
+    }
+    if (type === 'birthday') {
+        icon = '🎉'; // Ou 🎂
+        cssClass = 'notif-birthday'; // Você pode criar um CSS específico para ficar colorido
+    }
+
+    notifications.push({ type: cssClass, title, desc, targetTab, icon });
 }
 
 function updateNotificationUI() {
@@ -7156,19 +7242,17 @@ function updateNotificationUI() {
     // Atualiza o contador (Badge)
     if (notifications.length > 0) {
         badge.textContent = notifications.length;
-        badge.style.display = 'inline-block';
-        // Animação visual
-        badge.classList.add('pulse');
+        badge.style.display = 'flex'; // Mudei para flex para centralizar melhor o número
     } else {
         badge.style.display = 'none';
     }
 
     // Renderiza a lista
     if (notifications.length === 0) {
-        list.innerHTML = '<p style="padding:15px; text-align:center; color:#999; font-size:13px;">Tudo certo! Nenhuma pendência encontrada.</p>';
+        list.innerHTML = '<p style="padding:15px; text-align:center; color:#999; font-size:13px;">Tudo certo! Nenhuma pendência hoje.</p>';
     } else {
         list.innerHTML = notifications.map(n => `
-            <div class="notification-item notif-${n.type}" onclick="openTab('${n.targetTab}'); toggleNotifications();">
+            <div class="notification-item ${n.type}" onclick="openTab('${n.targetTab}'); toggleNotifications();">
                 <div class="notif-icon">${n.icon}</div>
                 <div class="notif-content">
                     <span class="notif-title">${n.title}</span>
@@ -7182,10 +7266,8 @@ function updateNotificationUI() {
 function toggleNotifications() {
     const menu = document.getElementById('notification-menu');
     if (menu) {
-        // Fecha o menu de configurações se estiver aberto para não sobrepor
         const settingsMenu = document.getElementById('settings-menu');
         if(settingsMenu) settingsMenu.classList.remove('show');
-        
         menu.classList.toggle('show');
     }
 }
@@ -9252,3 +9334,110 @@ window.changeMunicipalityListPage = changeMunicipalityListPage;
 
 // Validação de Data (Usada no HTML onchange)
 if(typeof validateDateRange !== 'undefined') window.validateDateRange = validateDateRange;
+
+
+/* =================================================================================
+   SISTEMA DE INATIVIDADE (VERSÃO SESSION STORAGE)
+   Cole isto no FINAL do script.js
+   ================================================================================= */
+
+// CONFIGURAÇÃO: 15 Minutos
+var CONFIG_INATIVIDADE = {
+    TEMPO_LIMITE: 15 * 60 * 1000, // 15 Minutos (900.000 ms)
+    TEMPO_AVISO: 1 * 60 * 1000    // Avisa faltando 1 minuto (aos 14 min)
+};
+var _timerInatividade = null;
+var _avisoNaTela = false;
+
+function initializeInactivityTracking() {
+    console.log('🛡️ Monitoramento de Inatividade: ATIVADO');
+    localStorage.setItem('lastActivityTime', Date.now().toString());
+    _avisoNaTela = false;
+
+    var eventos = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    eventos.forEach(function(evt) {
+        document.removeEventListener(evt, _resetarTempo);
+        document.addEventListener(evt, _resetarTempo);
+    });
+
+    if (_timerInatividade) clearInterval(_timerInatividade);
+    _timerInatividade = setInterval(_verificarInatividade, 1000); 
+}
+
+function _resetarTempo() {
+    if (_avisoNaTela) return; 
+    var agora = Date.now();
+    var ultimoSalvo = parseInt(localStorage.getItem('lastActivityTime') || 0);
+    if (agora - ultimoSalvo > 1000) {
+        localStorage.setItem('lastActivityTime', agora.toString());
+    }
+}
+
+function _verificarInatividade() {
+    if (!localStorage.getItem('currentUser')) return;
+
+    var ultimoSalvo = parseInt(localStorage.getItem('lastActivityTime') || Date.now());
+    var agora = Date.now();
+    var diferenca = agora - ultimoSalvo;
+    var limite = CONFIG_INATIVIDADE.TEMPO_LIMITE;
+    var inicioAviso = limite - CONFIG_INATIVIDADE.TEMPO_AVISO;
+
+    if (diferenca >= inicioAviso && diferenca < limite) {
+        if (!_avisoNaTela) {
+            _avisoNaTela = true;
+            console.warn("⚠️ ALERTA: Exibindo aviso de inatividade...");
+            var modal = document.getElementById('modalAvisoInatividade');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.classList.add('show');
+            }
+        }
+    }
+
+    if (diferenca >= limite) {
+        console.error("🔴 TEMPO ESGOTADO. Logout...");
+        executarLogoutNuclear();
+    }
+}
+
+window.confirmarPresenca = function() {
+    console.log("✅ Usuário continuou logado.");
+    _avisoNaTela = false;
+    localStorage.setItem('lastActivityTime', Date.now().toString());
+    var modal = document.getElementById('modalAvisoInatividade');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+    }
+};
+
+// No final do script.js
+
+window.executarLogoutNuclear = function() {
+    console.log("☢️ Executando Logout...");
+    
+    if (_timerInatividade) clearInterval(_timerInatividade);
+    
+    // 1. Limpa dados
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // 2. TATUA A ABA (A peça chave!)
+    window.name = "LOGOUT_POR_INATIVIDADE";
+
+    // 3. Função de Recarregamento
+    var recarregar = function() {
+        window.location.href = window.location.pathname; // Reload limpo
+    };
+
+    // 4. Apaga Firebase e Recarrega
+    if (window.indexedDB) {
+        var request = window.indexedDB.deleteDatabase('firebaseLocalStorageDb');
+        request.onsuccess = recarregar;
+        request.onerror = recarregar;
+        request.onblocked = recarregar;
+        setTimeout(recarregar, 1000);
+    } else {
+        recarregar();
+    }
+};
