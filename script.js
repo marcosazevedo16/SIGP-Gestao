@@ -6574,13 +6574,92 @@ function resetLoginAttempts(login) {
 }
 
 /* =================================================================================
-   GERENCIAMENTO DE INTEGRAÇÕES (ABA PRINCIPAL - COMPLETO COM PAGINAÇÃO)
+   SEÇÃO: CADASTRO DE APIS (CONFIGURAÇÃO) & INTEGRAÇÕES
+   ================================================================================= */
+
+// --- 1. CADASTRO DE APIS (LISTA MESTRA) ---
+
+function showApiListModal(id=null) {
+    editingId = id;
+    document.getElementById('api-list-form').reset();
+    if(id) {
+        const a = apisList.find(x => String(x.id) === String(id));
+        if(a) {
+            document.getElementById('api-list-name').value = a.name;
+            document.getElementById('api-list-description').value = a.description;
+        }
+    }
+    document.getElementById('api-list-modal').classList.add('show');
+}
+
+function saveApiList(e) {
+    e.preventDefault();
+    const data = { 
+        name: sanitizeInput(document.getElementById('api-list-name').value), 
+        description: sanitizeInput(document.getElementById('api-list-description').value) 
+    };
+    
+    if(editingId) { 
+        db.collection('apisList').doc(editingId).update(data)
+            .then(() => { closeApiListModal(); editingId=null; }); 
+    } else { 
+        db.collection('apisList').add(data)
+            .then(() => { closeApiListModal(); }); 
+    }
+}
+
+function renderApiList() {
+    const c = document.getElementById('apis-list-table');
+    const totalDiv = document.getElementById('apis-list-total');
+
+    apisList.sort((a,b)=>a.name.localeCompare(b.name));
+    
+    // Contador
+    if(totalDiv) {
+        totalDiv.style.display = 'block';
+        totalDiv.innerHTML = `Total: <strong>${apisList.length}</strong> APIs cadastradas`;
+    }
+
+    const r = apisList.map(a => 
+        `<tr>
+            <td class="text-primary-cell">${a.name}</td>
+            <td class="text-secondary-cell">${a.description}</td>
+            <td>
+                <button class="btn btn--sm" onclick="showApiListModal('${a.id}')">✏️</button>
+                <button class="btn btn--sm" onclick="deleteApiList('${a.id}')">🗑️</button>
+            </td>
+        </tr>`
+    ).join('');
+    
+    c.innerHTML = `<table><thead><th>API</th><th>Descrição</th><th>Ações</th></thead><tbody>${r}</tbody></table>`;
+}
+
+function deleteApiList(id){ 
+    if(confirm('Excluir API?')) {
+        const item = apisList.find(x => x.id === id);
+        if(item) {
+            registerUndo(item, 'apisList', renderApiList);
+            db.collection('apisList').doc(id).delete();
+        }
+    }
+}
+
+function closeApiListModal() { 
+    document.getElementById('api-list-modal').classList.remove('show'); 
+}
+
+
+/* =================================================================================
+   SEÇÃO: GERENCIAMENTO DE INTEGRAÇÕES (ABA PRINCIPAL - COM PAGINAÇÃO)
    ================================================================================= */
 
 // Variável para gráfico
 let chartInstanceApis = null;
 
-// --- FUNÇÕES DE MODAL E SALVAMENTO (ORIGINAIS PRESERVADAS) ---
+// Variáveis Globais de Controle (Integrações)
+var _integracoesFiltradas = []; 
+var _paginacaoIntegracoes = 1;
+var _itensIntegracoes = 15;
 
 function showIntegrationModal(id = null) {
     editingId = id;
@@ -6672,7 +6751,6 @@ function saveIntegration(e) {
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    // Feedback Visual
     const btnSubmit = document.querySelector('#integration-form button[type="submit"]');
     const txtOriginal = btnSubmit.innerText;
     btnSubmit.innerText = 'Salvando...';
@@ -6684,19 +6762,17 @@ function saveIntegration(e) {
     if(editingId) {
         const oldItem = integrations.find(x => x.id === editingId);
         let detailsLog = `Município: ${data.municipality}`;
-        
         if (oldItem) {
             const map = { expirationDate: 'Vencimento', responsible: 'Responsável' };
             const diff = detectChanges(oldItem, data, map);
             if (diff) detailsLog += `. Alterações: [${diff}]`;
         }
-
         promise = collection.doc(editingId).update(data);
         logSystemAction('Edição', 'Integrações', detailsLog);
     } else {
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         promise = collection.add(data);
-        logSystemAction('Criação', 'Integrações', `Município: ${data.municipality} | Vencimento: ${formatDate(data.expirationDate)}`);
+        logSystemAction('Criação', 'Integrações', `Município: ${data.municipality}`);
     }
 
     promise.then(() => {
@@ -6714,13 +6790,6 @@ function saveIntegration(e) {
         btnSubmit.disabled = false;
     });
 }
-
-// --- PAGINAÇÃO E RENDERIZAÇÃO ---
-
-// Variáveis Globais de Controle (Integrações)
-var _integracoesFiltradas = []; 
-var _paginacaoIntegracoes = 1;
-var _itensIntegracoes = 15;
 
 function renderIntegrations() {
     console.log("🔄 Renderizando integrações com paginação...");
@@ -6749,7 +6818,7 @@ function renderIntegrations() {
     // Ordenação
     _integracoesFiltradas.sort((a, b) => a.municipality.localeCompare(b.municipality));
 
-    // 3. Atualiza Contador Global
+    // 3. Atualiza Contador
     const countDiv = document.getElementById('integrations-results-count');
     if(countDiv) {
         countDiv.style.display = 'block';
@@ -6763,7 +6832,6 @@ function renderIntegrations() {
     atualizarTabelaIntegracoesPaginada();
 }
 
-// Função que desenha a tabela fatiada
 function atualizarTabelaIntegracoesPaginada() {
     const c = document.getElementById('integrations-table');
     if (!c) return;
@@ -6772,11 +6840,10 @@ function atualizarTabelaIntegracoesPaginada() {
     const totalItens = _integracoesFiltradas.length;
     const totalPaginas = Math.ceil(totalItens / _itensIntegracoes);
     
-    // Ajuste de limites
     if (_paginacaoIntegracoes > totalPaginas && totalPaginas > 0) _paginacaoIntegracoes = totalPaginas;
     if (_paginacaoIntegracoes < 1) _paginacaoIntegracoes = 1;
 
-    // Fatiamento (Slice)
+    // Fatiamento
     const inicio = (_paginacaoIntegracoes - 1) * _itensIntegracoes;
     const fim = inicio + _itensIntegracoes;
     const itensParaMostrar = _integracoesFiltradas.slice(inicio, fim);
@@ -6819,9 +6886,7 @@ function atualizarTabelaIntegracoesPaginada() {
                 <td>${i.contact || '-'}</td> 
                 <td style="text-align:center;" class="${dateClass}">${dateText}</td>
                 <td style="text-align:center;">${daysText}</td>
-                
                 <td title="${i.observation || ''}">${i.observation || '-'}</td>
-                
                 <td>
                     <div style="display:flex; justify-content:center; gap:5px;">
                         <button class="btn btn--sm" onclick="showIntegrationModal('${i.id}')">✏️</button>
@@ -6846,11 +6911,9 @@ function atualizarTabelaIntegracoesPaginada() {
         </table>`;
     }
 
-    // Desenha os botões de paginação
     renderizarControlesIntegracoes(totalPaginas);
 }
 
-// Desenha os botões (Anterior / Próximo)
 function renderizarControlesIntegracoes(totalPaginas) {
     const container = document.getElementById('integracoesPagination');
     if (!container) return;
@@ -6861,11 +6924,8 @@ function renderizarControlesIntegracoes(totalPaginas) {
     }
 
     let html = '';
-    
-    // Botão Anterior
     html += `<button onclick="mudarPaginaIntegracoes(${_paginacaoIntegracoes - 1})" ${ _paginacaoIntegracoes === 1 ? 'disabled' : '' }>Anterior</button>`;
 
-    // Lógica de botões numerados
     let startPage = Math.max(1, _paginacaoIntegracoes - 2);
     let endPage = Math.min(totalPaginas, _paginacaoIntegracoes + 2);
 
@@ -6883,7 +6943,6 @@ function renderizarControlesIntegracoes(totalPaginas) {
         html += `<button onclick="mudarPaginaIntegracoes(${totalPaginas})">${totalPaginas}</button>`;
     }
 
-    // Botão Próximo
     html += `<button onclick="mudarPaginaIntegracoes(${_paginacaoIntegracoes + 1})" ${ _paginacaoIntegracoes === totalPaginas ? 'disabled' : '' }>Próximo</button>`;
     
     html += `<span style="margin-left:15px; font-size:0.9em; color:#666;">
@@ -6893,7 +6952,6 @@ function renderizarControlesIntegracoes(totalPaginas) {
     container.innerHTML = html;
 }
 
-// --- FUNÇÕES GLOBAIS DE CONTROLE (WINDOW) ---
 window.mudarQtdPorPaginaIntegracoes = function(valor) {
     _itensIntegracoes = parseInt(valor);
     _paginacaoIntegracoes = 1; 
@@ -6905,15 +6963,12 @@ window.mudarPaginaIntegracoes = function(novaPagina) {
     atualizarTabelaIntegracoesPaginada();
 };
 
-// --- OUTRAS FUNÇÕES DA ABA (ORIGINAIS MANTIDAS) ---
-
 function updateIntegrationChart(data) {
     const ctx = document.getElementById('chartApisUsage');
     if(!ctx || !window.Chart) return;
 
     if(chartInstanceApis) chartInstanceApis.destroy();
 
-    // Contagem de APIs
     const counts = {};
     data.forEach(item => {
         if(item.apis) {
