@@ -7266,8 +7266,9 @@ function renderCollaboratorInfos() {
         const rowsActive = activeList.map(c => {
             const master = orientadores.find(o => o.name === c.name);
             const birthDate = master ? master.birthDate : null;
-            const age = calcDateDiffString(birthDate);
-            const serviceTime = calcDateDiffString(c.admissionDate, null);
+            // Usa a nova função de cálculo exato
+            const age = calcularIdadeExata(birthDate);
+            const serviceTime = calcularIdadeExata(c.admissionDate, c.status === 'Desligado da Empresa' ? c.terminationDate : null);
             const timeSinceVacation = c.lastVacationEnd ? calcDateDiffString(c.lastVacationEnd) : '-';
 
             return `<tr>
@@ -10021,3 +10022,57 @@ window.executarLogoutNuclear = function() {
         recarregar();
     }
 };
+/* =================================================================================
+   FUNÇÃO DE CÁLCULO DE DATA PRECISA (CORREÇÃO DE FUSO HORÁRIO)
+   ================================================================================= */
+function calcularIdadeExata(dataInicio, dataFim = null) {
+    if (!dataInicio) return '-';
+
+    // TRUQUE DO MEIO-DIA: Adiciona 'T12:00:00' para evitar que o fuso volte o dia
+    // Ex: "1997-12-15" vira "1997-12-15T12:00:00" (blindado contra UTC-3)
+    const d1 = new Date(dataInicio + 'T12:00:00');
+    
+    // Se não tiver data fim, usa hoje (também ao meio-dia)
+    let d2;
+    if (dataFim) {
+        d2 = new Date(dataFim + 'T12:00:00');
+    } else {
+        const hoje = new Date();
+        // Monta string YYYY-MM-DD de hoje para garantir o meio-dia correto
+        const strHoje = hoje.getFullYear() + '-' + 
+                       String(hoje.getMonth() + 1).padStart(2, '0') + '-' + 
+                       String(hoje.getDate()).padStart(2, '0');
+        d2 = new Date(strHoje + 'T12:00:00');
+    }
+
+    // Validação
+    if (isNaN(d1) || isNaN(d2)) return '-';
+    if (d1 > d2) return 'Data futura';
+
+    // Cálculo Matemático (Igual do Excel)
+    let anos = d2.getFullYear() - d1.getFullYear();
+    let meses = d2.getMonth() - d1.getMonth();
+    let dias = d2.getDate() - d1.getDate();
+
+    // Ajuste de dias negativos (pega emprestado do mês anterior)
+    if (dias < 0) {
+        meses--;
+        // Pega o último dia do mês anterior de d2
+        const ultimoDiaMesAnterior = new Date(d2.getFullYear(), d2.getMonth(), 0).getDate();
+        dias += ultimoDiaMesAnterior;
+    }
+
+    // Ajuste de meses negativos (pega emprestado do ano)
+    if (meses < 0) {
+        anos--;
+        meses += 12;
+    }
+
+    // Formatação do Texto
+    const partes = [];
+    if (anos > 0) partes.push(`${anos} ano(s)`);
+    if (meses > 0) partes.push(`${meses} mês(es)`);
+    if (dias > 0) partes.push(`${dias} dia(s)`);
+
+    return partes.length > 0 ? partes.join(', ') : '0 dias'; // Caso seja o mesmo dia
+}
