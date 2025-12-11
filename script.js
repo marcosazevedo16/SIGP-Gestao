@@ -1859,9 +1859,11 @@ function clearTaskFilters() {
     });
     renderTasks();
 }
-// ----------------------------------------------------------------------------
-// 13. SOLICITAÇÕES (Itens 3, 4, 5, 17)
-// ----------------------------------------------------------------------------
+/* =================================================================================
+   SEÇÃO 13: SOLICITAÇÕES (COMPLETO COM PAGINAÇÃO)
+   ================================================================================= */
+
+// --- FUNÇÕES DE MODAL E SALVAMENTO (ORIGINAIS PRESERVADAS) ---
 
 function handleRequestStatusChange() {
     const statusEl = document.getElementById('request-status');
@@ -1892,6 +1894,7 @@ function handleRequestStatusChange() {
         if(inpJust) inpJust.required = true;
     }
 }
+
 function showRequestModal(id = null) {
     editingId = id;
     const form = document.getElementById('request-form');
@@ -1902,13 +1905,12 @@ function showRequestModal(id = null) {
     const statusSel = document.getElementById('request-status');
     if (statusSel) statusSel.onchange = handleRequestStatusChange;
 
-    // 2. Atualiza dropdowns globais e depois SOBRESCREVE o de município para mostrar a UF
+    // 2. Atualiza dropdowns globais
     updateGlobalDropdowns(); 
     
     const munSelect = document.getElementById('request-municipality');
     if (munSelect) {
         const sortedList = municipalitiesList.slice().sort((a, b) => a.name.localeCompare(b.name));
-        // Aqui está o segredo: Mostra "Nome - UF" no texto, mas salva só o "Nome" no value
         munSelect.innerHTML = '<option value="">Selecione o município</option>' + 
                               sortedList.map(m => `<option value="${m.name}">${m.name} - ${m.uf}</option>`).join('');
     }
@@ -1931,19 +1933,15 @@ function showRequestModal(id = null) {
                 document.getElementById('request-justification').value = r.justification || '';
             }
             
-            // Atualiza a visibilidade dos campos (Data Realização / Justificativa)
             handleRequestStatusChange();
         }
     } else {
-        // Se for novo, garante que os campos ocultos estejam escondidos
         handleRequestStatusChange();
     }
     
     document.getElementById('request-modal').classList.add('show');
 }
-// ============================================================
-// NOVA FUNÇÃO: SALVAR SOLICITAÇÃO NO FIREBASE
-// ============================================================
+
 function saveRequest(e) {
     e.preventDefault();
     const status = document.getElementById('request-status').value;
@@ -2018,11 +2016,12 @@ function saveRequest(e) {
         btnSubmit.disabled = false;
     });
 }
+
 function getFilteredRequests() {
     const fMun = document.getElementById('filter-request-municipality')?.value;
     const fStatus = document.getElementById('filter-request-status')?.value;
     const fSol = document.getElementById('filter-request-solicitante')?.value.toLowerCase();
-    const fUser = document.getElementById('filter-request-user')?.value; // Agora é Select (nome exato)
+    const fUser = document.getElementById('filter-request-user')?.value; 
     
     // Datas Solicitação
     const fSolStart = document.getElementById('filter-request-sol-start')?.value;
@@ -2037,7 +2036,7 @@ function getFilteredRequests() {
         if (fStatus && r.status !== fStatus) return false;
         if (fSol && !r.requester.toLowerCase().includes(fSol)) return false;
         
-        // Filtro de Usuário (Select: busca exata)
+        // Filtro de Usuário
         if (fUser && r.user !== fUser) return false;
 
         // Filtro Data Solicitação
@@ -2055,50 +2054,65 @@ function getFilteredRequests() {
     return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
+// --- PAGINAÇÃO E RENDERIZAÇÃO ---
+
+// Variáveis Globais de Controle (Solicitações)
+var _solicitacoesFiltradas = []; 
+var _paginacaoSolicitacoes = 1;
+var _itensSolicitacoes = 15;
+
 function renderRequests() {
-    const fMun = document.getElementById('filter-request-municipality')?.value;
-    const fStatus = document.getElementById('filter-request-status')?.value;
-    const fSol = document.getElementById('filter-request-solicitante')?.value.toLowerCase();
-    const fUser = document.getElementById('filter-request-user')?.value;
-    const fSolStart = document.getElementById('filter-request-sol-start')?.value;
-    const fSolEnd = document.getElementById('filter-request-sol-end')?.value;
-    const fRealStart = document.getElementById('filter-request-real-start')?.value;
-    const fRealEnd = document.getElementById('filter-request-real-end')?.value;
+    console.log("🔄 Renderizando solicitações com paginação...");
 
-    let filtered = requests.filter(r => {
-        if (fMun && r.municipality !== fMun) return false;
-        if (fStatus && r.status !== fStatus) return false;
-        if (fSol && !r.requester.toLowerCase().includes(fSol)) return false;
-        if (fUser && r.user !== fUser) return false;
-        if (fSolStart && r.date < fSolStart) return false;
-        if (fSolEnd && r.date > fSolEnd) return false;
-        if (fRealStart && (!r.dateRealization || r.dateRealization < fRealStart)) return false;
-        if (fRealEnd && (!r.dateRealization || r.dateRealization > fRealEnd)) return false;
-        return true;
-    }).sort((a, b) => new Date(a.date) - new Date(b.date));
+    // 1. Obtém lista filtrada
+    _solicitacoesFiltradas = getFilteredRequests();
 
-    const c = document.getElementById('requests-table');
-    
+    // 2. Atualiza Contadores e Gráficos (Baseado no TOTAL filtrado)
     if(document.getElementById('requests-results-count')) {
-        document.getElementById('requests-results-count').innerHTML = '<strong>' + filtered.length + '</strong> solicitações encontradas';
+        document.getElementById('requests-results-count').innerHTML = '<strong>' + _solicitacoesFiltradas.length + '</strong> solicitações encontradas';
         document.getElementById('requests-results-count').style.display = 'block';
     }
     
-    // Contadores
     if(document.getElementById('total-requests')) document.getElementById('total-requests').textContent = requests.length;
-    if(document.getElementById('pending-requests')) document.getElementById('pending-requests').textContent = filtered.filter(r => r.status === 'Pendente').length;
-    if(document.getElementById('completed-requests')) document.getElementById('completed-requests').textContent = filtered.filter(r => r.status === 'Realizado').length;
-    if(document.getElementById('unfeasible-requests')) document.getElementById('unfeasible-requests').textContent = filtered.filter(r => r.status === 'Inviável').length;
+    if(document.getElementById('pending-requests')) document.getElementById('pending-requests').textContent = _solicitacoesFiltradas.filter(r => r.status === 'Pendente').length;
+    if(document.getElementById('completed-requests')) document.getElementById('completed-requests').textContent = _solicitacoesFiltradas.filter(r => r.status === 'Realizado').length;
+    if(document.getElementById('unfeasible-requests')) document.getElementById('unfeasible-requests').textContent = _solicitacoesFiltradas.filter(r => r.status === 'Inviável').length;
 
-    if (filtered.length === 0) {
+    // Atualiza gráficos
+    updateRequestCharts(_solicitacoesFiltradas);
+
+    // 3. Chama o desenhista da tabela paginada
+    atualizarTabelaSolicitacoesPaginada();
+}
+
+// Função que desenha a tabela fatiada
+function atualizarTabelaSolicitacoesPaginada() {
+    const c = document.getElementById('requests-table');
+    if (!c) return;
+
+    // Cálculos de Paginação
+    const totalItens = _solicitacoesFiltradas.length;
+    const totalPaginas = Math.ceil(totalItens / _itensSolicitacoes);
+    
+    // Ajuste de limites
+    if (_paginacaoSolicitacoes > totalPaginas && totalPaginas > 0) _paginacaoSolicitacoes = totalPaginas;
+    if (_paginacaoSolicitacoes < 1) _paginacaoSolicitacoes = 1;
+
+    // Fatiamento (Slice)
+    const inicio = (_paginacaoSolicitacoes - 1) * _itensSolicitacoes;
+    const fim = inicio + _itensSolicitacoes;
+    const itensParaMostrar = _solicitacoesFiltradas.slice(inicio, fim);
+
+    // Renderização HTML
+    if (itensParaMostrar.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhuma solicitação encontrada.</div>';
     } else {
-        const rows = filtered.map(x => {
+        const rows = itensParaMostrar.map(x => {
             const desc = x.description.length > 40 ? `<span title="${x.description}">${x.description.substring(0,40)}...</span>` : x.description;
             const just = x.justification ? (x.justification.length > 30 ? `<span title="${x.justification}">${x.justification.substring(0,30)}...</span>` : x.justification) : '-';
             let stCls = x.status === 'Realizado' ? 'completed' : (x.status === 'Inviável' ? 'cancelled' : 'pending');
 
-            // --- CORREÇÃO: Busca UF na lista mestra ---
+            // --- Busca UF na lista mestra ---
             const munData = municipalitiesList.find(m => m.name === x.municipality);
             const munDisplay = munData ? `${x.municipality} - ${munData.uf}` : x.municipality;
 
@@ -2118,10 +2132,70 @@ function renderRequests() {
                 </td>
             </tr>`;
         }).join('');
+        
         c.innerHTML = `<table><thead><th>Município</th><th>Data Solicitação</th><th>Solicitante</th><th>Contato</th><th>Descrição</th><th>Usuário que Registrou a Solicitação</th><th style="text-align:center;">Status</th><th style="text-align:center;">Data Realização</th><th>Justificativa</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
-    updateRequestCharts(filtered);
+
+    // Desenha os botões de paginação
+    renderizarControlesSolicitacoes(totalPaginas);
 }
+
+// Desenha os botões (Anterior / Próximo)
+function renderizarControlesSolicitacoes(totalPaginas) {
+    const container = document.getElementById('solicitacoesPagination');
+    if (!container) return;
+
+    if (totalPaginas <= 1) {
+        container.innerHTML = '';
+        return; 
+    }
+
+    let html = '';
+    
+    // Botão Anterior
+    html += `<button onclick="mudarPaginaSolicitacoes(${_paginacaoSolicitacoes - 1})" ${ _paginacaoSolicitacoes === 1 ? 'disabled' : '' }>Anterior</button>`;
+
+    // Lógica de botões numerados
+    let startPage = Math.max(1, _paginacaoSolicitacoes - 2);
+    let endPage = Math.min(totalPaginas, _paginacaoSolicitacoes + 2);
+
+    if (startPage > 1) {
+        html += `<button onclick="mudarPaginaSolicitacoes(1)">1</button>`;
+        if (startPage > 2) html += `<span>...</span>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button onclick="mudarPaginaSolicitacoes(${i})" class="${i === _paginacaoSolicitacoes ? 'active' : ''}">${i}</button>`;
+    }
+
+    if (endPage < totalPaginas) {
+        if (endPage < totalPaginas - 1) html += `<span>...</span>`;
+        html += `<button onclick="mudarPaginaSolicitacoes(${totalPaginas})">${totalPaginas}</button>`;
+    }
+
+    // Botão Próximo
+    html += `<button onclick="mudarPaginaSolicitacoes(${_paginacaoSolicitacoes + 1})" ${ _paginacaoSolicitacoes === totalPaginas ? 'disabled' : '' }>Próximo</button>`;
+    
+    html += `<span style="margin-left:15px; font-size:0.9em; color:#666;">
+             Pág ${_paginacaoSolicitacoes} de ${totalPaginas} 
+             (${_solicitacoesFiltradas.length} registros)</span>`;
+
+    container.innerHTML = html;
+}
+
+// --- FUNÇÕES GLOBAIS DE CONTROLE (WINDOW) ---
+window.mudarQtdPorPaginaSolicitacoes = function(valor) {
+    _itensSolicitacoes = parseInt(valor);
+    _paginacaoSolicitacoes = 1; 
+    atualizarTabelaSolicitacoesPaginada();
+};
+
+window.mudarPaginaSolicitacoes = function(novaPagina) {
+    _paginacaoSolicitacoes = novaPagina;
+    atualizarTabelaSolicitacoesPaginada();
+};
+
+// --- OUTRAS FUNÇÕES DA ABA (ORIGINAIS MANTIDAS) ---
 
 function updateRequestCharts(data) {
     // 1. Gráfico de Status (Pizza)
@@ -2153,7 +2227,6 @@ function updateRequestCharts(data) {
         const labels = Object.keys(mCounts);
         const values = Object.values(mCounts);
         
-        // Gera cores diferentes para cada barra
         const bgColors = labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
 
         chartMunReq = new Chart(document.getElementById('requestMunicipalityChart'), {
@@ -2171,14 +2244,13 @@ function updateRequestCharts(data) {
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        ticks: { display: false } // Oculta nomes no eixo X (mostra só no mouse)
+                        ticks: { display: false } 
                     }
                 }
             }
         });
     }
     
-    // Removemos a lógica do gráfico de Solicitante que foi excluído
     if (chartSolReq) {
         chartSolReq.destroy();
         chartSolReq = null;
@@ -2193,10 +2265,7 @@ function generateRequestsPDF() {
     });
     downloadPDF('Relatório Solicitações', headers, rows);
 }
-// ============================================================
-// NOVA FUNÇÃO: EXCLUIR SOLICITAÇÃO DO FIREBASE
-// ============================================================
-// 3. SOLICITAÇÕES
+
 function deleteRequest(id) {
     if (confirm('Excluir esta solicitação?')) {
         const item = requests.find(x => x.id === id);
@@ -2226,6 +2295,7 @@ function clearRequestFilters() {
     renderRequests();
 }
 
+// ABA APRESENTAÇÕES DO SOFTWARE
 // Função Visual: Controla asteriscos e visibilidade conforme o Status
 function handlePresentationStatusChange() {
     const status = document.getElementById('presentation-status').value;
