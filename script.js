@@ -2398,24 +2398,63 @@ function getFilteredPresentations() {
     return filtered.sort((a, b) => a.municipality.localeCompare(b.municipality));
 }
 
+/* =================================================================================
+   RENDERIZAÇÃO E PAGINAÇÃO DE APRESENTAÇÕES
+   ================================================================================= */
+
+// Variáveis Globais de Controle (Apresentações)
+var _apresentacoesFiltradas = []; 
+var _paginacaoApres = 1;
+var _itensApres = 15;
+
 function renderPresentations() {
-    const filtered = getFilteredPresentations(); // Usa a função de filtro real
-    const c = document.getElementById('presentations-table');
-    
-    // Contadores
+    console.log("🔄 Renderizando apresentações com paginação...");
+
+    // 1. Obtém a lista filtrada e ordenada (Mantendo sua função original de filtro)
+    _apresentacoesFiltradas = getFilteredPresentations(); 
+
+    // 2. Atualiza Contadores e Gráficos (Baseado no TOTAL filtrado)
     if(document.getElementById('presentations-results-count')) {
-        document.getElementById('presentations-results-count').innerHTML = '<strong>' + filtered.length + '</strong> apresentações encontradas';
+        document.getElementById('presentations-results-count').innerHTML = '<strong>' + _apresentacoesFiltradas.length + '</strong> apresentações encontradas';
         document.getElementById('presentations-results-count').style.display = 'block';
     }
+    
     if(document.getElementById('total-presentations')) document.getElementById('total-presentations').textContent = presentations.length;
-    if(document.getElementById('pending-presentations')) document.getElementById('pending-presentations').textContent = filtered.filter(p => p.status === 'Pendente').length;
-    if(document.getElementById('completed-presentations')) document.getElementById('completed-presentations').textContent = filtered.filter(p => p.status === 'Realizada').length;
-    if(document.getElementById('cancelled-presentations')) document.getElementById('cancelled-presentations').textContent = filtered.filter(p => p.status === 'Cancelada').length;
+    if(document.getElementById('pending-presentations')) document.getElementById('pending-presentations').textContent = _apresentacoesFiltradas.filter(p => p.status === 'Pendente').length;
+    if(document.getElementById('completed-presentations')) document.getElementById('completed-presentations').textContent = _apresentacoesFiltradas.filter(p => p.status === 'Realizada').length;
+    if(document.getElementById('cancelled-presentations')) document.getElementById('cancelled-presentations').textContent = _apresentacoesFiltradas.filter(p => p.status === 'Cancelada').length;
 
-    if (filtered.length === 0) {
+    // Atualiza os gráficos com os dados filtrados (Tudo, não só a página atual)
+    updatePresentationCharts(_apresentacoesFiltradas);
+
+    // 3. Chama o desenhista da tabela (Que vai aplicar a paginação visual)
+    atualizarTabelaApresentacoesPaginada();
+}
+
+// --- FUNÇÃO QUE DESENHA A TABELA FATIADA (PÁGINA ATUAL) ---
+function atualizarTabelaApresentacoesPaginada() {
+    const c = document.getElementById('presentations-table');
+    if (!c) return;
+
+    // Cálculos de Paginação
+    const totalItens = _apresentacoesFiltradas.length;
+    const totalPaginas = Math.ceil(totalItens / _itensApres);
+    
+    // Ajuste de limites (Segurança para não ficar em página inexistente)
+    if (_paginacaoApres > totalPaginas && totalPaginas > 0) _paginacaoApres = totalPaginas;
+    if (_paginacaoApres < 1) _paginacaoApres = 1;
+
+    // Fatiamento (Slice) dos dados
+    const inicio = (_paginacaoApres - 1) * _itensApres;
+    const fim = inicio + _itensApres;
+    const itensParaMostrar = _apresentacoesFiltradas.slice(inicio, fim);
+
+    // Renderização HTML
+    if (itensParaMostrar.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhuma apresentação encontrada.</div>';
     } else {
-        const rows = filtered.map(p => {
+        const rows = itensParaMostrar.map(p => {
+            // Lógica original de formatação mantida 100% igual
             const desc = p.description ? (p.description.length > 30 ? p.description.substring(0, 30) + '...' : p.description) : '-';
             const stCls = p.status === 'Realizada' ? 'completed' : (p.status === 'Cancelada' ? 'cancelled' : 'pending');
             const oStr = (p.orientadores || []).join(', ');
@@ -2440,11 +2479,78 @@ function renderPresentations() {
             </tr>`;
         }).join('');
         
-        c.innerHTML = `<table><thead><th>Município</th><th>Data Solicitação</th><th>Solicitante(s)</th><th>Colaborador(es) Responsável(is)</th><th>Formas</th><th>Descrição</th><th>Data Realização</th><th>Status</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
+        c.innerHTML = `<table><thead>
+            <th>Município</th>
+            <th>Data Solicitação</th>
+            <th>Solicitante(s)</th>
+            <th>Colaborador(es) Responsável(is)</th>
+            <th>Formas</th>
+            <th>Descrição</th>
+            <th>Data Realização</th>
+            <th>Status</th>
+            <th>Ações</th>
+        </thead><tbody>${rows}</tbody></table>`;
     }
-    
-    updatePresentationCharts(filtered);
+
+    // Desenha os botões de paginação no final
+    renderizarControlesApresentacoes(totalPaginas);
 }
+
+// --- DESENHA OS BOTÕES (ANTERIOR / PRÓXIMO) ---
+function renderizarControlesApresentacoes(totalPaginas) {
+    const container = document.getElementById('apresentacoesPagination');
+    if (!container) return;
+
+    if (totalPaginas <= 1) {
+        container.innerHTML = '';
+        return; 
+    }
+
+    let html = '';
+    
+    // Botão Anterior
+    html += `<button onclick="mudarPaginaApres(${_paginacaoApres - 1})" ${ _paginacaoApres === 1 ? 'disabled' : '' }>Anterior</button>`;
+
+    // Lógica de botões numerados (Janela deslizante)
+    let startPage = Math.max(1, _paginacaoApres - 2);
+    let endPage = Math.min(totalPaginas, _paginacaoApres + 2);
+
+    if (startPage > 1) {
+        html += `<button onclick="mudarPaginaApres(1)">1</button>`;
+        if (startPage > 2) html += `<span>...</span>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button onclick="mudarPaginaApres(${i})" class="${i === _paginacaoApres ? 'active' : ''}">${i}</button>`;
+    }
+
+    if (endPage < totalPaginas) {
+        if (endPage < totalPaginas - 1) html += `<span>...</span>`;
+        html += `<button onclick="mudarPaginaApres(${totalPaginas})">${totalPaginas}</button>`;
+    }
+
+    // Botão Próximo
+    html += `<button onclick="mudarPaginaApres(${_paginacaoApres + 1})" ${ _paginacaoApres === totalPaginas ? 'disabled' : '' }>Próximo</button>`;
+    
+    // Texto informativo
+    html += `<span style="margin-left:15px; font-size:0.9em; color:#666;">
+             Pág ${_paginacaoApres} de ${totalPaginas} 
+             (${_apresentacoesFiltradas.length} registros)</span>`;
+
+    container.innerHTML = html;
+}
+
+// --- FUNÇÕES GLOBAIS DE CONTROLE (WINDOW) ---
+window.mudarQtdPorPaginaApres = function(valor) {
+    _itensApres = parseInt(valor);
+    _paginacaoApres = 1; 
+    atualizarTabelaApresentacoesPaginada();
+};
+
+window.mudarPaginaApres = function(novaPagina) {
+    _paginacaoApres = novaPagina;
+    atualizarTabelaApresentacoesPaginada();
+};
 
 function updatePresentationCharts(data) {
     // 1. Status
@@ -2520,7 +2626,7 @@ function generatePresentationsPDF() {
     downloadPDF('Relatório Apresentações', headers, rows);
 }
 
-// 4. APRESENTAÇÕES
+// 4. APRESENTAÇÕES - Função de Exclusão
 function deletePresentation(id) {
     if (confirm('Excluir esta apresentação?')) {
         const item = presentations.find(x => x.id === id);
