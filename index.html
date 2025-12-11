@@ -1565,11 +1565,22 @@
 
             <div id="tasks-results-count" class="results-count" style="display: none;"></div>
 
-            <div class="tasks-table" id="tasks-table">
+            <div class="tasks-table" id="tasks-table"></div>
+
+            <div class="pagination-wrapper">
+                <div class="rows-per-page">
+                    <label>Itens por página:</label>
+                    <select id="tarefasRowsPerPage" onchange="mudarQtdPorPaginaTarefas(this.value)">
+                        <option value="15" selected>15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
                 </div>
-
+                <div class="pagination-controls" id="tarefasPagination">
+                    </div>
+            </div>
             <div class="section-divider"></div>
-
             <h3 class="section-subtitle">Relatórios e Estatísticas</h3>
 
             <div class="stats-cards">
