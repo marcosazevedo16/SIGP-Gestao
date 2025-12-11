@@ -6231,34 +6231,69 @@ function clearAuditFilters() {
     renderAuditLogs(); // Recarrega a tabela sem filtros
 }
 
-function clearAuditLogs() {
-    if(confirm('Tem certeza? Isso apagará todo o histórico de auditoria.')) {
-        auditLogs = [];
-        salvarNoArmazenamento('auditLogs', auditLogs);
-        renderAuditLogs();
+// ============================================================
+// FUNÇÃO: LIMPAR LOGS (APAGA DO FIREBASE PERMANENTEMENTE)
+// ============================================================
+window.clearAuditLogs = function() {
+    if(!confirm('⚠️ PERIGO: Tem certeza que deseja APAGAR TODO O HISTÓRICO de auditoria?\n\nEssa ação removerá os registros do banco de dados permanentemente e não pode ser desfeita.')) {
+        return;
     }
-}
 
-// --- BLOCO DE CORREÇÃO AUTOMÁTICA DE IDs (Pode manter no arquivo) ---
-(function autoFixPresentationIds() {
-    // Verifica se existem apresentações
-    if (typeof presentations !== 'undefined' && presentations.length > 0) {
-        // Reinumera todas as apresentações sequencialmente (1, 2, 3...)
-        presentations.forEach((p, index) => {
-            p.id = index + 1;
+    // Feedback Visual no botão (pra saber que está trabalhando)
+    // Tenta encontrar o botão pelo texto ou classe se possível, ou usa querySelector genérico
+    const btnList = document.querySelectorAll('button'); 
+    let btn = null;
+    btnList.forEach(b => { if(b.innerText.includes('Limpar Logs')) btn = b; });
+    
+    const txtOriginal = btn ? btn.innerText : 'Limpar Logs Antigos';
+    if(btn) { btn.innerText = "⏳ Apagando..."; btn.disabled = true; }
+
+    // 1. Busca todos os documentos da coleção 'auditLogs'
+    db.collection('auditLogs').get()
+        .then(snapshot => {
+            if (snapshot.empty) {
+                alert("O banco de dados de auditoria já está vazio.");
+                return;
+            }
+
+            // 2. Prepara um lote (Batch) de exclusão
+            // O Firebase permite deletar até 500 itens de uma vez num lote
+            const batch = db.batch();
+            let count = 0;
+
+            snapshot.forEach(doc => {
+                // Adiciona cada documento à lista de exclusão
+                if (count < 500) { // Segurança para o limite do lote
+                    batch.delete(doc.ref);
+                    count++;
+                }
+            });
+
+            // 3. Envia o comando de deletar para a nuvem
+            return batch.commit().then(() => {
+                return count; // Retorna quantos deletou pra usar na mensagem
+            });
+        })
+        .then((qtdDeletada) => {
+            if (qtdDeletada) {
+                alert(`✅ Sucesso! ${qtdDeletada} registros de logs foram apagados.`);
+                
+                // Se tiver mais de 500 logs, avisa para clicar de novo
+                // (O contador na tela vai diminuir automaticamente via listener)
+                if (qtdDeletada === 500) {
+                    alert("Ainda existem logs restantes. Clique novamente para apagar o próximo lote.");
+                }
+            }
+        })
+        .catch(error => {
+            console.error("Erro ao limpar logs:", error);
+            alert("Erro ao tentar limpar o banco de dados: " + error.message);
+        })
+        .finally(() => {
+            // Restaura o botão
+            if(btn) { btn.innerText = txtOriginal; btn.disabled = false; }
         });
-        
-        // Atualiza o contador geral para o próximo número disponível
-        if (typeof counters !== 'undefined') {
-            counters.pres = presentations.length + 1;
-            salvarNoArmazenamento('counters', counters);
-        }
-        
-        // Salva a lista corrigida
-        salvarNoArmazenamento('presentations', presentations);
-        appLogger.log("IDs de apresentações corrigidos e reordenados com sucesso.");
-    }
-})();
+};
 
 // --- FUNÇÕES DE IMPORTAÇÃO DE APRESENTAÇÕES (Adicionar no final) ---
 
