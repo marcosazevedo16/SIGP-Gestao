@@ -1860,7 +1860,21 @@
     <div id="integrations-results-count" class="results-count" style="display: none;"></div>
 
     <div class="tasks-table" id="integrations-table"></div>
-        <div class="actions-bar">
+
+            <div class="pagination-wrapper">
+                <div class="rows-per-page">
+                    <label>Itens por página:</label>
+                    <select id="integracoesRowsPerPage" onchange="mudarQtdPorPaginaIntegracoes(this.value)">
+                        <option value="15" selected>15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="pagination-controls" id="integracoesPagination">
+                    </div>
+            </div>
+            <div class="actions-bar">
         <button class="btn btn--outline btn--sm" onclick="exportIntegrationsExcel()">📊 Exportar Excel</button>
     </div>
 
