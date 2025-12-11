@@ -1,7 +1,6 @@
 // ============================================================
 // MÓDULO DE AUTENTICAÇÃO (auth.js)
 // ============================================================
-
 // 1. CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyATTTu0WtcWC0p8irfTkbco-CfzPzZXqxs",
@@ -12,7 +11,6 @@ const firebaseConfig = {
     appId: "1:225860756360:web:04a21a8ead9ae03fa5503d",
     measurementId: "G-JWFFYZP83Z"
 };
-
 // Inicializa o Firebase (usando a global 'firebase' do HTML)
 firebase.initializeApp(firebaseConfig);
 
@@ -35,11 +33,9 @@ export const appLogger = {
         console.error(`[SIGP ERROR]: ${message}`);
     }
 };
-
 // ============================================================
 // 3. FUNÇÕES DE LOGIN E SESSÃO
 // ============================================================
-
 export function checkAuthentication() {
     auth.onIdTokenChanged(user => {
         appLogger.log('🔍 Autenticação: Verificando token...');
@@ -66,7 +62,6 @@ export function checkAuthentication() {
         }
     });
 }
-
 // Funções visuais (Exportadas para uso interno ou externo)
 export function showAppScreen() {
     if (isAuthenticated) {
@@ -78,7 +73,6 @@ export function showAppScreen() {
         if (window.initializeApp) window.initializeApp();
     }
 }
-
 export function showLoginScreen() {
     // 1. Limpezas padrão (mantendo o que já existia)
     currentUser = null;
@@ -114,3 +108,4 @@ export function handleLogout() {
 
 // Inicialização do Módulo
 appLogger.log("🔥 Módulo Auth carregado com sucesso!");
+
