@@ -6934,10 +6934,10 @@ function atualizarTabelaIntegracoesPaginada() {
         c.innerHTML = `<table>
             <thead>
                 <th>Município</th>
-                <th>APIs Integradas</th>
-                <th>Responsável</th>
-                <th>Contato</th> 
-                <th>Vencimento</th>
+                <th>APIs Em Funcionamento no Município</th>
+                <th>Responsável Pela Atualização<br>do Certificado</th>
+                <th>Contato do<br>Responsável</th> 
+                <th>Data de<br>Vencimento</th>
                 <th>Status Vencimento</th>
                 <th>Observações</th>
                 <th>Ações</th>
