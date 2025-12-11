@@ -3540,9 +3540,12 @@ function clearVisitFilters() {
     renderVisits();
 }
 
-// ----------------------------------------------------------------------------
-// 17. PRODUÇÃO (Item 7)
-// ----------------------------------------------------------------------------
+/* =================================================================================
+   SEÇÃO 17: CONTROLE DE ENVIO DE PRODUÇÃO (COMPLETO COM PAGINAÇÃO)
+   ================================================================================= */
+
+// --- FUNÇÕES DE MODAL E SALVAMENTO (ORIGINAIS PRESERVADAS) ---
+
 function showProductionModal(id = null) {
     editingId = id;
     document.getElementById('production-form').reset();
@@ -3565,7 +3568,6 @@ function showProductionModal(id = null) {
         const p = productions.find(x => x.id === id);
         if(p) {
             // Garante que o valor selecionado exista no dropdown
-            // (Mesmo se o dropdown foi recriado acima, o valor deve bater pelo nome)
             let exists = false;
             for (let i = 0; i < munSelect.options.length; i++) {
                 if (munSelect.options[i].value === p.municipality) {
@@ -3577,7 +3579,7 @@ function showProductionModal(id = null) {
             if (!exists) {
                 const opt = document.createElement('option');
                 opt.value = p.municipality;
-                opt.textContent = p.municipality; // Sem UF pois não achou o registro mestre
+                opt.textContent = p.municipality; 
                 munSelect.appendChild(opt);
             }
             munSelect.value = p.municipality;
@@ -3599,9 +3601,6 @@ function showProductionModal(id = null) {
     document.getElementById('production-modal').classList.add('show');
 }
 
-// ============================================================
-// NOVA FUNÇÃO: SALVAR PRODUÇÃO NO FIREBASE
-// ============================================================
 function saveProduction(e) {
     e.preventDefault();
     const freq = document.getElementById('production-frequency').value;
@@ -3710,48 +3709,61 @@ function getFilteredProductions() {
     return filtered.sort((a,b) => new Date(a.releaseDate) - new Date(b.releaseDate));
 }
 
-function renderProductions() {
-    // 1. Captura Filtros
-    const fMun = document.getElementById('filter-production-municipality')?.value;
-    const fStatus = document.getElementById('filter-production-status')?.value;
-    const fProf = document.getElementById('filter-production-professional')?.value.toLowerCase();
-    const fFreq = document.getElementById('filter-production-frequency')?.value;
-    const fRelStart = document.getElementById('filter-production-release-start')?.value;
-    const fRelEnd = document.getElementById('filter-production-release-end')?.value;
-    const fSendStart = document.getElementById('filter-production-send-start')?.value;
-    const fSendEnd = document.getElementById('filter-production-send-end')?.value;
-    
-    // 2. Filtragem
-    let filtered = productions.filter(p => {
-        if (fMun && p.municipality !== fMun) return false;
-        if (fStatus && p.status !== fStatus) return false;
-        if (fProf && p.professional && !p.professional.toLowerCase().includes(fProf)) return false;
-        if (fFreq && p.frequency !== fFreq) return false;
-        if (fRelStart && p.releaseDate < fRelStart) return false;
-        if (fRelEnd && p.releaseDate > fRelEnd) return false;
-        if (fSendStart && (!p.sendDate || p.sendDate < fSendStart)) return false;
-        if (fSendEnd && (!p.sendDate || p.sendDate > fSendEnd)) return false;
-        return true;
-    }).sort((a,b) => new Date(a.releaseDate) - new Date(b.releaseDate));
+// --- PAGINAÇÃO E RENDERIZAÇÃO ---
 
-    // 3. Renderização
-    const c = document.getElementById('productions-table');
-    
+// Variáveis Globais de Controle (Produção)
+var _producaoFiltradas = []; 
+var _paginacaoProducao = 1;
+var _itensProducao = 15;
+
+function renderProductions() {
+    console.log("🔄 Renderizando produção com paginação...");
+
+    // 1. Obtém lista filtrada
+    _producaoFiltradas = getFilteredProductions();
+
+    // 2. Atualiza Contadores e Gráficos (Baseado no TOTAL filtrado)
     if(document.getElementById('productions-results-count')) {
-        document.getElementById('productions-results-count').innerHTML = `<strong>${filtered.length}</strong> envios encontrados`;
+        document.getElementById('productions-results-count').innerHTML = `<strong>${_producaoFiltradas.length}</strong> envios encontrados`;
         document.getElementById('productions-results-count').style.display = 'block';
     }
     
     // Atualiza Estatísticas
     if(document.getElementById('total-productions')) document.getElementById('total-productions').textContent = productions.length;
-    if(document.getElementById('sent-productions')) document.getElementById('sent-productions').textContent = filtered.filter(p => p.status === 'Enviada').length;
-    if(document.getElementById('pending-productions')) document.getElementById('pending-productions').textContent = filtered.filter(p => p.status === 'Pendente').length;
-    if(document.getElementById('cancelled-productions')) document.getElementById('cancelled-productions').textContent = filtered.filter(p => p.status === 'Cancelada').length;
+    if(document.getElementById('sent-productions')) document.getElementById('sent-productions').textContent = _producaoFiltradas.filter(p => p.status === 'Enviada').length;
+    if(document.getElementById('pending-productions')) document.getElementById('pending-productions').textContent = _producaoFiltradas.filter(p => p.status === 'Pendente').length;
+    if(document.getElementById('cancelled-productions')) document.getElementById('cancelled-productions').textContent = _producaoFiltradas.filter(p => p.status === 'Cancelada').length;
 
-    if (filtered.length === 0) {
+    // Atualiza gráficos
+    updateProductionCharts(_producaoFiltradas);
+
+    // 3. Chama o desenhista da tabela paginada
+    atualizarTabelaProducaoPaginada();
+}
+
+// Função que desenha a tabela fatiada
+function atualizarTabelaProducaoPaginada() {
+    const c = document.getElementById('productions-table');
+    if (!c) return;
+
+    // Cálculos de Paginação
+    const totalItens = _producaoFiltradas.length;
+    const totalPaginas = Math.ceil(totalItens / _itensProducao);
+    
+    // Ajuste de limites
+    if (_paginacaoProducao > totalPaginas && totalPaginas > 0) _paginacaoProducao = totalPaginas;
+    if (_paginacaoProducao < 1) _paginacaoProducao = 1;
+
+    // Fatiamento (Slice)
+    const inicio = (_paginacaoProducao - 1) * _itensProducao;
+    const fim = inicio + _itensProducao;
+    const itensParaMostrar = _producaoFiltradas.slice(inicio, fim);
+
+    // Renderização HTML
+    if (itensParaMostrar.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhum envio encontrado.</div>';
     } else {
-        const rows = filtered.map(p => {
+        const rows = itensParaMostrar.map(p => {
             let statusClass = 'task-status';
             if (p.status === 'Enviada') statusClass += ' completed';
             else if (p.status === 'Cancelada') statusClass += ' cancelled';
@@ -3803,8 +3815,67 @@ function renderProductions() {
             <tbody>${rows}</tbody>
         </table>`;
     }
-    updateProductionCharts(filtered);
+
+    // Desenha os botões de paginação
+    renderizarControlesProducao(totalPaginas);
 }
+
+// Desenha os botões (Anterior / Próximo)
+function renderizarControlesProducao(totalPaginas) {
+    const container = document.getElementById('producaoPagination');
+    if (!container) return;
+
+    if (totalPaginas <= 1) {
+        container.innerHTML = '';
+        return; 
+    }
+
+    let html = '';
+    
+    // Botão Anterior
+    html += `<button onclick="mudarPaginaProducao(${_paginacaoProducao - 1})" ${ _paginacaoProducao === 1 ? 'disabled' : '' }>Anterior</button>`;
+
+    // Lógica de botões numerados
+    let startPage = Math.max(1, _paginacaoProducao - 2);
+    let endPage = Math.min(totalPaginas, _paginacaoProducao + 2);
+
+    if (startPage > 1) {
+        html += `<button onclick="mudarPaginaProducao(1)">1</button>`;
+        if (startPage > 2) html += `<span>...</span>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button onclick="mudarPaginaProducao(${i})" class="${i === _paginacaoProducao ? 'active' : ''}">${i}</button>`;
+    }
+
+    if (endPage < totalPaginas) {
+        if (endPage < totalPaginas - 1) html += `<span>...</span>`;
+        html += `<button onclick="mudarPaginaProducao(${totalPaginas})">${totalPaginas}</button>`;
+    }
+
+    // Botão Próximo
+    html += `<button onclick="mudarPaginaProducao(${_paginacaoProducao + 1})" ${ _paginacaoProducao === totalPaginas ? 'disabled' : '' }>Próximo</button>`;
+    
+    html += `<span style="margin-left:15px; font-size:0.9em; color:#666;">
+             Pág ${_paginacaoProducao} de ${totalPaginas} 
+             (${_producaoFiltradas.length} registros)</span>`;
+
+    container.innerHTML = html;
+}
+
+// --- FUNÇÕES GLOBAIS DE CONTROLE (WINDOW) ---
+window.mudarQtdPorPaginaProducao = function(valor) {
+    _itensProducao = parseInt(valor);
+    _paginacaoProducao = 1; 
+    atualizarTabelaProducaoPaginada();
+};
+
+window.mudarPaginaProducao = function(novaPagina) {
+    _paginacaoProducao = novaPagina;
+    atualizarTabelaProducaoPaginada();
+};
+
+// --- OUTRAS FUNÇÕES DA ABA (ORIGINAIS MANTIDAS) ---
 
 function updateProductionCharts(data) {
     // 1. Status (Cores: Azul, Laranja, Vermelho)
@@ -3848,7 +3919,6 @@ function updateProductionCharts(data) {
     }
 }
 
-
 function generateProductionsPDF() {
     const data = getFilteredProductions();
     const headers = ['Município', 'Comp.', 'Período', 'Status'];
@@ -3856,7 +3926,6 @@ function generateProductionsPDF() {
     downloadPDF('Relatório Produção', headers, rows);
 }
 
-// 7. PRODUÇÃO
 function deleteProduction(id) {
     if (confirm('Excluir este registro de envio?')) {
         const item = productions.find(x => x.id === id);
@@ -3885,7 +3954,7 @@ function clearProductionFilters() {
     });
     renderProductions();
 }
-// Função Visual: Controla campos, obrigatoriedade e ASTERISCOS (*)
+
 function handleProductionFrequencyChange() {
     const freq = document.getElementById('production-frequency').value;
     const grpPeriod = document.getElementById('production-period-group');
@@ -3897,27 +3966,22 @@ function handleProductionFrequencyChange() {
     const inStat = document.getElementById('production-status');
     const inCont = document.getElementById('production-contact');
 
-    // Labels (Rótulos de Texto)
+    // Labels
     const lblPeriod = document.getElementById('lbl-prod-period');
     const lblComp = document.getElementById('lbl-prod-competence');
     const lblRel = document.getElementById('lbl-prod-release');
     const lblStat = document.getElementById('lbl-prod-status');
     const lblCont = document.getElementById('lbl-prod-contact');
 
-    // Garante que o grupo do Período esteja sempre visível
     if (grpPeriod) grpPeriod.style.display = 'block';
 
     if (freq === 'Diário') {
-        // --- MODO DIÁRIO: Remove obrigatoriedade e asteriscos ---
-        
-        // Remove required
         if(inPeriod) inPeriod.required = false;
         if(inComp) inComp.required = false;
         if(inRel) inRel.required = false;
         if(inStat) inStat.required = false;
         if(inCont) inCont.required = false;
 
-        // Remove asterisco visual (*)
         if(lblPeriod) lblPeriod.textContent = 'Período (Data Inicial à Data Final)';
         if(lblComp) lblComp.textContent = 'Competência (mês/ano)';
         if(lblRel) lblRel.textContent = 'Data de Liberação';
@@ -3925,16 +3989,12 @@ function handleProductionFrequencyChange() {
         if(lblCont) lblCont.textContent = 'Contato';
 
     } else {
-        // --- OUTROS MODOS: Adiciona obrigatoriedade e asteriscos ---
-
-        // Adiciona required
         if(inPeriod) inPeriod.required = true;
         if(inComp) inComp.required = true;
         if(inRel) inRel.required = true;
         if(inStat) inStat.required = true;
         if(inCont) inCont.required = true;
 
-        // Adiciona asterisco visual (*) se não tiver
         if(lblPeriod) lblPeriod.textContent = 'Período (Data Inicial à Data Final)*';
         if(lblComp) lblComp.textContent = 'Competência (mês/ano)*';
         if(lblRel) lblRel.textContent = 'Data de Liberação*';
@@ -3942,7 +4002,6 @@ function handleProductionFrequencyChange() {
         if(lblCont) lblCont.textContent = 'Contato*';
     }
 }
-
 // --- USUÁRIOS ---
 function showUserModal(id = null) {
     const m = document.getElementById('user-modal');
