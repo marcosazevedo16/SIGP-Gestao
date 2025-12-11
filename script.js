@@ -7293,12 +7293,12 @@ function renderCollaboratorInfos() {
             <thead>
                 <th>Colaborador</th>
                 <th>Data Nasc.</th>
-                <th>Idade</th>
-                <th>Admissão</th>
+                <th>Idade Atual</th>
+                <th>Data de Admissão</th>
                 <th>Tempo de Serviço</th>
-                <th>Últimas Férias</th>
+                <th>Data Final</th>Últimas Férias</th>
                 <th>Tempo s/ Férias</th>
-                <th>Obs</th>
+                <th>Observações</th>
                 <th style="width:90px;">Ações</th>
             </thead>
             <tbody>${rowsActive}</tbody>
@@ -7337,11 +7337,11 @@ function renderCollaboratorInfos() {
             <thead>
                 <th>Colaborador</th>
                 <th>Data Nasc.</th>
-                <th>Idade</th>
-                <th>Admissão</th>
-                <th>Data Desligamento</th> 
+                <th>Idade Atual</th>
+                <th>Data de Admissão</th>
+                <th>Data de Desligamento</th> 
                 <th>Tempo de Serviço Total</th>
-                <th>Obs</th>
+                <th>Observações</th>
                 <th style="width:90px;">Ações</th>
             </thead>
             <tbody>${rowsTerm}</tbody>
