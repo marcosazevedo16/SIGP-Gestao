@@ -6844,8 +6844,8 @@ function renderIntegrations() {
         if (fEnd && i.expirationDate > fEnd) return false;
         if (fStatus) {
             const diff = getDaysDiff(i.expirationDate);
-            if (fStatus === 'Vencido' && diff >= 0) return false;
-            if (fStatus === 'Em dia' && diff < 0) return false;
+            if (fStatus === 'Certificado Vencido' && diff >= 0) return false;
+            if (fStatus === 'Certificado Em dia' && diff < 0) return false;
         }
         return true;
     });
