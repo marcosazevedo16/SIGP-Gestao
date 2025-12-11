@@ -1134,7 +1134,7 @@ function atualizarTabelaPaginada() {
         c.innerHTML = `<table><thead>
             <th>Município</th>
             <th>Módulos Em Uso</th>
-            <th>Gestor(a) Atual</th>
+            <th>Gestor(a) de Saúde Atual</th>
             <th>Contato</th>
             <th>Data de<br>Implantação</th>
             <th>Tempo de Uso</th> 
