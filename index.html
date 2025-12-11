@@ -1359,6 +1359,19 @@
 
             <div class="tasks-table" id="requests-table"></div>
 
+            <div class="pagination-wrapper">
+                <div class="rows-per-page">
+                    <label>Itens por página:</label>
+                    <select id="solicitacoesRowsPerPage" onchange="mudarQtdPorPaginaSolicitacoes(this.value)">
+                        <option value="15" selected>15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="pagination-controls" id="solicitacoesPagination">
+                    </div>
+            </div>
             <div class="actions-bar">
                 <button class="btn btn--outline btn--sm" onclick="exportRequestsCSV()">📥 Exportar CSV</button>
                 <button class="btn btn--primary btn--sm" onclick="generateRequestsPDF()">📄 Gerar PDF</button>
