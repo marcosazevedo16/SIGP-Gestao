@@ -1491,9 +1491,11 @@ function clearMunicipalityFilters() {
     renderMunicipalities();
 }
 
-// ----------------------------------------------------------------------------
-// 12. TREINAMENTOS (Itens 3, 16)
-// ----------------------------------------------------------------------------
+/* =================================================================================
+   SEÇÃO 12: GERENCIAMENTO DE TREINAMENTOS (COMPLETO COM PAGINAÇÃO)
+   ================================================================================= */
+
+// --- FUNÇÕES DE MODAL E SALVAMENTO (ORIGINAIS PRESERVADAS) ---
 
 function showTaskModal(id = null) {
     editingId = id;
@@ -1507,7 +1509,7 @@ function showTaskModal(id = null) {
     // 2. Popula dropdowns e colaboradores
     updateGlobalDropdowns();
     const selectColab = document.getElementById('task-performed-by');
-    // Garante que a lista de colaboradores seja carregada
+    
     if(selectColab && typeof orientadores !== 'undefined') {
         populateSelect(selectColab, orientadores, 'name', 'name');
     }
@@ -1537,9 +1539,6 @@ function showTaskModal(id = null) {
     document.getElementById('task-modal').classList.add('show');
 }
 
-// ============================================================
-// NOVA FUNÇÃO: SALVAR TREINAMENTO NO FIREBASE
-// ============================================================
 function saveTask(e) {
     e.preventDefault();
     
@@ -1596,6 +1595,7 @@ function saveTask(e) {
         promise = collection.add(data);
         logSystemAction('Criação', 'Treinamentos', `Município: ${data.municipality} | Responsável: ${data.performedBy}`);
     }
+    
     // 5. Finalização
     promise.then(() => {
         document.getElementById('task-modal').classList.remove('show');
@@ -1656,63 +1656,69 @@ function getFilteredTasks() {
     });
 }
 
+// --- PAGINAÇÃO E RENDERIZAÇÃO ---
+
+// Variáveis Globais de Controle (Treinamentos)
+var _tarefasFiltradas = []; 
+var _paginacaoTarefas = 1;
+var _itensTarefas = 15;
+
 function renderTasks() {
-    // 1. Captura dos Filtros
-    const fMun = document.getElementById('filter-task-municipality')?.value;
-    const fStatus = document.getElementById('filter-task-status')?.value;
-    const fReq = document.getElementById('filter-task-requester')?.value.toLowerCase();
-    const fPerf = document.getElementById('filter-task-performer')?.value; 
-    const fCargo = document.getElementById('filter-task-position')?.value; 
-    const fReqStart = document.getElementById('filter-task-req-start')?.value;
-    const fReqEnd = document.getElementById('filter-task-req-end')?.value;
-    const fPerfStart = document.getElementById('filter-task-perf-start')?.value;
-    const fPerfEnd = document.getElementById('filter-task-perf-end')?.value;
+    console.log("🔄 Renderizando treinamentos com paginação...");
 
-    // 2. Filtragem
-    let filtered = tasks.filter(t => {
-        if (fMun && t.municipality !== fMun) return false;
-        if (fStatus && t.status !== fStatus) return false;
-        if (fReq && !t.requestedBy.toLowerCase().includes(fReq)) return false;
-        if (fPerf && t.performedBy !== fPerf) return false;
-        if (fCargo && t.trainedPosition !== fCargo) return false;
-        if (fReqStart && t.dateRequested < fReqStart) return false;
-        if (fReqEnd && t.dateRequested > fReqEnd) return false;
-        if (fPerfStart && (!t.datePerformed || t.datePerformed < fPerfStart)) return false;
-        if (fPerfEnd && (!t.datePerformed || t.datePerformed > fPerfEnd)) return false;
-        return true;
-    });
+    // 1. Obtém a lista filtrada e ordenada (Mantendo sua função original getFilteredTasks)
+    _tarefasFiltradas = getFilteredTasks();
 
-    // 3. Elementos da DOM
-    const c = document.getElementById('tasks-table');
-    
-    if(document.getElementById('tasks-results-count')) {
-        document.getElementById('tasks-results-count').style.display = 'block';
-        document.getElementById('tasks-results-count').innerHTML = '<strong>' + filtered.length + '</strong> treinamentos encontrados';
+    // 2. Atualiza Elementos da DOM e Contadores (Baseado no TOTAL filtrado)
+    const countDiv = document.getElementById('tasks-results-count');
+    if(countDiv) {
+        countDiv.style.display = 'block';
+        countDiv.innerHTML = '<strong>' + _tarefasFiltradas.length + '</strong> treinamentos encontrados';
     }
     
-    // Atualiza estatísticas
+    // Atualiza estatísticas (Cards acima da tabela)
     if(document.getElementById('total-tasks')) document.getElementById('total-tasks').textContent = tasks.length;
-    if(document.getElementById('completed-tasks')) document.getElementById('completed-tasks').textContent = filtered.filter(t => t.status==='Concluído').length;
-    if(document.getElementById('pending-tasks')) document.getElementById('pending-tasks').textContent = filtered.filter(t => t.status==='Pendente').length;
-    if(document.getElementById('cancelled-tasks')) document.getElementById('cancelled-tasks').textContent = filtered.filter(t => t.status==='Cancelado').length;
+    if(document.getElementById('completed-tasks')) document.getElementById('completed-tasks').textContent = _tarefasFiltradas.filter(t => t.status==='Concluído').length;
+    if(document.getElementById('pending-tasks')) document.getElementById('pending-tasks').textContent = _tarefasFiltradas.filter(t => t.status==='Pendente').length;
+    if(document.getElementById('cancelled-tasks')) document.getElementById('cancelled-tasks').textContent = _tarefasFiltradas.filter(t => t.status==='Cancelado').length;
 
-    if (filtered.length === 0) { 
+    // 3. Chama o desenhista da tabela paginada
+    atualizarTabelaTarefasPaginada();
+}
+
+// Função que desenha a tabela fatiada (Página Atual)
+function atualizarTabelaTarefasPaginada() {
+    const c = document.getElementById('tasks-table');
+    if (!c) return;
+
+    // Cálculos de Paginação
+    const totalItens = _tarefasFiltradas.length;
+    const totalPaginas = Math.ceil(totalItens / _itensTarefas);
+    
+    // Ajuste de limites
+    if (_paginacaoTarefas > totalPaginas && totalPaginas > 0) _paginacaoTarefas = totalPaginas;
+    if (_paginacaoTarefas < 1) _paginacaoTarefas = 1;
+
+    // Fatiamento (Slice)
+    const inicio = (_paginacaoTarefas - 1) * _itensTarefas;
+    const fim = inicio + _itensTarefas;
+    const itensParaMostrar = _tarefasFiltradas.slice(inicio, fim);
+
+    // Renderização HTML
+    if (itensParaMostrar.length === 0) { 
         c.innerHTML = '<div class="empty-state">Nenhum treinamento encontrado.</div>'; 
     } else {
-        const rows = filtered.map(t => {
+        const rows = itensParaMostrar.map(t => {
             // Lógica para observação curta
             let obs = t.observations ? (t.observations.length > 30 ? t.observations.substring(0,30)+'...' : t.observations) : '-';
             
             // Define classe de status
             const stCls = t.status === 'Concluído' ? 'completed' : (t.status === 'Cancelado' ? 'cancelled' : 'pending');
 
-            // --- NOVO: Busca a UF na lista mestra para exibir na tabela ---
-            // Procura na lista mestra um município com o mesmo nome
+            // Busca UF na lista mestra
             const munData = municipalitiesList.find(m => m.name === t.municipality);
-            // Se achar, monta "Nome - UF", senão mostra só o "Nome"
             const munDisplay = munData ? `${t.municipality} - ${munData.uf}` : t.municipality;
 
-            // --- Montagem da Linha (Colunas Reordenadas) ---
             return `<tr>
                 <td class="text-primary-cell">${munDisplay}</td>
                 <td style="text-align:center;">${formatDate(t.dateRequested)}</td>
@@ -1733,7 +1739,6 @@ function renderTasks() {
             </tr>`;
         }).join('');
         
-        // --- Cabeçalho Reordenado ---
         c.innerHTML = `<table>
             <thead>
                 <th>Município</th>
@@ -1750,7 +1755,68 @@ function renderTasks() {
             <tbody>${rows}</tbody>
         </table>`;
     }
+
+    // Desenha os botões de paginação no final
+    renderizarControlesTarefas(totalPaginas);
 }
+
+// Desenha os botões (Anterior / Próximo)
+function renderizarControlesTarefas(totalPaginas) {
+    const container = document.getElementById('tarefasPagination');
+    if (!container) return;
+
+    if (totalPaginas <= 1) {
+        container.innerHTML = '';
+        return; 
+    }
+
+    let html = '';
+    
+    // Botão Anterior
+    html += `<button onclick="mudarPaginaTarefas(${_paginacaoTarefas - 1})" ${ _paginacaoTarefas === 1 ? 'disabled' : '' }>Anterior</button>`;
+
+    // Lógica de botões numerados
+    let startPage = Math.max(1, _paginacaoTarefas - 2);
+    let endPage = Math.min(totalPaginas, _paginacaoTarefas + 2);
+
+    if (startPage > 1) {
+        html += `<button onclick="mudarPaginaTarefas(1)">1</button>`;
+        if (startPage > 2) html += `<span>...</span>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button onclick="mudarPaginaTarefas(${i})" class="${i === _paginacaoTarefas ? 'active' : ''}">${i}</button>`;
+    }
+
+    if (endPage < totalPaginas) {
+        if (endPage < totalPaginas - 1) html += `<span>...</span>`;
+        html += `<button onclick="mudarPaginaTarefas(${totalPaginas})">${totalPaginas}</button>`;
+    }
+
+    // Botão Próximo
+    html += `<button onclick="mudarPaginaTarefas(${_paginacaoTarefas + 1})" ${ _paginacaoTarefas === totalPaginas ? 'disabled' : '' }>Próximo</button>`;
+    
+    // Texto informativo
+    html += `<span style="margin-left:15px; font-size:0.9em; color:#666;">
+             Pág ${_paginacaoTarefas} de ${totalPaginas} 
+             (${_tarefasFiltradas.length} registros)</span>`;
+
+    container.innerHTML = html;
+}
+
+// --- FUNÇÕES GLOBAIS DE CONTROLE (WINDOW) ---
+window.mudarQtdPorPaginaTarefas = function(valor) {
+    _itensTarefas = parseInt(valor);
+    _paginacaoTarefas = 1; 
+    atualizarTabelaTarefasPaginada();
+};
+
+window.mudarPaginaTarefas = function(novaPagina) {
+    _paginacaoTarefas = novaPagina;
+    atualizarTabelaTarefasPaginada();
+};
+
+// --- OUTRAS FUNÇÕES DA ABA (ORIGINAIS MANTIDAS) ---
 
 function generateTasksPDF() {
     const data = getFilteredTasks();
@@ -1761,7 +1827,6 @@ function generateTasksPDF() {
     downloadPDF('Relatório Treinamentos', headers, rows);
 }
 
-// 2. TREINAMENTOS
 function deleteTask(id) {
     if (confirm('Excluir este treinamento?')) {
         const item = tasks.find(x => x.id === id);
@@ -1777,6 +1842,7 @@ function deleteTask(id) {
         }
     }
 }
+
 function closeTaskModal() {
     document.getElementById('task-modal').classList.remove('show');
 }
@@ -1793,7 +1859,6 @@ function clearTaskFilters() {
     });
     renderTasks();
 }
-
 // ----------------------------------------------------------------------------
 // 13. SOLICITAÇÕES (Itens 3, 4, 5, 17)
 // ----------------------------------------------------------------------------
