@@ -7266,10 +7266,12 @@ function renderCollaboratorInfos() {
         const rowsActive = activeList.map(c => {
             const master = orientadores.find(o => o.name === c.name);
             const birthDate = master ? master.birthDate : null;
-            // Usa a nova função de cálculo exato
+            
+            // ✅ CORREÇÃO APLICADA: Usando calcularIdadeExata
             const age = calcularIdadeExata(birthDate);
-            const serviceTime = calcularIdadeExata(c.admissionDate, c.status === 'Desligado da Empresa' ? c.terminationDate : null);
-            const timeSinceVacation = c.lastVacationEnd ? calcDateDiffString(c.lastVacationEnd) : '-';
+            const serviceTime = calcularIdadeExata(c.admissionDate, null); // Data fim nula = hoje
+            
+            const timeSinceVacation = c.lastVacationEnd ? calcularIdadeExata(c.lastVacationEnd) : '-'; // Opcional: padronizar férias também
 
             return `<tr>
                 <td class="text-primary-cell"><strong>${c.name}</strong></td>
@@ -7305,16 +7307,17 @@ function renderCollaboratorInfos() {
         secActive.style.display = 'none';
     }
 
-    // TABELA 2: DESLIGADOS (COLUNAS TROCADAS AQUI)
+    // TABELA 2: DESLIGADOS
     if (terminatedList.length > 0) {
         secTerminated.style.display = 'block';
         const rowsTerm = terminatedList.map(c => {
             const master = orientadores.find(o => o.name === c.name);
             const birthDate = master ? master.birthDate : null;
-            const age = calcDateDiffString(birthDate);
-            const serviceTime = calcDateDiffString(c.admissionDate, c.terminationDate);
+            
+            // ✅ CORREÇÃO APLICADA AQUI TAMBÉM (Antes estava calcDateDiffString)
+            const age = calcularIdadeExata(birthDate);
+            const serviceTime = calcularIdadeExata(c.admissionDate, c.terminationDate);
 
-            // AQUI ESTÁ A TROCA: Primeiro Data Desligamento, depois Tempo de Serviço
             return `<tr>
                 <td class="text-primary-cell"><strong>${c.name}</strong></td>
                 <td>${formatDate(birthDate)}</td>
