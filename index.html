@@ -671,10 +671,21 @@
                 </div>
             </div>
 
-            <div id="productions-results-count" class="results-count" style="display: none;"></div>
-
             <div class="tasks-table" id="productions-table"></div>
 
+            <div class="pagination-wrapper">
+                <div class="rows-per-page">
+                    <label>Itens por página:</label>
+                    <select id="producaoRowsPerPage" onchange="mudarQtdPorPaginaProducao(this.value)">
+                        <option value="15" selected>15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="pagination-controls" id="producaoPagination">
+                    </div>
+            </div>
             <div class="section-divider"></div>
 
             <h3 class="section-subtitle">Gráficos e Estatísticas</h3>
