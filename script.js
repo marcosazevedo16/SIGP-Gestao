@@ -14,11 +14,6 @@ import {
 // NOTA: Como estamos usando módulos, precisamos expor funções ao HTML manualmente
 // ou refatorar para adicionar EventListeners via JS. Faremos a exposição global 
 // no index.js para funções como 'handleLogout'.
-
-// ============================================================================
-// FIM DAS IMPORTAÇÕES
-// ============================================================================
-
 // Mantenha a verificação do CryptoJS
 if (typeof CryptoJS === 'undefined') {
     appLogger.error('Erro Crítico: CryptoJS não encontrado.');
@@ -126,7 +121,6 @@ function salvarNoArmazenamento(chave, dados) {
         }
     }
 }
-
 function recuperarDoArmazenamento(chave, valorPadrao = null) {
     try {
         const dados = localStorage.getItem(chave);
