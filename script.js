@@ -2721,26 +2721,22 @@ function clearPresentationFilters() {
     renderPresentations();
 }
 
-// ----------------------------------------------------------------------------
-// 15. DEMANDAS (Item 5)
-// ----------------------------------------------------------------------------
-// ============================================================
-// FUNÇÃO VISUAL: CONTROLA CAMPOS DA DEMANDA (Realizada/Inviável)
-// ============================================================
+/* =================================================================================
+   SEÇÃO 15: DEMANDAS DO SUPORTE (COMPLETO COM PAGINAÇÃO)
+   ================================================================================= */
+
+// --- FUNÇÕES DE MODAL E SALVAMENTO (ORIGINAIS PRESERVADAS) ---
+
 function handleDemandStatusChange() {
     const statusEl = document.getElementById('demand-status');
     if (!statusEl) return;
     
     const status = statusEl.value;
     
-    // Grupos (Divs) - O ID do grupo no seu HTML parece ser 'group-demand-justification' mesmo, isso ok.
     const grpReal = document.getElementById('group-demand-realization-date');
     const grpJust = document.getElementById('group-demand-justification');
     
-    // Inputs (para required - opcional agora que usamos noValidate, mas bom manter referência correta)
     const inpReal = document.getElementById('demand-realization-date');
-    
-    // CORREÇÃO AQUI: Usando o ID 'demand-justification-reply'
     const inpJust = document.getElementById('demand-justification-reply');
 
     // RESET
@@ -2758,9 +2754,7 @@ function handleDemandStatusChange() {
         if(inpJust) inpJust.required = true;
     }
 }
-// ============================================================
-// FUNÇÃO: ABRIR MODAL DE DEMANDA (CORRIGIDA)
-// ============================================================
+
 function showDemandModal(id = null) {
     editingId = id;
     const form = document.getElementById('demand-form');
@@ -2788,7 +2782,6 @@ function showDemandModal(id = null) {
                 document.getElementById('demand-realization-date').value = d.dateRealization || '';
             }
             
-            // CORREÇÃO AQUI: Usando o ID 'demand-justification-reply'
             if(document.getElementById('demand-justification-reply')) {
                 document.getElementById('demand-justification-reply').value = d.justification || '';
             }
@@ -2799,9 +2792,6 @@ function showDemandModal(id = null) {
     document.getElementById('demand-modal').classList.add('show');
 }
 
-// ============================================================
-// NOVA FUNÇÃO: SALVAR DEMANDA NO FIREBASE
-// ============================================================
 function saveDemand(e) {
     e.preventDefault();
     
@@ -2810,9 +2800,7 @@ function saveDemand(e) {
     const dateReal = document.getElementById('demand-realization-date').value;
     const dateSol = document.getElementById('demand-date').value;
     
-    // Captura Descrição e Justificativa (USANDO O ID CORRETO DO HTML)
     const rawDesc = document.getElementById('demand-description').value;
-    // CORREÇÃO AQUI: Mudamos de 'demand-justification' para 'demand-justification-reply'
     const rawJustif = document.getElementById('demand-justification-reply').value; 
 
     // 2. Validações Manuais
@@ -2893,10 +2881,11 @@ function saveDemand(e) {
         btnSubmit.disabled = false;
     });
 }
+
 function getFilteredDemands() {
     const fStatus = document.getElementById('filter-demand-status')?.value;
     const fPrio = document.getElementById('filter-demand-priority')?.value;
-    const fUser = document.getElementById('filter-demand-user')?.value; // Agora Select
+    const fUser = document.getElementById('filter-demand-user')?.value;
     
     // Datas
     const fSolStart = document.getElementById('filter-demand-sol-start')?.value;
@@ -2907,8 +2896,6 @@ function getFilteredDemands() {
     let filtered = demands.filter(function(d) {
         if (fStatus && d.status !== fStatus) return false;
         if (fPrio && d.priority !== fPrio) return false;
-        
-        // Usuário (Select)
         if (fUser && d.user !== fUser) return false;
 
         // Data Solicitação
@@ -2929,23 +2916,61 @@ function getFilteredDemands() {
     });
 }
 
+// --- PAGINAÇÃO E RENDERIZAÇÃO ---
+
+// Variáveis Globais de Controle (Demandas)
+var _demandasFiltradas = []; 
+var _paginacaoDemandas = 1;
+var _itensDemandas = 15;
+
 function renderDemands() {
-    const filtered = getFilteredDemands();
-    const c = document.getElementById('demands-table');
-    
+    console.log("🔄 Renderizando demandas com paginação...");
+
+    // 1. Obtém lista filtrada
+    _demandasFiltradas = getFilteredDemands();
+
+    // 2. Atualiza Contadores e Gráficos (Baseado no TOTAL filtrado)
     if(document.getElementById('demands-results-count')) {
-        document.getElementById('demands-results-count').innerHTML = '<strong>' + filtered.length + '</strong> demandas encontradas';
+        document.getElementById('demands-results-count').innerHTML = '<strong>' + _demandasFiltradas.length + '</strong> demandas encontradas';
         document.getElementById('demands-results-count').style.display = 'block';
     }
+    
+    // Estatísticas
     if(document.getElementById('total-demands')) document.getElementById('total-demands').textContent = demands.length;
-    if(document.getElementById('pending-demands')) document.getElementById('pending-demands').textContent = filtered.filter(d => d.status === 'Pendente').length;
-    if(document.getElementById('completed-demands')) document.getElementById('completed-demands').textContent = filtered.filter(d => d.status === 'Realizada').length;
-    if(document.getElementById('unfeasible-demands')) document.getElementById('unfeasible-demands').textContent = filtered.filter(d => d.status === 'Inviável').length;
+    if(document.getElementById('pending-demands')) document.getElementById('pending-demands').textContent = _demandasFiltradas.filter(d => d.status === 'Pendente').length;
+    if(document.getElementById('completed-demands')) document.getElementById('completed-demands').textContent = _demandasFiltradas.filter(d => d.status === 'Realizada').length;
+    if(document.getElementById('unfeasible-demands')) document.getElementById('unfeasible-demands').textContent = _demandasFiltradas.filter(d => d.status === 'Inviável').length;
 
-    if (filtered.length === 0) {
+    // Atualiza gráficos
+    updateDemandCharts(_demandasFiltradas);
+
+    // 3. Chama o desenhista da tabela paginada
+    atualizarTabelaDemandasPaginada();
+}
+
+// Função que desenha a tabela fatiada
+function atualizarTabelaDemandasPaginada() {
+    const c = document.getElementById('demands-table');
+    if (!c) return;
+
+    // Cálculos de Paginação
+    const totalItens = _demandasFiltradas.length;
+    const totalPaginas = Math.ceil(totalItens / _itensDemandas);
+    
+    // Ajuste de limites
+    if (_paginacaoDemandas > totalPaginas && totalPaginas > 0) _paginacaoDemandas = totalPaginas;
+    if (_paginacaoDemandas < 1) _paginacaoDemandas = 1;
+
+    // Fatiamento (Slice)
+    const inicio = (_paginacaoDemandas - 1) * _itensDemandas;
+    const fim = inicio + _itensDemandas;
+    const itensParaMostrar = _demandasFiltradas.slice(inicio, fim);
+
+    // Renderização HTML
+    if (itensParaMostrar.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhuma demanda encontrada.</div>';
     } else {
-        const rows = filtered.map(function(d) {
+        const rows = itensParaMostrar.map(function(d) {
             let statusClass = 'task-status';
             if (d.status === 'Realizada') statusClass += ' completed';
             else if (d.status === 'Inviável') statusClass += ' cancelled';
@@ -2987,11 +3012,70 @@ function renderDemands() {
             <tbody>${rows}</tbody>
         </table>`;
     }
-    updateDemandCharts(filtered);
+
+    // Desenha os botões de paginação
+    renderizarControlesDemandas(totalPaginas);
 }
 
+// Desenha os botões (Anterior / Próximo)
+function renderizarControlesDemandas(totalPaginas) {
+    const container = document.getElementById('demandasPagination');
+    if (!container) return;
+
+    if (totalPaginas <= 1) {
+        container.innerHTML = '';
+        return; 
+    }
+
+    let html = '';
+    
+    // Botão Anterior
+    html += `<button onclick="mudarPaginaDemandas(${_paginacaoDemandas - 1})" ${ _paginacaoDemandas === 1 ? 'disabled' : '' }>Anterior</button>`;
+
+    // Lógica de botões numerados
+    let startPage = Math.max(1, _paginacaoDemandas - 2);
+    let endPage = Math.min(totalPaginas, _paginacaoDemandas + 2);
+
+    if (startPage > 1) {
+        html += `<button onclick="mudarPaginaDemandas(1)">1</button>`;
+        if (startPage > 2) html += `<span>...</span>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button onclick="mudarPaginaDemandas(${i})" class="${i === _paginacaoDemandas ? 'active' : ''}">${i}</button>`;
+    }
+
+    if (endPage < totalPaginas) {
+        if (endPage < totalPaginas - 1) html += `<span>...</span>`;
+        html += `<button onclick="mudarPaginaDemandas(${totalPaginas})">${totalPaginas}</button>`;
+    }
+
+    // Botão Próximo
+    html += `<button onclick="mudarPaginaDemandas(${_paginacaoDemandas + 1})" ${ _paginacaoDemandas === totalPaginas ? 'disabled' : '' }>Próximo</button>`;
+    
+    html += `<span style="margin-left:15px; font-size:0.9em; color:#666;">
+             Pág ${_paginacaoDemandas} de ${totalPaginas} 
+             (${_demandasFiltradas.length} registros)</span>`;
+
+    container.innerHTML = html;
+}
+
+// --- FUNÇÕES GLOBAIS DE CONTROLE (WINDOW) ---
+window.mudarQtdPorPaginaDemandas = function(valor) {
+    _itensDemandas = parseInt(valor);
+    _paginacaoDemandas = 1; 
+    atualizarTabelaDemandasPaginada();
+};
+
+window.mudarPaginaDemandas = function(novaPagina) {
+    _paginacaoDemandas = novaPagina;
+    atualizarTabelaDemandasPaginada();
+};
+
+// --- OUTRAS FUNÇÕES DA ABA (ORIGINAIS MANTIDAS) ---
+
 function updateDemandCharts(data) {
-    // 1. Status (Cores Específicas)
+    // 1. Status
     if (document.getElementById('demandStatusChart') && window.Chart) {
         if (chartStatusDem) chartStatusDem.destroy();
         chartStatusDem = new Chart(document.getElementById('demandStatusChart'), {
@@ -3004,13 +3088,13 @@ function updateDemandCharts(data) {
                         data.filter(d => d.status==='Realizada').length, 
                         data.filter(d => d.status==='Inviável').length
                     ], 
-                    backgroundColor: ['#E68161', '#005580', '#C85250'] // Laranja, Azul, Vermelho
+                    backgroundColor: ['#E68161', '#005580', '#C85250'] 
                 }] 
             }
         });
     }
 
-    // 2. Prioridade (Cores Específicas)
+    // 2. Prioridade
     if (document.getElementById('demandPriorityChart') && window.Chart) {
         if (chartPrioDem) chartPrioDem.destroy();
         const pCounts = { 'Alta':0, 'Média':0, 'Baixa':0 };
@@ -3023,13 +3107,13 @@ function updateDemandCharts(data) {
                 datasets: [{ 
                     label: 'Qtd', 
                     data: Object.values(pCounts), 
-                    backgroundColor: ['#C85250', '#E68161', '#79C2A9'] // Vermelho, Laranja, Verde
+                    backgroundColor: ['#C85250', '#E68161', '#79C2A9'] 
                 }] 
             }
         });
     }
 
-    // 3. Usuário (Colorido Dinâmico)
+    // 3. Usuário
     if (document.getElementById('demandUserChart') && window.Chart) {
         if (chartUserDem) chartUserDem.destroy();
         const uCounts = {};
@@ -3061,7 +3145,6 @@ function generateDemandsPDF() {
     downloadPDF('Relatório Demandas', headers, rows);
 }
 
-// 5. DEMANDAS
 function deleteDemand(id) {
     if (confirm('Excluir esta demanda?')) {
         const item = demands.find(x => x.id === id);
