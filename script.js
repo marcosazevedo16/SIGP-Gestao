@@ -2616,12 +2616,12 @@ function atualizarTabelaApresentacoesPaginada() {
         
         c.innerHTML = `<table><thead>
             <th>Município</th>
-            <th>Data Solicitação</th>
-            <th>Solicitante(s)</th>
+            <th>Data de Solicitação</th>
+            <th>Profissional(ais) Solicitante(s)</th>
             <th>Colaborador(es) Responsável(is)</th>
-            <th>Formas</th>
-            <th>Descrição</th>
-            <th>Data Realização</th>
+            <th>Formas de<br>Apresentação</th>
+            <th>Detalhes da<br>Apresentação</th>
+            <th>Data de<br>Realização</th>
             <th>Status</th>
             <th>Ações</th>
         </thead><tbody>${rows}</tbody></table>`;
