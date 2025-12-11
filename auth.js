@@ -80,11 +80,32 @@ export function showAppScreen() {
 }
 
 export function showLoginScreen() {
+    // 1. Limpezas padrão (mantendo o que já existia)
     currentUser = null;
     isAuthenticated = false;
-    document.getElementById('login-screen').classList.add('active');
-    document.getElementById('main-app').classList.remove('active');
+    
+    const loginScreen = document.getElementById('login-screen');
+    const mainApp = document.getElementById('main-app');
+    
+    if (loginScreen) loginScreen.classList.add('active');
+    if (mainApp) mainApp.classList.remove('active');
     document.body.classList.remove('loading');
+
+    // --- 2. NOVO: DETECTOR DE LOGOUT POR INATIVIDADE ---
+    // Verifica se a "tatuagem" está na aba
+    try {
+        if (window.name === "LOGOUT_POR_INATIVIDADE") {
+            // a. Limpa a marca para não avisar de novo num F5 futuro
+            window.name = "";
+            
+            // b. Exibe o alerta (com pequeno delay para garantir que a tela apareceu)
+            setTimeout(function() {
+                alert("⚠️ SESSÃO EXPIRADA\n\nVocê ficou inativo por muito tempo e foi desconectado por segurança.\n\nPor favor, faça login novamente.");
+            }, 500); 
+        }
+    } catch (e) {
+        console.error("Erro ao verificar aviso de inatividade:", e);
+    }
 }
 
 export function handleLogout() {
