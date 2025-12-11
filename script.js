@@ -3090,9 +3090,12 @@ function clearDemandFilters() {
     renderDemands();
 }
 
-// ----------------------------------------------------------------------------
-// 16. VISITAS (Item 6)
-// ----------------------------------------------------------------------------
+/* =================================================================================
+   SEÇÃO 16: VISITAS PRESENCIAIS (COMPLETO COM PAGINAÇÃO)
+   ================================================================================= */
+
+// --- FUNÇÕES DE MODAL E SALVAMENTO (ORIGINAIS PRESERVADAS) ---
+
 function handleVisitStatusChange() {
     const statusEl = document.getElementById('visit-status');
     if (!statusEl) return;
@@ -3123,6 +3126,7 @@ function handleVisitStatusChange() {
         if(inpJust) inpJust.required = true;
     }
 }
+
 function showVisitModal(id = null) {
     editingId = id;
     const form = document.getElementById('visit-form');
@@ -3185,9 +3189,6 @@ function showVisitModal(id = null) {
     document.getElementById('visit-modal').classList.add('show');
 }
 
-// ============================================================
-// NOVA FUNÇÃO: SALVAR VISITA NO FIREBASE
-// ============================================================
 function saveVisit(e) {
     e.preventDefault();
     const status = document.getElementById('visit-status').value;
@@ -3286,49 +3287,61 @@ function getFilteredVisits() {
     return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
+// --- PAGINAÇÃO E RENDERIZAÇÃO ---
+
+// Variáveis Globais de Controle (Visitas)
+var _visitasFiltradas = []; 
+var _paginacaoVisitas = 1;
+var _itensVisitas = 15;
+
 function renderVisits() {
-    // 1. Captura Filtros
-    const fMun = document.getElementById('filter-visit-municipality')?.value;
-    const fStatus = document.getElementById('filter-visit-status')?.value;
-    const fApp = document.getElementById('filter-visit-applicant')?.value.toLowerCase();
-    const fSolStart = document.getElementById('filter-visit-sol-start')?.value;
-    const fSolEnd = document.getElementById('filter-visit-sol-end')?.value;
-    const fRealStart = document.getElementById('filter-visit-real-start')?.value;
-    const fRealEnd = document.getElementById('filter-visit-real-end')?.value;
+    console.log("🔄 Renderizando visitas com paginação...");
 
-    // 2. Filtragem
-    let filtered = visits.filter(function(v) {
-        if (fMun && v.municipality !== fMun) return false;
-        if (fStatus && v.status !== fStatus) return false;
-        if (fApp && !v.applicant.toLowerCase().includes(fApp)) return false;
-        if (fSolStart && v.date < fSolStart) return false;
-        if (fSolEnd && v.date > fSolEnd) return false;
-        if (fRealStart && (!v.dateRealization || v.dateRealization < fRealStart)) return false;
-        if (fRealEnd && (!v.dateRealization || v.dateRealization > fRealEnd)) return false;
-        return true;
-    });
+    // 1. Obtém lista filtrada
+    _visitasFiltradas = getFilteredVisits();
 
-    // Ordenação
-    filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    // 3. Renderização
-    const c = document.getElementById('visits-table');
-    
+    // 2. Atualiza Contadores e Gráficos (Baseado no TOTAL filtrado)
     if(document.getElementById('visits-results-count')) {
-        document.getElementById('visits-results-count').innerHTML = '<strong>' + filtered.length + '</strong> visitas encontradas';
+        document.getElementById('visits-results-count').innerHTML = '<strong>' + _visitasFiltradas.length + '</strong> visitas encontradas';
         document.getElementById('visits-results-count').style.display = 'block';
     }
 
     // Estatísticas
     if(document.getElementById('total-visits')) document.getElementById('total-visits').textContent = visits.length;
-    if(document.getElementById('pending-visits')) document.getElementById('pending-visits').textContent = filtered.filter(v => v.status === 'Pendente').length;
-    if(document.getElementById('completed-visits')) document.getElementById('completed-visits').textContent = filtered.filter(v => v.status === 'Realizada').length;
-    if(document.getElementById('cancelled-visits')) document.getElementById('cancelled-visits').textContent = filtered.filter(v => v.status === 'Cancelada').length;
+    if(document.getElementById('pending-visits')) document.getElementById('pending-visits').textContent = _visitasFiltradas.filter(v => v.status === 'Pendente').length;
+    if(document.getElementById('completed-visits')) document.getElementById('completed-visits').textContent = _visitasFiltradas.filter(v => v.status === 'Realizada').length;
+    if(document.getElementById('cancelled-visits')) document.getElementById('cancelled-visits').textContent = _visitasFiltradas.filter(v => v.status === 'Cancelada').length;
 
-    if (filtered.length === 0) {
+    // Atualiza gráficos
+    updateVisitCharts(_visitasFiltradas);
+
+    // 3. Chama o desenhista da tabela paginada
+    atualizarTabelaVisitasPaginada();
+}
+
+// Função que desenha a tabela fatiada
+function atualizarTabelaVisitasPaginada() {
+    const c = document.getElementById('visits-table');
+    if (!c) return;
+
+    // Cálculos de Paginação
+    const totalItens = _visitasFiltradas.length;
+    const totalPaginas = Math.ceil(totalItens / _itensVisitas);
+    
+    // Ajuste de limites
+    if (_paginacaoVisitas > totalPaginas && totalPaginas > 0) _paginacaoVisitas = totalPaginas;
+    if (_paginacaoVisitas < 1) _paginacaoVisitas = 1;
+
+    // Fatiamento (Slice)
+    const inicio = (_paginacaoVisitas - 1) * _itensVisitas;
+    const fim = inicio + _itensVisitas;
+    const itensParaMostrar = _visitasFiltradas.slice(inicio, fim);
+
+    // Renderização HTML
+    if (itensParaMostrar.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhuma visita encontrada.</div>';
     } else {
-        const rows = filtered.map(function(v) {
+        const rows = itensParaMostrar.map(function(v) {
             let statusClass = 'task-status';
             if (v.status === 'Realizada') statusClass += ' completed';
             else if (v.status === 'Cancelada') statusClass += ' cancelled';
@@ -3340,7 +3353,7 @@ function renderVisits() {
             const motivo = v.reason ? (v.reason.length > 40 ? `<span title="${v.reason}">${v.reason.substring(0,40)}...</span>` : v.reason) : '-';
             const justif = v.justification ? (v.justification.length > 30 ? `<span title="${v.justification}">${v.justification.substring(0,30)}...</span>` : v.justification) : '-';
 
-            // --- CORREÇÃO: Busca UF na lista mestra ---
+            // --- Busca UF na lista mestra ---
             const munData = municipalitiesList.find(m => m.name === v.municipality);
             const munDisplay = munData ? `${v.municipality} - ${munData.uf}` : v.municipality;
 
@@ -3374,8 +3387,68 @@ function renderVisits() {
             <tbody>${rows}</tbody>
         </table>`;
     }
-    updateVisitCharts(filtered);
+
+    // Desenha os botões de paginação
+    renderizarControlesVisitas(totalPaginas);
 }
+
+// Desenha os botões (Anterior / Próximo)
+function renderizarControlesVisitas(totalPaginas) {
+    const container = document.getElementById('visitasPagination');
+    if (!container) return;
+
+    if (totalPaginas <= 1) {
+        container.innerHTML = '';
+        return; 
+    }
+
+    let html = '';
+    
+    // Botão Anterior
+    html += `<button onclick="mudarPaginaVisitas(${_paginacaoVisitas - 1})" ${ _paginacaoVisitas === 1 ? 'disabled' : '' }>Anterior</button>`;
+
+    // Lógica de botões numerados
+    let startPage = Math.max(1, _paginacaoVisitas - 2);
+    let endPage = Math.min(totalPaginas, _paginacaoVisitas + 2);
+
+    if (startPage > 1) {
+        html += `<button onclick="mudarPaginaVisitas(1)">1</button>`;
+        if (startPage > 2) html += `<span>...</span>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button onclick="mudarPaginaVisitas(${i})" class="${i === _paginacaoVisitas ? 'active' : ''}">${i}</button>`;
+    }
+
+    if (endPage < totalPaginas) {
+        if (endPage < totalPaginas - 1) html += `<span>...</span>`;
+        html += `<button onclick="mudarPaginaVisitas(${totalPaginas})">${totalPaginas}</button>`;
+    }
+
+    // Botão Próximo
+    html += `<button onclick="mudarPaginaVisitas(${_paginacaoVisitas + 1})" ${ _paginacaoVisitas === totalPaginas ? 'disabled' : '' }>Próximo</button>`;
+    
+    html += `<span style="margin-left:15px; font-size:0.9em; color:#666;">
+             Pág ${_paginacaoVisitas} de ${totalPaginas} 
+             (${_visitasFiltradas.length} registros)</span>`;
+
+    container.innerHTML = html;
+}
+
+// --- FUNÇÕES GLOBAIS DE CONTROLE (WINDOW) ---
+window.mudarQtdPorPaginaVisitas = function(valor) {
+    _itensVisitas = parseInt(valor);
+    _paginacaoVisitas = 1; 
+    atualizarTabelaVisitasPaginada();
+};
+
+window.mudarPaginaVisitas = function(novaPagina) {
+    _paginacaoVisitas = novaPagina;
+    atualizarTabelaVisitasPaginada();
+};
+
+// --- OUTRAS FUNÇÕES DA ABA (ORIGINAIS MANTIDAS) ---
+
 function updateVisitCharts(data) {
     // 1. Status (Cores Corretas)
     if (document.getElementById('visitStatusChart') && window.Chart) {
@@ -3439,7 +3512,6 @@ function generateVisitsPDF() {
     downloadPDF('Relatório Visitas', headers, rows);
 }
 
-// 6. VISITAS
 function deleteVisit(id) {
     if (confirm('Excluir esta visita?')) {
         const item = visits.find(x => x.id === id);
