@@ -6935,7 +6935,7 @@ function atualizarTabelaIntegracoesPaginada() {
             <thead>
                 <th>Município</th>
                 <th>APIs Em Funcionamento no Município</th>
-                <th>Responsável Pela Atualização<br>do Certificado</th>
+                <th>Responsável Por<br>Atualizar Certificado</th>
                 <th>Contato do<br>Responsável</th> 
                 <th>Data de<br>Vencimento</th>
                 <th>Status Vencimento</th>
