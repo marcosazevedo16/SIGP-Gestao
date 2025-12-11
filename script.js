@@ -7296,7 +7296,7 @@ function renderCollaboratorInfos() {
                 <th>Idade Atual</th>
                 <th>Data de Admissão</th>
                 <th>Tempo de Serviço</th>
-                <th>Data Final</th>Últimas Férias</th>
+                <th>Data Final<br>Últimas Férias</th>
                 <th>Tempo s/ Férias</th>
                 <th>Observações</th>
                 <th style="width:90px;">Ações</th>
