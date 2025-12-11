@@ -3529,12 +3529,12 @@ function atualizarTabelaVisitasPaginada() {
         <table>
             <thead>
                 <th>Município</th>
-                <th style="text-align:center;">Data Solic.</th>
-                <th>Solicitante</th>
+                <th style="text-align:center;">Data de<br>Solicitação.</th>
+                <th>Profissional(ais) Solicitantes</th>
                 <th>Motivo da Visita</th>
                 <th style="text-align:center;">Status</th>
-                <th style="text-align:center;">Data Realiz.</th>
-                <th>Justificativa</th>
+                <th style="text-align:center;">Data de<br>Realização.</th>
+                <th>Justificativa de Cancelamento</th>
                 <th style="text-align:center; width:90px;">Ações</th>
             </thead>
             <tbody>${rows}</tbody>
