@@ -812,17 +812,21 @@ function handleChangePassword(e) {
 // Função atualizada para o novo Layout Grid
 function handleMunicipalityStatusChange() {
     const statusEl = document.getElementById('municipality-status');
-    if (!statusEl) return; // Segurança
+    if (!statusEl) return; 
     const status = statusEl.value; 
-    // 1. Captura os grupos (divs) que já estão no HTML
+
+    // 1. Captura os campos e grupos
     const groupBlocked = document.getElementById('group-date-blocked');
     const groupStopped = document.getElementById('group-date-stopped'); 
-    // 2. Captura os inputs para controlar a obrigatoriedade (required)
+    
     const inputBlocked = document.getElementById('municipality-date-blocked');
     const inputStopped = document.getElementById('municipality-date-stopped');
-    // 3. RESET: Esconde tudo e tira obrigatoriedade antes de checar
+    const inputImpl = document.getElementById('municipality-implantation-date'); // Campo Implantação
+
+    // 2. RESET GERAL: Esconde grupos e reseta obrigatoriedades
     if (groupBlocked) groupBlocked.style.display = 'none';
     if (groupStopped) groupStopped.style.display = 'none';    
+    
     if (inputBlocked) { 
         inputBlocked.value = ''; 
         inputBlocked.required = false; 
@@ -831,19 +835,22 @@ function handleMunicipalityStatusChange() {
         inputStopped.value = ''; 
         inputStopped.required = false; 
     }
-    // 4. LÓGICA: Mostra o campo específico baseado no status
+
+    // [PADRÃO] Data de Implantação começa como OBRIGATÓRIA
+    if (inputImpl) inputImpl.required = true;
+
+    // 3. APLICA AS REGRAS ESPECÍFICAS
     if (status === 'Bloqueado') {
         if (groupBlocked) groupBlocked.style.display = 'block';
-        if (inputBlocked) inputBlocked.required = true; // Torna obrigatório
+        if (inputBlocked) inputBlocked.required = true; 
     } 
     else if (status === 'Parou de usar') {
         if (groupStopped) groupStopped.style.display = 'block';
-        // Se quiser que a data de parada seja obrigatória, descomente abaixo:
-        // if (inputStopped) inputStopped.required = true; 
     }
-    
-    // Se estiver editando, a função showMunicipalityModal vai repopular os valores
-    // logo após chamar esta função, então o reset acima não perde dados salvos.
+    else if (status === 'Não Implantado') {
+        // [AJUSTE] Se for "Não Implantado", remove a obrigatoriedade da implantação
+        if (inputImpl) inputImpl.required = false;
+    }
 }
 function showMunicipalityModal(id = null) {
     editingId = id;
@@ -1618,7 +1625,7 @@ function saveTask(e) {
 function getFilteredTasks() {
     const fMun = document.getElementById('filter-task-municipality')?.value;
     const fStatus = document.getElementById('filter-task-status')?.value;
-    const fReq = document.getElementById('filter-task-requester')?.value.toLowerCase();
+    // const fReq removido pois não existe mais no HTML
     const fPerf = document.getElementById('filter-task-performer')?.value; 
     const fCargo = document.getElementById('filter-task-position')?.value; 
     
@@ -1633,7 +1640,7 @@ function getFilteredTasks() {
     let filtered = tasks.filter(function(t) {
         if (fMun && t.municipality !== fMun) return false;
         if (fStatus && t.status !== fStatus) return false;
-        if (fReq && !t.requestedBy.toLowerCase().includes(fReq)) return false;
+        // if (fReq && !t.requestedBy.toLowerCase().includes(fReq)) return false; // REMOVIDO
         if (fPerf && t.performedBy !== fPerf) return false;
         if (fCargo && t.trainedPosition !== fCargo) return false;
 
@@ -1850,7 +1857,8 @@ function closeTaskModal() {
 function clearTaskFilters() {
     const ids = [
         'filter-task-municipality', 'filter-task-performer', 'filter-task-position', 
-        'filter-task-status', 'filter-task-requester', 
+        'filter-task-status', 
+        // 'filter-task-requester', // REMOVIDO
         'filter-task-req-start', 'filter-task-req-end', 
         'filter-task-perf-start', 'filter-task-perf-end'
     ];
@@ -2020,37 +2028,29 @@ function saveRequest(e) {
 function getFilteredRequests() {
     const fMun = document.getElementById('filter-request-municipality')?.value;
     const fStatus = document.getElementById('filter-request-status')?.value;
-    const fSol = document.getElementById('filter-request-solicitante')?.value.toLowerCase();
+    // O filtro 'filter-request-solicitante' foi removido do HTML
     const fUser = document.getElementById('filter-request-user')?.value; 
     
-    // Datas Solicitação
+    // Datas
     const fSolStart = document.getElementById('filter-request-sol-start')?.value;
     const fSolEnd = document.getElementById('filter-request-sol-end')?.value;
-    
-    // Datas Realização
     const fRealStart = document.getElementById('filter-request-real-start')?.value;
     const fRealEnd = document.getElementById('filter-request-real-end')?.value;
 
     let filtered = requests.filter(function(r) {
         if (fMun && r.municipality !== fMun) return false;
         if (fStatus && r.status !== fStatus) return false;
-        if (fSol && !r.requester.toLowerCase().includes(fSol)) return false;
-        
-        // Filtro de Usuário
         if (fUser && r.user !== fUser) return false;
 
-        // Filtro Data Solicitação
+        // Datas
         if (fSolStart && r.date < fSolStart) return false;
         if (fSolEnd && r.date > fSolEnd) return false;
-
-        // Filtro Data Realização
         if (fRealStart && (!r.dateRealization || r.dateRealization < fRealStart)) return false;
         if (fRealEnd && (!r.dateRealization || r.dateRealization > fRealEnd)) return false;
         
         return true;
     });
 
-    // Ordenação por Data Solicitação
     return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
@@ -2285,7 +2285,7 @@ function closeRequestModal() {
 function clearRequestFilters() {
     const ids = [
         'filter-request-municipality', 'filter-request-status', 'filter-request-user', 
-        'filter-request-solicitante', 
+        // 'filter-request-solicitante', // REMOVIDO
         'filter-request-sol-start', 'filter-request-sol-end',
         'filter-request-real-start', 'filter-request-real-end'
     ];
@@ -4541,11 +4541,18 @@ function showMunicipalityListModal(id=null){
     document.getElementById('municipality-list-modal').classList.add('show'); 
 }
 
-// ============================================================
-// LISTA MESTRA MUNICÍPIOS (Configurações) - ATUALIZADO
-// ============================================================
+/* =================================================================================
+   SEÇÃO: LISTA MESTRA DE MUNICÍPIOS (PAGINAÇÃO PADRONIZADA)
+   ================================================================================= */
 
-// 1. Salvar com Validação de Duplicidade
+// 1. Variáveis Globais de Controle
+var _munListFiltrados = [];
+var _paginacaoMunList = 1;
+var _itensMunList = 25; // Padrão inicial definido no HTML
+
+// ============================================================
+// 1. SALVAR COM VALIDAÇÃO DE DUPLICIDADE
+// ============================================================
 function saveMunicipalityList(e) { 
     e.preventDefault(); 
     
@@ -4553,7 +4560,6 @@ function saveMunicipalityList(e) {
     const ufInput = document.getElementById('municipality-list-uf').value;
     
     // Validação de Duplicidade (Nome + UF)
-    // Verifica se já existe algum item com mesmo nome E mesma UF, excluindo o próprio ID se for edição
     const isDuplicate = municipalitiesList.some(m => 
         m.name.toLowerCase() === nameInput.toLowerCase() && 
         m.uf === ufInput && 
@@ -4584,79 +4590,135 @@ function saveMunicipalityList(e) {
         .catch(err => alert("Erro ao salvar: " + err.message));
     } 
 }
-// 2. Renderizar com Paginação e Contador
-function renderMunicipalityList() {
-    const filterVal = document.getElementById('filter-municipality-list-name')?.value.toLowerCase() || '';
-    const c = document.getElementById('municipalities-list-table');
-    const countDiv = document.getElementById('municipalities-list-total'); // Certifique-se que este ID existe no HTML
 
-    // Filtragem
-    let filtered = municipalitiesList.filter(m => 
+// ============================================================
+// 2. RENDERIZAÇÃO PRINCIPAL (FILTROS + PREPARAÇÃO)
+// ============================================================
+function renderMunicipalityList() {
+    console.log("🔄 Renderizando lista mestra com paginação...");
+
+    const filterVal = document.getElementById('filter-municipality-list-name')?.value.toLowerCase() || '';
+    const countDiv = document.getElementById('municipalities-list-total');
+
+    // A. Filtragem Global
+    _munListFiltrados = municipalitiesList.filter(m => 
         m.name.toLowerCase().includes(filterVal)
     ).sort((a,b) => a.name.localeCompare(b.name));
 
-    // Contador de Resultados
+    // B. Atualiza Contador
     if(countDiv) {
         countDiv.style.display = 'block';
-        countDiv.innerHTML = `Total: <strong>${filtered.length}</strong> registros encontrados`;
+        countDiv.innerHTML = `Total: <strong>${_munListFiltrados.length}</strong> municípios cadastrados`;
     }
 
-    // Lógica de Paginação
-    const totalPages = Math.ceil(filtered.length / MUN_LIST_ITEMS_PER_PAGE);
+    // C. Chama o desenhista da tabela paginada
+    atualizarTabelaMunListPaginada();
+}
+
+// ============================================================
+// 3. PAGINAÇÃO E DESENHO DA TABELA
+// ============================================================
+function atualizarTabelaMunListPaginada() {
+    const c = document.getElementById('municipalities-list-table');
+    if (!c) return;
+
+    // Cálculos
+    const totalItens = _munListFiltrados.length;
+    const totalPaginas = Math.ceil(totalItens / _itensMunList);
     
-    // Se a página atual for maior que o total de páginas (ex: filtro reduziu itens), volta pra 1
-    if (munListPage > totalPages && totalPages > 0) munListPage = 1;
-    if (munListPage < 1) munListPage = 1;
+    // Ajuste de limites
+    if (_paginacaoMunList > totalPaginas && totalPaginas > 0) _paginacaoMunList = totalPaginas;
+    if (_paginacaoMunList < 1) _paginacaoMunList = 1;
 
-    const startIndex = (munListPage - 1) * MUN_LIST_ITEMS_PER_PAGE;
-    const endIndex = startIndex + MUN_LIST_ITEMS_PER_PAGE;
-    const paginatedData = filtered.slice(startIndex, endIndex);
+    // Fatiamento
+    const inicio = (_paginacaoMunList - 1) * _itensMunList;
+    const fim = inicio + _itensMunList;
+    const itensParaMostrar = _munListFiltrados.slice(inicio, fim);
 
-    if (filtered.length === 0) {
+    // Renderização HTML
+    if (itensParaMostrar.length === 0) {
         c.innerHTML = '<div class="empty-state">Nenhum município encontrado.</div>';
-        return;
+    } else {
+        const rows = itensParaMostrar.map(m => 
+            `<tr>
+                <td class="text-primary-cell">${m.name}</td>
+                <td>${m.uf}</td>
+                <td>
+                    <button class="btn btn--sm" onclick="showMunicipalityListModal('${m.id}')">✏️</button>
+                    <button class="btn btn--sm" onclick="deleteMunicipalityList('${m.id}')">🗑️</button>
+                </td>
+            </tr>`
+        ).join('');
+
+        c.innerHTML = `<table><thead><th>Nome</th><th>UF</th><th>Ações</th></thead><tbody>${rows}</tbody></table>`;
     }
 
-    // Gera Tabela
-    const rows = paginatedData.map(m => 
-        `<tr>
-            <td class="text-primary-cell">${m.name}</td>
-            <td>${m.uf}</td>
-            <td>
-                <button class="btn btn--sm" onclick="showMunicipalityListModal('${m.id}')">✏️</button>
-                <button class="btn btn--sm" onclick="deleteMunicipalityList('${m.id}')">🗑️</button>
-            </td>
-        </tr>`
-    ).join('');
+    // Desenha os botões de paginação no container específico
+    renderizarControlesMunList(totalPaginas);
+}
 
-    // Controles de Paginação HTML
-    let paginationHTML = '';
-    if (totalPages > 1) {
-        paginationHTML = `
-        <div class="pagination-controls" style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top:15px;">
-            <button class="btn btn--sm btn--secondary" 
-                onclick="changeMunicipalityListPage(-1)" 
-                ${munListPage === 1 ? 'disabled' : ''}>
-                ⬅️ Anterior
-            </button>
-            <span style="font-size:13px;">Página <strong>${munListPage}</strong> de <strong>${totalPages}</strong></span>
-            <button class="btn btn--sm btn--secondary" 
-                onclick="changeMunicipalityListPage(1)" 
-                ${munListPage === totalPages ? 'disabled' : ''}>
-                Próximo ➡️
-            </button>
-        </div>`;
+// ============================================================
+// 4. DESENHA OS CONTROLES (ANTERIOR / PRÓXIMO)
+// ============================================================
+function renderizarControlesMunList(totalPaginas) {
+    const container = document.getElementById('munListPagination');
+    if (!container) return;
+
+    if (totalPaginas <= 1) {
+        container.innerHTML = '';
+        return; 
     }
 
-    c.innerHTML = `<table><thead><th>Nome</th><th>UF</th><th>Ações</th></thead><tbody>${rows}</tbody></table>${paginationHTML}`;
-}
-// 3. Função Auxiliar para mudar de página
-function changeMunicipalityListPage(delta) {
-    munListPage += delta;
-    renderMunicipalityList();
+    let html = '';
+    
+    // Botão Anterior
+    html += `<button onclick="mudarPaginaMunList(${_paginacaoMunList - 1})" ${ _paginacaoMunList === 1 ? 'disabled' : '' }>Anterior</button>`;
+
+    // Lógica de botões numerados
+    let startPage = Math.max(1, _paginacaoMunList - 2);
+    let endPage = Math.min(totalPaginas, _paginacaoMunList + 2);
+
+    if (startPage > 1) {
+        html += `<button onclick="mudarPaginaMunList(1)">1</button>`;
+        if (startPage > 2) html += `<span>...</span>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button onclick="mudarPaginaMunList(${i})" class="${i === _paginacaoMunList ? 'active' : ''}">${i}</button>`;
+    }
+
+    if (endPage < totalPaginas) {
+        if (endPage < totalPaginas - 1) html += `<span>...</span>`;
+        html += `<button onclick="mudarPaginaMunList(${totalPaginas})">${totalPaginas}</button>`;
+    }
+
+    // Botão Próximo
+    html += `<button onclick="mudarPaginaMunList(${_paginacaoMunList + 1})" ${ _paginacaoMunList === totalPaginas ? 'disabled' : '' }>Próximo</button>`;
+    
+    html += `<span style="margin-left:15px; font-size:0.9em; color:#666;">
+             Pág ${_paginacaoMunList} de ${totalPaginas} 
+             (${_munListFiltrados.length} registros)</span>`;
+
+    container.innerHTML = html;
 }
 
+// ============================================================
+// 5. FUNÇÕES GLOBAIS DE CONTROLE (WINDOW)
+// ============================================================
+window.mudarQtdPorPaginaMunList = function(valor) {
+    _itensMunList = parseInt(valor);
+    _paginacaoMunList = 1; 
+    atualizarTabelaMunListPaginada();
+};
+
+window.mudarPaginaMunList = function(novaPagina) {
+    _paginacaoMunList = novaPagina;
+    atualizarTabelaMunListPaginada();
+};
+
+// ============================================================
 // 15. LISTA MESTRA MUNICÍPIOS (Configuração)
+// ============================================================
 function deleteMunicipalityList(id){ 
     if(confirm('Excluir da Lista Mestra?')) {
         const item = municipalitiesList.find(x => x.id === id);
@@ -4697,7 +4759,7 @@ function renderFormas() {
     // CORREÇÃO: Torna visível
     if(totalDiv) {
         totalDiv.style.display = 'block';
-        totalDiv.innerHTML = `Total: <strong>${formasApresentacao.length}</strong> formas cadastradas`;
+        totalDiv.innerHTML = `Total: <strong>${formasApresentacao.length}</strong> formas de apresentação cadastradas`;
     }
 
     const r = formasApresentacao.map(f => `<tr><td class="text-primary-cell">${f.name}</td><td><button class="btn btn--sm" onclick="showFormaApresentacaoModal('${f.id}')">✏️</button><button class="btn btn--sm" onclick="deleteForma('${f.id}')">🗑️</button></td></tr>`).join('');
@@ -4994,10 +5056,29 @@ function confirmRestore() {
 // 20. DASHBOARD E INICIALIZAÇÃO
 // ----------------------------------------------------------------------------
 function updateDashboardStats() {
-    document.getElementById('dashboard-municipalities-in-use').textContent = municipalities.filter(function(m) { return m.status === 'Em uso'; }).length;
-    document.getElementById('dashboard-trainings-completed').textContent = tasks.filter(function(t) { return t.status === 'Concluído'; }).length;
-    document.getElementById('dashboard-requests-completed').textContent = requests.filter(function(r) { return r.status === 'Realizado'; }).length;
-    document.getElementById('dashboard-presentations-completed').textContent = presentations.filter(function(p) { return p.status === 'Realizada'; }).length;
+    // 1. Municípios
+    const elMun = document.getElementById('dashboard-municipalities-in-use');
+    if (elMun) elMun.textContent = municipalities.filter(m => m.status === 'Em uso').length;
+
+    // 2. Treinamentos
+    const elTrain = document.getElementById('dashboard-trainings-completed');
+    if (elTrain) elTrain.textContent = tasks.filter(t => t.status === 'Concluído').length;
+
+    // 3. Solicitações
+    const elReq = document.getElementById('dashboard-requests-completed');
+    if (elReq) elReq.textContent = requests.filter(r => r.status === 'Realizado').length;
+
+    // 4. Apresentações
+    const elPres = document.getElementById('dashboard-presentations-completed');
+    if (elPres) elPres.textContent = presentations.filter(p => p.status === 'Realizada').length;
+
+    // 5. [NOVO] Viagens Realizadas (Visitas com status 'Realizada')
+    const elVisits = document.getElementById('dashboard-visits-completed');
+    if (elVisits) {
+        // Filtra na lista global 'visits' onde o status é exatamente 'Realizada'
+        const totalViagens = visits.filter(v => v.status === 'Realizada').length;
+        elVisits.textContent = totalViagens;
+    }
 }
 
 // Variáveis globais para as instâncias dos gráficos
@@ -5598,6 +5679,18 @@ function saveOrientador(e){
     } 
 }
 // ============================================================
+// FUNÇÃO AUXILIAR: ATUALIZA O DASHBOARD SE ESTIVER VISÍVEL
+// ============================================================
+function checkAndRefreshDashboard() {
+    const activeTab = document.querySelector('.tab-content.active');
+    // Se a aba ativa for o Dashboard, atualiza tudo (Números + Gráficos)
+    if (activeTab && activeTab.id === 'dashboard-section') {
+        if (typeof updateDashboardStats === 'function') updateDashboardStats();
+        if (typeof initializeDashboardCharts === 'function') initializeDashboardCharts();
+    }
+}
+
+// ============================================================
 // NOVA FUNÇÃO: OUVINTE DE MUNICÍPIOS (Lê do Firebase em tempo real)
 // ============================================================
 function setupMunicipalityListener() {
@@ -5626,13 +5719,16 @@ function setupMunicipalityListener() {
         
         // Atualiza os gráficos e os selects dos outros formulários
         updateGlobalDropdowns();
-        updateDashboardStats(); 
+        
+        // [FIX] Atualiza o Dashboard (Gráficos e Cards) se ele estiver na tela
+        checkAndRefreshDashboard();
         
     }, (error) => {
         appLogger.error("Erro ao buscar municípios:", error);
         showToast("Erro de conexão com o banco de dados.", "error");
     });
 }
+
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE TREINAMENTOS
 // ============================================================
@@ -5656,12 +5752,14 @@ function setupTaskListener() {
             renderTasks();
         }
         
-        updateDashboardStats();
+        // [FIX] Atualiza o Dashboard (Gráficos e Cards)
+        checkAndRefreshDashboard();
         
     }, (error) => {
         appLogger.error("Erro ao buscar treinamentos:", error);
     });
 }
+
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE SOLICITAÇÕES
 // ============================================================
@@ -5684,12 +5782,15 @@ function setupRequestListener() {
         if (activeTab && activeTab.id === 'solicitacoes-section') {
             renderRequests();
         }
-        updateDashboardStats();
+        
+        // [FIX] Atualiza o Dashboard (Gráficos e Cards)
+        checkAndRefreshDashboard();
         
     }, (error) => {
         appLogger.error("Erro ao buscar solicitações:", error);
     });
 }
+
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE APRESENTAÇÕES
 // ============================================================
@@ -5712,12 +5813,15 @@ function setupPresentationListener() {
         if (activeTab && activeTab.id === 'apresentacoes-section') {
             renderPresentations();
         }
-        updateDashboardStats();
+        
+        // [FIX] Atualiza o Dashboard (Gráficos e Cards)
+        checkAndRefreshDashboard();
         
     }, (error) => {
         appLogger.error("Erro ao buscar apresentações:", error);
     });
 }
+
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE DEMANDAS
 // ============================================================
@@ -5740,12 +5844,15 @@ function setupDemandListener() {
         if (activeTab && activeTab.id === 'demandas-section') {
             renderDemands();
         }
-        updateDashboardStats();
+        
+        // [FIX] Atualiza o Dashboard (Gráficos e Cards)
+        checkAndRefreshDashboard();
         
     }, (error) => {
         appLogger.error("Erro ao buscar demandas:", error);
     });
 }
+
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE VISITAS
 // ============================================================
@@ -5768,12 +5875,15 @@ function setupVisitListener() {
         if (activeTab && activeTab.id === 'visitas-section') {
             renderVisits();
         }
-        updateDashboardStats();
+        
+        // [FIX] Atualiza o Dashboard (Gráficos e Cards)
+        checkAndRefreshDashboard();
         
     }, (error) => {
         appLogger.error("Erro ao buscar visitas:", error);
     });
 }
+
 // ============================================================
 // NOVA FUNÇÃO: OUVINTE DE PRODUÇÃO
 // ============================================================
@@ -5796,7 +5906,9 @@ function setupProductionListener() {
         if (activeTab && activeTab.id === 'producao-section') {
             renderProductions();
         }
-        updateDashboardStats();
+        
+        // [FIX] Atualiza o Dashboard (Gráficos e Cards) - Caso adicione gráficos disto no futuro
+        checkAndRefreshDashboard();
         
     }, (error) => {
         appLogger.error("Erro ao buscar produção:", error);
@@ -5869,7 +5981,7 @@ function setupAuditListener() {
     // Busca os últimos 100 logs ordenados por data (do mais recente para o mais antigo)
     db.collection('auditLogs')
       .orderBy('createdAt', 'desc')
-      .limit(100) 
+      .limit(250) 
       .onSnapshot((snapshot) => {
         auditLogs = []; // Limpa memória
         
@@ -6062,7 +6174,14 @@ function initializeApp() {
         }
     }
 }
-// --- 21. SISTEMA DE AUDITORIA ---
+/* =================================================================================
+   SEÇÃO 21: SISTEMA DE AUDITORIA (PAGINAÇÃO PADRONIZADA)
+   ================================================================================= */
+
+// 1. Variáveis Globais de Controle (Auditoria)
+var _auditFiltrados = [];
+var _paginacaoAudit = 1;
+var _itensAudit = 15;
 
 // ============================================================
 // FUNÇÃO: REGISTRAR LOG NO FIREBASE
@@ -6090,14 +6209,18 @@ function navigateToAudit() {
         return;
     }
 
-    toggleSettings(); // <--- CORREÇÃO AQUI (Antes estava toggleSettingsMenu)
+    toggleSettings();
     openTab('audit-section');
-    renderAuditLogs();
+    renderAuditLogs(); // Renderiza a primeira vez
 }
 
-// Renderização da Tabela
+// ============================================================
+// RENDERIZAÇÃO PRINCIPAL (FILTROS + PREPARAÇÃO)
+// ============================================================
 function renderAuditLogs() {
-    // 1. Captura Filtros
+    console.log("🔄 Renderizando auditoria com paginação...");
+
+    // A. Captura Filtros
     const fAction = document.getElementById('filter-audit-action') ? document.getElementById('filter-audit-action').value : '';
     const fUser = document.getElementById('filter-audit-user') ? document.getElementById('filter-audit-user').value.toLowerCase() : '';
     const fTarget = document.getElementById('filter-audit-target') ? document.getElementById('filter-audit-target').value.toLowerCase() : '';
@@ -6106,15 +6229,14 @@ function renderAuditLogs() {
     const fStart = document.getElementById('filter-audit-start') ? document.getElementById('filter-audit-start').value : '';
     const fEnd = document.getElementById('filter-audit-end') ? document.getElementById('filter-audit-end').value : '';
 
-    // 2. Filtragem
-    const filtered = auditLogs.filter(log => {
+    // B. Filtragem Global (auditLogs vem do Firebase/Storage)
+    _auditFiltrados = auditLogs.filter(log => {
         // Filtros de Texto
         if (fAction && log.action !== fAction) return false;
         if (fUser && !log.user.toLowerCase().includes(fUser)) return false;
         if (fTarget && !log.target.toLowerCase().includes(fTarget)) return false;
 
-        // Filtros de Data (Comparação de String ISO funciona bem: '2023-12-01' < '2023-12-05')
-        // Extraímos apenas a parte da data YYYY-MM-DD do timestamp ISO
+        // Filtros de Data
         const logDate = log.timestamp.split('T')[0]; 
         
         if (fStart && logDate < fStart) return false;
@@ -6123,10 +6245,8 @@ function renderAuditLogs() {
         return true;
     });
 
-    const c = document.getElementById('audit-table');
+    // C. Atualiza Contador de Resultados
     const countDiv = document.getElementById('audit-count');
-
-    // Contador
     if (countDiv) {
         countDiv.style.display = 'block';
         countDiv.style.padding = '10px';
@@ -6135,31 +6255,39 @@ function renderAuditLogs() {
         countDiv.style.marginBottom = '15px';
         countDiv.style.border = '1px solid var(--color-primary)';
         countDiv.style.color = 'var(--color-primary)';
-        countDiv.innerHTML = `📊 <strong>${filtered.length}</strong> logs exibidos (de um total de ${auditLogs.length} registros).`;
+        countDiv.innerHTML = `📊 <strong>${_auditFiltrados.length}</strong> logs exibidos (de um total de ${auditLogs.length} registros).`;
     }
 
-    if (filtered.length === 0) {
-        c.innerHTML = '<div class="empty-state">Nenhum registro de auditoria encontrado neste período.</div>';
-        return;
-    }
+    // D. Chama o desenhista da tabela paginada
+    atualizarTabelaAuditPaginada();
+}
 
-    // Paginação
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    const paginatedData = filtered.slice(startIndex, endIndex);
-    
-    if (paginatedData.length === 0 && currentPage > 1) {
-        currentPage = 1;
-        renderAuditLogs();
-        return;
-    }
+// ============================================================
+// PAGINAÇÃO E DESENHO DA TABELA
+// ============================================================
+function atualizarTabelaAuditPaginada() {
+    const c = document.getElementById('audit-table');
+    if (!c) return;
 
+    // Cálculos de Paginação
+    const totalItens = _auditFiltrados.length;
+    const totalPaginas = Math.ceil(totalItens / _itensAudit);
+
+    // Ajuste de limites
+    if (_paginacaoAudit > totalPaginas && totalPaginas > 0) _paginacaoAudit = totalPaginas;
+    if (_paginacaoAudit < 1) _paginacaoAudit = 1;
+
+    // Fatiamento (Slice)
+    const inicio = (_paginacaoAudit - 1) * _itensAudit;
+    const fim = inicio + _itensAudit;
+    const itensParaMostrar = _auditFiltrados.slice(inicio, fim);
+
+    // Helpers Visuais
     const formatDateTime = (isoStr) => {
         const d = new Date(isoStr);
         return d.toLocaleDateString('pt-BR') + ' <span style="color:#999; font-size:10px;">' + d.toLocaleTimeString('pt-BR') + '</span>';
     };
 
-    // --- NOVO: ÍCONES E ESTILO VISUAL ---
     const getActionStyle = (act) => {
         if(act === 'Exclusão') return { icon: '🗑️', color: '#C85250', bg: 'rgba(200, 82, 80, 0.1)' };
         if(act === 'Criação') return { icon: '✨', color: '#005580', bg: 'rgba(0, 85, 128, 0.1)' };
@@ -6169,50 +6297,115 @@ function renderAuditLogs() {
         return { icon: '📝', color: 'inherit', bg: 'transparent' };
     };
 
-    const rows = paginatedData.map(log => {
-        const style = getActionStyle(log.action);
-        
-        return `
-        <tr>
-            <td style="font-size:12px; white-space:nowrap;">${formatDateTime(log.timestamp)}</td>
-            <td>
-                <div style="display:flex; align-items:center; gap:6px;">
-                    <span style="font-size:16px;">👤</span> 
-                    <strong>${log.user}</strong>
-                </div>
-            </td>
-            <td>
-                <span style="
-                    display:inline-flex; align-items:center; gap:5px;
-                    background-color:${style.bg}; color:${style.color};
-                    padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px;
-                    border: 1px solid ${style.color}30;">
-                    ${style.icon} ${log.action}
-                </span>
-            </td>
-            <td>${log.target}</td>
-            <td class="text-secondary-cell" style="font-size:12px; white-space:normal; line-height:1.4;">
-                ${log.details}
-            </td>
-        </tr>
-    `}).join('');
+    // Renderização HTML
+    if (itensParaMostrar.length === 0) {
+        c.innerHTML = '<div class="empty-state">Nenhum registro de auditoria encontrado neste período.</div>';
+    } else {
+        const rows = itensParaMostrar.map(log => {
+            const style = getActionStyle(log.action);
+            
+            return `
+            <tr>
+                <td style="font-size:12px; white-space:nowrap;">${formatDateTime(log.timestamp)}</td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="font-size:16px;">👤</span> 
+                        <strong>${log.user}</strong>
+                    </div>
+                </td>
+                <td>
+                    <span style="
+                        display:inline-flex; align-items:center; gap:5px;
+                        background-color:${style.bg}; color:${style.color};
+                        padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px;
+                        border: 1px solid ${style.color}30;">
+                        ${style.icon} ${log.action}
+                    </span>
+                </td>
+                <td>${log.target}</td>
+                <td class="text-secondary-cell" style="font-size:12px; white-space:normal; line-height:1.4;">
+                    ${log.details}
+                </td>
+            </tr>
+        `}).join('');
 
-    const paginationHTML = getPaginationHTML(filtered.length, 'renderAuditLogs');
-    
-    c.innerHTML = `
-        <table style="width:100%">
-            <thead>
-                <th style="width:140px;">Data/Hora</th>
-                <th style="width:180px;">Usuário</th>
-                <th style="width:110px;">Ação</th>
-                <th style="width:120px;">Módulo</th>
-                <th>Detalhes da Operação</th>
-            </thead>
-            <tbody>${rows}</tbody>
-        </table>
-        ${paginationHTML}
-    `;
+        c.innerHTML = `
+            <table style="width:100%">
+                <thead>
+                    <th style="width:140px;">Data/Hora</th>
+                    <th style="width:180px;">Usuário</th>
+                    <th style="width:110px;">Ação</th>
+                    <th style="width:120px;">Módulo</th>
+                    <th>Detalhes da Operação</th>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+    }
+
+    // Desenha os botões de paginação no container específico
+    renderizarControlesAudit(totalPaginas);
 }
+
+// 5. Desenha os Botões (Anterior / Próximo)
+function renderizarControlesAudit(totalPaginas) {
+    const container = document.getElementById('auditPagination');
+    if (!container) return;
+
+    if (totalPaginas <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+
+    // Botão Anterior
+    html += `<button onclick="mudarPaginaAudit(${_paginacaoAudit - 1})" ${ _paginacaoAudit === 1 ? 'disabled' : '' }>Anterior</button>`;
+
+    // Lógica de botões numerados (Janela deslizante)
+    let startPage = Math.max(1, _paginacaoAudit - 2);
+    let endPage = Math.min(totalPaginas, _paginacaoAudit + 2);
+
+    if (startPage > 1) {
+        html += `<button onclick="mudarPaginaAudit(1)">1</button>`;
+        if (startPage > 2) html += `<span>...</span>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button onclick="mudarPaginaAudit(${i})" class="${i === _paginacaoAudit ? 'active' : ''}">${i}</button>`;
+    }
+
+    if (endPage < totalPaginas) {
+        if (endPage < totalPaginas - 1) html += `<span>...</span>`;
+        html += `<button onclick="mudarPaginaAudit(${totalPaginas})">${totalPaginas}</button>`;
+    }
+
+    // Botão Próximo
+    html += `<button onclick="mudarPaginaAudit(${_paginacaoAudit + 1})" ${ _paginacaoAudit === totalPaginas ? 'disabled' : '' }>Próximo</button>`;
+
+    // Texto informativo
+    html += `<span style="margin-left:15px; font-size:0.9em; color:#666;">
+             Pág ${_paginacaoAudit} de ${totalPaginas} 
+             (${_auditFiltrados.length} registros)</span>`;
+
+    container.innerHTML = html;
+}
+
+// 6. Funções Globais de Controle (Window)
+window.mudarQtdPorPaginaAudit = function(valor) {
+    _itensAudit = parseInt(valor);
+    _paginacaoAudit = 1;
+    atualizarTabelaAuditPaginada();
+};
+
+window.mudarPaginaAudit = function(novaPagina) {
+    _paginacaoAudit = novaPagina;
+    atualizarTabelaAuditPaginada();
+};
+
+// ============================================================
+// LIMPEZA DE FILTROS E LOGS
+// ============================================================
 function clearAuditFilters() {
     const ids = [
         'filter-audit-action', 
@@ -6227,20 +6420,16 @@ function clearAuditFilters() {
         if (element) element.value = '';
     });
 
-    currentPage = 1; // Reseta a paginação para a primeira página
+    _paginacaoAudit = 1; // Reseta a paginação para a primeira página
     renderAuditLogs(); // Recarrega a tabela sem filtros
 }
 
-// ============================================================
-// FUNÇÃO: LIMPAR LOGS (APAGA DO FIREBASE PERMANENTEMENTE)
-// ============================================================
 window.clearAuditLogs = function() {
     if(!confirm('⚠️ PERIGO: Tem certeza que deseja APAGAR TODO O HISTÓRICO de auditoria?\n\nEssa ação removerá os registros do banco de dados permanentemente e não pode ser desfeita.')) {
         return;
     }
 
-    // Feedback Visual no botão (pra saber que está trabalhando)
-    // Tenta encontrar o botão pelo texto ou classe se possível, ou usa querySelector genérico
+    // Feedback Visual no botão
     const btnList = document.querySelectorAll('button'); 
     let btn = null;
     btnList.forEach(b => { if(b.innerText.includes('Limpar Logs')) btn = b; });
@@ -6257,12 +6446,10 @@ window.clearAuditLogs = function() {
             }
 
             // 2. Prepara um lote (Batch) de exclusão
-            // O Firebase permite deletar até 500 itens de uma vez num lote
             const batch = db.batch();
             let count = 0;
 
             snapshot.forEach(doc => {
-                // Adiciona cada documento à lista de exclusão
                 if (count < 500) { // Segurança para o limite do lote
                     batch.delete(doc.ref);
                     count++;
@@ -6271,15 +6458,12 @@ window.clearAuditLogs = function() {
 
             // 3. Envia o comando de deletar para a nuvem
             return batch.commit().then(() => {
-                return count; // Retorna quantos deletou pra usar na mensagem
+                return count;
             });
         })
         .then((qtdDeletada) => {
             if (qtdDeletada) {
                 alert(`✅ Sucesso! ${qtdDeletada} registros de logs foram apagados.`);
-                
-                // Se tiver mais de 500 logs, avisa para clicar de novo
-                // (O contador na tela vai diminuir automaticamente via listener)
                 if (qtdDeletada === 500) {
                     alert("Ainda existem logs restantes. Clique novamente para apagar o próximo lote.");
                 }
@@ -6290,7 +6474,6 @@ window.clearAuditLogs = function() {
             alert("Erro ao tentar limpar o banco de dados: " + error.message);
         })
         .finally(() => {
-            // Restaura o botão
             if(btn) { btn.innerText = txtOriginal; btn.disabled = false; }
         });
 };
@@ -6937,7 +7120,7 @@ function atualizarTabelaIntegracoesPaginada() {
                 <th>APIs Em Funcionamento no Município</th>
                 <th>Responsável Certificado</th>
                 <th>Contato</th> 
-                <th>Data de<br>Vencimento</th>
+                <th>Data Vencimento</th>
                 <th>Status Vencimento</th>
                 <th>Observações</th>
                 <th>Ações</th>
@@ -9913,8 +10096,6 @@ window.showChangePasswordModal = showChangePasswordModal;
 window.closeChangePasswordModal = closeChangePasswordModal;
 window.handleChangePassword = handleChangePassword;
 window.confirmUndo = confirmUndo;
-
-window.changeMunicipalityListPage = changeMunicipalityListPage;
 
 // Validação de Data (Usada no HTML onchange)
 if(typeof validateDateRange !== 'undefined') window.validateDateRange = validateDateRange;
