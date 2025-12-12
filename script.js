@@ -7968,15 +7968,26 @@ function checkSystemNotifications() {
         });
     }
 
-    // 2. TREINAMENTOS: Pendentes há muito tempo
+    // 2. TREINAMENTOS: Pendentes
     if (typeof tasks !== 'undefined') {
         tasks.forEach(t => {
             if (t.status === 'Pendente' && t.dateRequested) {
-                const reqDate = new Date(t.dateRequested);
-                const diffTime = Math.abs(today - reqDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                if (diffDays > 15) {
-                    addNotification('warning', 'Treinamento Atrasado', `Solicitação de <strong>${t.municipality}</strong> pendente há ${diffDays} dias.`, 'tarefas-section');
+                // Calcula a diferença em dias (Negativo = Passado/Atrasado)
+                const diff = getDaysDiff(t.dateRequested);
+                
+                // Se a data já passou (diff < 0), é um atraso
+                if (diff < 0) {
+                    const diasAtraso = Math.abs(diff);
+                    
+                    // Lógica visual:
+                    // - Mais de 15 dias: Vermelho (Perigo)
+                    // - Menos de 15 dias: Amarelo (Atenção)
+                    const tipoAlerta = diasAtraso > 15 ? 'danger' : 'warning';
+                    const textoDias = diasAtraso === 1 ? 'dia' : 'dias';
+
+                    addNotification(tipoAlerta, 'Treinamento Pendente', 
+                        `Solicitação de <strong>${t.municipality}</strong> aguardando há ${diasAtraso} ${textoDias}.`, 
+                        'tarefas-section');
                 }
             }
         });
