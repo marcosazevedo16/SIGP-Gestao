@@ -8606,16 +8606,15 @@ function generateReportPreview() {
         
         if (type === 'municipios') {
             customColumnStyles = {
-                // Redistribuição para 8 colunas (incluindo População)
-                0: { cellWidth: 55 }, // Município (Reduzido de 65)
-                1: { cellWidth: 25, halign: 'right' }, // População (NOVO)
-                2: { cellWidth: 22 }, // Status
-                3: { cellWidth: 45 }, // Gestor (Reduzido de 55)
-                4: { cellWidth: 32 }, // Contato (Reduzido de 35)
+                // Redistribuição Otimizada (Total mantido em ~277mm)
+                0: { cellWidth: 55 }, // Município
+                1: { cellWidth: 25, halign: 'right' }, // População
+                2: { cellWidth: 28 }, // Status (Aumentado de 22 para 28 - Agora cabe "Não Implantado" sem quebrar)
+                3: { cellWidth: 45 }, // Gestor
+                4: { cellWidth: 32 }, // Contato
                 5: { cellWidth: 26, halign: 'center' }, // Implantação
-                6: { cellWidth: 45 }, // Tempo de Uso (Mantido legível)
+                6: { cellWidth: 39 }, // Tempo de Uso (Reduzido de 45 para 39 - Mais compacto)
                 7: { cellWidth: 27, halign: 'center' }  // Última Visita
-                // Total: ~277mm
             };
         }
 
