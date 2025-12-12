@@ -998,7 +998,7 @@ function saveMunicipality(e) {
                 manager: 'Gestor', 
                 contact: 'Contato', 
                 implantationDate: 'Implantação', 
-                lastVisit: 'Última Visita'
+                lastVisit: 'Última Visita',
                 population: 'População'
             };
             const diff = detectChanges(oldItem, data, mapCampos);
