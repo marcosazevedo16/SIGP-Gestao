@@ -1674,135 +1674,130 @@
 
         <section id="municipios-section" class="tab-content">
 
-            <div class="section-header">
+    <div class="section-header">
+        <h2>Controle de Municípios</h2>
+        <div style="display: flex; gap: var(--space-8);">
+            <button class="btn btn--primary" onclick="showMunicipalityModal()">+ Novo Município</button>
+            <button class="btn btn--primary" onclick="triggerCSVImport()">📥 Importar CSV</button>
+            <input type="file" id="csv-import-input" accept=".csv" style="display: none;" onchange="handleCSVImport(event)">
+        </div>
+    </div>
 
-                <h2>Controle de Municípios</h2>
-
-                <div style="display: flex; gap: var(--space-8);">
-
-                    <button class="btn btn--primary" onclick="showMunicipalityModal()">+ Novo Município</button>
-
-                    <button class="btn btn--primary" onclick="triggerCSVImport()">📥 Importar CSV</button>
-
-                    <input type="file" id="csv-import-input" accept=".csv" style="display: none;" onchange="handleCSVImport(event)">
-
-                </div>
-
+    <h3 class="section-subtitle">Filtros</h3>
+    <div class="filters-section">
+        <div class="form-grid">
+            <div class="form-group col-3">
+                <label class="form-label">Nome do Município</label>
+                <select class="form-control" id="filter-municipality-name">
+                    <option value="">Todos</option>
+                </select>
             </div>
 
-            <h3 class="section-subtitle">Filtros</h3>
-<div class="filters-section">
-                <div class="form-grid">
-
-                    <div class="form-group col-3">
-                        <label class="form-label">Nome do Município</label>
-                        <select class="form-control" id="filter-municipality-name">
-                            <option value="">Todos</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group col-2">
-                        <label class="form-label">Status</label>
-                        <select class="form-control" id="filter-municipality-status">
-                            <option value="">Todos</option>
-                            <option value="Em uso">Em uso</option>
-                            <option value="Bloqueado">Bloqueado</option>
-                            <option value="Parou de usar">Parou de usar</option>
-                            <option value="Não Implantado">Não Implantado</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group col-2">
-                        <label class="form-label">Busca por Módulo</label>
-                        <select class="form-control" id="filter-municipality-module" onchange="renderMunicipalities()">
-                            <option value="">Todos</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group col-3">
-                        <label class="form-label">Busca por Gestor(a) de Saúde</label>
-                        <input type="text" class="form-control" id="filter-municipality-manager" placeholder="Buscar por gestor">
-                    </div>
-
-                    <div class="form-group col-2" style="display: flex; align-items: flex-end;">
-                        <button class="btn btn--secondary btn--full-width" onclick="clearMunicipalityFilters()">Limpar Filtros</button>
-                    </div>
-
-                </div>
+            <div class="form-group col-2">
+                <label class="form-label">Status</label>
+                <select class="form-control" id="filter-municipality-status">
+                    <option value="">Todos</option>
+                    <option value="Em uso">Em uso</option>
+                    <option value="Bloqueado">Bloqueado</option>
+                    <option value="Parou de usar">Parou de usar</option>
+                    <option value="Não Implantado">Não Implantado</option>
+                </select>
             </div>
 
-            <div id="municipalities-results-count" class="results-count" style="display: none;"></div>
-
-            <div class="municipalities-table" id="municipalities-table">
-                </div>
-
-                <div class="pagination-wrapper">
-                <div class="rows-per-page">
-                    <label>Itens por página:</label>
-                    <select id="municipiosRowsPerPage" onchange="mudarQtdPorPagina(this.value)">
-                        <option value="15" selected>15</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                </div>
-                <div class="pagination-controls" id="municipiosPagination">
-                    </div>
-
+            <div class="form-group col-2">
+                <label class="form-label">Busca por Módulo</label>
+                <select class="form-control" id="filter-municipality-module" onchange="renderMunicipalities()">
+                    <option value="">Todos</option>
+                </select>
             </div>
 
-            <div class="section-divider"></div>
-
-            <h3 class="section-subtitle">Relatórios e Gráficos</h3>
-
-            <div class="stats-cards">
-
-                <div class="stat-card">
-
-                    <h3 id="total-municipalities">0</h3>
-
-                    <p>Total de Municípios</p>
-
-                </div>
-
-                <div class="stat-card">
-
-                    <h3 id="active-municipalities">0</h3>
-
-                    <p>Municípios Ativos</p>
-
-                </div>
-
-                <div class="stat-card">
-
-                    <h3 id="inactive-municipalities">0</h3>
-
-                    <p>Municípios Inativos</p>
-
-                </div>
-
+            <div class="form-group col-3">
+                <label class="form-label">Busca por Gestor(a) de Saúde</label>
+                <input type="text" class="form-control" id="filter-municipality-manager" placeholder="Buscar por gestor">
             </div>
 
-            <div class="actions-bar">
-
-                <button class="btn btn--outline btn--sm" onclick="exportMunicipalitiesCSV()">📥 Exportar CSV</button>
-                <button class="btn btn--primary btn--sm" onclick="generateMunicipalitiesPDF()">📄 Gerar PDF</button>
+            <div class="form-group col-2" style="display: flex; align-items: flex-end;">
+                <button class="btn btn--secondary btn--full-width" onclick="clearMunicipalityFilters()">Limpar Filtros</button>
             </div>
-                <div class="charts-section">
-                <h4>Dashboard e Gráficos</h4>
-                <div class="charts-grid">
-                    <div class="chart-card">
-                        <h4>Distribuição por Status</h4>
-                        <canvas id="statusChart"></canvas>
-                    </div>
+        </div>
+    </div>
 
-                    <div class="chart-card">
-                        <h4>Municípios por Módulo</h4>
-                        <canvas id="modulesChart"></canvas>
-                    </div>
-                </div>
+    <div id="municipalities-results-count" class="results-count" style="display: none;"></div>
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+        <div class="rows-per-page" style="display: flex; align-items: center; gap: 10px;">
+            <label style="font-size: 13px; color: var(--color-text);">Itens por lista:</label>
+            <select id="municipiosRowsPerPage" onchange="mudarQtdPorPagina(this.value)" style="padding: 5px; border-radius: 4px; border: 1px solid var(--color-border);">
+                <option value="10">10</option>
+                <option value="15" selected>15</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="sec-mun-active" style="display:none; margin-bottom: 30px;">
+        <h3 class="colab-section-title title-active" style="text-align: left; padding-left: 10px; border-left: 5px solid #005580; margin-bottom: 15px; font-size: 16px;">
+            🏢 Municípios Ativos (Em Uso)
+        </h3>
+        <div class="municipalities-table" id="table-mun-active">
             </div>
-        </section>
+        <div class="pagination-wrapper">
+            <div class="pagination-controls" id="pagination-mun-active"></div>
+        </div>
+    </div>
+
+    <div id="sec-mun-inactive" style="display:none;">
+        <h3 class="colab-section-title title-terminated" style="text-align: left; padding-left: 10px; border-left: 5px solid #C85250; margin-bottom: 15px; font-size: 16px;">
+            ⚠️ Municípios Inativos / Outros
+        </h3>
+        <div class="municipalities-table" id="table-mun-inactive">
+            </div>
+        <div class="pagination-wrapper">
+            <div class="pagination-controls" id="pagination-mun-inactive"></div>
+        </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <h3 class="section-subtitle">Relatórios e Gráficos</h3>
+
+    <div class="stats-cards">
+        <div class="stat-card">
+            <h3 id="total-municipalities">0</h3>
+            <p>Total de Municípios</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="active-municipalities">0</h3>
+            <p>Municípios Ativos</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="inactive-municipalities">0</h3>
+            <p>Municípios Inativos</p>
+        </div>
+    </div>
+
+    <div class="actions-bar">
+        <button class="btn btn--outline btn--sm" onclick="exportMunicipalitiesCSV()">📥 Exportar CSV</button>
+        <button class="btn btn--primary btn--sm" onclick="generateMunicipalitiesPDF()">📄 Gerar PDF</button>
+    </div>
+
+    <div class="charts-section">
+        <h4>Dashboard e Gráficos</h4>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h4>Distribuição por Status</h4>
+                <canvas id="statusChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h4>Municípios por Módulo</h4>
+                <canvas id="modulesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+</section>
 
        <section id="apis-section" class="tab-content">
     <div class="section-header">
@@ -2144,21 +2139,24 @@
         <form id="municipality-form" onsubmit="saveMunicipality(event)">
             <div class="form-grid">
 
-                <div class="form-group col-4">
-                    <label class="form-label">Nome do Município*</label>
-                    <select class="form-control" id="municipality-name" required>
-                        <option value="">Selecione o município</option>
-                    </select>
-                </div>
-                <div class="form-group col-4">
-                    <label class="form-label">Status*</label>
-                    <select class="form-control" id="municipality-status" required onchange="handleMunicipalityStatusChange()">
-                        <option value="Em uso">Em uso</option>
-                        <option value="Bloqueado">Bloqueado</option>
-                        <option value="Parou de usar">Parou de usar</option>
-                        <option value="Não Implantado">Não Implantado</option>
-                    </select>
-                </div>
+                <div class="form-group col-3">
+    <label class="form-label">Nome do Município*</label>
+    <select class="form-control" id="municipality-name" required>
+        <option value="">Selecione...</option>
+    </select>
+</div>
+<div class="form-group col-2"> <label class="form-label">População</label>
+    <input type="text" class="form-control" id="municipality-population" placeholder="0" oninput="formatPopulation(this)">
+</div>
+<div class="form-group col-3">
+    <label class="form-label">Status*</label>
+    <select class="form-control" id="municipality-status" required onchange="handleMunicipalityStatusChange()">
+        <option value="Em uso">Em uso</option>
+        <option value="Bloqueado">Bloqueado</option>
+        <option value="Parou de usar">Parou de usar</option>
+        <option value="Não Implantado">Não Implantado</option>
+    </select>
+</div>
                 <div class="form-group col-4">
                     <label class="form-label" id="implantation-label">Data de Implantação*</label>
                     <input type="date" class="form-control" id="municipality-implantation-date" required>
