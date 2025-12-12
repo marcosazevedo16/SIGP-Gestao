@@ -1097,7 +1097,6 @@ function renderMunicipalities(resetPages = true) {
         updateMunicipalityCharts(filtered);
     }
 }
-
 // --- TABELA 1: ATIVOS ---
 function renderActiveTable(data) {
     const container = document.getElementById('sec-mun-active');
@@ -1121,7 +1120,8 @@ function renderActiveTable(data) {
         const badges = m.modules.map(n => {
             const mc = modulos.find(x => x.name === n);
             const abbr = mc ? mc.abbreviation : n.substring(0,3).toUpperCase();
-            return `<span class="module-tag" style="background:#e0f2fe; color:#0284c7; border:1px solid #bae6fd;">${abbr}</span>`;
+            // CORREÇÃO AQUI: Adicionado title="${n}"
+            return `<span class="module-tag" title="${n}" style="background:#e0f2fe; color:#0284c7; border:1px solid #bae6fd; cursor: help;">${abbr}</span>`;
         }).join('');
 
         const pop = m.population ? m.population.toLocaleString('pt-BR') : '-';
@@ -1130,7 +1130,8 @@ function renderActiveTable(data) {
 
         return `<tr>
             <td class="text-primary-cell" style="font-weight:bold;">${displayUF}</td>
-            <td><div class="module-tags-wrapper">${badges}</div></td> <td>${m.manager}</td>
+            <td><div class="module-tags-wrapper">${badges}</div></td>
+            <td>${m.manager}</td>
             <td>${m.contact}</td>
             <td style="text-align:center;">${formatDate(m.implantationDate)}</td>
             <td style="text-align:center;">${calculateTimeInUse(m.implantationDate)}</td>
@@ -1159,7 +1160,6 @@ function renderActiveTable(data) {
         <th style="text-align:center;">Ações</th>
     </thead><tbody>${rows}</tbody></table>`;
 
-    // Botões de Paginação ATIVOS (Chamada direta)
     let htmlPag = `<div style="display:flex; justify-content:center; gap:5px; margin-top:10px;">`;
     htmlPag += `<button class="btn btn--sm btn--outline" ${_pageActive===1?'disabled':''} onclick="window.mudarPaginaAtivos(${_pageActive-1})">◀</button>`;
     htmlPag += `<span style="align-self:center; font-size:12px; margin:0 10px;">Pág ${_pageActive} de ${totalPages}</span>`;
@@ -1194,7 +1194,8 @@ function renderInactiveTable(data) {
         const badges = m.modules.map(n => {
             const mc = modulos.find(x => x.name === n);
             const abbr = mc ? mc.abbreviation : n.substring(0,3).toUpperCase();
-            return `<span class="module-tag" style="background:#f3f4f6; color:#6b7280; border:1px solid #d1d5db;">${abbr}</span>`;
+            // CORREÇÃO AQUI: Adicionado title="${n}"
+            return `<span class="module-tag" title="${n}" style="background:#f3f4f6; color:#6b7280; border:1px solid #d1d5db; cursor: help;">${abbr}</span>`;
         }).join('');
 
         let stClass = 'task-status';
@@ -1207,7 +1208,8 @@ function renderInactiveTable(data) {
 
         return `<tr>
             <td class="text-primary-cell">${displayUF}</td>
-            <td><div class="module-tags-wrapper">${badges}</div></td> <td>${m.manager}</td>
+            <td><div class="module-tags-wrapper">${badges}</div></td>
+            <td>${m.manager}</td>
             <td>${m.contact}</td>
             <td style="text-align:center;">${formatDate(m.implantationDate)}</td>
             <td style="text-align:center; color:${corFim}; font-weight:bold;">${dataFim}</td>
@@ -1236,7 +1238,6 @@ function renderInactiveTable(data) {
         <th style="text-align:center;">Ações</th>
     </thead><tbody>${rows}</tbody></table>`;
 
-    // Botões de Paginação INATIVOS (Chamada direta)
     let htmlPag = `<div style="display:flex; justify-content:center; gap:5px; margin-top:10px;">`;
     htmlPag += `<button class="btn btn--sm btn--outline" ${_pageInactive===1?'disabled':''} onclick="window.mudarPaginaInativos(${_pageInactive-1})">◀</button>`;
     htmlPag += `<span style="align-self:center; font-size:12px; margin:0 10px;">Pág ${_pageInactive} de ${totalPages}</span>`;
