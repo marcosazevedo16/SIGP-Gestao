@@ -25,7 +25,7 @@ function setupLoginForm() {
     const loginForm = document.getElementById('login-form');
     
     if (loginForm) {
-        // Remove listeners antigos para evitar duplicidade (boa prática)
+        // Remove listeners antigos
         const newForm = loginForm.cloneNode(true);
         loginForm.parentNode.replaceChild(newForm, loginForm);
 
@@ -45,11 +45,14 @@ function setupLoginForm() {
 
             try {
                 let emailFinal = userInput;
+                let nomeParaLog = userInput.toUpperCase(); // Padrão caso não ache o nome
 
-                // Se digitou apenas LOGIN (sem @), buscamos o e-mail no banco
+                // 1. LÓGICA DE BUSCA DE CREDENCIAIS
                 if (!userInput.includes('@')) {
+                    // LOGIN (Sem @)
                     if (userInput.toUpperCase() === 'ADMIN') {
-                        emailFinal = 'admin@sigpsaude.com'; // E-mail fixo do admin
+                        emailFinal = 'admin@sigpsaude.com';
+                        nomeParaLog = 'Administrador';
                     } else {
                         const snapshot = await db.collection('users')
                             .where('login', '==', userInput.toUpperCase())
@@ -57,30 +60,39 @@ function setupLoginForm() {
                             .get();
 
                         if (snapshot.empty) throw { code: 'auth/user-not-found' };
-                        emailFinal = snapshot.docs[0].data().email;
+                        
+                        const dados = snapshot.docs[0].data();
+                        emailFinal = dados.email;
+                        nomeParaLog = dados.name; // <--- PEGA O NOME AQUI
+                    }
+                } else {
+                    // E-MAIL (Com @)
+                    // Busca o nome associado a este e-mail para o log ficar bonito
+                    const snapshot = await db.collection('users')
+                        .where('email', '==', userInput)
+                        .limit(1)
+                        .get();
+                    
+                    if (!snapshot.empty) {
+                        nomeParaLog = snapshot.docs[0].data().name; // <--- PEGA O NOME AQUI
                     }
                 }
 
-                // Autentica no Firebase
+                // 2. Autentica no Firebase
                 await auth.signInWithEmailAndPassword(emailFinal, password);
                 appLogger.log(`Login sucesso: ${emailFinal}`);
 
-                // ============================================================
-                // [NOVO] REGISTRA O LOG DE AUDITORIA MANUALMENTE
-                // ============================================================
-                // Como o auth.js que troca a tela, garantimos o log aqui no sucesso.
+                // 3. REGISTRA O LOG DE AUDITORIA (AGORA COM O NOME CORRETO)
                 db.collection('auditLogs').add({
                     timestamp: new Date().toISOString(),
-                    user: userInput.toUpperCase(), // Salva o login digitado
+                    user: nomeParaLog, // <--- CAMPO CORRIGIDO (Antes era userInput)
                     action: 'Login',
                     target: 'Sistema',
                     details: `Login realizado com sucesso. E-mail: ${emailFinal}`,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 }).catch(err => console.error("Erro ao salvar log de login:", err));
-                // ============================================================
                 
-                // O checkAuthentication() no auth.js vai perceber a mudança
-                // e redirecionar para a tela principal automaticamente.
+                // O checkAuthentication() no auth.js fará o redirecionamento
 
             } catch (error) {
                 appLogger.error("Erro no login:", error);
