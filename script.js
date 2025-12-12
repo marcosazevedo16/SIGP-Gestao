@@ -10260,3 +10260,94 @@ function calcularIdadeExata(dataInicio, dataFim = null) {
 
     return partes.length > 0 ? partes.join(', ') : '0 dias'; // Caso seja o mesmo dia
 }
+// ============================================================
+// SISTEMA DE INFORMATIVO GLOBAL (HEADER)
+// ============================================================
+
+// 1. Variável para guardar config atual (para edição)
+let currentAnnouncementConfig = null;
+
+// 2. Listener: Ouve alterações no aviso em TEMPO REAL
+function setupAnnouncementListener() {
+    // Usaremos uma coleção chamada 'systemConfig', documento 'global'
+    db.collection('systemConfig').doc('global').onSnapshot((doc) => {
+        const displayEl = document.getElementById('header-announcement-display');
+        
+        if (doc.exists) {
+            const data = doc.data();
+            currentAnnouncementConfig = data; // Guarda para quando abrir o modal
+
+            if (data.active && data.text) {
+                // Mostra o aviso
+                displayEl.style.display = 'block';
+                displayEl.innerHTML = `📢 ${data.text}`;
+                displayEl.style.color = data.color || '#FFD700'; // Aplica a cor
+            } else {
+                // Esconde se estiver inativo ou vazio
+                displayEl.style.display = 'none';
+            }
+        } else {
+            // Se não existe documento ainda
+            displayEl.style.display = 'none';
+        }
+    }, (error) => {
+        console.error("Erro ao buscar informativo:", error);
+    });
+}
+
+// 3. Abrir Modal
+function showAnnouncementModal() {
+    // Limpa ou preenche com dados atuais
+    document.getElementById('announcement-form').reset();
+    
+    if (currentAnnouncementConfig) {
+        document.getElementById('announcement-text').value = currentAnnouncementConfig.text || '';
+        document.getElementById('announcement-color').value = currentAnnouncementConfig.color || '#FFD700';
+        document.getElementById('announcement-active').checked = currentAnnouncementConfig.active || false;
+    }
+    
+    document.getElementById('announcement-modal').classList.add('show');
+}
+
+// 4. Fechar Modal
+function closeAnnouncementModal() {
+    document.getElementById('announcement-modal').classList.remove('show');
+}
+
+// 5. Salvar (Admin)
+function saveAnnouncement(e) {
+    e.preventDefault();
+    
+    const text = sanitizeInput(document.getElementById('announcement-text').value);
+    const color = document.getElementById('announcement-color').value;
+    const active = document.getElementById('announcement-active').checked;
+
+    const data = {
+        text: text,
+        color: color,
+        active: active,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: currentUser ? currentUser.name : 'Sistema'
+    };
+
+    const btn = document.querySelector('#announcement-form button[type="submit"]');
+    const txtOriginal = btn.innerText;
+    btn.innerText = "Salvando...";
+    btn.disabled = true;
+
+    // Salva/Atualiza no documento 'global' da coleção 'systemConfig'
+    db.collection('systemConfig').doc('global').set(data, { merge: true })
+        .then(() => {
+            showToast('Informativo atualizado com sucesso!', 'success');
+            closeAnnouncementModal();
+            // Log de Auditoria
+            logSystemAction('Edição', 'Configurações', `Atualizou informativo: "${text}" (Ativo: ${active})`);
+        })
+        .catch((error) => {
+            alert("Erro ao salvar: " + error.message);
+        })
+        .finally(() => {
+            btn.innerText = txtOriginal;
+            btn.disabled = false;
+        });
+}
