@@ -6122,6 +6122,7 @@ function initializeApp() {
         setupColabInfoListener();
         setupAuditListener();
         setupAuxiliaryListeners();
+        setupAnnouncementListener();
         
         // Renderiza as tabelas e dados
         renderMunicipalities();
@@ -10096,6 +10097,11 @@ window.showChangePasswordModal = showChangePasswordModal;
 window.closeChangePasswordModal = closeChangePasswordModal;
 window.handleChangePassword = handleChangePassword;
 window.confirmUndo = confirmUndo;
+
+// 15. Funções de Informativo (NOVO)
+window.showAnnouncementModal = showAnnouncementModal;
+window.closeAnnouncementModal = closeAnnouncementModal;
+window.saveAnnouncement = saveAnnouncement;
 
 // Validação de Data (Usada no HTML onchange)
 if(typeof validateDateRange !== 'undefined') window.validateDateRange = validateDateRange;
