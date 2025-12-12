@@ -887,6 +887,9 @@ function showMunicipalityModal(id = null) {
             const valToSelect = `${m.name}|${m.uf}`;
             // ... (Verificação se existe option) ...
             munSelect.value = valToSelect;
+            // NOVO: Preenche População formatada
+            const popVal = m.population || 0;
+            document.getElementById('municipality-population').value = popVal > 0 ? popVal.toLocaleString('pt-BR') : '';
 
             // 1. PRIMEIRO: Define o Status
             document.getElementById('municipality-status').value = m.status;
@@ -929,6 +932,10 @@ function saveMunicipality(e) {
     e.preventDefault();
     
     // 1. Validações e Captura de Dados
+    // NOVO: Captura População (remove pontos para salvar como número puro ou string limpa)
+    const popRaw = document.getElementById('municipality-population').value;
+    // Salva como número inteiro para facilitar cálculos futuros, ou 0 se vazio
+    const population = popRaw ? parseInt(popRaw.replace(/\./g, '')) : 0;
     const rawValue = document.getElementById('municipality-name').value;
     if (!rawValue) { alert('Por favor, selecione um município.'); return; }
 
@@ -957,6 +964,7 @@ function saveMunicipality(e) {
     const data = {
         name: name,
         uf: uf,
+        population: population,
         status: status,
         manager: sanitizeInput(document.getElementById('municipality-manager').value),
         contact: sanitizeInput(document.getElementById('municipality-contact').value),
@@ -990,7 +998,8 @@ function saveMunicipality(e) {
                 manager: 'Gestor', 
                 contact: 'Contato', 
                 implantationDate: 'Implantação', 
-                lastVisit: 'Última Visita' 
+                lastVisit: 'Última Visita'
+                population: 'População'
             };
             const diff = detectChanges(oldItem, data, mapCampos);
             if(diff) detailsLog += `. Alterações: [${diff}]`;
@@ -1025,25 +1034,25 @@ function saveMunicipality(e) {
     });
 }
 /* =================================================================================
-   PAGINAÇÃO E RENDERIZAÇÃO DE MUNICÍPIOS (UNIFICADO)
+   SEÇÃO 11: MUNICÍPIOS CLIENTES (VISUALIZAÇÃO EM DUAS LISTAS)
    ================================================================================= */
 
-// Variáveis Globais de Controle
-var _municipiosFiltrados = []; // Guarda a lista JÁ FILTRADA para paginar
-var _paginacaoAtual = 1;
-var _itensPorPagina = 15;
+// Variáveis de Paginação Independentes
+var _pageActive = 1;
+var _pageInactive = 1;
+var _itensPorPagina = 10; // Padrão inicial
 
+// Função Principal de Renderização (Substitui a antiga)
 function renderMunicipalities() {
-    console.log("🔄 Renderizando municípios com filtros e paginação...");
+    console.log("🔄 Renderizando Municípios (Modo Duplo)...");
 
-    // 1. CAPTURA DOS FILTROS (Da sua função original)
-    const fName = document.getElementById('filter-municipality-name') ? document.getElementById('filter-municipality-name').value : '';
-    const fStatus = document.getElementById('filter-municipality-status') ? document.getElementById('filter-municipality-status').value : '';
-    const fMod = document.getElementById('filter-municipality-module') ? document.getElementById('filter-municipality-module').value : '';
-    const fGest = document.getElementById('filter-municipality-manager') ? document.getElementById('filter-municipality-manager').value.toLowerCase() : '';
+    // 1. CAPTURA DOS FILTROS
+    const fName = document.getElementById('filter-municipality-name')?.value || '';
+    const fStatus = document.getElementById('filter-municipality-status')?.value || '';
+    const fMod = document.getElementById('filter-municipality-module')?.value || '';
+    const fGest = document.getElementById('filter-municipality-manager')?.value.toLowerCase() || '';
 
-    // 2. APLICAÇÃO DOS FILTROS (Lógica original)
-    // Usa a lista global 'municipalities' que já existe no seu sistema
+    // 2. FILTRAGEM GLOBAL (Aplica filtros na lista completa primeiro)
     let filtered = municipalities.filter(m => {
         if (fName && m.name !== fName) return false;
         if (fStatus && m.status !== fStatus) return false;
@@ -1052,163 +1061,199 @@ function renderMunicipalities() {
         return true;
     }).sort((a,b) => a.name.localeCompare(b.name));
 
-    // 3. ATUALIZA CONTADORES DE RESULTADO (Da sua função original)
+    // 3. ATUALIZA CONTADOR GLOBAL
     if(document.getElementById('municipalities-results-count')) {
         document.getElementById('municipalities-results-count').style.display = 'block';
-        document.getElementById('municipalities-results-count').innerHTML = `<strong>${filtered.length}</strong> município(s) no total`;
+        document.getElementById('municipalities-results-count').innerHTML = `<strong>${filtered.length}</strong> município(s) encontrados no total`;
     }
 
-    // 4. PREPARA A PAGINAÇÃO
-    _municipiosFiltrados = filtered; // Salva o resultado filtrado para o paginador usar
-    // _paginacaoAtual = 1; // Opcional: Voltar pra pág 1 sempre que filtrar (recomendado descomentar)
+    // 4. SEPARAÇÃO DAS LISTAS
+    // Lista 1: Apenas "Em uso"
+    const listActive = filtered.filter(m => m.status === 'Em uso');
+    // Lista 2: Todo o resto (Bloqueado, Parou, Não implantado)
+    const listInactive = filtered.filter(m => m.status !== 'Em uso');
 
-    // 5. CHAMA O DESENHISTA DA TABELA
-    atualizarTabelaPaginada();
+    // 5. RENDERIZA AS DUAS TABELAS
+    renderActiveTable(listActive);
+    renderInactiveTable(listInactive);
     
-    // 6. ATUALIZA GRÁFICOS (Da sua função original)
+    // 6. ATUALIZA GRÁFICOS
     if (typeof updateMunicipalityCharts === 'function') {
         updateMunicipalityCharts(filtered);
     }
 }
 
-// --- FUNÇÕES AUXILIARES DE PAGINAÇÃO (Mantenha ou adicione se não tiver) ---
+// --- TABELA 1: ATIVOS (Colunas: Tempo S/Visita, sem Bloqueio) ---
+function renderActiveTable(data) {
+    const container = document.getElementById('sec-mun-active');
+    const tableDiv = document.getElementById('table-mun-active');
+    const pagDiv = document.getElementById('pagination-mun-active');
 
-function atualizarTabelaPaginada() {
-    const c = document.getElementById('municipalities-table');
-    if (!c) return;
+    // Se não houver ativos, esconde a seção inteira
+    if (data.length === 0) {
+        if(container) container.style.display = 'none';
+        return;
+    }
+    if(container) container.style.display = 'block';
 
-    // Cálculos
-    const totalItens = _municipiosFiltrados.length;
-    const totalPaginas = Math.ceil(totalItens / _itensPorPagina);
+    // Paginação Local
+    const totalPages = Math.ceil(data.length / _itensPorPagina);
+    if (_pageActive > totalPages) _pageActive = 1;
+    if (_pageActive < 1) _pageActive = 1;
     
-    // Ajuste de limites
-    if (_paginacaoAtual > totalPaginas && totalPaginas > 0) _paginacaoAtual = totalPaginas;
-    if (_paginacaoAtual < 1) _paginacaoAtual = 1;
+    const slice = data.slice((_pageActive - 1) * _itensPorPagina, _pageActive * _itemsPorPagina);
 
-    // Fatiamento
-    const inicio = (_paginacaoAtual - 1) * _itensPorPagina;
-    const fim = inicio + _itensPorPagina;
-    const itensParaMostrar = _municipiosFiltrados.slice(inicio, fim);
-
-    // Renderização HTML
-    if (itensParaMostrar.length === 0) {
-        c.innerHTML = '<div class="empty-state">Nenhum município encontrado.</div>';
-    } else {
-        // Gera as linhas usando SEU LAYOUT ORIGINAL
-        const rows = itensParaMostrar.map(m => {
-            let dataFim = '-', corDataFim = 'inherit';
-            if (m.status === 'Bloqueado' && m.dateBlocked) { dataFim = formatDate(m.dateBlocked); corDataFim = '#C85250'; }
-            else if (m.status === 'Parou de usar' && m.dateStopped) { dataFim = formatDate(m.dateStopped); corDataFim = '#E68161'; }
-
-            const badges = m.modules.map(n => {
-                const mc = modulos.find(x => x.name === n);
-                const abbr = mc ? mc.abbreviation : n.substring(0,3).toUpperCase();
-                return `<span class="module-tag" style="background:rgba(0,85,128,0.1); color:#005580; border:1px solid rgba(0,85,128,0.3);" title="${n}">${abbr}</span>`;
-            }).join('');
-            
-            let stCls = 'task-status';
-            if (m.status === 'Em uso') stCls += ' completed'; 
-            else if (m.status === 'Bloqueado') stCls += ' cancelled'; 
-            else if (m.status === 'Parou de usar') stCls += ' pending';
-            else if (m.status === 'Não Implantado') stCls += ' not-implanted'; // ✅ Nova Classe
-
-            let displayUF = m.uf; 
-            if (!displayUF && typeof municipalitiesList !== 'undefined') {
-                const match = municipalitiesList.find(ml => ml.name === m.name);
-                if (match) displayUF = match.uf;
-            }
-            const nomeExibicao = displayUF ? `${m.name} - ${displayUF}` : m.name;
-
-            return `<tr>
-                <td class="text-primary-cell">${nomeExibicao}</td> 
-                <td class="module-tags-cell">${badges}</td>
-                <td style="font-size:12px;">${m.manager}</td>
-                <td>${m.contact}</td>
-                <td>${formatDate(m.implantationDate)}</td>
-                <td style="font-size:11px;">${calculateTimeInUse(m.implantationDate)}</td> 
-                <td style="font-size:11px;">${formatDate(m.lastVisit)}</td> 
-                <td style="font-size:11px;">${calculateDaysSince(m.lastVisit)}</td> 
-                <td><span class="${stCls}">${m.status}</span></td>
-                <td style="color:${corDataFim}; font-size:11px;">${dataFim}</td>
-                <td>
-                    <button class="btn btn--sm" onclick="showMunicipalityModal('${m.id}')">✏️</button>
-                    <button class="btn btn--sm" onclick="deleteMunicipality('${m.id}')">🗑️</button>
-                </td>
-            </tr>`;
+    const rows = slice.map(m => {
+        // Badges de Módulos (Azul Claro)
+        const badges = m.modules.map(n => {
+            const mc = modulos.find(x => x.name === n);
+            const abbr = mc ? mc.abbreviation : n.substring(0,3).toUpperCase();
+            return `<span class="module-tag" style="background:#e0f2fe; color:#0284c7; border:1px solid #bae6fd;">${abbr}</span>`;
         }).join('');
+
+        const pop = m.population ? m.population.toLocaleString('pt-BR') : '-';
+        const displayUF = m.uf ? `${m.name} - ${m.uf}` : m.name;
         
-        // Injeta a tabela
-        c.innerHTML = `<table><thead>
-            <th>Município</th>
-            <th>Módulos Em Uso</th>
-            <th>Gestor(a) de Saúde Atual</th>
-            <th>Contato</th>
-            <th>Data de<br>Implantação</th>
-            <th>Tempo de Uso</th> 
-            <th>Última Visita<br>Presencial</th> 
-            <th>Tempo sem Visita</th> 
-            <th>Status</th>
-            <th>Bloqueio/<br>Parou de Usar</th>
-            <th>Ações</th>
-        </thead><tbody>${rows}</tbody></table>`;
-    }
+        // Coluna específica: Tempo sem visita
+        const tempoSemVisita = calculateDaysSince(m.lastVisit);
 
-    // Atualiza os botões de paginação
-    renderizarControlesPaginacao(totalPaginas);
+        return `<tr>
+            <td class="text-primary-cell" style="font-weight:bold;">${displayUF}</td>
+            <td class="module-tags-cell">${badges}</td>
+            <td>${m.manager}</td>
+            <td>${m.contact}</td>
+            <td style="text-align:center;">${formatDate(m.implantationDate)}</td>
+            <td style="text-align:center;">${calculateTimeInUse(m.implantationDate)}</td>
+            <td style="text-align:center;">${formatDate(m.lastVisit)}</td>
+            <td style="text-align:center; color:#C85250; font-weight:bold;">${tempoSemVisita}</td>
+            <td style="text-align:right;">${pop}</td>
+            <td style="text-align:center;"><span class="task-status completed">Em uso</span></td>
+            <td style="text-align:center;">
+                <button class="btn btn--sm" onclick="showMunicipalityModal('${m.id}')">✏️</button>
+                <button class="btn btn--sm" onclick="deleteMunicipality('${m.id}')">🗑️</button>
+            </td>
+        </tr>`;
+    }).join('');
+
+    tableDiv.innerHTML = `<table><thead>
+        <th>Município</th>
+        <th>Módulos Em Uso</th>
+        <th>Gestor(a) de Saúde Atual</th>
+        <th>Contato</th>
+        <th style="text-align:center;">Data de<br>Implantação</th>
+        <th style="text-align:center;">Tempo de Uso</th>
+        <th style="text-align:center;">Última Visita<br>Presencial</th>
+        <th style="text-align:center;">Tempo S/Visita</th>
+        <th style="text-align:right;">População</th>
+        <th style="text-align:center;">Status</th>
+        <th style="text-align:center;">Ações</th>
+    </thead><tbody>${rows}</tbody></table>`;
+
+    renderPaginationControls(pagDiv, totalPages, _pageActive, (p) => { _pageActive = p; renderMunicipalities(); });
 }
 
-// Funções de Controle (Anterior/Próximo)
-function renderizarControlesPaginacao(totalPaginas) {
-    const container = document.getElementById('municipiosPagination');
-    if (!container) return;
+// --- TABELA 2: INATIVOS (Colunas: Data Bloqueio/Parou, sem Tempo S/Visita) ---
+function renderInactiveTable(data) {
+    const container = document.getElementById('sec-mun-inactive');
+    const tableDiv = document.getElementById('table-mun-inactive');
+    const pagDiv = document.getElementById('pagination-mun-inactive');
 
-    // Se não tiver páginas pra mostrar (0 resultados), esconde ou limpa
-    if (totalPaginas <= 1) {
-        container.innerHTML = '';
-        return; 
+    if (data.length === 0) {
+        if(container) container.style.display = 'none';
+        return;
     }
+    if(container) container.style.display = 'block';
 
-    let html = '';
-    html += `<button onclick="mudarPagina(${_paginacaoAtual - 1})" ${ _paginacaoAtual === 1 ? 'disabled' : '' }>Anterior</button>`;
-
-    // Lógica simplificada de botões (1 ... 5 6 7 ... 10)
-    let startPage = Math.max(1, _paginacaoAtual - 2);
-    let endPage = Math.min(totalPaginas, _paginacaoAtual + 2);
-
-    if (startPage > 1) {
-        html += `<button onclick="mudarPagina(1)">1</button>`;
-        if (startPage > 2) html += `<span>...</span>`;
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-        html += `<button onclick="mudarPagina(${i})" class="${i === _paginacaoAtual ? 'active' : ''}">${i}</button>`;
-    }
-
-    if (endPage < totalPaginas) {
-        if (endPage < totalPaginas - 1) html += `<span>...</span>`;
-        html += `<button onclick="mudarPagina(${totalPaginas})">${totalPaginas}</button>`;
-    }
-
-    html += `<button onclick="mudarPagina(${_paginacaoAtual + 1})" ${ _paginacaoAtual === totalPaginas ? 'disabled' : '' }>Próximo</button>`;
+    const totalPages = Math.ceil(data.length / _itensPorPagina);
+    if (_pageInactive > totalPages) _pageInactive = 1;
+    if (_pageInactive < 1) _pageInactive = 1;
     
-    // Texto de apoio
-    html += `<span style="margin-left:15px; font-size:0.9em; color:#666;">
-             Pág ${_paginacaoAtual} de ${totalPaginas} 
-             (${_municipiosFiltrados.length} registros)</span>`;
+    const slice = data.slice((_pageInactive - 1) * _itensPorPagina, _pageInactive * _itemsPorPagina);
 
-    container.innerHTML = html;
+    const rows = slice.map(m => {
+        // Lógica de Data de Bloqueio/Parou
+        let dataFim = '-', corFim = '#777';
+        if (m.status === 'Bloqueado') { dataFim = formatDate(m.dateBlocked); corFim = '#C85250'; }
+        else if (m.status === 'Parou de usar') { dataFim = formatDate(m.dateStopped); corFim = '#E68161'; }
+
+        // Badges Cinzas para inativos
+        const badges = m.modules.map(n => {
+            const mc = modulos.find(x => x.name === n);
+            const abbr = mc ? mc.abbreviation : n.substring(0,3).toUpperCase();
+            return `<span class="module-tag" style="background:#f3f4f6; color:#6b7280; border:1px solid #d1d5db;">${abbr}</span>`;
+        }).join('');
+
+        let stClass = 'task-status';
+        if(m.status === 'Bloqueado') stClass += ' cancelled';
+        else if(m.status === 'Não Implantado') stClass += ' not-implanted';
+        else stClass += ' pending';
+
+        const pop = m.population ? m.population.toLocaleString('pt-BR') : '-';
+        const displayUF = m.uf ? `${m.name} - ${m.uf}` : m.name;
+
+        return `<tr>
+            <td class="text-primary-cell">${displayUF}</td>
+            <td class="module-tags-cell">${badges}</td>
+            <td>${m.manager}</td>
+            <td>${m.contact}</td>
+            <td style="text-align:center;">${formatDate(m.implantationDate)}</td>
+            <td style="text-align:center; color:${corFim}; font-weight:bold;">${dataFim}</td>
+            <td style="text-align:center;">${calculateTimeInUse(m.implantationDate)}</td>
+            <td style="text-align:center;">${formatDate(m.lastVisit)}</td>
+            <td style="text-align:right;">${pop}</td>
+            <td style="text-align:center;"><span class="${stClass}">${m.status}</span></td>
+            <td style="text-align:center;">
+                <button class="btn btn--sm" onclick="showMunicipalityModal('${m.id}')">✏️</button>
+                <button class="btn btn--sm" onclick="deleteMunicipality('${m.id}')">🗑️</button>
+            </td>
+        </tr>`;
+    }).join('');
+
+    tableDiv.innerHTML = `<table><thead>
+        <th>Município</th>
+        <th>Módulos Em Uso</th>
+        <th>Gestor(a) de Saúde Atual</th>
+        <th>Contato</th>
+        <th style="text-align:center;">Data de<br>Implantação</th>
+        <th style="text-align:center;">Data Bloqueio/<br>Parou de Usar</th>
+        <th style="text-align:center;">Tempo de Uso</th>
+        <th style="text-align:center;">Última Visita<br>Presencial</th>
+        <th style="text-align:right;">População</th>
+        <th style="text-align:center;">Status</th>
+        <th style="text-align:center;">Ações</th>
+    </thead><tbody>${rows}</tbody></table>`;
+
+    renderPaginationControls(pagDiv, totalPages, _pageInactive, (p) => { _pageInactive = p; renderMunicipalities(); });
 }
 
+// Controle de Itens por Página (Global para a aba)
 window.mudarQtdPorPagina = function(valor) {
     _itensPorPagina = parseInt(valor);
-    _paginacaoAtual = 1; 
-    atualizarTabelaPaginada();
+    _pageActive = 1;
+    _pageInactive = 1;
+    renderMunicipalities(); // Recarrega ambas
 };
 
-window.mudarPagina = function(novaPagina) {
-    _paginacaoAtual = novaPagina;
-    atualizarTabelaPaginada();
-};
+// Helper Genérico para Botões de Paginação
+function renderPaginationControls(container, totalPages, currentPage, callback) {
+    if (totalPages <= 1) { container.innerHTML = ''; return; }
+    
+    let html = `<div style="display:flex; justify-content:center; gap:5px; margin-top:10px;">`;
+    
+    // Botão Anterior
+    html += `<button class="btn btn--sm btn--outline" ${currentPage===1?'disabled':''} onclick="window.tempPageCallback_${container.id}(${currentPage-1})">◀</button>`;
+    
+    // Mostra Página Atual
+    html += `<span style="align-self:center; font-size:12px; margin:0 10px;">Pág ${currentPage} de ${totalPages}</span>`;
+    
+    // Botão Próximo
+    html += `<button class="btn btn--sm btn--outline" ${currentPage===totalPages?'disabled':''} onclick="window.tempPageCallback_${container.id}(${currentPage+1})">▶</button>`;
+    html += `</div>`;
+
+    // Truque para criar callbacks únicos por tabela
+    window['tempPageCallback_' + container.id] = callback;
+    container.innerHTML = html;
+}
 // ============================================================
 // FUNÇÃO FALTANTE: GERAR PDF DE MUNICÍPIOS
 // ============================================================
@@ -10364,4 +10409,11 @@ function saveAnnouncement(e) {
             btn.innerText = txtOriginal;
             btn.disabled = false;
         });
+}
+// Formata número com ponto de milhar (Ex: 12.500)
+function formatPopulation(input) {
+    let v = input.value.replace(/\D/g, ""); // Remove tudo que não é dígito
+    v = (parseInt(v) || 0).toLocaleString('pt-BR'); // Formata Brasil
+    if(v === '0') v = '';
+    input.value = v;
 }
