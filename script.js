@@ -8601,9 +8601,6 @@ function generateReportPreview() {
         // --- LARGURAS RECALCULADAS PARA PREENCHER 100% (Total ~277mm) ---
         let customColumnStyles = {};
         
-        // --- LARGURAS RECALCULADAS (Total ~277mm) ---
-        let customColumnStyles = {};
-        
         if (type === 'municipios') {
             customColumnStyles = {
                 // Redistribuição Otimizada (Total ~277mm)
