@@ -46,7 +46,7 @@
             <div class="login-left">
                 <div class="login-branding">
                     <h1 class="login-title">SIGP Gestão</h1>
-                    <p class="login-tagline">Setor de Saúde da empresa<br>HLH® Serviços & Tecnologia</p>
+                    <p class="login-tagline">Setor de Saúde da<BR> HLH® Serviços & Tecnologia</p>
                 </div>
             </div>
             <div class="login-right">
@@ -101,7 +101,7 @@
         </button>
 
 <div>
-                <h1>SIGP Saúde - Gestão de Setor</h1>
+                <h1>SIGP Gestão - Setor de Saúde</h1>
 
                 <p class="subtitle">Sistema de Gestão Completo</p>
 
@@ -300,11 +300,10 @@
             
             <h3 style="text-align: center; text-transform: uppercase; color: var(--color-primary); margin-bottom: 20px;">1. Histórico e Totais</h3>
 
-            <div class="stats-cards" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
+                <div class="stats-cards dashboard-grid-5">
                 <div class="stat-card">
                     <h3 id="dashboard-municipalities-in-use">0</h3>
-                    <p>Municípios Utilizando SIGP Saúde</p>
-                </div>
+                    <p>Municípios Ativos</p> </div>
                 <div class="stat-card">
                     <h3 id="dashboard-trainings-completed">0</h3>
                     <p>Treinamentos Realizados</p>
@@ -315,7 +314,11 @@
                 </div>
                 <div class="stat-card">
                     <h3 id="dashboard-presentations-completed">0</h3>
-                    <p>Apresentações de Sistema Realizadas</p>
+                    <p>Apresentações do Sistema Realizadas</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="dashboard-visits-completed">0</h3>
+                    <p>Viagens Realizadas</p>
                 </div>
             </div>
 
@@ -427,19 +430,19 @@
                     </div>
                     
                     <div class="form-group">
-    <label class="form-label">Solicitação (Início)</label>
+    <label class="form-label">Solicitação. Início</label>
     <input type="date" class="form-control" id="filter-demand-sol-start" onchange="validateDateRange('dem-sol')">
 </div>
 <div class="form-group">
-    <label class="form-label">Solicitação (Fim)</label>
+    <label class="form-label">Solicitação. Fim</label>
     <input type="date" class="form-control" id="filter-demand-sol-end" onchange="validateDateRange('dem-sol')">
 </div>
 <div class="form-group">
-    <label class="form-label">Realização (Início)</label>
+    <label class="form-label">Realização. Início</label>
     <input type="date" class="form-control" id="filter-demand-real-start" onchange="validateDateRange('dem-real')">
 </div>
 <div class="form-group">
-    <label class="form-label">Realização (Fim)</label>
+    <label class="form-label">Realização. Fim</label>
     <input type="date" class="form-control" id="filter-demand-real-end" onchange="validateDateRange('dem-real')">
 </div>
 
@@ -521,52 +524,56 @@
             </div>
 
             <h3 class="section-subtitle">Filtros</h3>
-            <div class="filters-section">
-                <div class="filters-grid">
-                    <div class="form-group">
-                        <label class="form-label">Município</label>
-                        <select class="form-control" id="filter-visit-municipality">
-                            <option value="">Todos</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Status</label>
-                        <select class="form-control" id="filter-visit-status">
-                            <option value="">Todos</option>
-                            <option value="Pendente">Pendente</option>
-                            <option value="Realizada">Realizada</option>
-                            <option value="Cancelada">Cancelada</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Solicitante</label>
-                        <input type="text" class="form-control" id="filter-visit-applicant" placeholder="Buscar solicitante">
-                    </div>
-                    
-                    <div class="form-group"></div> 
+           <div class="filters-section">
+    <div class="filters-grid-visitas">
+        
+        <div class="form-group g-municipio">
+            <label class="form-label">Município</label>
+            <select class="form-control" id="filter-visit-municipality">
+                <option value="">Todos</option>
+            </select>
+        </div>
 
-                    <div class="form-group">
-    <label class="form-label">Solicitação (Início)</label>
-    <input type="date" class="form-control" id="filter-visit-sol-start" onchange="validateDateRange('visit-sol')">
-</div>
-<div class="form-group">
-    <label class="form-label">Solicitação (Fim)</label>
-    <input type="date" class="form-control" id="filter-visit-sol-end" onchange="validateDateRange('visit-sol')">
-</div>
-<div class="form-group">
-    <label class="form-label">Data Visita (Início)</label>
-    <input type="date" class="form-control" id="filter-visit-real-start" onchange="validateDateRange('visit-real')">
-</div>
-<div class="form-group">
-    <label class="form-label">Data Visita (Fim)</label>
-    <input type="date" class="form-control" id="filter-visit-real-end" onchange="validateDateRange('visit-real')">
-</div>
+        <div class="form-group g-status">
+            <label class="form-label">Status</label>
+            <select class="form-control" id="filter-visit-status">
+                <option value="">Todos</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Realizada">Realizada</option>
+                <option value="Cancelada">Cancelada</option>
+            </select>
+        </div>
 
-                    <div class="form-group" style="display: flex; align-items: flex-end;">
-                        <button class="btn btn--secondary btn--full-width" onclick="clearVisitFilters()">Limpar Filtros</button>
-                    </div>
-                </div>
-            </div>
+        <div class="form-group g-applicant">
+            <label class="form-label">Solicitante</label>
+            <input type="text" class="form-control" id="filter-visit-applicant" placeholder="Buscar nome...">
+        </div>
+
+        <div class="form-group g-date">
+            <label class="form-label">Solicitação. Início</label>
+            <input type="date" class="form-control" id="filter-visit-sol-start" onchange="validateDateRange('visit-sol')">
+        </div>
+        <div class="form-group g-date">
+            <label class="form-label">Solicitação. Fim</label>
+            <input type="date" class="form-control" id="filter-visit-sol-end" onchange="validateDateRange('visit-sol')">
+        </div>
+        <div class="form-group g-date">
+            <label class="form-label">Realização. Início</label>
+            <input type="date" class="form-control" id="filter-visit-real-start" onchange="validateDateRange('visit-real')">
+        </div>
+        <div class="form-group g-date">
+            <label class="form-label">Realização. Fim</label>
+            <input type="date" class="form-control" id="filter-visit-real-end" onchange="validateDateRange('visit-real')">
+        </div>
+
+        <div class="form-group g-clear">
+            <label class="form-label" style="visibility: hidden;">_</label>
+            <button class="btn btn--secondary" onclick="clearVisitFilters()" title="Limpar Filtros" style="width: 100%; display: flex; justify-content: center;">
+                Limpar
+            </button>
+        </div>
+    </div>
+</div>
 
             <div id="visits-results-count" class="results-count" style="display: none;"></div>
 
@@ -1077,7 +1084,7 @@
 
         <!-- Aba de Cadastro de Municípios (Lista Mestra) -->
 
-        <section id="municipalities-list-section" class="tab-content">
+       <section id="municipalities-list-section" class="tab-content">
     <div class="section-header">
         <h2>Cadastro de Municípios</h2>
         <button class="btn btn--primary" onclick="showMunicipalityListModal()">+ Novo Município</button>
@@ -1091,8 +1098,21 @@
 
     <div id="municipalities-list-total" class="results-count" style="display: none; margin-bottom: 16px;"></div>
 
-    <div class="municipalities-table" id="municipalities-list-table">
+    <div class="municipalities-table" id="municipalities-list-table"></div>
+
+    <div class="pagination-wrapper">
+        <div class="rows-per-page">
+            <label>Itens por página:</label>
+            <select id="munListRowsPerPage" onchange="mudarQtdPorPaginaMunList(this.value)">
+                <option value="15">15</option>
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
         </div>
+        <div class="pagination-controls" id="munListPagination">
+        </div>
+    </div>
 </section>
 
         <!-- Aba de Formas de Apresentação -->
@@ -1305,55 +1325,60 @@
 
             <h3 class="section-subtitle">Filtros</h3>
             <div class="filters-section">
-                <div class="filters-grid">
-                    <div class="form-group">
-                        <label class="form-label">Município</label>
-                        <select class="form-control" id="filter-request-municipality">
-                            <option value="">Todos</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Status</label>
-                        <select class="form-control" id="filter-request-status">
-                            <option value="">Todos</option>
-                            <option value="Pendente">Pendente</option>
-                            <option value="Realizado">Realizado</option>
-                            <option value="Inviável">Inviável</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Usuário</label>
-                        <select class="form-control" id="filter-request-user">
-                            <option value="">Todos</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Solicitante (Cliente)</label>
-                        <input type="text" class="form-control" id="filter-request-solicitante" placeholder="Buscar nome">
-                    </div>
+    <div class="filters-grid-solicitacoes">
+        
+        <div class="form-group g-municipio">
+            <label class="form-label">Município</label>
+            <select class="form-control" id="filter-request-municipality">
+                <option value="">Todos</option>
+            </select>
+        </div>
 
-                   <div class="form-group">
-    <label class="form-label">Solicitação (Início)</label>
-    <input type="date" class="form-control" id="filter-request-sol-start" onchange="validateDateRange('request-sol')">
-</div>
-<div class="form-group">
-    <label class="form-label">Solicitação (Fim)</label>
-    <input type="date" class="form-control" id="filter-request-sol-end" onchange="validateDateRange('request-sol')">
-</div>
-<div class="form-group">
-    <label class="form-label">Realização (Início)</label>
-    <input type="date" class="form-control" id="filter-request-real-start" onchange="validateDateRange('request-real')">
-</div>
-<div class="form-group">
-    <label class="form-label">Realização (Fim)</label>
-    <input type="date" class="form-control" id="filter-request-real-end" onchange="validateDateRange('request-real')">
-</div>
+        <div class="form-group g-usuario">
+            <label class="form-label">Usuário</label>
+            <select class="form-control" id="filter-request-user">
+                <option value="">Todos</option>
+            </select>
+        </div>
 
-                    <div class="form-group" style="display: flex; align-items: flex-end;">
-                        <button class="btn btn--secondary btn--full-width" onclick="clearRequestFilters()">Limpar Filtros</button>
-                    </div>
-                </div>
-            </div>
+        <div class="form-group g-status">
+            <label class="form-label">Status</label>
+            <select class="form-control" id="filter-request-status">
+                <option value="">Todos</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Realizado">Realizado</option>
+                <option value="Inviável">Inviável</option>
+            </select>
+        </div>
+
+        <div class="form-group g-date">
+            <label class="form-label">Solicitação. Início</label>
+            <input type="date" class="form-control" id="filter-request-sol-start" onchange="validateDateRange('request-sol')">
+        </div>
+
+        <div class="form-group g-date">
+            <label class="form-label">Solicitação. Fim</label>
+            <input type="date" class="form-control" id="filter-request-sol-end" onchange="validateDateRange('request-sol')">
+        </div>
+
+        <div class="form-group g-date">
+            <label class="form-label">Realização. Início</label>
+            <input type="date" class="form-control" id="filter-request-real-start" onchange="validateDateRange('request-real')">
+        </div>
+
+        <div class="form-group g-date">
+            <label class="form-label">Realização. Fim</label>
+            <input type="date" class="form-control" id="filter-request-real-end" onchange="validateDateRange('request-real')">
+        </div>
+
+        <div class="form-group g-clear">
+            <label class="form-label" style="visibility: hidden;">_</label>
+            <button class="btn btn--secondary" onclick="clearRequestFilters()" title="Limpar Filtros">
+                Limpar
+            </button>
+        </div>
+    </div>
+</div>
 
             <div id="requests-results-count" class="results-count" style="display: none;"></div>
 
@@ -1427,7 +1452,7 @@
             </div>
 
             <h3 class="section-subtitle">Filtros</h3>
-            <div class="filters-section">
+              <div class="filters-section">
                 <div class="filters-grid">
                     <div class="form-group">
                         <label class="form-label">Município</label>
@@ -1456,27 +1481,28 @@
                     </div>
 
                     <div class="form-group">
-    <label class="form-label">Solicitação (Início)</label>
-    <input type="date" class="form-control" id="filter-presentation-sol-start" onchange="validateDateRange('pres-sol')">
-</div>
-<div class="form-group">
-    <label class="form-label">Solicitação (Fim)</label>
-    <input type="date" class="form-control" id="filter-presentation-sol-end" onchange="validateDateRange('pres-sol')">
-</div>
-<div class="form-group">
-    <label class="form-label">Realização (Início)</label>
-    <input type="date" class="form-control" id="filter-presentation-real-start" onchange="validateDateRange('pres-real')">
-</div>
-<div class="form-group">
-    <label class="form-label">Realização (Fim)</label>
-    <input type="date" class="form-control" id="filter-presentation-real-end" onchange="validateDateRange('pres-real')">
-</div>
+                    <label class="form-label">Solicitação. Início</label>
+                    <input type="date" class="form-control" id="filter-presentation-sol-start" onchange="validateDateRange('pres-sol')">
+                </div>
+                    <div class="form-group">
+                  <label class="form-label">Solicitação. Fim</label>
+                 <input type="date" class="form-control" id="filter-presentation-sol-end" onchange="validateDateRange('pres-sol')">
+               </div>
+                <div class="form-group">
+                  <label class="form-label">Realização. Início</label>
+                   <input type="date" class="form-control" id="filter-presentation-real-start" onchange="validateDateRange('pres-real')">
+               </div>
+             <div class="form-group">
+              <label class="form-label">Realização. Fim</label>
+               <input type="date" class="form-control" id="filter-presentation-real-end" onchange="validateDateRange('pres-real')">
+             </div>
 
                     <div class="form-group" style="display: flex; align-items: flex-end;">
                         <button class="btn btn--secondary btn--full-width" onclick="clearPresentationFilters()">Limpar Filtros</button>
                     </div>
                 </div>
             </div>
+
 
             <div id="presentations-results-count" class="results-count" style="display: none;"></div>
 
@@ -1557,59 +1583,63 @@
             <h3 class="section-subtitle">Filtros</h3>
 
             <div class="filters-section">
-                <div class="filters-grid">
-                    <div class="form-group">
-                        <label class="form-label">Município</label>
-                        <select class="form-control" id="filter-task-municipality">
+                <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+                    
+                    <div class="form-group" style="width: 220px; flex-shrink: 0; margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 11px; margin-bottom: 4px;">Município</label>
+                        <select class="form-control" id="filter-task-municipality" style="height: 34px; padding: 4px 8px; font-size: 13px;">
                             <option value="">Todos</option>
                         </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Colaborador</label>
-                        <select class="form-control" id="filter-task-performer">
-                            <option value="">Todos</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Cargo/Função</label>
-                        <select class="form-control" id="filter-task-position">
-                            <option value="">Todos</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Status</label>
-                        <select class="form-control" id="filter-task-status">
-                            <option value="">Todos</option>
-                            <option value="Concluído">Concluídos</option>
-                            <option value="Pendente">Pendentes</option>
-                            <option value="Cancelado">Cancelados</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Solicitante</label>
-                        <input type="text" class="form-control" id="filter-task-requester" placeholder="Buscar solicitante">
                     </div>
 
-                    <div class="form-group">
-                    <label class="form-label">Solicitação (Início)</label>
-                    <input type="date" class="form-control" id="filter-task-req-start" onchange="validateDateRange('task-req')">
-              </div>
-                    <div class="form-group">
-                    <label class="form-label">Solicitação (Fim)</label>
-                   <input type="date" class="form-control" id="filter-task-req-end" onchange="validateDateRange('task-req')">
-             </div>
-                   <div class="form-group">
-                         <label class="form-label">Realização (Início)</label>
-                        <input type="date" class="form-control" id="filter-task-perf-start" onchange="validateDateRange('task-perf')">
-                   </div>
-                    <div class="form-group">
-                        <label class="form-label">Realização (Fim)</label>
-                        <input type="date" class="form-control" id="filter-task-perf-end" onchange="validateDateRange('task-perf')">
-                 </div>
-
-                    <div class="form-group" style="display: flex; align-items: flex-end;">
-                        <button class="btn btn--secondary btn--full-width" onclick="clearTaskFilters()">Limpar Filtros</button>
+                    <div class="form-group" style="width: 220px; flex-shrink: 0; margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 11px; margin-bottom: 4px;">Colaborador</label>
+                        <select class="form-control" id="filter-task-performer" style="height: 34px; padding: 4px 8px; font-size: 13px;">
+                            <option value="">Todos</option>
+                        </select>
                     </div>
+
+                    <div class="form-group" style="flex: 1; min-width: 110px; margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 11px; margin-bottom: 4px;">Cargo</label>
+                        <select class="form-control" id="filter-task-position" style="height: 34px; padding: 4px 8px; font-size: 13px;">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="flex: 1; min-width: 100px; margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 11px; margin-bottom: 4px;">Status</label>
+                        <select class="form-control" id="filter-task-status" style="height: 34px; padding: 4px 8px; font-size: 13px;">
+                            <option value="">Todos</option>
+                            <option value="Concluído">Concluído</option>
+                            <option value="Pendente">Pendente</option>
+                            <option value="Cancelado">Cancelado</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="flex: 1; min-width: 115px; margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 11px; margin-bottom: 4px; white-space: nowrap;">Solicitação. Início</label>
+                        <input type="date" class="form-control" id="filter-task-req-start" onchange="validateDateRange('task-req')" style="height: 34px; padding: 4px 6px; font-size: 12px;">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 115px; margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 11px; margin-bottom: 4px; white-space: nowrap;">Solicitação. Fim</label>
+                        <input type="date" class="form-control" id="filter-task-req-end" onchange="validateDateRange('task-req')" style="height: 34px; padding: 4px 6px; font-size: 12px;">
+                    </div>
+                    
+                    <div class="form-group" style="flex: 1; min-width: 115px; margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 11px; margin-bottom: 4px; white-space: nowrap;">Realização. Início</label>
+                        <input type="date" class="form-control" id="filter-task-perf-start" onchange="validateDateRange('task-perf')" style="height: 34px; padding: 4px 6px; font-size: 12px;">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 115px; margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 11px; margin-bottom: 4px; white-space: nowrap;">Realização. Fim</label>
+                        <input type="date" class="form-control" id="filter-task-perf-end" onchange="validateDateRange('task-perf')" style="height: 34px; padding: 4px 6px; font-size: 12px;">
+                    </div>
+
+                    <div class="form-group" style="width: 80px; flex-shrink: 0; margin-bottom: 0;">
+                        <button class="btn btn--secondary" onclick="clearTaskFilters()" title="Limpar Filtros" style="width: 100%; height: 34px; padding: 0; display: flex; justify-content: center; align-items: center; font-size: 12px;">
+                            Limpar
+                        </button>
+                    </div>
+
                 </div>
             </div>
 
@@ -1679,62 +1709,44 @@
             </div>
 
             <h3 class="section-subtitle">Filtros</h3>
+<div class="filters-section">
+                <div class="form-grid">
 
-            <div class="filters-section">
-
-                <div class="filters-grid">
-
-                    <div class="form-group">
-
+                    <div class="form-group col-3">
                         <label class="form-label">Nome do Município</label>
-
                         <select class="form-control" id="filter-municipality-name">
-
                             <option value="">Todos</option>
-
                         </select>
-
                     </div>
 
-                    <div class="form-group">
-
+                    <div class="form-group col-2">
                         <label class="form-label">Status</label>
-
                         <select class="form-control" id="filter-municipality-status">
-
                             <option value="">Todos</option>
-
                             <option value="Em uso">Em uso</option>
-
                             <option value="Bloqueado">Bloqueado</option>
-
                             <option value="Parou de usar">Parou de usar</option>
-
                             <option value="Não Implantado">Não Implantado</option>
-
                         </select>
-
                     </div>
 
-                    <div class="form-group">
-                     <label class="form-label">Módulo</label>
-                    <select class="form-control" id="filter-municipality-module" onchange="renderMunicipalities()">
-                    <option value="">Todos</option>
-                  </select>
-                 </div>
+                    <div class="form-group col-2">
+                        <label class="form-label">Busca por Módulo</label>
+                        <select class="form-control" id="filter-municipality-module" onchange="renderMunicipalities()">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
 
-                    <div class="form-group">
-
-                        <label class="form-label">Gestor</label>
-
+                    <div class="form-group col-3">
+                        <label class="form-label">Busca por Gestor(a) de Saúde</label>
                         <input type="text" class="form-control" id="filter-municipality-manager" placeholder="Buscar por gestor">
+                    </div>
 
+                    <div class="form-group col-2" style="display: flex; align-items: flex-end;">
+                        <button class="btn btn--secondary btn--full-width" onclick="clearMunicipalityFilters()">Limpar Filtros</button>
                     </div>
 
                 </div>
-
-                <button class="btn btn--secondary" onclick="clearMunicipalityFilters()">Limpar Filtros</button>
-
             </div>
 
             <div id="municipalities-results-count" class="results-count" style="display: none;"></div>
@@ -1989,59 +2001,72 @@
 </section>
 
     <section id="audit-section" class="tab-content">
-        <div class="section-header">
-    <h2>Auditoria do Sistema</h2>
-    <div style="display: flex; gap: 10px;">
-        <button class="btn btn--secondary" onclick="clearAuditLogs()">Limpar Logs Antigos</button>
-        <button class="btn btn--outline" onclick="exportAuditCSV()">📥 Exportar CSV</button>
-        
-        <button class="btn btn--primary" onclick="generateAuditPDF()">🖨️ Imprimir PDF</button>
+    <div class="section-header">
+        <h2>Auditoria do Sistema</h2>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn--secondary" onclick="clearAuditLogs()">Limpar Logs Antigos</button>
+            <button class="btn btn--outline" onclick="exportAuditCSV()">📥 Exportar CSV</button>
+            <button class="btn btn--primary" onclick="generateAuditPDF()">🖨️ Imprimir PDF</button>
+        </div>
     </div>
-</div>
-        <div class="filters-section">
-    <div class="filters-grid">
-        <div class="form-group">
-            <label class="form-label">Ação</label>
-            <select class="form-control" id="filter-audit-action" onchange="currentPage=1; renderAuditLogs()">
-                <option value="">Todas</option>
-                <option value="Criação">Criação</option>
-                <option value="Edição">Edição</option>
-                <option value="Exclusão">Exclusão</option>
-                <option value="Login">Login</option>
-                <option value="Restauração">Restauração</option>
+
+    <div class="filters-section">
+        <div class="filters-grid">
+            <div class="form-group">
+                <label class="form-label">Ação</label>
+                <select class="form-control" id="filter-audit-action" onchange="renderAuditLogs()">
+                    <option value="">Todas</option>
+                    <option value="Criação">Criação</option>
+                    <option value="Edição">Edição</option>
+                    <option value="Exclusão">Exclusão</option>
+                    <option value="Login">Login</option>
+                    <option value="Restauração">Restauração</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Usuário</label>
+                <input type="text" class="form-control" id="filter-audit-user" placeholder="Quem fez?" oninput="renderAuditLogs()">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Módulo/Alvo</label>
+                <input type="text" class="form-control" id="filter-audit-target" placeholder="Ex: Município..." oninput="renderAuditLogs()">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">De (Data)</label>
+                <input type="date" class="form-control" id="filter-audit-start" onchange="validateDateRange('audit'); renderAuditLogs();">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Até (Data)</label>
+                <input type="date" class="form-control" id="filter-audit-end" onchange="validateDateRange('audit'); renderAuditLogs();">
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: flex-end;">
+                <button class="btn btn--secondary btn--full-width" onclick="clearAuditFilters()">Limpar Filtros</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="results-count" id="audit-count" style="margin-bottom: 10px; display:none;"></div>
+
+    <div class="municipalities-table" id="audit-table"></div>
+
+    <div class="pagination-wrapper">
+        <div class="rows-per-page">
+            <label>Itens por página:</label>
+            <select id="auditRowsPerPage" onchange="mudarQtdPorPaginaAudit(this.value)">
+                <option value="15" selected>15</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
             </select>
         </div>
-
-        <div class="form-group">
-            <label class="form-label">Usuário</label>
-            <input type="text" class="form-control" id="filter-audit-user" placeholder="Quem fez?" 
-                   oninput="currentPage=1; renderAuditLogs()">
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Módulo/Alvo</label>
-            <input type="text" class="form-control" id="filter-audit-target" placeholder="Ex: Município..." 
-                   oninput="currentPage=1; renderAuditLogs()">
-        </div>
-
-        <div class="form-group">
-    <label class="form-label">De (Data)</label>
-    <input type="date" class="form-control" id="filter-audit-start" onchange="validateDateRange('audit')">
-</div>
-<div class="form-group">
-    <label class="form-label">Até (Data)</label>
-    <input type="date" class="form-control" id="filter-audit-end" onchange="validateDateRange('audit')">
-</div>
-
-        <div class="form-group" style="display: flex; align-items: flex-end;">
-            <button class="btn btn--secondary btn--full-width" onclick="clearAuditFilters()">Limpar Filtros</button>
+        <div class="pagination-controls" id="auditPagination">
         </div>
     </div>
-</div>
-        <div class="results-count" id="audit-count" style="margin-bottom: 10px; display:none;"></div>
-        
-        <div class="municipalities-table" id="audit-table"></div>
-    </section>
+</section>
 
     </main>
 
@@ -2893,7 +2918,7 @@
 
         <div class="container">
 
-            <p>&copy; 2025 SIGP Saúde - Gestão de Setor. Todos os direitos reservados.</p>
+            <p>&copy; 2025 SIGP Gestão - Setor de Saúde. Todos os direitos reservados.</p>
 
         </div>
 
