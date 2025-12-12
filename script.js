@@ -7028,8 +7028,16 @@ function renderIntegrations() {
         if (fEnd && i.expirationDate > fEnd) return false;
         if (fStatus) {
             const diff = getDaysDiff(i.expirationDate);
+            
+            // Se filtrar por 'Vencido': esconde se a diferença for maior ou igual a 0
             if (fStatus === 'Vencido' && diff >= 0) return false;
+            
+            // Se filtrar por 'Em dia': esconde se a diferença for negativa (já venceu)
             if (fStatus === 'Em dia' && diff < 0) return false;
+
+            // NOVA REGRA: Se filtrar por 'Alerta' (Vence em 30 dias)
+            // Esconde se já venceu (diff < 0) OU se falta muito tempo (diff > 30)
+            if (fStatus === 'Alerta' && (diff < 0 || diff > 30)) return false;
         }
         return true;
     });
