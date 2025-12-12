@@ -4534,3 +4534,43 @@ html.dark-mode body table tbody tr:hover {
     .filters-grid-visitas .g-date      { flex: 1; min-width: 125px; margin-top: 5px; }
     .filters-grid-visitas .g-clear     { flex: 0; min-width: 90px; margin-top: 5px; }
 }
+/* --- ESTILOS DO INFORMATIVO NO HEADER --- */
+
+/* Novo container que alinha o aviso e os botões à direita */
+.header-right-container {
+    display: flex;
+    flex-direction: column; /* Empilha verticalmente */
+    align-items: flex-end;  /* Alinha tudo à direita */
+    justify-content: center;
+    margin-left: auto;      /* Empurra para o canto direito */
+    gap: 4px;
+}
+
+/* O texto do aviso em si */
+.header-announcement {
+    font-size: 13px;
+    font-weight: bold;
+    color: #FFD700; /* Cor padrão, mas será sobrescrita pelo JS */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    white-space: nowrap;
+    animation: fadeIn 0.5s ease-out;
+    padding-right: 5px;
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Ajuste fino para não quebrar no mobile */
+@media (max-width: 900px) {
+    .header-right-container {
+        align-items: center;
+        width: 100%;
+        margin-top: 10px;
+    }
+    .header-announcement {
+        font-size: 11px;
+        margin-bottom: 5px;
+        white-space: normal;
+        text-align: center;
+    }
+}
