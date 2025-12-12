@@ -1935,7 +1935,7 @@ tbody tr:hover { background-color: var(--color-bg-1); }
         opacity: 0.8; }
     
     /* Estado ABERTO (Texto) */
-    .sidebar:hover .sidebar-nav::before { content: "MENU LATERAL"; /* Alterado o texto */
+    .sidebar:hover .sidebar-nav::before { content: "Menu de Abas"; /* Alterado o texto */
         font-size: 14px;
         font-weight: 800; /* Negrito extra para destaque */
         letter-spacing: 1px;
@@ -2528,7 +2528,7 @@ table td .module-tags { white-space: normal; /* Permite quebrar linha nos módul
         line-height: 40px; }
     
     /* Texto MENU LATERAL no Hover */
-    .sidebar:hover .sidebar-nav::before { content: "MENU LATERAL" !important;
+    .sidebar:hover .sidebar-nav::before { content: "Menu de Abas" !important;
         font-size: 14px;
         font-weight: 800;
         letter-spacing: 1px;
@@ -4228,4 +4228,309 @@ html.dark-mode body table tbody tr:hover {
 
 .notif-birthday .notif-icon {
     font-size: 1.2rem;
+}
+/* ==========================================================================
+   AJUSTE DASHBOARD - 5 CARDS E ESTILO MELHORADO
+   ========================================================================== */
+
+/* 1. Força 5 colunas em telas grandes (diminuindo a largura mínima para caber) */
+.dashboard-grid-5 {
+    display: grid;
+    /* minmax(180px) garante que caibam 5 cards lado a lado em monitores comuns */
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important; 
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+/* 2. Centralização e Espaçamento Interno */
+.dashboard-grid-5 .stat-card {
+    text-align: center !important; /* Centraliza tudo */
+    padding: 20px 10px !important; /* Mais respiro vertical */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+/* 3. Destaque dos Números (Contadores) */
+.dashboard-grid-5 .stat-card h3 {
+    font-size: 2.5rem !important; /* Número maior */
+    margin-bottom: 8px !important;
+    width: 100%;
+}
+
+/* 4. Destaque dos Textos (Títulos) - Ajustado para texto normal */
+.dashboard-grid-5 .stat-card p {
+    font-size: 0.85rem !important; 
+    font-weight: 700 !important;    /* Negrito mantido para destaque */
+    /* text-transform: uppercase; */ /* REMOVIDO: Agora o texto fica normal */
+    letter-spacing: 0.5px;          
+    color: #555 !important;         
+    margin: 0 !important;
+    line-height: 1.3 !important;
+}
+
+/* Ajuste Responsivo: No celular, volta para 1 ou 2 colunas */
+@media (max-width: 900px) {
+    .dashboard-grid-5 {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    }
+}
+/* ==========================================================================
+   CORREÇÃO FINAL - QUEBRA DE TEXTO EM MÓDULOS
+   Adicione isto ao final do style.css
+   ========================================================================== */
+
+/* 1. Força a tabela a respeitar limites de largura */
+#modulos-table table {
+    table-layout: fixed !important; /* Essencial para quebras de texto funcionarem */
+    width: 100% !important;
+}
+
+/* 2. Configura a coluna de Descrição (3ª coluna) para quebrar o texto */
+#modulos-table td:nth-child(3) {
+    white-space: normal !important;       /* Permite a quebra de linha */
+    word-wrap: break-word !important;     /* Quebra palavras longas */
+    word-break: break-word !important;    /* Garante quebra mesmo sem espaços (ex: aaaaa...) */
+    overflow-wrap: break-word !important; /* Compatibilidade moderna */
+    line-height: 1.4 !important;          /* Melhora leitura de múltiplas linhas */
+    max-width: 0;                         /* Truque para table-layout: fixed forçar o wrap */
+}
+
+/* 3. Ajuste de larguras para equilibrar a tabela */
+#modulos-table th:nth-child(1), #modulos-table td:nth-child(1) { width: 25%; } /* Nome */
+#modulos-table th:nth-child(2), #modulos-table td:nth-child(2) { width: 10%; text-align: center; } /* Abrev */
+#modulos-table th:nth-child(3), #modulos-table td:nth-child(3) { width: 55%; } /* Descrição (Maior espaço) */
+#modulos-table th:nth-child(4), #modulos-table td:nth-child(4) { width: 10%; text-align: right; } /* Ações */
+/* ==========================================================================
+   FILTROS GRID PERSONALIZADO (SOLICITAÇÕES)
+   ========================================================================== */
+
+/* Configuração do Grid com colunas de largura EXATA */
+.filters-grid-custom {
+    display: grid;
+    grid-template-columns: 
+        220px  /* Município */
+        150px  /* Usuário */
+        120px  /* Status */
+        115px  /* Sol. Início */
+        115px  /* Sol. Fim */
+        115px  /* Real. Início */
+        115px  /* Real. Fim */
+        80px;  /* Botão Limpar */
+    gap: 10px;
+    align-items: end; /* Alinha tudo pela parte de baixo */
+    width: 100%;
+}
+
+/* Ajustes finos nos inputs dentro deste grid */
+.filters-grid-custom .form-control {
+    width: 100%;
+    font-size: 12px;
+    padding: 4px 6px;
+    height: 34px;
+}
+
+.filters-grid-custom .form-label {
+    font-size: 11px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+}
+
+/* RESPONSIVIDADE: Se a tela for menor que 1100px (Notebooks pequenos), quebra a linha */
+@media (max-width: 1100px) {
+    .filters-grid-custom {
+        grid-template-columns: 1fr 1fr 1fr 1fr; /* 4 colunas */
+        grid-template-rows: auto auto; /* 2 linhas */
+    }
+}
+
+/* RESPONSIVIDADE: Celular */
+@media (max-width: 600px) {
+    .filters-grid-custom {
+        grid-template-columns: 1fr; /* 1 coluna (empilhado) */
+    }
+}
+/* ==========================================================================
+   GRID ESPECÍFICO - ABA SOLICITAÇÕES (RE-EQUILIBRADO)
+   ========================================================================== */
+
+.filters-grid-solicitacoes {
+    display: grid;
+    /* DISTRIBUIÇÃO OTIMIZADA:
+       1. Município: minmax(180px, 1.5fr) -> Reduzi o peso (antes 2.5fr)
+       2. Usuário:   minmax(140px, 1fr)   -> Reduzi o peso (antes 1.5fr)
+       3. Status:    minmax(130px, 1fr)   -> Cresce igual ao usuário
+       4-7. Datas:   minmax(125px, 1fr)   -> AGORA SÃO FLEXÍVEIS (Crescem para não ficar achatadas)
+       8. Botão:     90px                 -> Largura fixa suficiente
+    */
+    grid-template-columns: 
+        minmax(180px, 1.5fr) 
+        minmax(140px, 1fr) 
+        minmax(130px, 1fr) 
+        minmax(125px, 1fr) 
+        minmax(125px, 1fr) 
+        minmax(125px, 1fr) 
+        minmax(125px, 1fr) 
+        90px;
+    
+    gap: 10px;
+    align-items: end;
+    width: 100%;
+}
+
+/* Garante que os inputs preencham toda a célula do grid */
+.filters-grid-solicitacoes .form-group {
+    margin-bottom: 0;
+    min-width: 0;
+    width: 100%;
+}
+
+.filters-grid-solicitacoes .form-control {
+    width: 100%;
+    height: 34px;
+    padding: 4px 8px;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+/* Data um pouco menor para caber bonito */
+.filters-grid-solicitacoes input[type="date"].form-control {
+    font-size: 12px;
+    padding: 4px 2px;
+}
+
+/* Centraliza o botão limpar */
+.filters-grid-solicitacoes .g-clear .btn {
+    width: 100%;
+    height: 34px;
+    padding: 0;
+    font-size: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* RESPONSIVIDADE: Notebooks menores que 1350px */
+/* Quebra para 2 linhas mantendo organização */
+@media (max-width: 1350px) {
+    .filters-grid-solicitacoes {
+        /* Linha 1: Município, Usuário, Status */
+        /* Linha 2: Datas (4x) + Botão */
+        grid-template-columns: 1.5fr 1fr 1fr; /* Grid base de 3 colunas */
+        grid-template-rows: auto auto;
+        gap: 10px;
+    }
+
+    /* REPOSICIONAMENTO DOS ITENS NO GRID DE 2 LINHAS */
+    
+    /* Linha 1: Ocupa topo */
+    .filters-grid-solicitacoes .g-municipio { grid-column: span 1; }
+    .filters-grid-solicitacoes .g-usuario   { grid-column: span 1; }
+    .filters-grid-solicitacoes .g-status    { grid-column: span 1; }
+
+    /* MUDANÇA DE ESTRATÉGIA NO QUEBRA DE LINHA */
+    /* Quando quebrar, mudamos para Flexbox para acomodar as 5 colunas de baixo (4 datas + botão) */
+    .filters-grid-solicitacoes {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    /* Regras do Flexbox quando quebrado */
+    .filters-grid-solicitacoes .g-municipio { flex: 2; min-width: 200px; }
+    .filters-grid-solicitacoes .g-usuario { flex: 1.5; min-width: 150px; }
+    .filters-grid-solicitacoes .g-status { flex: 1; min-width: 130px; }
+    
+    /* Datas e botão na linha de baixo */
+    .filters-grid-solicitacoes .g-date { flex: 1; min-width: 120px; }
+    .filters-grid-solicitacoes .g-clear { flex: 0; min-width: 90px; }
+}
+/* ==========================================================================
+   GRID ESPECÍFICO - ABA VISITAS (8 COLUNAS BALANCEADAS)
+   ========================================================================== */
+
+.filters-grid-visitas {
+    display: grid;
+    /* 1. Município:   1.5fr (Cresce moderadamente)
+       2. Status:      160px (Fixo - Bem largo)
+       3. Solicitante: 1.5fr (Cresce moderadamente)
+       4-7. Datas:     1fr (Cresce igual, mínimo 130px)
+       8. Botão:       90px (Fixo)
+    */
+    grid-template-columns: 
+        minmax(150px, 1.5fr)  /* 1. Município */
+        160px                 /* 2. Status */
+        minmax(150px, 1.5fr)  /* 3. Solicitante */
+        minmax(130px, 1fr)    /* 4. Sol. Início */
+        minmax(130px, 1fr)    /* 5. Sol. Fim */
+        minmax(130px, 1fr)    /* 6. Visita Início */
+        minmax(130px, 1fr)    /* 7. Visita Fim */
+        90px;                 /* 8. Botão Limpar */
+    
+    gap: 10px;
+    align-items: end;
+    width: 100%;
+}
+
+/* Ajustes visuais internos */
+.filters-grid-visitas .form-group {
+    margin-bottom: 0;
+    min-width: 0;
+    width: 100%;
+}
+
+.filters-grid-visitas .form-control {
+    width: 100%;
+    height: 34px;
+    padding: 4px 8px;
+    font-size: 12px;
+    box-sizing: border-box;
+}
+
+/* Fonte da data ajustada */
+.filters-grid-visitas input[type="date"].form-control {
+    font-size: 11px;
+    padding: 4px 2px;
+}
+
+/* Botão centralizado */
+.filters-grid-visitas .g-clear .btn {
+    width: 100%;
+    height: 34px;
+    padding: 0;
+    font-size: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* RESPONSIVIDADE: Notebooks menores que 1450px */
+/* Quebra em 2 linhas se não couber tudo em 1 */
+@media (max-width: 1450px) {
+    .filters-grid-visitas {
+        /* Linha 1: Mun, Status, Solicitante */
+        grid-template-columns: 1.5fr 1fr 1.5fr; 
+        grid-template-rows: auto auto;
+        display: grid;
+    }
+
+    /* Posicionamento forçado na Linha 1 */
+    .filters-grid-visitas .g-municipio { grid-column: 1; grid-row: 1; }
+    .filters-grid-visitas .g-status    { grid-column: 2; grid-row: 1; }
+    .filters-grid-visitas .g-applicant { grid-column: 3; grid-row: 1; }
+
+    /* Linha 2 (Datas e Botão) muda para Flexbox */
+    .filters-grid-visitas {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    /* Configuração Flex quando quebrado */
+    .filters-grid-visitas .g-municipio { flex: 2; min-width: 180px; }
+    .filters-grid-visitas .g-applicant { flex: 2; min-width: 180px; }
+    .filters-grid-visitas .g-status    { flex: 1; min-width: 140px; }
+    
+    .filters-grid-visitas .g-date      { flex: 1; min-width: 125px; margin-top: 5px; }
+    .filters-grid-visitas .g-clear     { flex: 0; min-width: 90px; margin-top: 5px; }
 }
