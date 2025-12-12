@@ -4575,3 +4575,22 @@ html.dark-mode body table tbody tr:hover {
         text-align: center;
     }
 }
+/* --- CORREÇÃO FINAL V90: Badges dentro da tabela --- */
+
+/* Garante que a célula TD seja uma célula normal (sem flex) */
+#table-mun-active td,
+#table-mun-inactive td {
+    display: table-cell !important;
+    vertical-align: middle !important;
+    height: auto !important;
+}
+
+/* O container interno (DIV) é que será flex */
+.module-tags-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    width: 100%;
+    min-width: 200px; /* Garante largura mínima para não espremer */
+}
