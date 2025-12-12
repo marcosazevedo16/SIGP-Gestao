@@ -1083,7 +1083,7 @@ function renderMunicipalities() {
     }
 }
 
-// --- TABELA 1: ATIVOS (Colunas: Tempo S/Visita, sem Bloqueio) ---
+// --- TABELA 1: ATIVOS ---
 function renderActiveTable(data) {
     const container = document.getElementById('sec-mun-active');
     const tableDiv = document.getElementById('table-mun-active');
@@ -1101,10 +1101,10 @@ function renderActiveTable(data) {
     if (_pageActive > totalPages) _pageActive = 1;
     if (_pageActive < 1) _pageActive = 1;
     
-    const slice = data.slice((_pageActive - 1) * _itensPorPagina, _pageActive * _itemsPorPagina);
+    // CORREÇÃO AQUI: Usei _itensPorPagina nos dois lugares
+    const slice = data.slice((_pageActive - 1) * _itensPorPagina, _pageActive * _itensPorPagina);
 
     const rows = slice.map(m => {
-        // Badges de Módulos (Azul Claro)
         const badges = m.modules.map(n => {
             const mc = modulos.find(x => x.name === n);
             const abbr = mc ? mc.abbreviation : n.substring(0,3).toUpperCase();
@@ -1114,7 +1114,6 @@ function renderActiveTable(data) {
         const pop = m.population ? m.population.toLocaleString('pt-BR') : '-';
         const displayUF = m.uf ? `${m.name} - ${m.uf}` : m.name;
         
-        // Coluna específica: Tempo sem visita
         const tempoSemVisita = calculateDaysSince(m.lastVisit);
 
         return `<tr>
@@ -1151,8 +1150,7 @@ function renderActiveTable(data) {
 
     renderPaginationControls(pagDiv, totalPages, _pageActive, (p) => { _pageActive = p; renderMunicipalities(); });
 }
-
-// --- TABELA 2: INATIVOS (Colunas: Data Bloqueio/Parou, sem Tempo S/Visita) ---
+// --- TABELA 2: INATIVOS ---
 function renderInactiveTable(data) {
     const container = document.getElementById('sec-mun-inactive');
     const tableDiv = document.getElementById('table-mun-inactive');
@@ -1168,15 +1166,14 @@ function renderInactiveTable(data) {
     if (_pageInactive > totalPages) _pageInactive = 1;
     if (_pageInactive < 1) _pageInactive = 1;
     
-    const slice = data.slice((_pageInactive - 1) * _itensPorPagina, _pageInactive * _itemsPorPagina);
+    // CORREÇÃO AQUI: Usei _itensPorPagina nos dois lugares
+    const slice = data.slice((_pageInactive - 1) * _itensPorPagina, _pageInactive * _itensPorPagina);
 
     const rows = slice.map(m => {
-        // Lógica de Data de Bloqueio/Parou
         let dataFim = '-', corFim = '#777';
         if (m.status === 'Bloqueado') { dataFim = formatDate(m.dateBlocked); corFim = '#C85250'; }
         else if (m.status === 'Parou de usar') { dataFim = formatDate(m.dateStopped); corFim = '#E68161'; }
 
-        // Badges Cinzas para inativos
         const badges = m.modules.map(n => {
             const mc = modulos.find(x => x.name === n);
             const abbr = mc ? mc.abbreviation : n.substring(0,3).toUpperCase();
@@ -1225,7 +1222,6 @@ function renderInactiveTable(data) {
 
     renderPaginationControls(pagDiv, totalPages, _pageInactive, (p) => { _pageInactive = p; renderMunicipalities(); });
 }
-
 // Controle de Itens por Página (Global para a aba)
 window.mudarQtdPorPagina = function(valor) {
     _itensPorPagina = parseInt(valor);
