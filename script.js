@@ -5798,6 +5798,7 @@ function setupTaskListener() {
         
         // [FIX] Atualiza o Dashboard (Gráficos e Cards)
         checkAndRefreshDashboard();
+        checkSystemNotifications();
         
     }, (error) => {
         appLogger.error("Erro ao buscar treinamentos:", error);
