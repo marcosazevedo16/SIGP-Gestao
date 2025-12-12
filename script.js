@@ -1034,7 +1034,7 @@ function saveMunicipality(e) {
     });
 }
 /* =================================================================================
-   SEÇÃO 11: MUNICÍPIOS CLIENTES (VISUALIZAÇÃO EM DUAS LISTAS)
+   SEÇÃO 11: MUNICÍPIOS CLIENTES (VISUALIZAÇÃO EM DUAS LISTAS - CORRIGIDO FINAL)
    ================================================================================= */
 
 // Variáveis de Paginação Independentes
@@ -1042,9 +1042,20 @@ var _pageActive = 1;
 var _pageInactive = 1;
 var _itensPorPagina = 10; // Padrão inicial
 
-// Função Principal de Renderização (Substitui a antiga)
-function renderMunicipalities() {
-    console.log("🔄 Renderizando Municípios (Modo Duplo)...");
+// --- FUNÇÕES DE PAGINAÇÃO GLOBAIS (FIXAS PARA EVITAR ERROS) ---
+window.mudarPaginaAtivos = function(pageNum) {
+    _pageActive = pageNum;
+    renderMunicipalities(false); // false = mantém o filtro, só muda a página
+};
+
+window.mudarPaginaInativos = function(pageNum) {
+    _pageInactive = pageNum;
+    renderMunicipalities(false);
+};
+
+// Função Principal de Renderização
+function renderMunicipalities(resetPages = true) {
+    console.log("🔄 Renderizando Municípios...");
 
     // 1. CAPTURA DOS FILTROS
     const fName = document.getElementById('filter-municipality-name')?.value || '';
@@ -1052,7 +1063,13 @@ function renderMunicipalities() {
     const fMod = document.getElementById('filter-municipality-module')?.value || '';
     const fGest = document.getElementById('filter-municipality-manager')?.value.toLowerCase() || '';
 
-    // 2. FILTRAGEM GLOBAL (Aplica filtros na lista completa primeiro)
+    // Se for uma nova filtragem (resetPages = true), volta para página 1
+    if (resetPages) {
+        _pageActive = 1;
+        _pageInactive = 1;
+    }
+
+    // 2. FILTRAGEM GLOBAL
     let filtered = municipalities.filter(m => {
         if (fName && m.name !== fName) return false;
         if (fStatus && m.status !== fStatus) return false;
@@ -1068,9 +1085,7 @@ function renderMunicipalities() {
     }
 
     // 4. SEPARAÇÃO DAS LISTAS
-    // Lista 1: Apenas "Em uso"
     const listActive = filtered.filter(m => m.status === 'Em uso');
-    // Lista 2: Todo o resto (Bloqueado, Parou, Não implantado)
     const listInactive = filtered.filter(m => m.status !== 'Em uso');
 
     // 5. RENDERIZA AS DUAS TABELAS
@@ -1089,7 +1104,6 @@ function renderActiveTable(data) {
     const tableDiv = document.getElementById('table-mun-active');
     const pagDiv = document.getElementById('pagination-mun-active');
 
-    // Se não houver ativos, esconde a seção inteira
     if (data.length === 0) {
         if(container) container.style.display = 'none';
         return;
@@ -1098,10 +1112,9 @@ function renderActiveTable(data) {
 
     // Paginação Local
     const totalPages = Math.ceil(data.length / _itensPorPagina);
-    if (_pageActive > totalPages) _pageActive = 1;
+    if (_pageActive > totalPages) _pageActive = totalPages;
     if (_pageActive < 1) _pageActive = 1;
     
-    // CORREÇÃO AQUI: Usei _itensPorPagina nos dois lugares
     const slice = data.slice((_pageActive - 1) * _itensPorPagina, _pageActive * _itensPorPagina);
 
     const rows = slice.map(m => {
@@ -1113,13 +1126,11 @@ function renderActiveTable(data) {
 
         const pop = m.population ? m.population.toLocaleString('pt-BR') : '-';
         const displayUF = m.uf ? `${m.name} - ${m.uf}` : m.name;
-        
         const tempoSemVisita = calculateDaysSince(m.lastVisit);
 
         return `<tr>
             <td class="text-primary-cell" style="font-weight:bold;">${displayUF}</td>
-            <td class="module-tags-cell">${badges}</td>
-            <td>${m.manager}</td>
+            <td><div class="module-tags-wrapper">${badges}</div></td> <td>${m.manager}</td>
             <td>${m.contact}</td>
             <td style="text-align:center;">${formatDate(m.implantationDate)}</td>
             <td style="text-align:center;">${calculateTimeInUse(m.implantationDate)}</td>
@@ -1148,8 +1159,15 @@ function renderActiveTable(data) {
         <th style="text-align:center;">Ações</th>
     </thead><tbody>${rows}</tbody></table>`;
 
-    renderPaginationControls(pagDiv, totalPages, _pageActive, (p) => { _pageActive = p; renderMunicipalities(); });
+    // Botões de Paginação ATIVOS (Chamada direta)
+    let htmlPag = `<div style="display:flex; justify-content:center; gap:5px; margin-top:10px;">`;
+    htmlPag += `<button class="btn btn--sm btn--outline" ${_pageActive===1?'disabled':''} onclick="window.mudarPaginaAtivos(${_pageActive-1})">◀</button>`;
+    htmlPag += `<span style="align-self:center; font-size:12px; margin:0 10px;">Pág ${_pageActive} de ${totalPages}</span>`;
+    htmlPag += `<button class="btn btn--sm btn--outline" ${_pageActive===totalPages?'disabled':''} onclick="window.mudarPaginaAtivos(${_pageActive+1})">▶</button>`;
+    htmlPag += `</div>`;
+    pagDiv.innerHTML = htmlPag;
 }
+
 // --- TABELA 2: INATIVOS ---
 function renderInactiveTable(data) {
     const container = document.getElementById('sec-mun-inactive');
@@ -1163,10 +1181,9 @@ function renderInactiveTable(data) {
     if(container) container.style.display = 'block';
 
     const totalPages = Math.ceil(data.length / _itensPorPagina);
-    if (_pageInactive > totalPages) _pageInactive = 1;
+    if (_pageInactive > totalPages) _pageInactive = totalPages;
     if (_pageInactive < 1) _pageInactive = 1;
     
-    // CORREÇÃO AQUI: Usei _itensPorPagina nos dois lugares
     const slice = data.slice((_pageInactive - 1) * _itensPorPagina, _pageInactive * _itensPorPagina);
 
     const rows = slice.map(m => {
@@ -1190,8 +1207,7 @@ function renderInactiveTable(data) {
 
         return `<tr>
             <td class="text-primary-cell">${displayUF}</td>
-            <td class="module-tags-cell">${badges}</td>
-            <td>${m.manager}</td>
+            <td><div class="module-tags-wrapper">${badges}</div></td> <td>${m.manager}</td>
             <td>${m.contact}</td>
             <td style="text-align:center;">${formatDate(m.implantationDate)}</td>
             <td style="text-align:center; color:${corFim}; font-weight:bold;">${dataFim}</td>
@@ -1220,36 +1236,22 @@ function renderInactiveTable(data) {
         <th style="text-align:center;">Ações</th>
     </thead><tbody>${rows}</tbody></table>`;
 
-    renderPaginationControls(pagDiv, totalPages, _pageInactive, (p) => { _pageInactive = p; renderMunicipalities(); });
+    // Botões de Paginação INATIVOS (Chamada direta)
+    let htmlPag = `<div style="display:flex; justify-content:center; gap:5px; margin-top:10px;">`;
+    htmlPag += `<button class="btn btn--sm btn--outline" ${_pageInactive===1?'disabled':''} onclick="window.mudarPaginaInativos(${_pageInactive-1})">◀</button>`;
+    htmlPag += `<span style="align-self:center; font-size:12px; margin:0 10px;">Pág ${_pageInactive} de ${totalPages}</span>`;
+    htmlPag += `<button class="btn btn--sm btn--outline" ${_pageInactive===totalPages?'disabled':''} onclick="window.mudarPaginaInativos(${_pageInactive+1})">▶</button>`;
+    htmlPag += `</div>`;
+    pagDiv.innerHTML = htmlPag;
 }
+
 // Controle de Itens por Página (Global para a aba)
 window.mudarQtdPorPagina = function(valor) {
     _itensPorPagina = parseInt(valor);
     _pageActive = 1;
     _pageInactive = 1;
-    renderMunicipalities(); // Recarrega ambas
+    renderMunicipalities(true); 
 };
-
-// Helper Genérico para Botões de Paginação
-function renderPaginationControls(container, totalPages, currentPage, callback) {
-    if (totalPages <= 1) { container.innerHTML = ''; return; }
-    
-    let html = `<div style="display:flex; justify-content:center; gap:5px; margin-top:10px;">`;
-    
-    // Botão Anterior
-    html += `<button class="btn btn--sm btn--outline" ${currentPage===1?'disabled':''} onclick="window.tempPageCallback_${container.id}(${currentPage-1})">◀</button>`;
-    
-    // Mostra Página Atual
-    html += `<span style="align-self:center; font-size:12px; margin:0 10px;">Pág ${currentPage} de ${totalPages}</span>`;
-    
-    // Botão Próximo
-    html += `<button class="btn btn--sm btn--outline" ${currentPage===totalPages?'disabled':''} onclick="window.tempPageCallback_${container.id}(${currentPage+1})">▶</button>`;
-    html += `</div>`;
-
-    // Truque para criar callbacks únicos por tabela
-    window['tempPageCallback_' + container.id] = callback;
-    container.innerHTML = html;
-}
 // ============================================================
 // FUNÇÃO FALTANTE: GERAR PDF DE MUNICÍPIOS
 // ============================================================
