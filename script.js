@@ -8501,8 +8501,9 @@ function exportReportToExcel() {
 }
 
 // Função específica para Exportar MUNICÍPIOS usando os FILTROS NOVOS da tela de relatórios
+// Função específica para Exportar MUNICÍPIOS usando os FILTROS NOVOS da tela de relatórios
 function exportReportMunicipiosExcel() {
-    // 1. Captura os filtros DA TELA DE RELATÓRIOS (não da aba principal)
+    // 1. Captura os filtros DA TELA DE RELATÓRIOS
     const dateType = document.getElementById('rep-mun-date-type').value;
     const dateStart = document.getElementById('rep-mun-start').value;
     const dateEnd = document.getElementById('rep-mun-end').value;
@@ -8528,19 +8529,21 @@ function exportReportMunicipiosExcel() {
         return;
     }
 
-    // 3. Gera o Excel
-    const headers = ['Município', 'UF', 'Status', 'Gestor', 'Contato', 'Implantação', 'Última Visita'];
+    // 3. Gera o Excel (COM POPULAÇÃO)
+    const headers = ['Município', 'UF', 'População', 'Status', 'Gestor', 'Contato', 'Implantação', 'Tempo de Uso', 'Última Visita'];
     const rows = data.map(m => [
         m.name,
         m.uf || '',
+        m.population ? m.population : 0, // Exporta como número puro para permitir soma no Excel
         m.status,
         m.manager,
         m.contact,
         formatDate(m.implantationDate),
+        calculateTimeInUse(m.implantationDate),
         formatDate(m.lastVisit)
     ]);
 
-    downloadXLSX("Relatorio_Carteira_Clientes_Filtrado", headers, rows);
+    downloadXLSX("Relatorio_Carteira_Clientes_Completo", headers, rows);
 }
 // ============================================================================
 // 2. FUNÇÃO PRINCIPAL: Gera o Preview (LARGURA TOTAL DA FOLHA CORRIGIDA)
@@ -8598,17 +8601,21 @@ function generateReportPreview() {
         // --- LARGURAS RECALCULADAS PARA PREENCHER 100% (Total ~277mm) ---
         let customColumnStyles = {};
         
+        // --- LARGURAS RECALCULADAS (Total ~277mm) ---
+        let customColumnStyles = {};
+        
         if (type === 'municipios') {
             customColumnStyles = {
-                // Aumentei Município e Gestor para empurrar a tabela até a borda direita
-                0: { cellWidth: 65 }, // Município 
-                1: { cellWidth: 22 }, // Status
-                2: { cellWidth: 55 }, // Gestor (Aumentado)
-                3: { cellWidth: 35 }, // Contato
-                4: { cellWidth: 28, halign: 'center' }, // Implantação (Compacto)
-                5: { cellWidth: 45 }, // Tempo de Uso
-                6: { cellWidth: 27, halign: 'center' }  // Última Visita (Compacto)
-                // Soma Total: 277mm (Preenche exatamente o espaço entre as margens)
+                // Redistribuição para 8 colunas (incluindo População)
+                0: { cellWidth: 55 }, // Município (Reduzido de 65)
+                1: { cellWidth: 25, halign: 'right' }, // População (NOVO)
+                2: { cellWidth: 22 }, // Status
+                3: { cellWidth: 45 }, // Gestor (Reduzido de 55)
+                4: { cellWidth: 32 }, // Contato (Reduzido de 35)
+                5: { cellWidth: 26, halign: 'center' }, // Implantação
+                6: { cellWidth: 45 }, // Tempo de Uso (Mantido legível)
+                7: { cellWidth: 27, halign: 'center' }  // Última Visita
+                // Total: ~277mm
             };
         }
 
@@ -8763,12 +8770,15 @@ function genRepMunicipios() {
         const dtVis = m.lastVisit ? formatDate(m.lastVisit) : '-';
         const tempoUso = calculateTimeInUse(m.implantationDate); 
         const nomeExibicao = m.uf ? `${m.name} - ${m.uf}` : m.name;
+        // NOVO: Formata população
+        const pop = m.population ? m.population.toLocaleString('pt-BR') : '-';
 
         return `<tr>
             <td>${nomeExibicao}</td>
-            <td>${m.status}</td>
+            <td style="text-align:right;">${pop}</td> <td>${m.status}</td>
             <td>${m.manager || '-'}</td>
-            <td>${m.contact || '-'}</td> <td style="text-align:center;">${dtImp}</td>
+            <td>${m.contact || '-'}</td> 
+            <td style="text-align:center;">${dtImp}</td>
             <td>${tempoUso}</td>
             <td style="text-align:center;">${dtVis}</td>
         </tr>`;
@@ -8784,9 +8794,10 @@ function genRepMunicipios() {
     <table class="report-table">
         <thead>
             <th>Município</th>
-            <th>Status</th>
+            <th style="text-align:right;">População</th> <th>Status</th>
             <th>Gestor</th>
-            <th>Contato</th> <th style="text-align:center;">Data Implantação</th>
+            <th>Contato</th> 
+            <th style="text-align:center;">Implantação</th>
             <th>Tempo de Uso</th>
             <th style="text-align:center;">Última Visita</th>
         </thead>
