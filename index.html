@@ -112,75 +112,57 @@
 
             </div>
 
-           <div class="header-actions">
-                <button class="btn btn--outline btn--sm header-icon-btn" id="home-btn" onclick="navigateToHome()" title="Tela Inicial">
-                    🏠
-                </button>
-                
-                <button class="btn btn--outline btn--sm header-icon-btn" id="theme-toggle" onclick="toggleTheme()" title="Alternar Tema">
-                    🌙
-                </button>
-                
-                <div class="settings-dropdown">
-                    <button class="btn btn--outline btn--sm relative header-icon-btn" id="notif-btn" onclick="toggleNotifications()" title="Notificações">
-                        🔔 <span id="notif-badge" class="notification-badge" style="display:none;">0</span>
-                    </button>
-                    <div class="settings-menu notification-menu" id="notification-menu">
-                        <div class="notification-header">Notificações</div>
-                        <div id="notification-list" class="notification-list">
-                            <p style="padding:10px; color:#666;">Nenhuma notificação.</p>
-                        </div>
-                    </div>
+           <div class="header-right-container">
+    <div id="header-announcement-display" class="header-announcement" style="display: none;">
+        </div>
+
+    <div class="header-actions">
+        <button class="btn btn--outline btn--sm header-icon-btn" id="home-btn" onclick="navigateToHome()" title="Tela Inicial">🏠</button>
+        <button class="btn btn--outline btn--sm header-icon-btn" id="theme-toggle" onclick="toggleTheme()" title="Alternar Tema">🌙</button>
+        
+        <div class="settings-dropdown">
+            <button class="btn btn--outline btn--sm relative header-icon-btn" id="notif-btn" onclick="toggleNotifications()" title="Notificações">
+                🔔 <span id="notif-badge" class="notification-badge" style="display:none;">0</span>
+            </button>
+            <div class="settings-menu notification-menu" id="notification-menu">
+                <div class="notification-header">Notificações</div>
+                <div id="notification-list" class="notification-list">
+                    <p style="padding:10px; color:#666;">Nenhuma notificação.</p>
                 </div>
-
-                <div class="settings-dropdown" id="settings-dropdown-container">
-                    <button class="btn btn--outline btn--sm header-text-btn" onclick="toggleSettings()" title="Configurações">
-                        ⚙️ Configurações
-                    </button>
-                    
-                    <div class="settings-menu" id="settings-menu">
-                        <button class="settings-menu-item" id="user-management-menu-btn" style="display: none;" onclick="navigateToUserManagement()">
-                            👥 Gestão de Usuários
-                        </button>
-                        <button class="settings-menu-item" onclick="showChangePasswordModal(); toggleSettings();">
-                            🔒 Alterar Senha
-                        </button>
-                        <div class="settings-divider" id="admin-divider" style="display: none;"></div>
-
-                        <button class="settings-menu-item" id="cargo-management-menu-btn" onclick="navigateToCargoManagement()">
-                            💼 Cadastro de Cargo/Função
-                        </button>
-                        <button class="settings-menu-item" id="orientador-management-menu-btn" onclick="navigateToOrientadorManagement()">
-                            👨‍🏫 Cadastro de Colaborador
-                        </button>
-                        <button class="settings-menu-item" id="modulo-management-menu-btn" onclick="navigateToModuloManagement()">
-                            📦 Cadastro de Módulos
-                        </button>
-                        <button class="settings-menu-item" id="municipality-list-management-menu-btn" onclick="navigateToMunicipalityListManagement()">
-                            🏙️ Cadastro de Municípios
-                        </button>
-                        <button class="settings-menu-item" id="forma-apresentacao-management-menu-btn" onclick="navigateToFormaApresentacaoManagement()">
-                            📋 Formas de Apresentação
-                        </button>
-                        <button class="settings-menu-item" id="api-list-management-menu-btn" onclick="navigateToApiListManagement()">
-                            🌐 Cadastro de APIs
-                        </button>
-
-                        <div class="settings-divider"></div>
-
-                        <button class="settings-menu-item" id="backup-menu-btn" onclick="navigateToBackupManagement()">
-                            💾 Backup e Restauração
-                        </button>
-                        <button class="settings-menu-item" id="audit-menu-btn" onclick="navigateToAudit()">
-                            🕵️ Auditoria (Logs)
-                        </button>
-                    </div>
-                </div>
-
-                <button class="btn btn--secondary btn--sm header-text-btn" onclick="handleLogout()" title="Sair do Sistema">
-                  🚪 Sair
-                </button>
             </div>
+        </div>
+
+        <div class="settings-dropdown" id="settings-dropdown-container">
+            <button class="btn btn--outline btn--sm header-text-btn" onclick="toggleSettings()" title="Configurações">
+                ⚙️ Configurações
+            </button>
+            
+            <div class="settings-menu" id="settings-menu">
+                <button class="settings-menu-item" id="user-management-menu-btn" style="display: none;" onclick="navigateToUserManagement()">👥 Gestão de Usuários</button>
+                <button class="settings-menu-item" onclick="showChangePasswordModal(); toggleSettings();">🔒 Alterar Senha</button>
+                
+                <div class="settings-divider" id="admin-divider" style="display: none;"></div>
+
+                <button class="settings-menu-item" id="announcement-menu-btn" onclick="showAnnouncementModal(); toggleSettings();">
+                    📢 Configurar Informativo
+                </button>
+                <button class="settings-menu-item" id="cargo-management-menu-btn" onclick="navigateToCargoManagement()">💼 Cadastro de Cargo/Função</button>
+                <button class="settings-menu-item" id="orientador-management-menu-btn" onclick="navigateToOrientadorManagement()">👨‍🏫 Cadastro de Colaborador</button>
+                <button class="settings-menu-item" id="modulo-management-menu-btn" onclick="navigateToModuloManagement()">📦 Cadastro de Módulos</button>
+                <button class="settings-menu-item" id="municipality-list-management-menu-btn" onclick="navigateToMunicipalityListManagement()">🏙️ Cadastro de Municípios</button>
+                <button class="settings-menu-item" id="forma-apresentacao-management-menu-btn" onclick="navigateToFormaApresentacaoManagement()">📋 Formas de Apresentação</button>
+                <button class="settings-menu-item" id="api-list-management-menu-btn" onclick="navigateToApiListManagement()">🌐 Cadastro de APIs</button>
+
+                <div class="settings-divider"></div>
+
+                <button class="settings-menu-item" id="backup-menu-btn" onclick="navigateToBackupManagement()">💾 Backup e Restauração</button>
+                <button class="settings-menu-item" id="audit-menu-btn" onclick="navigateToAudit()">🕵️ Auditoria (Logs)</button>
+            </div>
+        </div>
+
+        <button class="btn btn--secondary btn--sm header-text-btn" onclick="handleLogout()" title="Sair do Sistema">🚪 Sair</button>
+    </div>
+</div>
 
     </header>
 
@@ -3038,6 +3020,44 @@
         <button class="btn-confirmar" onclick="confirmarPresenca()">
             Sim, continuar logado
         </button>
+    </div>
+</div>
+        <div id="announcement-modal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>📢 Configurar Informativo Global</h3>
+            <button class="close-btn" onclick="closeAnnouncementModal()">&times;</button>
+        </div>
+        <form id="announcement-form" onsubmit="saveAnnouncement(event)">
+            <div style="padding: 24px;">
+                <div class="form-group">
+                    <label class="form-label">Texto do Informativo*</label>
+                    <input type="text" class="form-control" id="announcement-text" required placeholder="Ex: Nova versão v1.0.5 disponível na PlayStore!" maxlength="100">
+                    <p style="font-size: 11px; color: #666; margin-top: 5px;">Este texto aparecerá no topo para TODOS os usuários.</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Cor do Texto</label>
+                    <select class="form-control" id="announcement-color">
+                        <option value="#FFD700">Amarelo (Destaque)</option>
+                        <option value="#FFFFFF">Branco (Padrão)</option>
+                        <option value="#FF6B6B">Vermelho Claro (Alerta)</option>
+                        <option value="#79C2A9">Verde Claro (Sucesso)</option>
+                    </select>
+                </div>
+
+                <div class="checkbox-group" style="margin-top: 15px;">
+                    <label>
+                        <input type="checkbox" id="announcement-active"> 
+                        <strong>Ativar exibição no topo</strong>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn--secondary" onclick="closeAnnouncementModal()">Cancelar</button>
+                <button type="submit" class="btn btn--primary">Salvar e Publicar</button>
+            </div>
+        </form>
     </div>
 </div>
 
