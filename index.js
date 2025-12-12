@@ -64,6 +64,20 @@ function setupLoginForm() {
                 // Autentica no Firebase
                 await auth.signInWithEmailAndPassword(emailFinal, password);
                 appLogger.log(`Login sucesso: ${emailFinal}`);
+
+                // ============================================================
+                // [NOVO] REGISTRA O LOG DE AUDITORIA MANUALMENTE
+                // ============================================================
+                // Como o auth.js que troca a tela, garantimos o log aqui no sucesso.
+                db.collection('auditLogs').add({
+                    timestamp: new Date().toISOString(),
+                    user: userInput.toUpperCase(), // Salva o login digitado
+                    action: 'Login',
+                    target: 'Sistema',
+                    details: `Login realizado com sucesso. E-mail: ${emailFinal}`,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).catch(err => console.error("Erro ao salvar log de login:", err));
+                // ============================================================
                 
                 // O checkAuthentication() no auth.js vai perceber a mudança
                 // e redirecionar para a tela principal automaticamente.
